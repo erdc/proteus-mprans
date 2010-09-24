@@ -587,6 +587,7 @@ class OneLevelRANS2PV2(OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.nElements_global,
+            self.coefficients.useRBLES,
             self.timeIntegration.alpha_bdf,
             self.coefficients.epsFact_density,
             self.coefficients.epsFact,
@@ -727,6 +728,7 @@ class OneLevelRANS2PV2(OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             self.mesh.nElements_global,
+            self.coefficients.useRBLES,
             self.timeIntegration.alpha_bdf,
             self.coefficients.epsFact_density,
             self.coefficients.epsFact,

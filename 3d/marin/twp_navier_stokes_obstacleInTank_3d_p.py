@@ -17,7 +17,8 @@ coefficients = TwophaseNavierStokes_ST_LS_SO(epsFact=epsFact_viscosity,
                                              nd=nd,
                                              LS_model=1,
                                              epsFact_density=epsFact_density,
-                                             stokes=useStokes)
+                                             stokes=useStokes,
+                                             useRBLES=0.0)
 
 def getDBC_p_obstacleInTank(x,flag):
     if flag == boundaryTags['top']:

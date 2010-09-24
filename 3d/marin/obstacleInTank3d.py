@@ -105,7 +105,7 @@ def shockSignedDistance(x):
 #
 dt_init=he*0.001
 T = 6.0
-nDTout=600#500
+nDTout=100#500
 runCFL = 1.0#0.33
 #
 #numerics

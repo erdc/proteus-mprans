@@ -10,7 +10,7 @@ if useBackwardEuler_ls:
     stepController = HeuristicNL_dt_controller
     nonlinearIterationsFloor = 3
     nonlinearIterationsCeil=5
-    dtNLgrowFactor  = 1.5
+    dtNLgrowFactor  = 2.0
     dtNLreduceFactor= 0.5#75
 else:
     timeIntegration = FLCBDF

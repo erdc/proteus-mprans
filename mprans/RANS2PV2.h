@@ -846,6 +846,7 @@ extern "C"
 				  double* boundaryJac_ref,
 				  //end testing meshreplacement
 				  int nElements_global,
+                                  double useRBLES,
 				  double alpha_bdf,
 				  double eps_rho,
 				  double eps_mu,
@@ -947,6 +948,7 @@ extern "C"
 				  double* boundaryJac_ref,
 				  //end testing meshreplacement
 				  int nElements_global,
+                                  double useRBLES,
 				  double alpha_bdf,
 				  double eps_rho,
 				  double eps_mu,
