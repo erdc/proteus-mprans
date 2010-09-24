@@ -1,9 +1,9 @@
 from proteus import *
 from proteus.default_p import *
 from beach_erosion_board_waves_3d import *
-from proteus import NCLS
+from proteus import NCLSV2
 if useNCLS:
-    LevelModelType = NCLS.OneLevelNCLS
+    LevelModelType = NCLSV2.OneLevelNCLSV2
 """
 The non-conservative level set description of the free surface of a sloshing two-phase flow in a closed box.
 """
@@ -17,11 +17,11 @@ The non-conservative level set description of the free surface of a sloshing two
 #\todo finish ls_so_sloshbox_3d_p.py doc
 
 if applyCorrection:
-    coefficients = NCLevelSetCoefficients(V_model=0,RD_model=3,ME_model=1)
+    coefficients = NCLevelSetCoefficients(V_model=0,RD_model=3,ME_model=1,checkMass=False)
 elif applyRedistancing:
-    coefficients = NCLevelSetCoefficients(V_model=0,RD_model=2,ME_model=1)
+    coefficients = NCLevelSetCoefficients(V_model=0,RD_model=2,ME_model=1,checkMass=False)
 else:
-    coefficients = NCLevelSetCoefficients(V_model=0,ME_model=1)
+    coefficients = NCLevelSetCoefficients(V_model=0,ME_model=1,checkMass=False)
 
 def getDBC_ls(x,flag):
     pass

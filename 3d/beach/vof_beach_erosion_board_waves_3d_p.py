@@ -1,11 +1,11 @@
 from proteus import *
 from proteus.default_p import *
 from beach_erosion_board_waves_3d import *
-from proteus import VOF,VolumeAveragedVOF
+from proteus import VOFV2,VolumeAveragedVOF
 
 if useVOF:
     if useSpongeLayer:
-        LevelModelType = VOF.OneLevelVOF
+        LevelModelType = VOFV2.OneLevelVOFV2
     else:
         LevelModelType = VolumeAveragedVOF.OneLevelVolumeAveragedVOF
 

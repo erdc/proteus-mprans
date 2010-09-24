@@ -2,9 +2,9 @@ from proteus import *
 from proteus.default_p import *
 from math import *
 from wigley import *
-from proteus import RDLS
+from proteus import RDLSV2
 
-LevelModelType = RDLS.OneLevelRDLS
+LevelModelType = RDLSV2.OneLevelRDLSV2
 coefficients = RedistanceLevelSet(applyRedistancing=applyRedistancing,
                                   epsFact=epsFact_redistance,
                                   nModelId=1,
@@ -16,8 +16,8 @@ def getDBC_rd(x,flag):
 dirichletConditions = {0:getDBC_rd}
 
 if freezeLevelSet:
-    if LevelModelType == RDLS.OneLevelRDLS:
-        weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCs}
+    if LevelModelType == RDLSV2.OneLevelRDLSV2:
+        weakDirichletConditions = {0:RDLSV2.setZeroLSweakDirichletBCs}
     else:
         weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs}
 #weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs2}

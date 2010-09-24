@@ -31,7 +31,7 @@ rd_shockCapturingFactor=0.33#0.1
 ns_shockCapturingFactor=0.33
 
 rd_freezeLS = True
-usePETSc=True#False#True
+usePETSc=False#True
 nOverlap = 1
 partitioningType = MeshTools.MeshParallelPartitioningTypes.element
 #-P"-ksp_type bcgsl -pc_type asm -pc_asm_type basic -pc_asm_overlap 1 -sub_ksp_type preonly -sub_pc_type lu -sub_pc_factor_mat_solver_package spooles -ksp_atol 1.0e-7 -ksp_rtol 1.0e-7 "

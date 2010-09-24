@@ -2,9 +2,9 @@ from proteus import *
 from proteus.default_p import *
 from math import *
 from beach_erosion_board_waves_3d import *
-from proteus import RDLS
+from proteus import RDLSV2
 if useRDLS:
-    LevelModelType = RDLS.OneLevelRDLS
+    LevelModelType = RDLSV2.OneLevelRDLSV2
 """
 The redistancing equation in the sloshbox test problem.
 """
@@ -31,8 +31,8 @@ def getDBC_rd(x,flag):
     
 dirichletConditions = {0:getDBC_rd}
 if rd_freezeLS:
-    if LevelModelType == RDLS.OneLevelRDLS:
-        weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCs}
+    if LevelModelType == RDLSV2.OneLevelRDLSV2:
+        weakDirichletConditions = {0:RDLSV2.setZeroLSweakDirichletBCs}
     else:
         weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs}
 

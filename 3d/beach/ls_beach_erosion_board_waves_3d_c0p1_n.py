@@ -25,7 +25,7 @@ elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
 
 subgridError = None
 
-if LevelModelType == NCLS.OneLevelNCLS:
+if LevelModelType == NCLSV2.OneLevelNCLSV2:
     subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=True)#it's  linear anyway
 else:
     subgridError = HamiltonJacobi_ASGS(coefficients,nd,lag=True)#it's  linear anyway
@@ -56,15 +56,16 @@ maxNonlinearIts = 50
 matrix = SparseMatrix
 
 if usePETSc:
-    if LevelModelType == NCLS.OneLevelNCLS:
+    if LevelModelType == NCLSV2.OneLevelNCLSV2:
         numericalFluxType = DoNothing# does nothing
     else:
-        numericalFluxType = NF_base# does nothing
+        numericalFluxType = DoNothing# does nothing
 
     multilevelLinearSolver = PETSc
     
     levelLinearSolver = PETSc
 else:
+    numericalFluxType = DoNothing# does nothing
     multilevelLinearSolver = LU
     
     levelLinearSolver = LU

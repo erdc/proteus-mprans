@@ -127,7 +127,7 @@ epsFact_consrv_dirac=1.5
 epsFact_consrv_diffusion=10.0
 epsFact_vof=1.5
 #
-usePETSc=True
+usePETSc=False#True
 spaceOrder=1
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node

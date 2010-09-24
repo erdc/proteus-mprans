@@ -79,6 +79,7 @@ if usePETSc:
     parallelPartitioningType = partitioningType#MeshParallelPartitioningTypes.node
     nLayersOfOverlapForParallel = nOverlap#2
 else:
+    numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_IIPG_exterior #need weak for parallel and global conservation
     multilevelLinearSolver = LU
     
     levelLinearSolver = LU

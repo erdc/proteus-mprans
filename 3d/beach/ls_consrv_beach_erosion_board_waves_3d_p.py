@@ -1,9 +1,9 @@
 from proteus import *
 from proteus.default_p import *
 from beach_erosion_board_waves_3d import *
-from proteus import MCorr
+from proteus import MCorrV2
 if useMCorr:
-    LevelModelType = MCorr.OneLevelMCorr
+    LevelModelType = MCorrV2.OneLevelMCorrV2
 """
 The non-conservative level set description of a bubble in a two-phase flow
 """
@@ -17,7 +17,7 @@ coefficients = LevelSetConservation(applyCorrection=applyCorrection,
                                     epsFactHeaviside=epsFact_consrv_heaviside,
                                     epsFactDirac=epsFact_consrv_dirac,
                                     epsFactDiffusion=epsFact_consrv_diffusion,
-                                    LSModel_index=1,V_model=0,me_model=4,VOFModel_index=2,nd=nd)
+                                    LSModel_index=1,V_model=0,me_model=4,VOFModel_index=2,nd=nd,checkMass=False)
 
 #waterLevel = 0.9*L[1]
 

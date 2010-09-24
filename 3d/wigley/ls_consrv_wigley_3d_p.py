@@ -1,9 +1,9 @@
 from proteus import *
 from proteus.default_p import *
 from wigley import *
-from proteus import MCorr
+from proteus import MCorrV2
 
-LevelModelType = MCorr.OneLevelMCorr
+LevelModelType = MCorrV2.OneLevelMCorrV2
 coefficients = LevelSetConservation(applyCorrection=applyCorrection,
                                     epsFactHeaviside=epsFact_consrv_heaviside,
                                     epsFactDirac=epsFact_consrv_dirac,
@@ -12,7 +12,8 @@ coefficients = LevelSetConservation(applyCorrection=applyCorrection,
                                     V_model=0,
                                     me_model=4,
                                     VOFModel_index=2,
-                                    nd=nd)
+                                    nd=nd,
+                                    checkMass=False)
 
 class zero_phi:
     def __init__(self):

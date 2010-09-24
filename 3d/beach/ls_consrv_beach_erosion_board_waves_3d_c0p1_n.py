@@ -28,7 +28,7 @@ subgridError = None
 
 massLumping = False
 
-if LevelModelType == MCorr.OneLevelMCorr:
+if LevelModelType == MCorrV2.OneLevelMCorrV2:
     numericalFluxType = DoNothing# does nothing
 else:
     numericalFluxType = NF_base# does nothing

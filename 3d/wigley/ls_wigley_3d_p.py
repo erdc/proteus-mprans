@@ -1,11 +1,11 @@
 from proteus import *
 from proteus.default_p import *
 from wigley import *
-from proteus import NCLS
+from proteus import NCLSV2
 
-LevelModelType = NCLS.OneLevelNCLS
+LevelModelType = NCLSV2.OneLevelNCLSV2
 
-coefficients = NCLevelSetCoefficients(V_model=0,RD_model=3,ME_model=1)
+coefficients = NCLevelSetCoefficients(V_model=0,RD_model=3,ME_model=1,checkMass=False)
 #coefficients = NCLevelSetCoefficients(V_model=0,ME_model=1)
 
 def getDBC_ls(x,flag):

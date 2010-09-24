@@ -2,14 +2,15 @@ from proteus import *
 from proteus.default_p import *
 from proteus.ctransportCoefficients import smoothedHeaviside
 from wigley import *
-from proteus import VOF
+from proteus import VOFV2
 
-LevelModelType = VOF.OneLevelVOF
+LevelModelType = VOFV2.OneLevelVOFV2
 coefficients = VOFCoefficients(LS_model=1,
                                V_model=0,
                                RD_model=3,
                                ME_model=2,
-                               epsFact=epsFact_vof)
+                               epsFact=epsFact_vof,
+                               checkMass=False)
 
 class Flat_H:
     def __init__(self,waterLevel):
