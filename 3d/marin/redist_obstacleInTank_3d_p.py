@@ -3,7 +3,7 @@ from proteus.default_p import *
 from math import *
 from obstacleInTank3d import *
 from proteus import RDLS
-from proteus import RDLSV2
+from proteus.mprans import RDLSV2
 """
 The redistancing equation in the obstacleInTank test problem.
 """

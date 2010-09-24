@@ -3,7 +3,7 @@ from proteus.default_p import *
 from proteus.ctransportCoefficients import smoothedHeaviside
 from obstacleInTank3d import *
 from proteus import VOF
-from proteus import VOFV2
+from proteus.mprans import VOFV2
 
 LevelModelType = VOF.OneLevelVOF
 LevelModelType = VOFV2.OneLevelVOFV2

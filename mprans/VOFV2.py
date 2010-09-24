@@ -1,7 +1,9 @@
-from Transport import *
-import cNCLSV2,cNCLS2D,cNCLSQ,cNCLS2DQ
+from proteus import *
+from proteus.Transport import *
+import cVOFV2
+from proteus import cVOF2D,cVOFQ,cVOF2DQ
 
-class OneLevelNCLSV2(OneLevelTransport):
+class OneLevelVOFV2(OneLevelTransport):
     nCalls=0
     def __init__(self,
                  uDict,
@@ -95,6 +97,19 @@ class OneLevelNCLSV2(OneLevelTransport):
         self.ua = {}#analytical solutions
         self.phi  = phiDict
         self.dphi={}
+#         for ck,phi in phiDict.iteritems():
+#             if coefficients.potential.has_key(ck):
+#                 for cj in coefficients.potential[ck].keys():
+#                     self.dphi[(ck,cj)] = FiniteElementFunction(phi.femSpace)
+#             else:
+#                 self.dphi[(ck,ck)] = FiniteElementFunction(phi.femSpace)
+        #check for nonlinearities in the diffusion coefficient that don't match the potential
+#         for ci,ckDict in coefficients.diffusion.iteritems():
+#             #for ck,cjDict in coefficients.diffusion.iteritems(): #cek: bug?
+#             for ck,cjDict in ckDict.iteritems():
+#                 for cj in cjDict.keys():
+#                     if not self.dphi.has_key((ck,cj)):
+#                         self.dphi[(ck,cj)] = FiniteElementFunction(phi.femSpace)
         self.matType = matType
         #mwf try to reuse test and trial information across components if spaces are the same
         self.reuse_test_trial_quadrature = reuse_trial_and_test_quadrature#True#False
@@ -255,6 +270,10 @@ class OneLevelNCLSV2(OneLevelTransport):
                 assert(self.nElementBoundaryQuadraturePoints_elementBoundary == 4)
             elif self.nSpace_global == 1:
                 assert(self.nElementBoundaryQuadraturePoints_elementBoundary == 1)
+
+        #
+        #storage dictionaries
+        self.scalars_element = set()
         #
         #simplified allocations for test==trial and also check if space is mixed or not
         #
@@ -285,32 +304,25 @@ class OneLevelNCLSV2(OneLevelTransport):
         self.q[('w',0)] = self.q[('v',0)]
         self.q[('grad(v)',0)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[0],self.nSpace_global),'d')
         self.q[('grad(w)',0)] =  self.q[('grad(v)',0)]
-        self.q[('w*dV_H',0)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[0]),'d')
-        self.q[('w*dV_m',0)] =  self.q[('w*dV_H',0)]
-        self.q[('grad(w)*dV_H',0)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[0],self.nSpace_global),'d')
+        self.q[('w*dV_m',0)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[0]),'d')
+        self.q[('grad(w)*dV_f',0)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[0],self.nSpace_global),'d')
         self.ebqe[('v',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nDOF_trial_element[0]),'d')
         self.ebqe[('w',0)] = self.ebqe[('v',0)]
         self.ebqe[('grad(v)',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nDOF_trial_element[0],self.nSpace_global),'d')
-        self.ebqe[('w*dS_H',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nDOF_trial_element[0]),'d')
+        self.ebqe[('w*dS_f',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nDOF_trial_element[0]),'d')
         self.q[('u',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('grad(u)',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
-        #cek hack for running with old RANS
-        self.ebq[('u',0)] = numpy.zeros((self.mesh.nElements_global,self.mesh.nElementBoundaries_element,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
-        self.ebq[('grad(u)',0)] = numpy.zeros((self.mesh.nElements_global,self.mesh.nElementBoundaries_element,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
-        #
+        self.q[('m',0)] = self.q[('u',0)]
+        #self.q[('mt',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('m_last',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
-        self.q[('m_tmp',0)] = self.q[('u',0)]#numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
-        self.q[('m',0)] = self.q[('u',0)]#numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
-        self.q[('dH',0,0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
-        self.q[('dH_sge',0,0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
+        self.q[('m_tmp',0)] = self.q[('u',0)]
         self.q[('cfl',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('numDiff',0,0)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.ebqe[('u',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.ebqe[('grad(u)',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
-        #mwf for running as standalone 
-        self.ebqe[('dH',0,0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
-        self.q[('dm',0,0)] =numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
-        self.q[('H',0)] =numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        self.ebqe[('advectiveFlux_bc_flag',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'i')
+        self.ebqe[('advectiveFlux_bc',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
+        self.ebqe[('advectiveFlux',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.points_elementBoundaryQuadrature= set()
         self.scalars_elementBoundaryQuadrature= set([('u',ci) for ci in range(self.nc)])
         self.vectors_elementBoundaryQuadrature= set()
@@ -326,6 +338,11 @@ class OneLevelNCLSV2(OneLevelTransport):
             (self.mesh.nElements_global,
              self.nDOF_test_element[ci]),
             'd') for ci in range(self.nc)]
+        #
+        #
+        #
+        #
+        log(memory("element and element boundary Jacobians","OneLevelTransport"),level=4)
 	self.inflowBoundaryBC = {}
 	self.inflowBoundaryBC_values = {}
 	self.inflowFlux = {}
@@ -412,11 +429,11 @@ class OneLevelNCLSV2(OneLevelTransport):
         log(memory("numericalFlux","OneLevelTransport"),level=4)
         self.elementEffectiveDiametersArray  = self.mesh.elementInnerDiametersArray
         #use post processing tools to get conservative fluxes, None by default
-        import PostProcessingTools
+        from proteus import PostProcessingTools
         self.velocityPostProcessor = PostProcessingTools.VelocityPostProcessingChooser(self)  
         log(memory("velocity postprocessor","OneLevelTransport"),level=4)
         #helper for writing out data storage
-        import Archiver
+        from proteus import Archiver
         self.elementQuadratureDictionaryWriter = Archiver.XdmfWriter()
         self.elementBoundaryQuadratureDictionaryWriter = Archiver.XdmfWriter()
         self.exteriorElementBoundaryQuadratureDictionaryWriter = Archiver.XdmfWriter()
@@ -436,11 +453,9 @@ class OneLevelNCLSV2(OneLevelTransport):
             self.numericalFlux.ebqe = {('u',0):numpy.zeros(self.ebqe[('u',0)].shape,'d')}
         #TODO how to handle redistancing calls for calculateCoefficients,calculateElementResidual etc
         self.globalResidualDummy = None
-
     #mwf these are getting called by redistancing classes,
     def calculateCoefficients(self):
         pass
-        
     def calculateElementResidual(self):
         if self.globalResidualDummy != None:
             self.getResidual(self.u[0].dof,self.globalResidualDummy)
@@ -459,24 +474,36 @@ class OneLevelNCLSV2(OneLevelTransport):
         self.setUnknowns(self.timeIntegration.u)
         #cek can put in logic to skip of BC's don't depend on t or u
         #Dirichlet boundary conditions
-        if hasattr(self.numericalFlux,'setDirichletValues'):
-            self.numericalFlux.setDirichletValues(self.ebqe)
-        #flux boundary conditions, SHOULDN'T HAVE
+        #if hasattr(self.numericalFlux,'setDirichletValues'):
+        self.numericalFlux.setDirichletValues(self.ebqe)
+        #flux boundary conditions
+        for t,g in self.fluxBoundaryConditionsObjectsDict[0].advectiveFluxBoundaryConditionsDict.iteritems():
+            self.ebqe[('advectiveFlux_bc',0)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
+            self.ebqe[('advectiveFlux_bc_flag',0)][t[0],t[1]] = 1
+#         self.ebqe[('advectiveFlux_bc',0)].flat[:]=0.0
+#         self.ebqe[('advectiveFlux_bc_flag',0)].flat[:]=0
+#         self.numericalFlux.isDOFBoundary[0].flat[:]=1
+#         self.numericalFlux.ebqe[('u',0)].flat[:]=1.0
         self.elementResidual[0].fill(0.0)
-        #cNCLS.calculateResidual(self.mesh.nElements_global,
+        self.shockCapturing.lag=True
         #try to use 1d,2d,3d specific modules
         if isinstance(self.u[0].femSpace,C0_AffineLinearOnSimplexWithNodalBasis):
-            cResidual = cNCLSV2.calculateResidual
+            cResidual = cVOFV2.calculateResidual
             if self.nSpace_global == 2:
-                cResidual = cNCLS2D.calculateResidual
+                cResidual = cVOF2D.calculateResidual
             elif self.nSpace_global == 1:
-                cResidual = cNCLS1D.calculateResidual
-        if isinstance(self.u[0].femSpace,C0_AffineQuadraticOnSimplexWithNodalBasis):
-            cResidual = cNCLSQ.calculateResidual
+                cResidual = cVOF1D.calculateResidual
+        elif isinstance(self.u[0].femSpace,C0_AffineQuadraticOnSimplexWithNodalBasis):
+            cResidual = cVOFQ.calculateResidual
             if self.nSpace_global == 2:
-                cResidual = cNCLS2DQ.calculateResidual
+                cResidual = cVOF2DQ.calculateResidual
             elif self.nSpace_global == 1:
-                cResidual = cNCLS1DQ.calculateResidual
+                cResidual = cVOF1DQ.calculateResidual
+        
+        #cVOFV2.calculateResidual(self.mesh.nElements_global,
+        #mwf debug
+        #import pdb
+        #pdb.set_trace()
         cResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -499,7 +526,7 @@ class OneLevelNCLSV2(OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.nElements_global,
-                  self.timeIntegration.alpha_bdf,#mwf was self.timeIntegration.dt,
+                  self.timeIntegration.alpha_bdf,
                   self.shockCapturing.lag,
                   self.shockCapturing.shockCapturingFactor,
                   self.u[0].femSpace.dofMap.l2g,
@@ -507,13 +534,12 @@ class OneLevelNCLSV2(OneLevelTransport):
                   self.u[0].dof,
                   self.q[('v',0)], 
                   self.q[('grad(v)',0)], 
-                  self.q[('w*dV_H',0)], 
-                  self.q[('grad(w)*dV_H',0)], 
+                  self.q[('w*dV_m',0)], 
+                  self.q[('grad(w)*dV_f',0)], 
                   self.coefficients.q_v,
                   self.timeIntegration.m_tmp[0],
                   self.q[('u',0)],
-                  self.q[('dH_sge',0,0)],
-                  self.timeIntegration.beta_bdf[0],#mwf was self.timeIntegration.m_last[0],
+                  self.timeIntegration.beta_bdf[0],
                   self.q[('cfl',0)],
                   self.shockCapturing.numDiff[0],
                   self.shockCapturing.numDiff_last[0],
@@ -530,10 +556,12 @@ class OneLevelNCLSV2(OneLevelTransport):
                   self.ebqe[('n')],
                   self.numericalFlux.isDOFBoundary[0],
                   self.numericalFlux.ebqe[('u',0)],
-                  self.ebqe[('w*dS_H',0)],
-                  self.ebqe[('u',0)])
-        #print "velocity in ncls",self.coefficients.q_v,
-        #print "cfl",self.q[('cfl',0)]
+                  self.ebqe[('advectiveFlux_bc_flag',0)],
+                  self.ebqe[('advectiveFlux_bc',0)],
+                  self.ebqe[('w*dS_f',0)],
+                  self.coefficients.ebqe_phi,self.coefficients.epsFact,
+                  self.ebqe[('u',0)],
+                  self.ebqe[('advectiveFlux',0)])
         if self.stabilization:
             self.stabilization.accumulateSubgridMassHistory(self.q)
         log("Global residual",level=9,data=r)
@@ -544,28 +572,28 @@ class OneLevelNCLSV2(OneLevelTransport):
         if self.globalResidualDummy == None:
             self.globalResidualDummy = numpy.zeros(r.shape,'d')
     def getJacobian(self,jacobian):
-        import superluWrappers
-        import numpy
+        #import superluWrappers
+        #import numpy
         import pdb
 	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
 				       jacobian)
         #mwf debug
         #pdb.set_trace()
-
-        #cNCLS.calculateJacobian(self.mesh.nElements_global,
         #try to use 1d,2d,3d specific modules
         if isinstance(self.u[0].femSpace,C0_AffineLinearOnSimplexWithNodalBasis):
-            cJacobian = cNCLSV2.calculateJacobian
+            cJacobian = cVOFV2.calculateJacobian
             if self.nSpace_global == 2:
-                cJacobian = cNCLS2D.calculateJacobian
+                cJacobian = cVOF2D.calculateJacobian
             elif self.nSpace_global == 1:
-                cJacobian = cNCLS1D.calculateJacobian
-        if isinstance(self.u[0].femSpace,C0_AffineQuadraticOnSimplexWithNodalBasis):
-            cJacobian = cNCLSQ.calculateJacobian
+                cJacobian = cVOF1D.calculateJacobian
+        elif isinstance(self.u[0].femSpace,C0_AffineQuadraticOnSimplexWithNodalBasis):
+            cJacobian = cVOFQ.calculateJacobian
             if self.nSpace_global == 2:
-                cJacobian = cNCLS2DQ.calculateJacobian
+                cJacobian = cVOF2DQ.calculateJacobian
             elif self.nSpace_global == 1:
-                cJacobian = cNCLS1DQ.calculateJacobian
+                cJacobian = cVOF1DQ.calculateJacobian
+
+        #cVOFV2.calculateJacobian(self.mesh.nElements_global,
         cJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -587,7 +615,7 @@ class OneLevelNCLSV2(OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             self.mesh.nElements_global,
-                  self.timeIntegration.alpha_bdf,#mwf was dt
+                  self.timeIntegration.alpha_bdf,
                   self.shockCapturing.lag,
                   self.shockCapturing.shockCapturingFactor,
                   self.u[0].femSpace.dofMap.l2g,
@@ -595,10 +623,10 @@ class OneLevelNCLSV2(OneLevelTransport):
                   self.u[0].dof,
                   self.q[('v',0)], 
                   self.q[('grad(v)',0)], 
-                  self.q[('w*dV_H',0)], 
-                  self.q[('grad(w)*dV_H',0)], 
+                  self.q[('w*dV_m',0)], 
+                  self.q[('grad(w)*dV_f',0)], 
                   self.coefficients.q_v,
-                  self.timeIntegration.beta_bdf[0],#mwf was self.timeIntegration.m_last[0],
+                  self.timeIntegration.beta_bdf[0],
                   self.q[('cfl',0)],
                   self.shockCapturing.numDiff_last[0],
                   self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
@@ -613,9 +641,10 @@ class OneLevelNCLSV2(OneLevelTransport):
                   self.ebqe[('n')],
                   self.numericalFlux.isDOFBoundary[0],
                   self.numericalFlux.ebqe[('u',0)],
-                  self.ebqe[('w*dS_H',0)],
+                  self.ebqe[('advectiveFlux_bc_flag',0)],
+                  self.ebqe[('advectiveFlux_bc',0)],
+                  self.ebqe[('w*dS_f',0)],
                   self.csrColumnOffsets_eb[(0,0)])
-
         log("Jacobian ",level=10,data=jacobian)
         #mwf decide if this is reasonable for solver statistics
         self.nonlinear_function_jacobian_evaluations += 1
@@ -671,10 +700,10 @@ class OneLevelNCLSV2(OneLevelTransport):
         self.testSpace[0].getBasisGradientValues(self.elementQuadraturePoints,
                                                   self.q['inverse(J)'],
                                                   self.q[('grad(w)',0)])
-        cfemIntegrals.calculateWeightedShapeGradients(self.elementQuadratureWeights[('H',0)],
+        cfemIntegrals.calculateWeightedShapeGradients(self.elementQuadratureWeights[('f',0)],
                                                       self.q['abs(det(J))'],
                                                       self.q[('grad(w)',0)],
-                                                      self.q[('grad(w)*dV_H',0)])
+                                                      self.q[('grad(w)*dV_f',0)])
         self.coefficients.initializeElementQuadrature(self.timeIntegration.t,self.q)
         if self.stabilization != None:
             self.stabilization.initializeElementQuadrature(self.mesh,self.timeIntegration.t,self.q)
@@ -736,10 +765,10 @@ class OneLevelNCLSV2(OneLevelTransport):
         cfemIntegrals.calculateWeightedShapeGlobalExteriorTrace(self.mesh.exteriorElementBoundariesArray,
                                                                 self.mesh.elementBoundaryElementsArray,
                                                                 self.mesh.elementBoundaryLocalElementBoundariesArray,
-                                                                self.elementBoundaryQuadratureWeights[('H',0)],
+                                                                self.elementBoundaryQuadratureWeights[('f',0)],
                                                                 self.ebqe['sqrt(det(g))'],
                                                                 self.ebqe[('w',0)],
-                                                                self.ebqe[('w*dS_H',0)])
+                                                                self.ebqe[('w*dS_f',0)])
         self.u[0].femSpace.getBasisGradientValuesGlobalExteriorTrace(self.elementBoundaryQuadraturePoints,
                                                                       self.ebqe['inverse(J)'],
                                                                       self.ebqe[('grad(v)',0)])
@@ -758,3 +787,89 @@ class OneLevelNCLSV2(OneLevelTransport):
         self.coefficients.initializeGlobalExteriorElementBoundaryQuadrature(self.timeIntegration.t,self.ebqe)
     def estimate_mt(self):
         pass
+
+########################################################################
+#for testing VOFV2 class
+from proteus import ctransportCoefficients
+class VOFV2ConstantlinearAdvectionCoefficients(TC_base):
+    from proteus.ctransportCoefficients import VOFCoefficientsEvaluate
+    def __init__(self,nc=1,M=[0],B=[0],rFunc=None,useSparseDiffusion = True):
+
+        mass={}
+        advection={}
+        diffusion={}
+        potential={}
+        reaction={}
+        hamiltonian={}
+        for i in range(nc):
+            mass[i]      = {i:'linear'}
+            advection[i] = {i:'linear'}
+            potential[i] = {i: 'u'}
+        TC_base.__init__(self,
+                         nc,
+                         mass,
+                         advection,
+                         diffusion,
+                         potential,
+                         reaction,
+                         hamiltonian,
+                         useSparseDiffusion = useSparseDiffusion)
+        self.M = M
+        self.B = B
+        self.rFunc=rFunc
+        self.epsFact =1.0
+        self.q_v=None; self.ebqe_v = None
+        self.ebq_v= None; self.ebq_global_v= None
+    def initializeMesh(self,mesh):
+        self.eps = mesh.h*self.epsFact
+    def initializeElementQuadrature(self,t,cq):
+        self.q_v = numpy.ones(cq[('grad(u)',0)].shape,'d')
+        self.q_v[-1] = numpy.array(self.B[0])
+        if not cq.has_key(('f',0)):
+            cq[('f',0)]= numpy.zeros(cq[('grad(u)',0)].shape,'d')
+        #
+        self.q_phi = numpy.zeros(cq[('u',0)].shape,'d')
+    def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
+        if cebq.has_key(('grad(u)',0)):
+            self.ebq_v = numpy.ones(cebq[('grad(u)',0)].shape,'d')
+            self.ebq_v[-1] = numpy.array(self.B[0])
+        if cebq_global.has_key(('grad(u)',0)):
+            self.ebq_global_v  = numpy.ones(cebq_global[('grad(u)',0)].shape,'d')
+            self.ebq_global_v[-1] = numpy.array(self.B[0])
+        if not cebq.has_key(('f',0)):
+            cebq[('f',0)]= numpy.zeros(cebq[('grad(u)',0)].shape,'d')
+        if not cebq_global.has_key(('f',0)):
+            cebq_global[('f',0)]= numpy.zeros(cebq_global[('grad(u)',0)].shape,'d')
+        self.ebq_phi = numpy.zeros(cebq[('u',0)].shape,'d')
+        self.ebq_global_phi = numpy.zeros(cebq_global[('u',0)].shape,'d')
+    def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
+        self.ebqe_v = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
+        self.ebqe_v[-1] =  numpy.array(self.B[0])
+        if not cebqe.has_key(('f',0)):
+            cebqe[('f',0)]= numpy.zeros(cebqe[('grad(u)',0)].shape,'d')
+        self.ebqe_phi = numpy.zeros(cebqe[('u',0)].shape,'d')
+    def evaluate(self,t,c):
+        #mwf debug
+        #print "VOFV2coeficients eval t=%s " % t 
+        if c[('grad(u)',0)].shape == self.q_v.shape:
+            v = self.q_v
+            phi = self.q_phi
+        elif c[('grad(u)',0)].shape == self.ebqe_v.shape:
+            v = self.ebqe_v
+            phi = self.ebqe_phi
+        elif ((self.ebq_v != None and self.ebq_phi != None) and c[('grad(u)',0)].shape == self.ebq_v.shape):
+            v = self.ebq_v
+            phi = self.ebq_phi
+        else:
+            v=None
+            phi=None
+        if v != None:
+            self.VOFCoefficientsEvaluate(self.epsFact,
+                                         v,
+                                         phi,
+                                         c[('u',0)],
+                                         c[('m',0)],
+                                         c[('dm',0,0)],
+                                         c[('f',0)],
+                                         c[('df',0,0)])
+    

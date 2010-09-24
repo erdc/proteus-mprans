@@ -2,7 +2,7 @@ from proteus import *
 from proteus.default_p import *
 from proteus.ctransportCoefficients import smoothedHeaviside
 from wigley import *
-from proteus import VOFV2
+from proteus.mprans import VOFV2
 
 LevelModelType = VOFV2.OneLevelVOFV2
 coefficients = VOFCoefficients(LS_model=1,

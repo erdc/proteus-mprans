@@ -2,7 +2,7 @@ from proteus import *
 from proteus.default_p import *
 from obstacleInTank3d import *
 from proteus import MCorr
-from proteus import MCorrV2
+from proteus.mprans import MCorrV2
 
 LevelModelType = MCorr.OneLevelMCorr
 LevelModelType = MCorrV2.OneLevelMCorrV2

@@ -2,7 +2,7 @@ from proteus import *
 from proteus.default_p import *
 from math import *
 from beach_erosion_board_waves_3d import *
-from proteus import RDLSV2
+from proteus.mprans import RDLSV2
 if useRDLS:
     LevelModelType = RDLSV2.OneLevelRDLSV2
 """

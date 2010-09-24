@@ -1,6 +1,8 @@
-from Transport import *
-import TimeIntegration
-import cRDLSV2,cRDLS2D,cRDLSQ,cRDLS2DQ
+from proteus import *
+from proteus.Transport import *
+from proteus import TimeIntegration
+import cRDLSV2
+from proteus import cRDLS2D,cRDLSQ,cRDLS2DQ
 
 debugRDLS = False#True
 class OneLevelRDLSV2(OneLevelTransport):
@@ -32,7 +34,7 @@ class OneLevelRDLSV2(OneLevelTransport):
                  sd = True,
                  movingDomain=False):#,
         import pdb
-        import Comm
+        from proteus import Comm
         if debugRDLS:
             OneLevelTransport.__init__(self,
                                        uDict,
@@ -439,11 +441,11 @@ class OneLevelRDLSV2(OneLevelTransport):
             log(memory("numericalFlux","OneLevelTransport"),level=4)
             self.elementEffectiveDiametersArray  = self.mesh.elementInnerDiametersArray
             #use post processing tools to get conservative fluxes, None by default
-            import PostProcessingTools
+            from proteus import PostProcessingTools
             self.velocityPostProcessor = PostProcessingTools.VelocityPostProcessingChooser(self)  
             log(memory("velocity postprocessor","OneLevelTransport"),level=4)
             #helper for writing out data storage
-            import Archiver
+            from proteus import Archiver
             self.elementQuadratureDictionaryWriter = Archiver.XdmfWriter()
             self.elementBoundaryQuadratureDictionaryWriter = Archiver.XdmfWriter()
             self.exteriorElementBoundaryQuadratureDictionaryWriter = Archiver.XdmfWriter()
@@ -630,8 +632,8 @@ class OneLevelRDLSV2(OneLevelTransport):
             return self.getJacobianNew(jacobian)
         OneLevelTransport.getJacobian(self,jacobian)
     def getJacobianNew(self,jacobian):
-        import superluWrappers
-        import numpy
+        #import superluWrappers
+        #import numpy
         import pdb
 	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
 				       jacobian)

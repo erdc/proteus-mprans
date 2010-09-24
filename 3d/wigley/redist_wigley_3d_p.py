@@ -2,7 +2,7 @@ from proteus import *
 from proteus.default_p import *
 from math import *
 from wigley import *
-from proteus import RDLSV2
+from proteus.mprans import RDLSV2
 
 LevelModelType = RDLSV2.OneLevelRDLSV2
 coefficients = RedistanceLevelSet(applyRedistancing=applyRedistancing,

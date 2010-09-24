@@ -2,7 +2,7 @@ from proteus import *
 from proteus.default_p import *
 from obstacleInTank3d import *
 from proteus import NCLS
-from proteus import NCLSV2
+from proteus.mprans import NCLSV2
 
 LevelModelType = NCLS.OneLevelNCLS
 LevelModelType = NCLSV2.OneLevelNCLSV2

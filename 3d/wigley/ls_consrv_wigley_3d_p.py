@@ -1,7 +1,7 @@
 from proteus import *
 from proteus.default_p import *
 from wigley import *
-from proteus import MCorrV2
+from proteus.mprans import MCorrV2
 
 LevelModelType = MCorrV2.OneLevelMCorrV2
 coefficients = LevelSetConservation(applyCorrection=applyCorrection,

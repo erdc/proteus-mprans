@@ -1,7 +1,8 @@
 from proteus import *
 from proteus.default_p import *
 from beach_erosion_board_waves_3d import *
-from proteus import VOFV2,VolumeAveragedVOF
+from proteus.mprans import VOFV2
+from proteus import VolumeAveragedVOF
 
 if useVOF:
     if useSpongeLayer:

@@ -1,7 +1,7 @@
 from proteus import *
 from proteus.default_p import *
 from sloshbox3d import *
-from proteus import NCLSV2
+from proteus.mprans import NCLSV2
 
 LevelModelType = NCLSV2.OneLevelNCLSV2
 

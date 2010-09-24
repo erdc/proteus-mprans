@@ -1,7 +1,7 @@
 from proteus import *
 from proteus.default_p import *
 from beach_erosion_board_waves_3d import *
-from proteus import MCorrV2
+from proteus.mprans import MCorrV2
 if useMCorr:
     LevelModelType = MCorrV2.OneLevelMCorrV2
 """

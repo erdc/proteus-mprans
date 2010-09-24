@@ -1,5 +1,7 @@
-from Transport import *
-import cRANS2PV2,cRANS2P2D,cRANS2PQ#,cRANS2P2DQ
+from proteus import *
+from proteus.Transport import *
+import cRANS2PV2
+from proteus import cRANS2P2D,cRANS2PQ#,cRANS2P2DQ
 
 class OneLevelRANS2PV2(OneLevelTransport):
     nCalls=0
@@ -480,11 +482,11 @@ class OneLevelRANS2PV2(OneLevelTransport):
         log(memory("numericalFlux","OneLevelTransport"),level=4)
         self.elementEffectiveDiametersArray  = self.mesh.elementInnerDiametersArray
         #use post processing tools to get conservative fluxes, None by default
-        import PostProcessingTools
+        from proteus import PostProcessingTools
         self.velocityPostProcessor = PostProcessingTools.VelocityPostProcessingChooser(self)  
         log(memory("velocity postprocessor","OneLevelTransport"),level=4)
         #helper for writing out data storage
-        import Archiver
+        from proteus import Archiver
         self.elementQuadratureDictionaryWriter = Archiver.XdmfWriter()
         self.elementBoundaryQuadratureDictionaryWriter = Archiver.XdmfWriter()
         self.exteriorElementBoundaryQuadratureDictionaryWriter = Archiver.XdmfWriter()
@@ -682,8 +684,8 @@ class OneLevelRANS2PV2(OneLevelTransport):
         #mwf decide if this is reasonable for keeping solver statistics
         self.nonlinear_function_evaluations += 1
     def getJacobian(self,jacobian):
-        import superluWrappers
-        import numpy
+        #import superluWrappers
+        #import numpy
         if isinstance(self.u[0].femSpace,C0_AffineLinearOnSimplexWithNodalBasis):
         #if isinstance(self.u[0].femSpace,C0_AffineLinearOnCubeWithNodalBasis):
             cJacobian = cRANS2PV2.calculateJacobian

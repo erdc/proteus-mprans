@@ -8,7 +8,7 @@ from math import *
 from wigley import *
 from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
-from proteus import RANS2PV2
+from proteus.mprans import RANS2PV2
 
 LevelModelType = RANS2PV2.OneLevelRANS2PV2
 coefficients = TwophaseNavierStokes_ST_LS_SO(epsFact=epsFact_viscosity,

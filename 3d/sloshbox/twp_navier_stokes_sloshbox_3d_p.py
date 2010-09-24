@@ -1,7 +1,7 @@
 from proteus import *
 from proteus.default_p import *
 from sloshbox3d import *
-from proteus import RANS2PV2
+from proteus.mprans import RANS2PV2
 
 useOpt=True#False
 if useOpt:

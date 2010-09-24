@@ -2,7 +2,7 @@ from proteus import *
 from proteus.default_p import *
 from obstacleInTank3d import *
 from proteus import RANS2P
-from proteus import RANS2PV2
+from proteus.mprans import RANS2PV2
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
 
 LevelModelType = RANS2P.OneLevelRANS2P
