@@ -25,6 +25,8 @@ if obstacleInTank3d.useBackwardEuler:
     systemStepControllerType = Sequential_MinAdaptiveModelStep
 else:
     systemStepControllerType = Sequential_MinFLCBDFModelStep
+if obstacleInTank3d.useFixedStep:
+    systemStepControllerType = Sequential_FixedStep 
 needEBQ_GLOBAL = False#True
 needEBQ = False#True
 useOneArchive = False

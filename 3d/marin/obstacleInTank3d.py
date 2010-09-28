@@ -105,8 +105,6 @@ def shockSignedDistance(x):
 #
 dt_init=he*0.001
 T = 6.0
-nDTout=100#500
-runCFL = 1.0#0.33
 #
 #numerics
 #
@@ -120,8 +118,11 @@ freezeLevelSet=True
 obstacleInTank_quad_order = 3
 useBackwardEuler=True
 useBackwardEuler_ls=True
+useFixedStep = False#True
+nDTout=100#500
+runCFL = 1.0#0.33
 #subgrid error
-lag_ns_subgridError=True
+lag_ns_subgridError=False#True
 lag_ns_shockCapturing=True
 lag_ls_shockCapturing=True
 #shock capturing diffusion
