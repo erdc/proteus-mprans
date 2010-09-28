@@ -1,4 +1,5 @@
 from distutils.core import setup, Extension
+from Cython.Distutils import build_ext
 import numpy
 
 ## \file setup.py setup.py
@@ -31,6 +32,7 @@ setup(name='proteus_mprans',
       packages=['proteus.mprans'],
       package_dir={'proteus.mprans':'mprans'},
       ext_package='proteus.mprans',
+      cmdclass = {'build_ext':build_ext},
       ext_modules=[Extension('cRANS2PV2',
                              ['mprans/cRANS2PV2Module.cpp','mprans/RANS2PV2.cpp'],
                              define_macros=[('PROTEUS_SUPERLU_H',PROTEUS_SUPERLU_H)],
@@ -71,6 +73,7 @@ setup(name='proteus_mprans',
                              libraries=['m'],
                              extra_compile_args=PROTEUS_EXTRA_COMPILE_ARGS,
                              extra_link_args=PROTEUS_EXTRA_LINK_ARGS),
+                   Extension("mprTest",["mprTest.pyx"], language="c++",include_dirs=[numpy.get_include()]),
                    ],
       requires=['numpy']
       )
