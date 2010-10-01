@@ -36,6 +36,8 @@ elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
 
 if LevelModelType == VANS2P.OneLevelVANS2P:
     subgridError = NavierStokesASGS_velocity_pressure_opt(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=2,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
+elif LevelModelType == RANS2PV2.OneLevelRANS2PV2:
+    subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=2,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
 else:
     subgridError = NavierStokesASGS_velocity_pressure(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=2,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
     if useSpongeLayer == True:
@@ -44,6 +46,8 @@ massLumping = False
 
 shockCapturing = None
 if LevelModelType == VANS2P.OneLevelVANS2P:
+    shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=True)
+elif LevelModelType == RANS2PV2.OneLevelRANS2PV2:
     shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=True)
 else:
     shockCapturing = NavierStokes_SC(coefficients,nd,ns_shockCapturingFactor,lag=True)
@@ -92,5 +96,5 @@ linTolFac = 1.0e-8
 #if useVANS2P:
 #    conservativeFlux = None
 #else:
-conservativeFlux = {0:'pwl'}
+#conservativeFlux = {0:'pwl'}
 

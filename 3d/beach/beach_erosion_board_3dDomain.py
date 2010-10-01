@@ -166,9 +166,18 @@ def beach_erosion_board_3d(domainHeightPad=2.0,
         facets.append(bottom_facet)
         facetFlags.append(boundaryTags['bottom'])
  
+    #label inflow region for wave dampening
+    #todo stopped here
+    xinflowCenter = 0.5*(x_0 + x_bs)
+    zinflowCenter = 0.5*domainHeightPad
+    regions = [[xinflowCenter,0.5*width,zinflowCenter]]
+    regionFlags = [1]
+
     domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
                                                  facets=facets,
-                                                 facetFlags=facetFlags)
+                                                 facetFlags=facetFlags,
+                                                 regions=regions,
+                                                 regionFlags=regionFlags)
     domain.backHeight = backHeight
  
     domain.backHeight = backHeight
@@ -381,10 +390,9 @@ def beach_erosion_board_with_sponge_layer_3d(spongeLayerWidth=0.2,
 
      z=0         beach slope
                  (1/10)         1/s slope           1/s_2 slope
-     |---|----|----------------|-----------|-------|-----------|-----|
-     0  x_sl x_bs            x_be         x_se   x_ce        x_bse  L
+     |--------|----------------|-----------|-------|-----------|-----|
+     0        x_bs            x_be         x_se   x_ce        x_bse  L
 
-    x_sl = sponge layer pad (0.2 [m] default), 
     x_bs = inflow pad (2 [m] default), 
     z(x) = 0, [0,x_bs]
 
@@ -432,6 +440,7 @@ def beach_erosion_board_with_sponge_layer_3d(spongeLayerWidth=0.2,
     z_L  = bathymetry([x_se]) + domainHeightPad
     L = [x_L,width,z_L]
 
+    #xpoints = [x_0,x_bs,x_be,x_se,x_ce,x_bse,x_L]
     xpoints = [x_0,x_sl,x_bs,x_be,x_se,x_ce,x_bse,x_L]
     zpoints = [bathymetry([x]) for x in xpoints]
     bathymetryPoints = [[x,0.0,z] for x,z in zip(xpoints,zpoints)]
@@ -462,10 +471,9 @@ def beach_erosion_board_with_sponge_layer_3d(spongeLayerWidth=0.2,
     #left 
     frontVertices.insert(0,pNW)
 
-    
     frontVertices.append(pNE)
     frontVertices.append(pSpongeTop)
-        
+
     nfrontVertices = len(frontVertices)
 
     backVertices = [[v[0],width,v[2]] for v in frontVertices]
@@ -484,10 +492,10 @@ def beach_erosion_board_with_sponge_layer_3d(spongeLayerWidth=0.2,
     back_facets=[[vN for vN in range(nfrontVertices,2*nfrontVertices)]]
     facets.append(back_facets)
     facetFlags.append(boundaryTags['back'])
-    top_facets=[[vN for vN in [0,nfrontVertices-1,nfrontVertices-2,nfrontVertices*2-2,2*nfrontVertices-1,nfrontVertices]]]#[[vN for vN in range(0,nfrontVertices+1)]]
+    top_facets=[[vN for vN in [0,nfrontVertices-1,nfrontVertices*2-1,nfrontVertices]]]#[[vN for vN in range(0,nfrontVertices+1)]]
     facets.append(top_facets)
     facetFlags.append(boundaryTags['top'])
-    right_facets=[[vN for vN in [nfrontVertices-3,nfrontVertices-2,2*nfrontVertices-2,2*nfrontVertices-3]]]#[[vN for vN in range(1,1+(nfrontVertices+1))]]
+    right_facets=[[vN for vN in [nfrontVertices-2,nfrontVertices-1,2*nfrontVertices-1,2*nfrontVertices-2]]]#[[vN for vN in range(1,1+(nfrontVertices+1))]]
     facets.append(right_facets)
     facetFlags.append(boundaryTags['right'])
     left_facets=[[vN for vN in [0,nfrontVertices,nfrontVertices+1,1]]]
@@ -497,15 +505,16 @@ def beach_erosion_board_with_sponge_layer_3d(spongeLayerWidth=0.2,
         bottom_facet=[[vN,vN+1,vN+1+nfrontVertices,vN+nfrontVertices]]
         facets.append(bottom_facet)
         facetFlags.append(boundaryTags['bottom'])
-        
+ 
     #sponge layer boundary
     sponge_facets=[[vN for vN in [2,2+nfrontVertices,2*nfrontVertices-1,nfrontVertices-1]]]
     facets.append(sponge_facets)
     facetFlags.append(boundaryTags['sponge'])
-                   
+
+    fluid_center = [0.5*(x_sl+x_bs),0.5*width,0.5*domainHeightPad]
     sponge_center= [0.5*(x_0+x_sl),0.5*width,0.5*domainHeightPad]
-    regions = [sponge_center]
-    regionFlags = [1]
+    regions = [fluid_center,sponge_center]
+    regionFlags = [0,1]
     domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
                                                  facets=facets,
                                                  facetFlags=facetFlags,
@@ -525,7 +534,6 @@ def beach_erosion_board_with_sponge_layer_3d(spongeLayerWidth=0.2,
     domain.boundaryTags = boundaryTags
     return domain
 
-
 if __name__=='__main__':
     import os
     domainFlag = 2
@@ -533,12 +541,12 @@ if __name__=='__main__':
         domain =  beach_erosion_board_3d()
         domain.writeAsymptote("beach_erosion_board_3d")
         domain.writePoly("beach_erosion_board_3d")
-        domain.writePLY("beach_erosion_board_porous_3d")
+        domain.writePLY("beach_erosion_board_3d")
         os.system("asy -V -render=5 beach_erosion_board_3d")
         os.system("asy -f png -render 3 beach_erosion_board_3d")
         os.system("asy -prc -f pdf -render=5 beach_erosion_board_3d")
     elif domainFlag == 2:
-        domain =  beach_erosion_board_with_sponge_layer_3d()
+        domain =  beach_erosion_board_with_sponge_layer_3d()#beach_erosion_board_with_sponge_layer_3d()
         domain.writeAsymptote("beach_erosion_board_with_sponge_layer_3d")
         domain.writePoly("beach_erosion_board_with_sponge_layer_3d")
         domain.writePLY("beach_erosion_board_with_sponge_layer_3d")

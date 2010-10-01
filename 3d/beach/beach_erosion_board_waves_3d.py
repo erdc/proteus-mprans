@@ -10,6 +10,7 @@ import beach_erosion_board_3dDomain
 useVANS2P=True
 useNCLS  =True
 useVOF   =True
+
 useRDLS  =True
 useMCorr =True
 
@@ -45,19 +46,23 @@ spaceOrder=1
 
 #spatial domain
 nd = 3
+#set up absorbing boundary at left side using volume averaged ns formulation
+spongeLayerWidth = 0.2
+useSpongeLayer = True
 
-domain = beach_erosion_board_3dDomain.beach_erosion_board_3d(domainHeightPad=0.2,
-                                                             inflowLength=3.0,#0.45,3.0
-                                                             beachLength=4.48,
-                                                             beachSlope =0.1,
-                                                             h_c=0.054,#0.054,
-                                                             h_s=0.081,
-                                                             s  =3.0,
-                                                             B  = 0.0896,
-                                                             s_2= -0.2,
-                                                             backStepFraction=0.25,
-                                                             outflowLength=0.5,
-                                                             width = 0.3)
+domain = beach_erosion_board_3dDomain.beach_erosion_board_with_sponge_layer_3d(spongeLayerWidth=spongeLayerWidth,
+                                                                               domainHeightPad=0.2,
+                                                                               inflowLength=3.0,#0.45,3.0
+                                                                               beachLength=4.48,
+                                                                               beachSlope =0.1,
+                                                                               h_c=0.054,#0.054,
+                                                                               h_s=0.081,
+                                                                               s  =3.0,
+                                                                               B  = 0.0896,
+                                                                               s_2= -0.2,
+                                                                               backStepFraction=0.25,
+                                                                               outflowLength=0.5,
+                                                                               width = 0.3)
 nnx=3; nny=3
 nLevels = 1
 height=domain.L[2]
@@ -67,12 +72,13 @@ L = domain.L
 constraintFactor = 0.2#0.1#0.2
 volumeConstraint =  (((constraintFactor*height)**3)/6.0,)
 dx =0.05*height ; dy = dx ; dz = dx; he = dx;
-triangleOptions="VpAq1.25ena%f" % (volumeConstraint)
+triangleOptions="VpAfq1.25ena%f" % (volumeConstraint)
 #triangleOptions="VpAq1.25en" 
 
 
 domain.writeAsymptote("beach_erosion_board_3d")
 domain.writePoly("beach_erosion_board_3d")
+domain.writePLY("beach_erosion_board_3d")
 
 
 
@@ -140,7 +146,7 @@ g=[0.0,0.0,-9.8]
 #mwf play with density and viscosity ratios
 #rho_1 = rho_0/20.
 #nu_1  = nu_0*0.5
-turbulenceClosureFlag = 1#Smagorinsky
+turbulenceClosureFlag = None#1 Smagorinsky
 smagorinskyConstant_0 = 0.1
 smagorinskyConstant_1 = 0.5
 #surface tension
@@ -152,9 +158,7 @@ nDTout = 3#math.ceil(T/wavePeriod)*10+1#51#101#None#2#None, can't be 1
 runCFL = 0.33
 
 dt_init = min(0.01*wavePeriod,T)
-#set up absorbing boundary at left side using volume averaged ns formulation
-spongeLayerWidth = max(2.0*dx,0.3)#0.2*domain.inflowLength)
-useSpongeLayer = True#True#False
+useSpongeFunc  = False
 spongeGrainSize= 0.01
 spongePorosity = 0.5
 killNonlinearDragInSpongeLayer = True#True
@@ -174,10 +178,17 @@ def setSpongeLayer(x,porosity,meanGrain=None):
     #mwf hack
     #porosity.flat[:] = obstaclePorosity
 #
-if useSpongeLayer == True:
+import numpy
+if useSpongeLayer == True and useSpongeFunc:
     spongeLayerFunc = setSpongeLayer
+elif useSpongeLayer == True:
+    spongeLayerFunc = None
+    porosityTypes      = numpy.array([1.0,spongePorosity])
+    meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize])
 else:
     spongeLayerFunc = None
+    porosityTypes      = None
+    meanGrainSizeTypes = None
 
 
 

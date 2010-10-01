@@ -1,6 +1,8 @@
 from proteus import *
 from proteus.default_p import *
 from beach_erosion_board_waves_3d import *
+from proteus import VANS2P
+from proteus.mprans import RANS2PV2
 """
 Two-phase incompressible Navier-Stokes flow of air and water in a perturbed box
 """
@@ -33,23 +35,10 @@ Two-phase incompressible Navier-Stokes flow of air and water in a perturbed box
 #
 # <A href="https://adh.usace.army.mil/proteus-images/sloshbox_adh.avi"> AVI Animation of Richard Stockstill's moving mesh simulation with ADH</A>
 #
-from proteus import VANS2P
-
 if useVANS2P:
-    LevelModelType = VANS2P.OneLevelVANS2P
-   
-# coefficients = TwophaseNavierStokes_ST_LS_SO(epsFact=epsFact_viscosity,
-#                                              sigma=sigma_01,
-#                                              rho_0 = rho_0,
-#                                              nu_0 = nu_0,
-#                                              rho_1 = rho_1,
-#                                              nu_1 = nu_1,
-#                                              g=g,
-#                                              nd=nd,
-#                                              LS_model=2,
-#                                              KN_model=0,
-#                                              epsFact_density=epsFact_density,
-#                                              stokes=useStokes)
+    #LevelModelType = VANS2P.OneLevelVANS2P
+    LevelModelType = RANS2PV2.OneLevelRANS2PV2
+ 
 
 coefficients = VolumeAveragedTwophaseNavierStokes(epsFact=epsFact_viscosity,
                                                   sigma=sigma_01,
@@ -68,6 +57,8 @@ coefficients = VolumeAveragedTwophaseNavierStokes(epsFact=epsFact_viscosity,
                                                   smagorinskyConstant_1=smagorinskyConstant_1,
                                                   setParamsFunc=spongeLayerFunc,
                                                   meanGrainSize=spongeGrainSize,
+                                                  porosityTypes=porosityTypes,
+                                                  meanGrainSizeTypes=meanGrainSizeTypes,
                                                   killNonlinearDrag = killNonlinearDragInSpongeLayer,
                                                   waveFlag=waveFlag,
                                                   waveHeight=waveHeight,

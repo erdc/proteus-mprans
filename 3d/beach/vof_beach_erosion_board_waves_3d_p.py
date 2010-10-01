@@ -4,13 +4,11 @@ from beach_erosion_board_waves_3d import *
 from proteus.mprans import VOFV2
 from proteus import VolumeAveragedVOF
 
-if useVOF:
-    if useSpongeLayer:
-        LevelModelType = VOFV2.OneLevelVOFV2
-    else:
-        LevelModelType = VolumeAveragedVOF.OneLevelVolumeAveragedVOF
 
 if useSpongeLayer:
+    if useVOF:
+        #LevelModelType = VolumeAveragedVOF.OneLevelVolumeAveragedVOF
+        LevelModelType = VOFV2.OneLevelVOFV2
     coefficients = VolumeAveragedVOFCoefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,
                                                  setParamsFunc=spongeLayerFunc,checkMass=checkMass)
 else:

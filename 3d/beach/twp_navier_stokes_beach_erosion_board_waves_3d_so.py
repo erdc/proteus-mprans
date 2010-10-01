@@ -26,8 +26,8 @@ if beach_erosion_board_waves_3d.useBackwardEuler:
     systemStepControllerType = Sequential_MinAdaptiveModelStep
 else:
     systemStepControllerType = Sequential_MinFLCBDFModelStep
-needEBQ_GLOBAL =True
-needEBQ = True
+needEBQ_GLOBAL =False
+needEBQ = False
 useOneArchive = False
 archiveFlag = ArchiveFlags.EVERY_USER_STEP
 
