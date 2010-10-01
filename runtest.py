@@ -1,4 +1,4 @@
-import mprTest
+from proteus.mprans import mprTest
 import numpy
 
 if __name__ == '__main__':
