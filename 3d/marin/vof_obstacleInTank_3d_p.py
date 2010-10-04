@@ -2,12 +2,10 @@ from proteus import *
 from proteus.default_p import *
 from proteus.ctransportCoefficients import smoothedHeaviside
 from obstacleInTank3d import *
-from proteus import VOF
-from proteus.mprans import VOFV2
+from proteus.mprans import VOF
 
-LevelModelType = VOF.OneLevelVOF
-LevelModelType = VOFV2.OneLevelVOFV2
-coefficients = VOFCoefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,checkMass=False)
+LevelModelType = VOF.LevelModel
+coefficients = VOF.Coefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,checkMass=False)
 
 class Shock_H:
     def uOfXT(self,x,t):

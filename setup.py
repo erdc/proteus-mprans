@@ -73,7 +73,11 @@ setup(name='proteus_mprans',
                              libraries=['m'],
                              extra_compile_args=PROTEUS_EXTRA_COMPILE_ARGS,
                              extra_link_args=PROTEUS_EXTRA_LINK_ARGS),
-                   Extension("mprTest",["mprTest.pyx"], language="c++",include_dirs=[numpy.get_include()]),
+                   Extension("cNCLS",["mprans/cNCLS.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cMCorr",["mprans/cMCorr.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cRANS2P",["mprans/cRANS2P.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cRDLS",["mprans/cRDLS.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cVOF",["mprans/cVOF.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
                    ],
       requires=['numpy']
       )

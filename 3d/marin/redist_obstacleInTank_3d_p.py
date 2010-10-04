@@ -2,25 +2,23 @@ from proteus import *
 from proteus.default_p import *
 from math import *
 from obstacleInTank3d import *
-from proteus import RDLS
-from proteus.mprans import RDLSV2
+from proteus.mprans import RDLS
 """
 The redistancing equation in the obstacleInTank test problem.
 """
 ##
-LevelModelType = RDLS.OneLevelRDLS
-LevelModelType = RDLSV2.OneLevelRDLSV2
+LevelModelType = RDLS.LevelModel
 
 ##\ingroup test
 #\brief The redistancing equation in the obstacleInTank test problem.
 #
 if applyCorrection:
-    coefficients = RedistanceLevelSet(applyRedistancing=applyRedistancing,
+    coefficients = RDLS.Coefficients(applyRedistancing=applyRedistancing,
                                       epsFact=epsFact_redistance,
                                       nModelId=1,
                                       rdModelId=3)
 else:
-    coefficients = RedistanceLevelSet(applyRedistancing=applyRedistancing,
+    coefficients = RDLS.Coefficients(applyRedistancing=applyRedistancing,
                                       epsFact=epsFact_redistance,
                                       nModelId=1,
                                       rdModelId=2)
@@ -33,7 +31,7 @@ def getDBC_rd(x,flag):
 dirichletConditions = {0:getDBC_rd}
 
 if freezeLevelSet:
-    if LevelModelType == RDLS.OneLevelRDLS:
+    if LevelModelType == RDLS.LevelModel:
         weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCs}
     else:
         weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs}
