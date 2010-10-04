@@ -1,8 +1,173 @@
-from proteus import *
-from proteus.Transport import *
+import proteus
 from proteus.mprans.cVOF import *
 
-class OneLevelVOF(OneLevelTransport):
+class Coefficients(proteus.TransportCoefficients.TC_base):
+    from proteus.ctransportCoefficients import VOFCoefficientsEvaluate
+    from proteus.UnstructuredFMMandFSWsolvers import FMMEikonalSolver,FSWEikonalSolver
+    from proteus.NonlinearSolvers import EikonalSolver
+    def __init__(self,LS_model=-1,V_model=0,RD_model=-1,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0):
+        self.variableNames=['vof']
+        nc=1
+        mass={0:{0:'linear'}}
+        advection={0:{0:'linear'}}
+        hamiltonian={}
+        diffusion={}
+        potential={}
+        reaction={}
+        TC_base.__init__(self,
+                         nc,
+                         mass,
+                         advection,
+                         diffusion,
+                         potential,
+                         reaction,
+                         hamiltonian,
+                         self.variableNames)
+        self.epsFact=epsFact
+        self.flowModelIndex=V_model
+        self.modelIndex=ME_model
+        self.RD_modelIndex=RD_model
+        self.LS_modelIndex=LS_model
+        #mwf added
+        self.eikonalSolverFlag = EikonalSolverFlag
+        if self.eikonalSolverFlag >= 1: #FMM
+            assert self.RD_modelIndex < 0, "no redistance with eikonal solver too"
+        self.checkMass = checkMass
+    def initializeMesh(self,mesh):
+        self.eps = self.epsFact*mesh.h
+    def attachModels(self,modelList):
+        #self
+        self.model = modelList[self.modelIndex]
+        #redistanced level set
+        if self.RD_modelIndex >= 0:
+            self.rdModel = modelList[self.RD_modelIndex]
+        #level set
+        self.lsModel = modelList[self.LS_modelIndex]
+        self.q_phi = modelList[self.LS_modelIndex].q[('u',0)]
+        self.ebqe_phi = modelList[self.LS_modelIndex].ebqe[('u',0)]
+        if modelList[self.LS_modelIndex].ebq.has_key(('u',0)):
+            self.ebq_phi = modelList[self.LS_modelIndex].ebq[('u',0)]
+        else:
+            self.ebq_phi = None
+        #flow model
+        #print "flow model index------------",self.flowModelIndex,modelList[self.flowModelIndex].q.has_key(('velocity',0))
+        if self.flowModelIndex >= 0:
+            if modelList[self.flowModelIndex].q.has_key(('velocity',0)):
+                self.q_v = modelList[self.flowModelIndex].q[('velocity',0)]
+                self.ebqe_v = modelList[self.flowModelIndex].ebqe[('velocity',0)]
+            else:
+                self.q_v = modelList[self.flowModelIndex].q[('f',0)]
+                self.ebqe_v = modelList[self.flowModelIndex].ebqe[('f',0)]
+            if modelList[self.flowModelIndex].ebq.has_key(('velocity',0)):
+                self.ebq_v = modelList[self.flowModelIndex].ebq[('velocity',0)]
+            else:
+                if modelList[self.flowModelIndex].ebq.has_key(('f',0)):
+                    self.ebq_v = modelList[self.flowModelIndex].ebq[('f',0)]
+        #
+        if self.eikonalSolverFlag == 2: #FSW
+            self.resDummy = numpy.zeros(self.model.u[0].dof.shape,'d')
+            eikonalSolverType = self.FSWEikonalSolver
+            self.eikonalSolver = self.EikonalSolver(eikonalSolverType,
+                                                    self.model,
+                                                    relativeTolerance=0.0,absoluteTolerance=1.0e-12,
+                                                    frontTolerance=1.0e-4,#default 1.0e-4
+                                                    frontInitType='frontIntersection',#'frontIntersection',#or 'magnitudeOnly'
+                                                    useLocalPWLreconstruction = False)
+        elif self.eikonalSolverFlag == 1: #FMM 
+            self.resDummy = numpy.zeros(self.model.u[0].dof.shape,'d')
+            eikonalSolverType = self.FMMEikonalSolver
+            self.eikonalSolver = self.EikonalSolver(eikonalSolverType,
+                                                    self.model,
+                                                    frontTolerance=1.0e-4,#default 1.0e-4
+                                                    frontInitType='frontIntersection',#'frontIntersection',#or 'magnitudeOnly'
+                                                    useLocalPWLreconstruction = False)
+        if self.checkMass:
+            self.m_pre = Norms.scalarDomainIntegral(self.model.q['dV'],
+                                                     self.model.q[('m',0)],
+                                                     self.model.mesh.nElements_owned)
+            log("Attach Models VOF: Phase  0 mass after VOF step = %12.5e" % (self.m_pre,),level=2)
+            self.m_post = Norms.scalarDomainIntegral(self.model.q['dV'],
+                                                     self.model.q[('m',0)],
+                                                     self.model.mesh.nElements_owned)
+            log("Attach Models VOF: Phase  0 mass after VOF step = %12.5e" % (self.m_post,),level=2)
+            if self.model.ebqe.has_key(('advectiveFlux',0)):
+                self.fluxIntegral = Norms.fluxDomainBoundaryIntegral(self.model.ebqe['dS'],
+                                                                     self.model.ebqe[('advectiveFlux',0)],
+                                                                     self.model.mesh)
+                log("Attach Models VOF: Phase  0 mass conservation after VOF step = %12.5e" % (self.m_post - self.m_pre + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
+            
+    def initializeElementQuadrature(self,t,cq):
+        if self.flowModelIndex == None:
+            self.q_v = numpy.ones(cq[('f',0)].shape,'d')
+    def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
+        if self.flowModelIndex == None:
+            self.ebq_v = numpy.ones(cebq[('f',0)].shape,'d')
+    def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
+        if self.flowModelIndex == None:
+            self.ebqe_v = numpy.ones(cebqe[('f',0)].shape,'d')
+    def preStep(self,t,firstStep=False):
+        if self.checkMass:
+            self.m_pre = Norms.scalarDomainIntegral(self.model.q['dV'],
+                                                    self.model.q[('m',0)],
+                                                    self.model.mesh.nElements_owned)
+            log("Phase  0 mass before VOF step = %12.5e" % (self.m_pre,),level=2)
+            self.m_last = Norms.scalarDomainIntegral(self.model.q['dV'],
+                                                     self.model.timeIntegration.m_last[0],
+                                                     self.model.mesh.nElements_owned)
+            log("Phase  0 mass before VOF (m_last) step = %12.5e" % (self.m_last,),level=2)
+        copyInstructions = {}
+        return copyInstructions
+    def postStep(self,t,firstStep=False):
+        if self.checkMass:
+            self.m_post = Norms.scalarDomainIntegral(self.model.q['dV'],
+                                                     self.model.q[('m',0)],
+                                                     self.model.mesh.nElements_owned)
+            log("Phase  0 mass after VOF step = %12.5e" % (self.m_post,),level=2)
+            self.fluxIntegral = Norms.fluxDomainBoundaryIntegral(self.model.ebqe['dS'],
+                                                                 self.model.ebqe[('advectiveFlux',0)],
+                                                                 self.model.mesh)
+            log("Phase  0 mass flux boundary integral after VOF step = %12.5e" % (self.fluxIntegral,),level=2)
+            log("Phase  0 mass conservation after VOF step = %12.5e" % (self.m_post - self.m_last + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
+            divergence = Norms.fluxDomainBoundaryIntegralFromVector(self.model.ebqe['dS'],
+                                                                    self.ebqe_v,
+                                                                    self.model.ebqe['n'],
+                                                                    self.model.mesh)
+            log("Divergence = %12.5e" % (divergence,),level=2)
+        copyInstructions = {}
+        return copyInstructions
+    def updateToMovingDomain(self,t,c):
+        #in a moving domain simulation the velocity coming in is already for the moving domain
+        pass
+    def evaluate(self,t,c):
+        #mwf debug
+        #print "VOFcoeficients eval t=%s " % t 
+        if c[('f',0)].shape == self.q_v.shape:
+            v = self.q_v
+            phi = self.q_phi
+        elif c[('f',0)].shape == self.ebqe_v.shape:
+            v = self.ebqe_v
+            phi = self.ebqe_phi
+        elif ((self.ebq_v != None and self.ebq_phi != None) and c[('f',0)].shape == self.ebq_v.shape):
+            v = self.ebq_v
+            phi = self.ebq_phi
+        else:
+            v=None
+            phi=None
+        if v != None:
+            self.VOFCoefficientsEvaluate(self.eps,
+                                         v,
+                                         phi,
+                                         c[('u',0)],
+                                         c[('m',0)],
+                                         c[('dm',0,0)],
+                                         c[('f',0)],
+                                         c[('df',0,0)])
+        if self.checkMass:
+            log("Phase  0 mass in eavl = %12.5e" % (Norms.scalarDomainIntegral(self.model.q['dV'],
+                                                                               self.model.q[('m',0)],
+                                                                               self.model.mesh.nElements_owned),),level=2)
+
+class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
     def __init__(self,
                  uDict,

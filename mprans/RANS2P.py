@@ -1,8 +1,462 @@
-from proteus import *
-from proteus.Transport import *
+import proteus
 from proteus.mprans.cRANS2P import *
 
-class OneLevelRANS2P(OneLevelTransport):
+class Coefficients(proteus.TransportCoefficients.TC_base):
+    """
+    The coefficients for two incompresslble fluids governed by the Navier-Stokes equations and separated by a sharp interface represented by a level set function
+    """
+    from proteus.ctransportCoefficients import TwophaseNavierStokes_ST_LS_SO_2D_Evaluate
+    from proteus.ctransportCoefficients import TwophaseNavierStokes_ST_LS_SO_3D_Evaluate
+    from proteus.ctransportCoefficients import TwophaseNavierStokes_ST_LS_SO_2D_Evaluate_sd
+    from proteus.ctransportCoefficients import TwophaseNavierStokes_ST_LS_SO_3D_Evaluate_sd
+    def __init__(self,
+                 epsFact=1.5,
+                 sigma=72.8,
+                 rho_0=998.2,nu_0=1.004e-6,
+                 rho_1=1.205,nu_1=1.500e-5,
+                 g=[0.0,-9.8],
+                 nd=2,
+                 LS_model=None,
+                 KN_model=None,
+                 epsFact_density=None,
+                 stokes=False,
+                 sd=True,
+                 movingDomain=False,
+                 useRBLES=0.0):
+        self.useRBLES=useRBLES
+        self.sd=sd
+        if epsFact_density != None:
+            self.epsFact_density = epsFact_density
+        else:
+            self.epsFact_density = epsFact
+        self.stokes=stokes
+        self.LS_model=LS_model
+        self.KN_model=KN_model
+        self.epsFact=epsFact
+        self.eps=None
+        self.sigma=sigma
+        self.rho_0 = rho_0
+        self.nu_0 = nu_0
+        #cek for debugging using single phase test problems
+        self.rho=rho_0
+        self.nu=nu_0
+        self.rho_1 = rho_1
+        self.nu_1 = nu_1
+        self.g = numpy.array(g)
+        self.nd=nd
+        
+        mass={}
+        advection={}
+        diffusion={}
+        potential={}
+        reaction={}
+        hamiltonian={}
+        if nd==2:
+            variableNames=['p','u','v']
+            mass= {1:{1:'linear'},
+                   2:{2:'linear'}}
+            advection = {0:{0:'linear',
+                            1:'linear',
+                            2:'linear'},
+                         1:{0:'nonlinear',
+                            1:'nonlinear',
+                            2:'nonlinear'},
+                         2:{0:'nonlinear',
+                            1:'nonlinear',
+                            2:'nonlinear'}}
+            diffusion  = {1:{1:{1:'constant'},2:{2:'constant'}},
+                          2:{2:{2:'constant'},1:{1:'constant'}}}
+            sdInfo  = {(1,1):(numpy.array([0,1,2],dtype='i'),
+                             numpy.array([0,1],dtype='i')),
+                       (1,2):(numpy.array([0,0,1],dtype='i'),
+                              numpy.array([0],dtype='i')),
+                       (2,2):(numpy.array([0,1,2],dtype='i'),
+                              numpy.array([0,1],dtype='i')),
+                       (2,1):(numpy.array([0,1,1],dtype='i'),
+                              numpy.array([1],dtype='i'))}
+            potential= {1:{1:'u'},
+                        2:{2:'u'}}
+            reaction = {0:{0:'constant'},#added for Lin, Liu wave forcing
+                        1:{1:'constant'},
+                        2:{2:'constant'}}
+            hamiltonian = {1:{0:'linear'},
+                           2:{0:'linear'}}
+            TC_base.__init__(self,
+                             3,
+                             mass,
+                             advection,
+                             diffusion,
+                             potential,
+                             reaction,
+                             hamiltonian,
+                             variableNames,
+                             sparseDiffusionTensors=sdInfo,
+                             useSparseDiffusion = sd,
+                             movingDomain=movingDomain)
+            self.vectorComponents=[1,2]
+        elif nd==3:
+            variableNames=['p','u','v','w']
+            mass = {1:{1:'linear'},
+                    2:{2:'linear'},
+                    3:{3:'linear'}}
+            advection = {0:{1:'linear',
+                            2:'linear',
+                            3:'linear'},
+                         1:{0:'nonlinear',
+                            1:'nonlinear',
+                            2:'nonlinear',
+                            3:'nonlinear'},
+                         2:{0:'nonlinear',
+                            1:'nonlinear',
+                            2:'nonlinear',
+                            3:'nonlinear'},
+                         3:{0:'nonlinear',
+                            1:'nonlinear',
+                            2:'nonlinear',
+                            3:'nonlinear'}}
+            diffusion = {1:{1:{1:'constant'},2:{2:'constant'},3:{3:'constant'}},
+                         2:{1:{1:'constant'},2:{2:'constant'},3:{3:'constant'}},
+                         3:{1:{1:'constant'},2:{2:'constant'},3:{3:'constant'}}}
+            sdInfo={}
+            sdInfo  = {(1,1):(numpy.array([0,1,2,3],dtype='i'),numpy.array([0,1,2],dtype='i')),
+                       (1,2):(numpy.array([0,0,1,1],dtype='i'),numpy.array([0],dtype='i')),
+                       (1,3):(numpy.array([0,0,0,1],dtype='i'),numpy.array([0],dtype='i')),
+                       (2,1):(numpy.array([0,1,1,1],dtype='i'),numpy.array([1],dtype='i')),
+                       (2,2):(numpy.array([0,1,2,3],dtype='i'),numpy.array([0,1,2],dtype='i')),
+                       (2,3):(numpy.array([0,0,0,1],dtype='i'),numpy.array([1],dtype='i')),
+                       (3,1):(numpy.array([0,1,1,1],dtype='i'),numpy.array([2],dtype='i')),
+                       (3,2):(numpy.array([0,0,1,1],dtype='i'),numpy.array([2],dtype='i')),
+                       (3,3):(numpy.array([0,1,2,3],dtype='i'),numpy.array([0,1,2],dtype='i'))}
+            potential= {1:{1:'u'},
+                        2:{2:'u'},
+                        3:{3:'u'}}
+            reaction = {0:{0:'constant'},#added for Lin, Liu wave forcing,
+                        1:{1:'constant'},
+                        2:{2:'constant'},
+                        3:{3:'constant'}}
+            hamiltonian = {1:{0:'linear'},
+                           2:{0:'linear'},
+                           3:{0:'linear'}}
+            TC_base.__init__(self,
+                             4,
+                             mass,
+                             advection,
+                             diffusion,
+                             potential,
+                             reaction,
+                             hamiltonian,
+                             variableNames,
+                             sparseDiffusionTensors=sdInfo,
+                             useSparseDiffusion = sd,
+                             movingDomain=movingDomain)
+            self.vectorComponents=[1,2,3]
+        
+    def attachModels(self,modelList):
+        #level set
+        self.model = modelList[0]
+        if self.LS_model != None:
+            self.q_phi = modelList[self.LS_model].q[('u',0)]
+            if modelList[self.LS_model].ebq.has_key(('u',0)):
+                self.ebq_phi = modelList[self.LS_model].ebq[('u',0)]
+            else:
+                self.ebq_phi = None
+            self.ebqe_phi = modelList[self.LS_model].ebqe[('u',0)]
+            #normal
+            self.q_n = modelList[self.LS_model].q[('grad(u)',0)]
+            if modelList[self.LS_model].ebq.has_key(('grad(u)',0)):
+                self.ebq_n = modelList[self.LS_model].ebq[('grad(u)',0)]
+            else:
+                self.ebq_n   = None
+            self.ebqe_n    = modelList[self.LS_model].ebqe[('grad(u)',0)]
+        #curvature
+        if self.KN_model != None:
+            self.q_kappa    = modelList[self.KN_model].q[('u',0)]
+            self.ebqe_kappa = modelList[self.KN_model].ebqe[('u',0)]
+            if modelList[self.KN_model].ebq.has_key(('u',0)):
+                self.ebq_kappa = modelList[self.KN_model].ebq[('u',0)]
+            else:
+                self.ebq_kappa = None
+    def initializeMesh(self,mesh):
+        #cek we eventually need to use the local element diameter
+        self.eps_density = self.epsFact_density*mesh.h
+        self.eps_viscosity = self.epsFact*mesh.h
+    #initialize so it can run as single phase
+    def initializeElementQuadrature(self,t,cq):
+        if self.LS_model == None:
+            self.q_phi = -numpy.ones(cq[('u',1)].shape,'d')
+            self.q_n = -numpy.ones(cq[('velocity',0)].shape,'d')
+        if self.KN_model == None:
+            self.q_kappa = -numpy.zeros(cq[('u',1)].shape,'d')
+            
+    def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
+        if self.LS_model == None:
+            self.ebq_phi = -numpy.ones(cebq[('u',1)].shape,'d')
+            self.ebq_n = -numpy.ones(cebq[('velocity',0)].shape,'d')
+        if self.KN_model == None:
+            self.ebq_kappa = -numpy.zeros(cebq[('u',1)].shape,'d')
+    def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
+        if self.LS_model == None:
+            self.ebqe_phi = -numpy.ones(cebqe[('u',1)].shape,'d')
+            self.ebqe_n = -numpy.ones(cebqe[('velocity',0)].shape,'d')
+        if self.KN_model == None:
+            self.ebqe_kappa = -numpy.zeros(cebqe[('u',1)].shape,'d')
+    def updateToMovingDomain(self,t,c):
+        from proteus import cfemIntegrals
+        assert(self.movingDomain)
+        if self.movingDomain:
+            cfemIntegrals.update_f_movingDomain_constantMass(c['xt'],c[('f',0)])
+            cfemIntegrals.update_f_movingDomain(c['xt'],c[('m',1)],c[('f',1)])
+            cfemIntegrals.update_df_movingDomain(c['xt'],c[('dm',1,1)],c[('df',1,1)])
+            cfemIntegrals.update_f_movingDomain(c['xt'],c[('m',2)],c[('f',2)])
+            cfemIntegrals.update_df_movingDomain(c['xt'],c[('dm',2,2)],c[('df',2,2)])
+            if self.nd == 3:
+                cfemIntegrals.update_f_movingDomain(c['xt'],c[('m',3)],c[('f',3)])
+                cfemIntegrals.update_df_movingDomain(c['xt'],c[('dm',3,3)],c[('df',3,3)])
+    def evaluate(self,t,c):
+        import math
+        #self.rho_0 = 1000.0*self.rho_1
+        #self.nu_0 = 0.1*self.nu_1
+        if c[('u',0)].shape == self.q_phi.shape:
+            phi = self.q_phi
+            n   = self.q_n
+            kappa = self.q_kappa
+            #slopeAngle=0.1*math.pi/2.0#math.pi/4.0
+            #surfaceNormal = [-sin(slopeAngle),cos(slopeAngle)]
+            #waterLevel=0.5
+            #for eN in range(phi.shape[0]):
+            #   for k in range(phi.shape[1]):
+            #       phi[eN,k] = (c['x'][eN,k,0] - 0.5)*surfaceNormal[0]+(c['x'][eN,k,1] - waterLevel)*surfaceNormal[1]
+        elif c[('u',0)].shape == self.ebqe_phi.shape:
+            phi   = self.ebqe_phi
+            n     = self.ebqe_n
+            kappa = self.ebqe_kappa
+        else:
+            phi   = self.ebq_phi
+            n     = self.ebq_n
+            kappa = self.ebq_kappa
+        #mwf debug
+        #waterLevelBase = 0.529
+        #for i in range(len(phi.flat)):
+            #if abs(phi.flat[i]) > 0.0:
+            #    assert abs(phi.flat[i] - (c['x'].flat[3*i+1] - waterLevelBase)) <= 1.0e-5, "Problem with phi t=%s phi.shape=%s i=%s phi=%s y=%s wl=%s " % (t,phi.shape,i,phi.flat[i],c['x'].flat[3*i+1],waterLevelBase)
+            #phi.flat[i] = c['x'].flat[3*i+1] - waterLevelBase#self.waterLevel
+        #self.sd=False
+        if self.nd==2:
+            if self.sd:
+                self.TwophaseNavierStokes_ST_LS_SO_2D_Evaluate_sd(self.eps_density,
+                                                                  self.eps_viscosity,
+                                                                  self.sigma,
+                                                                  self.rho_0,
+                                                                  self.nu_0,
+                                                                  self.rho_1,
+                                                                  self.nu_1,
+                                                                  self.g,
+                                                                  phi,
+                                                                  n,
+                                                                  kappa,
+                                                                  c[('u',0)],
+                                                                  c[('grad(u)',0)],
+                                                                  c[('u',1)],
+                                                                  c[('u',2)],
+                                                                  c[('m',1)],
+                                                                  c[('dm',1,1)],
+                                                                  c[('m',2)],
+                                                                  c[('dm',2,2)],
+                                                                  c[('f',0)],
+                                                                  c[('df',0,1)],
+                                                                  c[('df',0,2)],
+                                                                  c[('f',1)],
+                                                                  c[('df',1,1)],
+                                                                  c[('df',1,2)],
+                                                                  c[('f',2)],
+                                                                  c[('df',2,1)],
+                                                                  c[('df',2,2)],
+                                                                  c[('a',1,1)],
+                                                                  c[('a',2,2)],
+                                                                  c[('a',1,2)],
+                                                                  c[('a',2,1)],
+                                                                  c[('r',1)],
+                                                                  c[('r',2)],
+                                                                  c[('H',1)],
+                                                                  c[('dH',1,0)],
+                                                                  c[('H',2)],
+                                                                  c[('dH',2,0)])
+            else:
+                self.TwophaseNavierStokes_ST_LS_SO_2D_Evaluate(self.eps_density,
+                                                           self.eps_viscosity,
+                                                           self.sigma,
+                                                           self.rho_0,
+                                                           self.nu_0,
+                                                           self.rho_1,
+                                                           self.nu_1,
+                                                           self.g,
+                                                           phi,
+                                                           n,
+                                                           kappa,
+                                                           c[('u',0)],
+                                                           c[('grad(u)',0)],
+                                                           c[('u',1)],
+                                                           c[('u',2)],
+                                                           c[('m',1)],
+                                                           c[('dm',1,1)],
+                                                           c[('m',2)],
+                                                           c[('dm',2,2)],
+                                                           c[('f',0)],
+                                                           c[('df',0,1)],
+                                                           c[('df',0,2)],
+                                                           c[('f',1)],
+                                                           c[('df',1,1)],
+                                                           c[('df',1,2)],
+                                                           c[('f',2)],
+                                                           c[('df',2,1)],
+                                                           c[('df',2,2)],
+                                                           c[('a',1,1)],
+                                                           c[('a',2,2)],
+                                                           c[('a',1,2)],
+                                                           c[('a',2,1)],
+                                                           c[('r',1)],
+                                                           c[('r',2)],
+                                                           c[('H',1)],
+                                                           c[('dH',1,0)],
+                                                           c[('H',2)],
+                                                           c[('dH',2,0)])
+            if self.stokes:
+                c[('f',1)].flat[:] = 0.0
+                c[('df',1,1)].flat[:] = 0.0
+                c[('df',1,2)].flat[:] = 0.0
+                c[('f',2)].flat[:] = 0.0
+                c[('df',2,1)].flat[:] = 0.0
+                c[('df',2,2)].flat[:] = 0.0
+        elif  self.nd==3:
+            if self.sd:
+                self.TwophaseNavierStokes_ST_LS_SO_3D_Evaluate_sd(self.eps_density,
+                                                                  self.eps_viscosity,
+                                                                  self.sigma,
+                                                                  self.rho_0,
+                                                                  self.nu_0,
+                                                                  self.rho_1,
+                                                                  self.nu_1,
+                                                                  self.g,
+                                                                  phi,
+                                                                  n,
+                                                                  kappa,
+                                                                  c[('u',0)],
+                                                                  c[('grad(u)',0)],
+                                                                  c[('u',1)],
+                                                                  c[('u',2)],
+                                                                  c[('u',3)],
+                                                                  c[('m',1)],
+                                                                  c[('dm',1,1)],
+                                                                  c[('m',2)],
+                                                                  c[('dm',2,2)],
+                                                                  c[('m',3)],
+                                                                  c[('dm',3,3)],
+                                                                  c[('f',0)],
+                                                                  c[('df',0,1)],
+                                                                  c[('df',0,2)],
+                                                                  c[('df',0,3)],
+                                                                  c[('f',1)],
+                                                                  c[('df',1,1)],
+                                                                  c[('df',1,2)],
+                                                                  c[('df',1,3)],
+                                                                  c[('f',2)],
+                                                                  c[('df',2,1)],
+                                                                  c[('df',2,2)],
+                                                                  c[('df',2,3)],
+                                                                  c[('f',3)],
+                                                                  c[('df',3,1)],
+                                                                  c[('df',3,2)],
+                                                                  c[('df',3,3)],
+                                                                  c[('a',1,1)],
+                                                                  c[('a',2,2)],
+                                                                  c[('a',3,3)],
+                                                                  c[('a',1,2)],
+                                                                  c[('a',1,3)],
+                                                                  c[('a',2,1)],
+                                                                  c[('a',2,3)],
+                                                                  c[('a',3,1)],
+                                                                  c[('a',3,2)],
+                                                                  c[('r',1)],
+                                                                  c[('r',2)],
+                                                                  c[('r',3)],
+                                                                  c[('H',1)],
+                                                                  c[('dH',1,0)],
+                                                                  c[('H',2)],
+                                                                  c[('dH',2,0)],
+                                                                  c[('H',3)],
+                                                                  c[('dH',3,0)])
+            else:
+                self.TwophaseNavierStokes_ST_LS_SO_3D_Evaluate(self.eps_density,
+                                                           self.eps_viscosity,
+                                                           self.sigma,
+                                                           self.rho_0,
+                                                           self.nu_0,
+                                                           self.rho_1,
+                                                           self.nu_1,
+                                                           self.g,
+                                                           phi,
+                                                           n,
+                                                           kappa,
+                                                           c[('u',0)],
+                                                           c[('grad(u)',0)],
+                                                           c[('u',1)],
+                                                           c[('u',2)],
+                                                           c[('u',3)],
+                                                           c[('m',1)],
+                                                           c[('dm',1,1)],
+                                                           c[('m',2)],
+                                                           c[('dm',2,2)],
+                                                           c[('m',3)],
+                                                           c[('dm',3,3)],
+                                                           c[('f',0)],
+                                                           c[('df',0,1)],
+                                                           c[('df',0,2)],
+                                                           c[('df',0,3)],
+                                                           c[('f',1)],
+                                                           c[('df',1,1)],
+                                                           c[('df',1,2)],
+                                                           c[('df',1,3)],
+                                                           c[('f',2)],
+                                                           c[('df',2,1)],
+                                                           c[('df',2,2)],
+                                                           c[('df',2,3)],
+                                                           c[('f',3)],
+                                                           c[('df',3,1)],
+                                                           c[('df',3,2)],
+                                                           c[('df',3,3)],
+                                                           c[('a',1,1)],
+                                                           c[('a',2,2)],
+                                                           c[('a',3,3)],
+                                                           c[('a',1,2)],
+                                                           c[('a',1,3)],
+                                                           c[('a',2,1)],
+                                                           c[('a',2,3)],
+                                                           c[('a',3,1)],
+                                                           c[('a',3,2)],
+                                                           c[('r',1)],
+                                                           c[('r',2)],
+                                                           c[('r',3)],
+                                                           c[('H',1)],
+                                                           c[('dH',1,0)],
+                                                           c[('H',2)],
+                                                           c[('dH',2,0)],
+                                                           c[('H',3)],
+                                                           c[('dH',3,0)])
+            if self.stokes:
+                c[('f',1)].flat[:] = 0.0
+                c[('df',1,1)].flat[:] = 0.0
+                c[('df',1,2)].flat[:] = 0.0
+                c[('df',1,3)].flat[:] = 0.0
+                c[('f',2)].flat[:] = 0.0
+                c[('df',2,1)].flat[:] = 0.0
+                c[('df',2,2)].flat[:] = 0.0
+                c[('df',2,3)].flat[:] = 0.0
+                c[('f',3)].flat[:] = 0.0
+                c[('df',3,1)].flat[:] = 0.0
+                c[('df',3,2)].flat[:] = 0.0
+                c[('df',3,3)].flat[:] = 0.0
+
+class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
     def __init__(self,
                  uDict,

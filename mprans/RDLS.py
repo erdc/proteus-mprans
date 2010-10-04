@@ -1,10 +1,261 @@
-from proteus import *
-from proteus.Transport import *
-from proteus import TimeIntegration
+import proteus
 from proteus.mprans.cRDLS import *
 
+class Coefficients(proteus.TransportCoefficients.TC_base):
+    from proteus.ctransportCoefficients import redistanceLevelSetCoefficientsEvaluate
+    def __init__(self,applyRedistancing=True,epsFact=2.0,nModelId=None,u0=None,rdModelId=0,penaltyParameter=0.0):
+        variableNames=['phid']
+        nc=1
+        mass={0:{0:'linear'}}
+        hamiltonian={0:{0:'nonlinear'}}
+        advection={}
+        diffusion={}
+        potential={}
+        reaction={0:{0:'constant'}}
+        TC_base.__init__(self,
+                         nc,
+                         mass,
+                         advection,
+                         diffusion,
+                         potential,
+                         reaction,
+                         hamiltonian,
+                         variableNames)
+        self.nModelId = nModelId
+        self.rdModelId= rdModelId
+        self.epsFact=epsFact
+        self.q_u0   = None
+        self.ebq_u0 = None
+        self.ebqe_u0= None
+        self.dof_u0 = None
+        self.u0 = u0
+        self.applyRedistancing = applyRedistancing
+        self.weakBC_on=True#False
+        self.penaltyParameter=penaltyParameter
+    def attachModels(self,modelList):
+        if self.nModelId != None:
+            self.nModel = modelList[self.nModelId]
+            self.q_u0 =   self.nModel.q[('u',0)]
+            if self.nModel.ebq.has_key(('u',0)):
+                self.ebq_u0 = self.nModel.ebq[('u',0)]
+            self.ebqe_u0 =   self.nModel.ebqe[('u',0)]            
+            self.dof_u0 = self.nModel.u[0].dof
+        else:
+            self.nModel = None
+        self.rdModel = modelList[self.rdModelId]
+    def initializeMesh(self,mesh):
+        self.h=mesh.h
+        self.eps = self.epsFact*mesh.h
+    def initializeElementQuadrature(self,t,cq):
+        if self.nModelId == None:
+            if self.q_u0 == None:
+                self.q_u0 = numpy.zeros(cq[('u',0)].shape,'d')
+            if self.u0 != None:
+                for i in range(len(cq[('u',0)].flat)):
+                    self.q_u0.flat[i]=self.u0.uOfXT(cq['x'].flat[3*i:3*(i+1)],0.)
+    def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
+        if self.nModelId == None:
+            if self.ebq_u0 == None:
+                self.ebq_u0 = numpy.zeros(cebq[('u',0)].shape,'d')
+            if self.u0 != None:
+                for i in range(len(cebq[('u',0)].flat)):
+                    self.ebq_u0.flat[i]=self.u0.uOfXT(cebq['x'].flat[3*i:3*(i+1)],0.)
+    def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
+        if self.nModelId == None:
+            if self.ebqe_u0 == None:
+                self.ebqe_u0 = numpy.zeros(cebqe[('u',0)].shape,'d')
+            if self.u0 != None:
+                for i in range(len(cebqe[('u',0)].flat)):
+                    self.ebqe_u0.flat[i]=self.u0.uOfXT(cebqe['x'].flat[3*i:3*(i+1)],0.)
+    def preStep(self,t,firstStep=False):
+        import pdb
+        #pdb.set_trace()
+        if self.nModel != None:
+            log("resetting signed distance level set to current level set",level=2)
+            self.rdModel.u[0].dof[:] = self.nModel.u[0].dof[:]
+            self.rdModel.calculateCoefficients()
+            self.rdModel.calculateElementResidual()
+            self.rdModel.timeIntegration.updateTimeHistory(resetFromDOF=True)
+            self.rdModel.timeIntegration.resetTimeHistory(resetFromDOF=True)
+            self.rdModel.updateTimeHistory(t,resetFromDOF=True)
+            #now do again because of subgrid error lagging
+            #\todo modify subgrid error lagging so this won't be necessary
+            self.rdModel.calculateCoefficients()
+            self.rdModel.calculateElementResidual()
+            self.rdModel.timeIntegration.updateTimeHistory(resetFromDOF=True)
+            self.rdModel.timeIntegration.resetTimeHistory(resetFromDOF=True)
+            self.rdModel.updateTimeHistory(t,resetFromDOF=True)
+            copyInstructions = {'copy_uList':True,
+                                'uList_model':self.nModelId}
+            copyInstructions = {'reset_uList':True}
+            return copyInstructions
+        else:
+            return {}
+    def postStep(self,t,firstStep=False):
+        if self.nModel != None:
+            if self.applyRedistancing == True:
+                log("resetting level set to signed distance")
+                self.nModel.u[0].dof.flat[:]  = self.rdModel.u[0].dof.flat[:]
+                self.nModel.calculateCoefficients()
+                self.nModel.calculateElementResidual()
+            copyInstructions = {}
+            return copyInstructions
+        else:
+            return {}
+    def getICDofs(self,cj):
+        return self.dof_u0
+    def updateToMovingDomain(self,t,c):
+        #the redistancing equations is not physical so it just needs the updated mesh
+        pass
+    def evaluate(self,t,c):
+        if c[('H',0)].shape == self.q_u0.shape:
+            u0 = self.q_u0
+            #print "numdiff",c[('numDiff',0,0)].min(),c[('numDiff',0,0)].max()
+            #print "tau",self.rdModel.stabilization.tau[0].min(),self.rdModel.stabilization.tau[0].max(),
+        elif c[('H',0)].shape == self.ebqe_u0.shape:
+            u0 = self.ebqe_u0
+        else:
+            u0 = self.ebq_u0
+        assert u0 != None
+        ##\todo make redistancing epsilon depend on local element diamater instead of global max
+        self.redistanceLevelSetCoefficientsEvaluate(self.eps,
+                                                    u0,
+                                                    c[('u',0)],
+                                                    c[('grad(u)',0)],
+                                                    c[('m',0)],
+                                                    c[('dm',0,0)],
+                                                    c[('H',0)],
+                                                    c[('dH',0,0)],
+                                                    c[('r',0)])
+    #weak Dirichlet conditions on level set (boundary conditions of Eikonal equation)
+    ##\todo clean up weak Dirichlet conditions for Eikonal equation in transport coefficents
+    def setZeroLSweakDirichletBCs(vt):
+        if vt.coefficients.weakBC_on:
+            #print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!=========================Setting new weak BC's=======================!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            vt.dirichletNodeSetList[0] = []
+            vt.dirichletGlobalNodeSet[0]=set()
+            vt.dirichletValues[0]={}
+            for eN in range(vt.mesh.nElements_global):
+                vt.dirichletNodeSetList[0].append(set())
+                signU = 0
+                j0=0
+                eps = vt.u[0].femSpace.mesh.elementDiametersArray[eN]
+                #loop over nodes looking for a node not within eps of zero
+                while ((signU == 0) and
+                       (j0 < vt.nDOF_trial_element[0])):
+                    J0 = vt.u[0].femSpace.dofMap.l2g[eN,j0]
+                    if vt.u[0].dof[J0] < -eps:
+                        signU = -1
+                    elif  vt.u[0].dof[J0] > eps:
+                        signU = 1
+                    else: #freeze this node within eps of zero
+                        vt.dirichletNodeSetList[0][eN].add(j0)
+                        vt.dirichletValues[0][(eN,j0)]=vt.u[0].dof[J0]
+                        vt.dirichletGlobalNodeSet[0].add(J0)
+                    j0 += 1
+                #loop over remaining nodes to see if the zero level set cuts element
+                for j in range(j0,vt.nDOF_trial_element[0]):
+                    J = vt.u[0].femSpace.dofMap.l2g[eN,j]
+                    if (((vt.u[0].dof[J] < -eps) and
+                         (signU == 1)) or
+                        ((vt.u[0].dof[J] > eps) and
+                         (signU == -1))): #level set cuts element, freeze whole element
+                        for jj in range(vt.nDOF_trial_element[0]):
+                            JJ = vt.u[0].femSpace.dofMap.l2g[eN,jj]
+                            vt.dirichletNodeSetList[0][eN].add(jj)
+                            vt.dirichletValues[0][(eN,jj)]=float(vt.u[0].dof[JJ])
+                            vt.dirichletGlobalNodeSet[0].add(JJ)
+                        break
+                    elif (fabs(vt.u[0].dof[J]) < eps):#freeze this node within eps of zero
+                        vt.dirichletNodeSetList[0][eN].add(j)
+                        vt.dirichletValues[0][(eN,j)]=float(vt.u[0].dof[J])
+                        vt.dirichletGlobalNodeSet[0].add(J)
+            #get all frozen dof and make sure they're frozen on each element
+            for eN in range(vt.mesh.nElements_global):
+                for j in range(vt.nDOF_trial_element[0]):
+                    J = vt.u[0].femSpace.dofMap.l2g[eN,j]
+                    if J in vt.dirichletGlobalNodeSet[0]:
+                        vt.dirichletNodeSetList[0][eN].add(j)
+                        vt.dirichletValues[0][(eN,j)]=float(vt.u[0].dof[J])
+        else:
+            #print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!=========================Unsetting weak BC's=======================!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            vt.dirichletNodeSetList[0] = []
+            vt.dirichletGlobalNodeSet[0]=set()
+            vt.dirichletValues[0]={}
+            for eN in range(vt.mesh.nElements_global):
+                vt.dirichletNodeSetList[0].append(set())
+    def setZeroLSweakDirichletBCs2(vt):
+        #just look for cut edges and nodes
+        vt.dirichletNodeSetList[0] = []
+        vt.dirichletGlobalNodeSet[0]=set()
+        vt.dirichletValues[0]={}
+        for eN in range(vt.mesh.nElements_global):
+            vt.dirichletNodeSetList[0].append(set())
+            signU = 0
+            j0=0
+            eps = .1*vt.u[0].femSpace.mesh.elementDiametersArray[eN]
+            eps = 0.0
+            for j0 in range(vt.nDOF_trial_element[0]):
+                J0 = vt.u[0].femSpace.dofMap.l2g[eN,j0]
+                if vt.u[0].dof[J0] < -eps:
+                    signU = -1
+                elif  vt.u[0].dof[J0] > eps:
+                    signU = 1
+                else:
+                    vt.dirichletNodeSetList[0][eN].add(j0)
+                    vt.dirichletValues[0][(eN,j0)]=float(vt.u[0].dof[J0])
+                    vt.dirichletGlobalNodeSet[0].add(J0)
+                if signU != 0:
+                    for j in (range(0,j0)+range(j0+1,vt.nDOF_trial_element[0])):
+                        J = vt.u[0].femSpace.dofMap.l2g[eN,j]
+                        if (((vt.u[0].dof[J] < -eps) and
+                             (signU == 1)) or
+                            ((vt.u[0].dof[J] > eps) and
+                             (signU == -1))):
+                            vt.dirichletNodeSetList[0][eN].add(j)
+                            vt.dirichletValues[0][(eN,j)]=float(vt.u[0].dof[J])
+                            vt.dirichletGlobalNodeSet[0].add(J)
+                            vt.dirichletNodeSetList[0][eN].add(j0)
+                            vt.dirichletValues[0][(eN,j0)]=float(vt.u[0].dof[j0])
+                            vt.dirichletGlobalNodeSet[0].add(j0)
+        for eN in range(vt.mesh.nElements_global):
+            for j in range(vt.nDOF_trial_element[0]):
+                J = vt.u[0].femSpace.dofMap.l2g[eN,j]
+                if J in vt.dirichletGlobalNodeSet[0]:
+                    vt.dirichletNodeSetList[0][eN].add(j)
+                    vt.dirichletValues[0][(eN,j)]=float(vt.u[0].dof[J])
+    def setZeroLSweakDirichletBCs3(vt):
+        if vt.coefficients.weakBC_on:
+            #print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!=========================Setting new weak BC's=======================!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            vt.dirichletNodeSetList[0] = []
+            vt.dirichletGlobalNodeSet[0]=set()
+            vt.dirichletValues[0]={}
+            for eN in range(vt.mesh.nElements_global):
+                vt.dirichletNodeSetList[0].append(set())
+                eps = vt.coefficients.epsFact*vt.u[0].femSpace.mesh.elementDiametersArray[eN]
+                #eps = 1.5*vt.u[0].femSpace.mesh.elementDiametersArray[eN]
+                #loop over nodes looking for a node not within eps of zero
+                for j in range(vt.nDOF_trial_element[0]):
+                    J = vt.u[0].femSpace.dofMap.l2g[eN,j]
+                    if (fabs(vt.u[0].dof[J]) < eps):#freeze this node within eps of zero
+                        vt.dirichletNodeSetList[0][eN].add(j)
+                        vt.dirichletValues[0][(eN,j)]=float(vt.u[0].dof[J])
+                        vt.dirichletGlobalNodeSet[0].add(J)
+        else:
+            #print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!=========================Unsetting weak BC's=======================!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            vt.dirichletNodeSetList[0] = []
+            vt.dirichletGlobalNodeSet[0]=set()
+            vt.dirichletValues[0]={}
+            for eN in range(vt.mesh.nElements_global):
+                vt.dirichletNodeSetList[0].append(set())
+
+    #def
+    setZeroLSweakDirichletBCs = staticmethod(setZeroLSweakDirichletBCs)
+    setZeroLSweakDirichletBCs2 = staticmethod(setZeroLSweakDirichletBCs2)
+    setZeroLSweakDirichletBCs3 = staticmethod(setZeroLSweakDirichletBCs3)
+
 debugRDLS = False#True
-class OneLevelRDLS(OneLevelTransport):
+class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
     def __init__(self,
                  uDict,

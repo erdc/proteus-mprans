@@ -1,8 +1,171 @@
-from proteus import *
-from proteus.Transport import *
+import proteus
 from proteus.mprans.cNCLS import *
 
-class OneLevelNCLS(OneLevelTransport):
+class Coefficients(proteus.TransportCoefficients.TC_base):
+    from proteus.ctransportCoefficients import ncLevelSetCoefficientsEvaluate
+    from proteus.UnstructuredFMMandFSWsolvers import FMMEikonalSolver,FSWEikonalSolver
+    from proteus.NonlinearSolvers import EikonalSolver
+
+    def __init__(self,
+                 V_model=0,
+                 RD_model=None,
+                 ME_model=1,
+                 EikonalSolverFlag=0,
+                 checkMass=True,epsFact=1.5):
+        self.epsFact=epsFact
+        self.variableNames=['phi']
+        nc=1
+        mass={0:{0:'linear'}}
+        hamiltonian={0:{0:'linear'}}
+        advection={}
+        diffusion={}
+        potential={}
+        reaction={}
+        TC_base.__init__(self,
+                         nc,
+                         mass,
+                         advection,
+                         diffusion,
+                         potential,
+                         reaction,
+                         hamiltonian,
+                         ['phi'])
+        self.flowModelIndex=V_model
+        self.modelIndex=ME_model
+        self.RD_modelIndex=RD_model
+        #mwf added
+        self.eikonalSolverFlag = EikonalSolverFlag
+        if self.eikonalSolverFlag >= 1: #FMM
+            assert self.RD_modelIndex==None, "no redistance with eikonal solver too"
+        self.checkMass = checkMass
+    def attachModels(self,modelList):
+        #the level set model
+        self.model = modelList[self.modelIndex]
+        #the velocity
+        if self.flowModelIndex >= 0:
+            self.flowModel = modelList[self.flowModelIndex]
+            self.q_v = modelList[self.flowModelIndex].q[('velocity',0)]
+            self.ebqe_v = modelList[self.flowModelIndex].ebqe[('velocity',0)]
+            if modelList[self.flowModelIndex].ebq.has_key(('velocity',0)):
+                self.ebq_v  = modelList[self.flowModelIndex].ebq[('velocity',0)]
+            else:
+                self.ebq_v  = None
+            if not self.model.ebq.has_key(('u',0)) and self.flowModel.ebq.has_key(('u',0)):
+                self.model.ebq[('u',0)] = numpy.zeros(self.flowModel.ebq[('u',0)].shape,'d')
+                self.model.ebq[('grad(u)',0)] = numpy.zeros(self.flowModel.ebq[('grad(u)',0)].shape,'d')
+            if self.flowModel.ebq.has_key(('v',1)):
+                self.model.u[0].getValuesTrace(self.flowModel.ebq[('v',1)],self.model.ebq[('u',0)])
+                self.model.u[0].getGradientValuesTrace(self.flowModel.ebq[('grad(v)',1)],self.model.ebq[('grad(u)',0)])
+        if self.RD_modelIndex != None:
+            #print self.RD_modelIndex,len(modelList)
+            self.rdModel = modelList[self.RD_modelIndex]
+        if self.eikonalSolverFlag == 2: #FSW
+            self.resDummy = numpy.zeros(self.model.u[0].dof.shape,'d')
+            eikonalSolverType = self.FSWEikonalSolver
+            self.eikonalSolver = self.EikonalSolver(eikonalSolverType,
+                                                    self.model,
+                                                    relativeTolerance=0.0,absoluteTolerance=1.0e-12,
+                                                    frontTolerance=1.0e-8,#default 1.0e-4
+                                                    frontInitType='frontIntersection')
+#,#'frontIntersection',#or 'magnitudeOnly'
+        elif self.eikonalSolverFlag == 1: #FMM 
+            self.resDummy = numpy.zeros(self.model.u[0].dof.shape,'d')
+            eikonalSolverType = self.FMMEikonalSolver
+            self.eikonalSolver = self.EikonalSolver(eikonalSolverType,
+                                                    self.model,
+                                                    frontTolerance=1.0e-8,#default 1.0e-4
+                                                    frontInitType='frontIntersection')
+#,#'frontIntersection',#or 'magnitudeOnly'
+        if self.checkMass:
+            self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+                                                                     self.model.mesh.elementDiametersArray,
+                                                                     self.model.q['dV'],
+                                                                     self.model.q[('u',0)],
+                                                                     self.model.mesh.nElements_owned)
+            log("Attach Models NCLS: Phase  0 mass before NCLS step = %12.5e" % (self.m_pre,),level=2)
+            self.totalFluxGlobal=0.0
+            self.lsGlobalMassArray = [self.m_pre]
+            self.lsGlobalMassErrorArray = [0.0]
+            self.fluxArray = [0.0]
+            self.timeArray = [self.model.timeIntegration.t]
+    def initializeElementQuadrature(self,t,cq):
+        if self.flowModelIndex == None:
+            self.q_v = numpy.zeros(cq[('grad(u)',0)].shape,'d')
+    def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
+        if self.flowModelIndex == None:
+            self.ebq_v = numpy.zeros(cebq[('grad(u)',0)].shape,'d')
+    def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
+        if self.flowModelIndex == None:
+            self.ebqe_v = numpy.zeros(cebqe[('grad(u)',0)].shape,'d')
+    def preStep(self,t,firstStep=False):
+        if self.checkMass:
+            self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+                                                                     self.model.mesh.elementDiametersArray,
+                                                                     self.model.q['dV'],
+                                                                     self.model.q[('m',0)],
+                                                                     self.model.mesh.nElements_owned)
+            log("Phase  0 mass before NCLS step = %12.5e" % (self.m_pre,),level=2)
+            self.m_last = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+                                                                      self.model.mesh.elementDiametersArray,
+                                                                      self.model.q['dV'],
+                                                                      self.model.timeIntegration.m_last[0],
+                                                                      self.model.mesh.nElements_owned)
+            log("Phase  0 mass before NCLS step (m_last) = %12.5e" % (self.m_last,),level=2)
+        #cek todo why is this here
+        if self.flowModelIndex >= 0 and self.flowModel.ebq.has_key(('v',1)):
+            self.model.u[0].getValuesTrace(self.flowModel.ebq[('v',1)],self.model.ebq[('u',0)])
+            self.model.u[0].getGradientValuesTrace(self.flowModel.ebq[('grad(v)',1)],self.model.ebq[('grad(u)',0)])
+        copyInstructions = {}
+        return copyInstructions
+    def postStep(self,t,firstStep=False):
+        if self.checkMass:
+            self.m_post = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+                                                                      self.model.mesh.elementDiametersArray,
+                                                                      self.model.q['dV'],
+                                                                      self.model.q[('u',0)],
+                                                                      self.model.mesh.nElements_owned)
+            log("Phase  0 mass after NCLS step = %12.5e" % (self.m_post,),level=2)
+            #need a flux here not a velocity
+            self.fluxIntegral = Norms.fluxDomainBoundaryIntegralFromVector(self.flowModel.ebqe['dS'],
+                                                                           self.flowModel.ebqe[('velocity',0)],
+                                                                           self.flowModel.ebqe['n'],
+                                                                           self.model.mesh)
+            log("Flux integral = %12.5e" % (self.fluxIntegral,),level=2)
+            log("Phase  0 mass conservation after NCLS step = %12.5e" % (self.m_post - self.m_last + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
+            self.lsGlobalMass = self.m_post
+            self.fluxGlobal = self.fluxIntegral*self.model.timeIntegration.dt
+            self.totalFluxGlobal += self.fluxGlobal
+            self.lsGlobalMassArray.append(self.lsGlobalMass)
+            self.lsGlobalMassErrorArray.append(self.lsGlobalMass - self.lsGlobalMassArray[0] + self.totalFluxGlobal)
+            self.fluxArray.append(self.fluxIntegral)
+            self.timeArray.append(self.model.timeIntegration.t)            
+        if self.flowModelIndex >= 0 and self.flowModel.ebq.has_key(('v',1)):
+            self.model.u[0].getValuesTrace(self.flowModel.ebq[('v',1)],self.model.ebq[('u',0)])
+            self.model.u[0].getGradientValuesTrace(self.flowModel.ebq[('grad(v)',1)],self.model.ebq[('grad(u)',0)])
+        copyInstructions = {}
+        return copyInstructions
+    def updateToMovingDomain(self,t,c):
+        #in a moving domain simulation the velocity coming in is already for the moving domain
+        pass
+    def evaluate(self,t,c):
+        v = None
+        if c[('dH',0,0)].shape == self.q_v.shape:
+            v = self.q_v
+        elif c[('dH',0,0)].shape == self.ebqe_v.shape:
+            v = self.ebqe_v
+        elif self.ebq_v != None and c[('dH',0,0)].shape == self.ebq_v.shape:
+            v = self.ebq_v
+        else:
+            raise RuntimeError,"don't have v for NC Level set of shape = " +`c[('dH',0,0)].shape`
+        if v != None:
+            self.ncLevelSetCoefficientsEvaluate(v,
+                                                c[('u',0)],
+                                                c[('grad(u)',0)],
+                                                c[('m',0)],
+                                                c[('dm',0,0)],
+                                                c[('H',0)],
+                                                c[('dH',0,0)])            
+class LevelModel(OneLevelTransport):
     nCalls=0
     def __init__(self,
                  uDict,

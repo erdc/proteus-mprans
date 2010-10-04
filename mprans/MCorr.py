@@ -1,8 +1,207 @@
-from proteus import *
-from proteus.Transport import *
+import proteus
 from proteus.mprans.cMCorr import *
 
-class OneLevelMCorr(OneLevelTransport):
+class Coefficients(proteus.TransportCoefficients.TC_base):
+    from proteus.ctransportCoefficients import levelSetConservationCoefficientsEvaluate
+    from proteus.ctransportCoefficients import levelSetConservationCoefficientsEvaluate_sd
+    def __init__(self,applyCorrection=True,epsFactHeaviside=0.0,epsFactDirac=1.0,epsFactDiffusion=2.0,LSModel_index=3,V_model=2,me_model=5,VOFModel_index=4,checkMass=True,sd=True,nd=None,applyCorrectionToDOF=True):
+        self.sd=sd
+        self.checkMass=checkMass
+        self.variableNames=['phiCorr']
+        nc=1
+        mass={}
+        advection={}
+        hamiltonian={}
+        diffusion={0:{0:{0:'constant'}}}
+        potential={0:{0:'u'}}
+        reaction={0:{0:'nonlinear'}}
+        #reaction={}
+        if self.sd:
+            assert nd!=None,"You must set the number of dimensions to use sparse diffusion in LevelSetConservationCoefficients"
+            sdInfo = {(0,0):(numpy.arange(start=0,stop=nd+1,step=1,dtype='i'),
+                             numpy.arange(start=0,stop=nd,step=1,dtype='i'))}
+        else:
+            sdInfo={}
+        TC_base.__init__(self,
+                         nc,
+                         mass,
+                         advection,
+                         diffusion,
+                         potential,
+                         reaction,
+                         hamiltonian,
+                         self.variableNames,
+                         sparseDiffusionTensors=sdInfo,
+                         useSparseDiffusion = sd)
+        self.levelSetModelIndex=LSModel_index
+        self.flowModelIndex=V_model
+        self.epsFactHeaviside=epsFactHeaviside
+        self.epsFactDirac=epsFactDirac
+        self.epsFactDiffusion=epsFactDiffusion
+        self.me_model=me_model
+        self.VOFModelIndex=VOFModel_index
+        self.useC = True
+        self.applyCorrection=applyCorrection
+        if self.applyCorrection:
+            self.applyCorrectionToDOF=applyCorrectionToDOF
+        else:
+            self.applyCorrection = False
+    def initializeMesh(self,mesh):
+        self.h=mesh.h
+        self.epsHeaviside = self.epsFactHeaviside*mesh.h
+        self.epsDirac = self.epsFactDirac*mesh.h
+        self.epsDiffusion = self.epsFactDiffusion*mesh.h
+    def attachModels(self,modelList):
+        import copy
+        log("Attaching models in LevelSetConservation")
+        #level set
+        self.lsModel = modelList[self.levelSetModelIndex]
+        self.q_u_ls    = modelList[self.levelSetModelIndex].q[('u',0)]
+        self.ebqe_u_ls = modelList[self.levelSetModelIndex].ebqe[('u',0)]
+        if modelList[self.levelSetModelIndex].ebq.has_key(('u',0)):
+            self.ebq_u_ls = modelList[self.levelSetModelIndex].ebq[('u',0)]
+        else:
+            self.ebq_u_ls = None
+        #volume of fluid
+        self.vofModel = modelList[self.VOFModelIndex]
+        self.q_H_vof = modelList[self.VOFModelIndex].q[('u',0)]
+        self.ebqe_H_vof = modelList[self.VOFModelIndex].ebqe[('u',0)]
+        if modelList[self.VOFModelIndex].ebq.has_key(('u',0)):
+            self.ebq_H_vof = modelList[self.VOFModelIndex].ebq[('u',0)]
+        else:
+            self.ebq_H_vof = None
+        #correction
+        self.massCorrModel = modelList[self.me_model]
+        if self.checkMass:
+            self.m_tmp = copy.deepcopy(self.massCorrModel.q[('r',0)])
+            if self.checkMass:
+                self.vofGlobalMass = Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+                                                                self.vofModel.q[('u',0)],
+                                                                self.massCorrModel.mesh.nElements_owned)
+                self.lsGlobalMass = Norms.scalarHeavisideDomainIntegral(self.vofModel.q['dV'],
+                                                                        self.lsModel.q[('u',0)],
+                                                                        self.massCorrModel.mesh.nElements_owned)
+                log("Attach Models MCorr: mass correction %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+                                                                                                self.massCorrModel.q[('r',0)],
+                                                                                                self.massCorrModel.mesh.nElements_owned),),level=2)
+                self.fluxGlobal = 0.0
+                self.totalFluxGlobal = 0.0
+                self.vofGlobalMassArray = [self.vofGlobalMass]
+                self.lsGlobalMassArray = [self.lsGlobalMass]
+                self.vofGlobalMassErrorArray = [self.vofGlobalMass - self.vofGlobalMassArray[0] + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral]
+                self.lsGlobalMassErrorArray = [self.lsGlobalMass - self.lsGlobalMassArray[0] + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral]
+                self.fluxArray = [self.vofModel.coefficients.fluxIntegral]
+                self.timeArray = [self.vofModel.timeIntegration.t]
+                log("Attach Models MCorr: Phase 0 mass after mass correction (VOF) %12.5e" % (self.vofGlobalMass,),level=2)
+                log("Attach Models MCorr: Phase 0 mass after mass correction (LS) %12.5e" % (self.lsGlobalMass,),level=2)
+                log("Attach Models MCorr: Phase  0 mass conservation (VOF) after step = %12.5e" % (self.vofGlobalMass - self.vofModel.coefficients.m_pre + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral,),level=2)
+                log("Attach Models MCorr: Phase  0 mass conservation (LS) after step = %12.5e" % (self.lsGlobalMass - self.lsModel.coefficients.m_pre + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral,),level=2)
+    def initializeElementQuadrature(self,t,cq):
+        if self.sd and cq.has_key(('a',0,0)):
+            cq[('a',0,0)].fill(self.epsDiffusion)
+    def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
+        if self.sd and cebq.has_key(('a',0,0)):
+            cebq[('a',0,0)].fill(self.epsDiffusion)
+    def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
+        if self.sd and cebqe.has_key(('a',0,0)):
+            cebqe[('a',0,0)].fill(self.epsDiffusion)
+    def preStep(self,t,firstStep=False):
+        if self.checkMass:
+            log("Phase 0 mass before mass correction (VOF) %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+                                                                                                 self.vofModel.q[('m',0)],
+                                                                                                 self.massCorrModel.mesh.nElements_owned),),level=2)
+            log("Phase 0 mass before mass correction (LS) %12.5e" % (Norms.scalarHeavisideDomainIntegral(self.vofModel.q['dV'],
+                                                                                                         self.lsModel.q[('m',0)],
+                                                                                                         self.massCorrModel.mesh.nElements_owned),),level=2)
+        copyInstructions = {'clear_uList':True}
+        return copyInstructions
+    def postStep(self,t,firstStep=False):
+        if self.applyCorrection:
+            
+            self.vofModel.q[('m',0)] += self.massCorrModel.q[('r',0)]
+            self.lsModel.q[('m',0)] += self.massCorrModel.q[('u',0)]
+            if self.vofModel.q[('u',0)] is not self.vofModel.q[('m',0)]:
+                self.vofModel.q[('u',0)][:]=self.vofModel.q[('m',0)]
+            if self.lsModel.q[('u',0)] is not self.lsModel.q[('m',0)]:
+                self.lsModel.q[('u',0)][:]=self.lsModel.q[('m',0)]
+            if self.vofModel.q.has_key(('mt',0)):
+                self.vofModel.timeIntegration.calculateElementCoefficients(self.vofModel.q)
+                self.vofModel.timeIntegration.lastStepErrorOk()
+            if self.applyCorrectionToDOF:
+                self.lsModel.u[0].dof += self.massCorrModel.u[0].dof
+            if self.lsModel.q.has_key(('mt',0)):
+                self.lsModel.timeIntegration.calculateElementCoefficients(self.lsModel.q)
+                self.lsModel.timeIntegration.lastStepErrorOk()
+            if self.checkMass:
+                self.vofGlobalMass = Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+                                                                self.vofModel.q[('u',0)],
+                                                                self.massCorrModel.mesh.nElements_owned)
+                self.lsGlobalMass = Norms.scalarHeavisideDomainIntegral(self.vofModel.q['dV'],
+                                                                        self.lsModel.q[('u',0)],
+                                                                        self.massCorrModel.mesh.nElements_owned)
+                log("mass correction %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+                                                                           self.massCorrModel.q[('r',0)],
+                                                                           self.massCorrModel.mesh.nElements_owned),),level=2)
+                self.fluxGlobal = self.vofModel.coefficients.fluxIntegral*self.vofModel.timeIntegration.dt
+                self.totalFluxGlobal += self.vofModel.coefficients.fluxIntegral*self.vofModel.timeIntegration.dt
+                self.vofGlobalMassArray.append(self.vofGlobalMass)
+                self.lsGlobalMassArray.append(self.lsGlobalMass)
+                self.vofGlobalMassErrorArray.append(self.vofGlobalMass - self.vofGlobalMassArray[0] + self.totalFluxGlobal)
+                self.lsGlobalMassErrorArray.append(self.lsGlobalMass - self.lsGlobalMassArray[0] + self.totalFluxGlobal)
+                self.fluxArray.append(self.vofModel.coefficients.fluxIntegral)
+                self.timeArray.append(self.vofModel.timeIntegration.t)
+                log("Phase 0 mass after mass correction (VOF) %12.5e" % (self.vofGlobalMass,),level=2)
+                log("Phase 0 mass after mass correction (LS) %12.5e" % (self.lsGlobalMass,),level=2)
+                log("Phase  0 mass conservation (VOF) after step = %12.5e" % (self.vofGlobalMass - self.vofModel.coefficients.m_last + self.fluxGlobal,),level=2)
+                log("Phase  0 mass conservation (LS) after step = %12.5e" % (self.lsGlobalMass - self.lsModel.coefficients.m_last + self.fluxGlobal,),level=2)
+        copyInstructions = {}
+        return copyInstructions
+    def evaluate(self,t,c):
+        import math
+        if c[('u',0)].shape == self.q_u_ls.shape:
+            u_ls = self.q_u_ls
+            H_vof = self.q_H_vof
+        elif c[('u',0)].shape == self.ebqe_u_ls.shape:
+            u_ls = self.ebqe_u_ls
+            H_vof = self.ebqe_H_vof
+        elif self.ebq_u_ls != None and c[('u',0)].shape == self.ebq_u_ls.shape:
+            u_ls = self.ebq_u_ls
+            H_vof = self.ebq_H_vof
+        else:
+            #\todo trap errors in TransportCoefficients.py
+            u_ls = None
+            H_vof = None
+        if u_ls != None and H_vof != None:
+            if self.useC:
+                if self.sd:
+                    self.levelSetConservationCoefficientsEvaluate_sd(self.epsHeaviside,
+                                                                     self.epsDirac,
+                                                                     u_ls,
+                                                                     H_vof,
+                                                                     c[('u',0)],
+                                                                     c[('r',0)],
+                                                                     c[('dr',0,0)])
+                else:
+                    self.levelSetConservationCoefficientsEvaluate(self.epsHeaviside,
+                                                                  self.epsDirac,
+                                                                  self.epsDiffusion,
+                                                                  u_ls,
+                                                                  H_vof,
+                                                                  c[('u',0)],
+                                                                  c[('r',0)],
+                                                                  c[('dr',0,0)],
+                                                                  c[('a',0,0)])
+        if (self.checkMass and c[('u',0)].shape == self.q_u_ls.shape):
+            self.m_tmp[:] = H_vof
+            self.m_tmp += self.massCorrModel.q[('r',0)]
+            log("mass correction during Newton %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+                                                                                     self.massCorrModel.q[('r',0)],
+                                                                                     self.massCorrModel.mesh.nElements_owned),),level=2)
+            log("Phase 0 mass during Newton %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+                                                                                 self.m_tmp,
+                                                                                  self.massCorrModel.mesh.nElements_owned),),level=2)
+
+class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
     def __init__(self,
                  uDict,
