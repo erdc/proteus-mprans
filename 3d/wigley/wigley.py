@@ -3,7 +3,7 @@ A helper module for doing air/water flow around a moving rigid cylinder in 2D
 """
 from math import *
 from proteus import *
-
+checkMass=False
 #
 #material properties
 #

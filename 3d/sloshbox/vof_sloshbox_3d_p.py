@@ -2,10 +2,10 @@ from proteus import *
 from proteus.default_p import *
 from proteus.ctransportCoefficients import smoothedHeaviside
 from sloshbox3d import *
-from proteus.mprans import VOFV2
+from proteus.mprans import VOF
 
-LevelModelType = VOFV2.OneLevelVOFV2
-coefficients = VOFCoefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,checkMass=False)
+LevelModelType = VOF.LevelModel
+coefficients = VOF.Coefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,checkMass=checkMass)
 
 class PerturbedSurface_H:
     def __init__(self,waterLevel,slopeAngle):

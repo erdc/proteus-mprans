@@ -2,10 +2,10 @@ from proteus import *
 from proteus.default_p import *
 from math import *
 from wigley import *
-from proteus.mprans import RDLSV2
+from proteus.mprans import RDLS
 
-LevelModelType = RDLSV2.OneLevelRDLSV2
-coefficients = RedistanceLevelSet(applyRedistancing=applyRedistancing,
+LevelModelType = RDLS.LevelModel
+coefficients = RDLS.Coefficients(applyRedistancing=applyRedistancing,
                                   epsFact=epsFact_redistance,
                                   nModelId=1,
                                   rdModelId=3)
@@ -16,11 +16,10 @@ def getDBC_rd(x,flag):
 dirichletConditions = {0:getDBC_rd}
 
 if freezeLevelSet:
-    if LevelModelType == RDLSV2.OneLevelRDLSV2:
-        weakDirichletConditions = {0:RDLSV2.setZeroLSweakDirichletBCs}
+    if LevelModelType == RDLS.LevelModel:
+        weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCs}
     else:
         weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs}
-#weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs2}
 
 class Flat_phi:
     def __init__(self,waterLevel):

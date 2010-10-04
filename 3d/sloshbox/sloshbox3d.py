@@ -1,10 +1,11 @@
 from math import *
 import proteus.MeshTools
+checkMass=False
 applyCorrection=True
 applyRedistancing=True
-rdtimeIntegration='newton'
+#rdtimeIntegration='newton'
 #freezeLevelSet=False
-#rdtimeIntegration='osher'
+rdtimeIntegration='osher'
 freezeLevelSet=True#False
 spaceOrder=1
 if spaceOrder == 1:
@@ -16,20 +17,21 @@ nodalPartitioning=False#True
 nd = 3
 useBackwardEuler=True
 useBackwardEuler_ls=True
-timeOrder = 2
+timeOrder = 1
 
 dt_init=1.0e-4
 T=20.0#3.0#20.0
-nDTout = 200#100
+nDTout = 100
 runCFL = 0.33
 
 lag_ns_subgridError=True
+lag_ns_shockCapturing=True
 lag_ls_shockCapturing=True
 
 ns_shockCapturingFactor=0.33
 ls_shockCapturingFactor=0.33
 vof_shockCapturingFactor=0.33
-rd_shockCapturingFactor=0.99#33
+rd_shockCapturingFactor=0.33
 
 #epsilons for Heaviside/Dirac/etc smoothing
 epsFact_density = 1.5

@@ -11,7 +11,7 @@ else:
     stepController = Osher_PsiTC_controller
     runCFL=1.0
     rtol_res[0] = 0.0
-    atol_res[0] = 0.1*he#1.0e-4
+    atol_res[0] = he*0.1#1.0e-6
 
 if spaceOrder == 1:
     femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
@@ -22,40 +22,24 @@ elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
 
 elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
 
-subgridErrorType = HamiltonJacobi_ASGS
-if LevelModelType == RDLSV2.OneLevelRDLSV2 and not RDLSV2.debugRDLS:
-    subgridErrorType = HamiltonJacobi_ASGS_opt
-if rdtimeIntegration == 'newton':
-    subgridError = subgridErrorType(coefficients,nd,stabFlag='2',lag=False)
-else:
-    subgridError = subgridErrorType(coefficients,nd,stabFlag='2',lag=False)
-subgridError.lag=0
-if rdtimeIntegration == 'newton':    
-    shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=False)
-else:
-    shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=False)
+if rdtimeIntegration != 'newton':    
+    subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=True)
     
+    shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=True)
+else:
+    subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=False)
+    shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=False)
+
 massLumping = False
 
-if LevelModelType == RDLSV2.OneLevelRDLSV2:
-    numericalFluxType = DoNothing
-else:    
-    numericalFluxType = None
-#numericalFluxType = Advection_DiagonalUpwind
+numericalFluxType = DoNothing
 
-#multilevelNonlinearSolver  = MultilevelEikonalSolver
-#levelNonlinearSolver = UnstructuredFMMandFSWsolvers.FMMEikonalSolver
-multilevelNonlinearSolver  = Newton
+multilevelNonlinearSolver  = MultilevelEikonalSolver
+levelNonlinearSolver = UnstructuredFMMandFSWsolvers.FMMEikonalSolver
+multilevelNonlinearSolver  = NLNI
 levelNonlinearSolver = Newton
 if rdtimeIntegration != 'newton':    
     maxLineSearches = 0
-    levelNonlinearSolverConvergenceTest='rits'
-    maxNonlinearIts = 1 #1 for PTC
-else:
-    maxLineSearches=100
-    levelNonlinearSolverConvergenceTest='rits'
-    maxNonlinearIts = 25 #1 for PTC
-    
 nonlinearSmoother = NLGaussSeidel
 
 fullNewtonFlag = True
@@ -64,25 +48,21 @@ fullNewtonFlag = True
 tolFac = 0.0
 
 if rdtimeIntegration != 'newton':
-    nl_atol_res = 0.01*he
+    nl_atol_res = 0.1*he
 else:
-    nl_atol_res = 0.01*he#1.0e-4#0.01*L[0]/nnx
+    nl_atol_res = 0.1*he#1.0e-7#0.01*L[0]/nnx
+
+maxNonlinearIts = 50 #1 for PTC
 
 matrix = SparseMatrix
 
 if usePETSc:
-    numericalFluxType = DoNothing
-
     multilevelLinearSolver = PETSc
-    
     levelLinearSolver = PETSc
 else:
-    numericalFluxType = DoNothing
-
     multilevelLinearSolver = LU
-    
     levelLinearSolver = LU
-
+    
 linearSmoother = GaussSeidel
 
 linTolFac = 0.001

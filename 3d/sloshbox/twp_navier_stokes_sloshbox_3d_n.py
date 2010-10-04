@@ -45,32 +45,31 @@ elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
 
 subgridError = None
 
-if useOpt:
-    subgridError = NavierStokesASGS_velocity_pressure_opt(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
-    shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=True)
-else:
-    subgridError = NavierStokesASGS_velocity_pressure(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
-    shockCapturing = NavierStokes_SC(coefficients,nd,ns_shockCapturingFactor,lag=True)
+#subgridError = NavierStokesASGS_velocity_pressure(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
+#subgridError = NavierStokesASGS_velocity_pressure_opt(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
+subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
+
 massLumping = False
 
-
+#shockCapturing = NavierStokes_SC(coefficients,nd,ns_shockCapturingFactor,lag=True)
+shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=lag_ns_shockCapturing)
 
 numericalFluxType = None
 
-multilevelNonlinearSolver  = Newton
+multilevelNonlinearSolver  = NLNI
 
 levelNonlinearSolver = Newton
+
+maxNonlinearIts = 10
+maxLineSearches =0
 
 nonlinearSmoother = NLGaussSeidel
 
 fullNewtonFlag = True
 
-maxNonlinearIts = 25
-maxLineSearches =50
+tolFac = 0.0
 
-tolFac = 0.0#0.01
-
-nl_atol_res = 1.0e-4#0.001*he
+nl_atol_res = 1.0e-4#0.0001*he
 
 matrix = SparseMatrix
 
@@ -78,16 +77,14 @@ numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_IIPG_exterio
 
 if usePETSc:    
     multilevelLinearSolver = PETSc
-    
     levelLinearSolver = PETSc
 else:
     multilevelLinearSolver = LU
-    
     levelLinearSolver = LU
-    
+
 linearSmoother = GaussSeidel
 
-linTolFac = 1.0e-8
+linTolFac = 0.001
 
 conservativeFlux = None
 #conservativeFlux = {0:'pwl-bdm'}

@@ -1,11 +1,11 @@
 from proteus import *
 from proteus.default_p import *
 from sloshbox3d import *
-from proteus.mprans import MCorrV2
+from proteus.mprans import MCorr
 
-LevelModelType = MCorrV2.OneLevelMCorrV2
+LevelModelType = MCorr.LevelModel
 #applyCorrection=False
-coefficients = LevelSetConservation(applyCorrection=applyCorrection,
+coefficients = MCorr.Coefficients(applyCorrection=applyCorrection,
                                     epsFactHeaviside=epsFact_consrv_heaviside,
                                     epsFactDirac=epsFact_consrv_dirac,
                                     epsFactDiffusion=epsFact_consrv_diffusion,

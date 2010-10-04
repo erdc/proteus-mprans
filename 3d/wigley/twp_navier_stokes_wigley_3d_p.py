@@ -8,21 +8,21 @@ from math import *
 from wigley import *
 from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
-from proteus.mprans import RANS2PV2
+from proteus.mprans import RANS2P
 
-LevelModelType = RANS2PV2.OneLevelRANS2PV2
-coefficients = TwophaseNavierStokes_ST_LS_SO(epsFact=epsFact_viscosity,
-                                             sigma=sigma_01,
-                                             rho_0=rho_0,
-                                             nu_0=nu_0,
-                                             rho_1=rho_1,
-                                             nu_1=nu_1,
-                                             g=g,
-                                             nd=nd,
-                                             LS_model=1,
-                                             epsFact_density=epsFact_density,
-                                             stokes=useStokes,
-                                             movingDomain=movingDomain)
+LevelModelType = RANS2P.LevelModel
+coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
+                                   sigma=sigma_01,
+                                   rho_0=rho_0,
+                                   nu_0=nu_0,
+                                   rho_1=rho_1,
+                                   nu_1=nu_1,
+                                   g=g,
+                                   nd=nd,
+                                   LS_model=1,
+                                   epsFact_density=epsFact_density,
+                                   stokes=useStokes,
+                                   movingDomain=movingDomain)
 coefficients.waterLevel=waterLevel
 #import ode
 # class RigidCylinder(AuxiliaryVariables.AV_base):

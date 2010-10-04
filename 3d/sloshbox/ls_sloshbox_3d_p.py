@@ -1,16 +1,16 @@
 from proteus import *
 from proteus.default_p import *
 from sloshbox3d import *
-from proteus.mprans import NCLSV2
+from proteus.mprans import NCLS
 
-LevelModelType = NCLSV2.OneLevelNCLSV2
+LevelModelType = NCLS.LevelModel
 
 if applyCorrection:
-    coefficients = NCLevelSetCoefficients(V_model=0,RD_model=3,ME_model=1,epsFact=epsFact_consrv_heaviside,checkMass=False)
+    coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=1,epsFact=epsFact_consrv_heaviside,checkMass=checkMass)
 elif applyRedistancing:
-    coefficients = NCLevelSetCoefficients(V_model=0,RD_model=2,ME_model=1,epsFact=epsFact_consrv_heaviside,checkMass=False)
+    coefficients = NCLS.Coefficients(V_model=0,RD_model=2,ME_model=1,epsFact=epsFact_consrv_heaviside,checkMass=checkMass)
 else:
-    coefficients = NCLevelSetCoefficients(V_model=0,ME_model=1,epsFact=epsFact_consrv_heaviside,checkMass=False)
+    coefficients = NCLS.Coefficients(V_model=0,ME_model=1,epsFact=epsFact_consrv_heaviside,checkMass=checkMass)
 
 def getDBC_ls(x,flag):
     pass

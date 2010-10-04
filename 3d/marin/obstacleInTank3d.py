@@ -33,7 +33,7 @@ box_width  = 0.403
 box_length = 0.161
 box_xy = [2.3955,.2985]
 #
-#he = 0.75*box_width#
+he = 0.75*box_width#
 #he = 0.4*box_width/(2.0**(1.0/3.0))#2G
 he = 0.4*box_width/2.0#16G
 #he = 0.25*0.4*box_width#64*2G

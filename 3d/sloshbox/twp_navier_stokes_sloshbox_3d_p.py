@@ -1,12 +1,12 @@
 from proteus import *
 from proteus.default_p import *
 from sloshbox3d import *
-from proteus.mprans import RANS2PV2
+from proteus.mprans import RANS2P
 
 useOpt=True#False
 if useOpt:
-    LevelModelType = RANS2PV2.OneLevelRANS2PV2
-coefficients = TwophaseNavierStokes_ST_LS_SO(epsFact=epsFact_viscosity,
+    LevelModelType = RANS2P.LevelModel
+coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                              sigma=0.0,
                                              rho_0 = rho_0,
                                              nu_0 = nu_0,

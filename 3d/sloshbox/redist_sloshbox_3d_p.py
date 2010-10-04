@@ -2,23 +2,23 @@ from proteus import *
 from proteus.default_p import *
 from math import *
 from sloshbox3d import *
-from proteus.mprans import RDLSV2
+from proteus.mprans import RDLS
 """
 The redistancing equation in the sloshbox test problem.
 """
 ##
-LevelModelType = RDLSV2.OneLevelRDLSV2
+LevelModelType = RDLS.LevelModel
 
 ##\ingroup test
 #\brief The redistancing equation in the sloshbox test problem.
 #
 if applyCorrection:
-    coefficients = RedistanceLevelSet(applyRedistancing=applyRedistancing,
+    coefficients = RDLS.Coefficients(applyRedistancing=applyRedistancing,
                                       epsFact=epsFact_redistance,
                                       nModelId=1,
                                       rdModelId=3)
 else:
-    coefficients = RedistanceLevelSet(applyRedistancing=applyRedistancing,
+    coefficients = RDLS.Coefficients(applyRedistancing=applyRedistancing,
                                       epsFact=epsFact_redistance,
                                       nModelId=1,
                                       rdModelId=2)
@@ -31,9 +31,9 @@ def getDBC_rd(x,flag):
 dirichletConditions = {0:getDBC_rd}
 
 if freezeLevelSet:
-    if LevelModelType == RDLSV2.OneLevelRDLSV2:
+    if LevelModelType == RDLS.LevelModel:
         #weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCs}
-        weakDirichletConditions = {0:RDLSV2.setZeroLSweakDirichletBCsSimple}
+        weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCsSimple}
     else:
         weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs}
 

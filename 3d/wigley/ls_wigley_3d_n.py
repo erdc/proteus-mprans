@@ -29,7 +29,6 @@ elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,quad_order)
 
 
 subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)#it's  linear anyway
-#subgridError = HamiltonJacobi_ASGS(coefficients,nd,lag=False)#it's  linear anyway
 
 massLumping = False
 

@@ -70,4 +70,5 @@ linearSmoother = GaussSeidel
 linTolFac = 1.0e-6
 
 conservativeFlux = None
-#auxiliaryVariables = [AuxiliaryVariables.ConservationHistoryMC("sloshbox3d"+`lRefinement`+"p"+`spaceOrder`)]
+if checkMass:
+    auxiliaryVariables = [AuxiliaryVariables.ConservationHistoryMC("sloshbox3d"+`lRefinement`+"p"+`spaceOrder`)]

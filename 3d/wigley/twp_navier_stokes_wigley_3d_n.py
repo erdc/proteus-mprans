@@ -36,7 +36,7 @@ multilevelNonlinearSolver  = NLNI
 
 levelNonlinearSolver = Newton
 
-maxNonlinearIts = 10
+maxNonlinearIts = 25
 maxLineSearches =0
 
 nonlinearSmoother = NLGaussSeidel
