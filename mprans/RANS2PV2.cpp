@@ -44,6 +44,14 @@ extern "C" void calculateResidual_RANS2PV2(//element
 					   double Ct_sge,
 					   double Cd_sge,
 					   double C_dc,
+#ifdef VRANS
+					   //VRANS
+					   double linearDragFactor,
+					   double nonlinearDragFactor,
+					   const double* q_porosity,
+					   const double* q_meanGrain,
+					   const double* q_mass_source,
+#endif
 					   int* p_l2g, 
 					   int* vel_l2g, 
 					   double* p_dof, 
@@ -83,6 +91,9 @@ extern "C" void calculateResidual_RANS2PV2(//element
 					   double* ebqe_phi_ext,
 					   double* ebqe_normal_phi_ext,
 					   double* ebqe_kappa_phi_ext,
+#ifdef VRANS
+					   const double* ebqe_porosity_ext,
+#endif					   
 					   int* isDOFBoundary_p,
 					   int* isDOFBoundary_u,
 					   int* isDOFBoundary_v,
@@ -213,6 +224,15 @@ extern "C" void calculateResidual_RANS2PV2(//element
 	    p_test_dV[nDOF_trial_element],vel_test_dV[nDOF_trial_element],
 	    p_grad_test_dV[nDOF_test_element*nSpace],vel_grad_test_dV[nDOF_test_element*nSpace],
 	    dV,x,y,z,
+	    velocity_sge[nSpace],
+#ifdef VRANS
+	    porosity,
+	    meanGrainSize,
+	    mass_source,
+	    dmom_u_source[nSpace],
+	    dmom_v_source[nSpace],
+	    dmom_w_source[nSpace],
+#endif
 	    G[nSpace*nSpace],G_dd_G,tr_G,norm_Rv,h_phi, velocity_star[nSpace];
 	  //get jacobian, etc for mapping reference element
 	  ck.calculateMapping_element(eN,
@@ -255,10 +275,19 @@ extern "C" void calculateResidual_RANS2PV2(//element
 		  vel_grad_test_dV[j*nSpace+I] = vel_grad_trial[j*nSpace+I]*dV;//cek warning won't work for Petrov-Galerkin
 		}
 	    }
+#ifdef VRANS
+	  //VRANS
+	  porosity      = q_porosity[eN_k];
+	  meanGrainSize = q_meanGrain[eN_k]; 
+#endif
 	  //save velocity at quadrature points for other models to use
 	  q_velocity[eN_k_nSpace+0]=u;
 	  q_velocity[eN_k_nSpace+1]=v;
 	  q_velocity[eN_k_nSpace+2]=w;
+	  //
+	  velocity_sge[0] = q_velocity_sge[eN_k_nSpace+0];
+	  velocity_sge[1] = q_velocity_sge[eN_k_nSpace+1];
+	  velocity_sge[2] = q_velocity_sge[eN_k_nSpace+2];
 	  //std::cout<<"velocity "<<u<<'\t'<<v<<'\t'<<w<<std::endl;
 	  // q_velocity_sge[eN_k_nSpace+0]=1.0;
 	  // q_velocity_sge[eN_k_nSpace+1]=1.0;
@@ -310,6 +339,9 @@ extern "C" void calculateResidual_RANS2PV2(//element
 					 phi[eN_k],
 					 &normal_phi[eN_k_nSpace],
 					 kappa_phi[eN_k],
+#ifdef VRANS
+					 porosity,
+#endif					 
 					 p,
 					 grad_p,
 					 u,
@@ -355,16 +387,47 @@ extern "C" void calculateResidual_RANS2PV2(//element
 					 dmom_v_ham_grad_p,
 					 mom_w_ham,
 					 dmom_w_ham_grad_p);          
+#ifdef VRANS
+	  //VRANS
+	  mass_source = q_mass_source[eN_k];
+	  RANS2PV2::updateDarcyForchheimerTerms_Ergun(linearDragFactor,
+						      nonlinearDragFactor,
+						      porosity,
+						      meanGrainSize,
+						      eps_rho,
+						      eps_mu,
+						      rho_0,
+						      nu_0,
+						      rho_1,
+						      nu_1,
+						      phi[eN_k],
+						      velocity_sge[0],//u
+						      velocity_sge[1],//v
+						      velocity_sge[2],//w
+						      mom_u_source,
+						      mom_v_source,
+						      mom_w_source,
+						      dmom_u_source,
+						      dmom_v_source,
+						      dmom_w_source);
+#endif
 	  //
 	  //save momentum for time history and velocity for subgrid error
 	  //
 	  q_mom_u_acc[eN_k] = mom_u_acc;                            
 	  q_mom_v_acc[eN_k] = mom_v_acc;                            
 	  q_mom_w_acc[eN_k] = mom_w_acc;
+
 	  //subgrid error uses grid scale velocity
-	  q_mass_adv[eN_k_nSpace+0] = u;
-	  q_mass_adv[eN_k_nSpace+1] = v;
-	  q_mass_adv[eN_k_nSpace+2] = w;
+	  q_mass_adv[eN_k_nSpace+0] = mass_adv[0];
+	  q_mass_adv[eN_k_nSpace+1] = mass_adv[1];
+	  q_mass_adv[eN_k_nSpace+2] = mass_adv[2];
+	  
+	  //sge approximations need to be df^{\prime}
+	  velocity_sge[0] *= dmom_u_acc_u;
+	  velocity_sge[1] *= dmom_v_acc_v; 
+	  velocity_sge[2] *= dmom_w_acc_w;
+ 
           //
           //moving mesh
           //
@@ -395,21 +458,24 @@ extern "C" void calculateResidual_RANS2PV2(//element
           //
           //calculate strong residual
 	  pdeResidual_p = ck.Advection_strong(dmass_adv_u,grad_u) +
+#ifdef VRANS
+	    ck.Reaction_strong(mass_source) + 
+#endif
 	    ck.Advection_strong(dmass_adv_v,grad_v) +
 	    ck.Advection_strong(dmass_adv_w,grad_w);
 	  
 	  pdeResidual_u = ck.Mass_strong(mom_u_acc_t) +
-	    ck.Advection_strong(&q_velocity_sge[eN_k_nSpace],grad_u) +
+	    ck.Advection_strong(velocity_sge,grad_u) +
 	    ck.Hamiltonian_strong(dmom_u_ham_grad_p,grad_p) +
 	    ck.Reaction_strong(mom_u_source);
 	  
 	  pdeResidual_v = ck.Mass_strong(mom_v_acc_t) +
-	    ck.Advection_strong(&q_velocity_sge[eN_k_nSpace],grad_v) +
+	    ck.Advection_strong(velocity_sge,grad_v) +
 	    ck.Hamiltonian_strong(dmom_v_ham_grad_p,grad_p) + 
 	    ck.Reaction_strong(mom_v_source);
 	  
 	  pdeResidual_w = ck.Mass_strong(mom_w_acc_t) + 
-	    ck.Advection_strong(&q_velocity_sge[eN_k_nSpace],grad_w) +
+	    ck.Advection_strong(velocity_sge,grad_w) +
 	    ck.Hamiltonian_strong(dmom_w_ham_grad_p,grad_p) +
 	    ck.Reaction_strong(mom_w_source);
 	
@@ -419,10 +485,10 @@ extern "C" void calculateResidual_RANS2PV2(//element
                                                 G,
                                                 G_dd_G,
                                                 tr_G,
-                                                dmom_u_acc_u,//rho
+                                                dmom_u_acc_u,//rho, VRANS --> rho*porosity
                                                 dmom_u_acc_u_t/dmom_u_acc_u,//Dt
-                                                &q_velocity_sge[eN_k_nSpace],//v
-                                                mom_u_diff_ten[1],//mu
+                                                velocity_sge,//v*rho, VRANS --> v*rho*porosity
+                                                mom_u_diff_ten[1],//mu, VRANS --> mu*porosity
                                                 tau_p,
                                                 tau_v,
                                                 q_cfl[eN_k]);
@@ -438,9 +504,9 @@ extern "C" void calculateResidual_RANS2PV2(//element
                                                subgridError_v,
                                                subgridError_w);
         // velocity used in adjoint (VMS or RBLES, with or without lagging the grid scale velocity)
-        velocity_star[0] = q_velocity_sge[eN_k_nSpace+0] + useRBLES*subgridError_u;
-        velocity_star[1] = q_velocity_sge[eN_k_nSpace+1] + useRBLES*subgridError_v;
-        velocity_star[2] = q_velocity_sge[eN_k_nSpace+2] + useRBLES*subgridError_w;
+        velocity_star[0] = velocity_sge[0] + useRBLES*subgridError_u;
+        velocity_star[1] = velocity_sge[1] + useRBLES*subgridError_v;
+        velocity_star[2] = velocity_sge[2] + useRBLES*subgridError_w;
         
         // adjoint times the test functions 
           for (int i=0;i<nDOF_test_element;i++)
@@ -455,6 +521,13 @@ extern "C" void calculateResidual_RANS2PV2(//element
 	      Lstar_p_u[i]=ck.Hamiltonian_adjoint(dmom_u_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
 	      Lstar_p_v[i]=ck.Hamiltonian_adjoint(dmom_v_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
 	      Lstar_p_w[i]=ck.Hamiltonian_adjoint(dmom_w_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
+#ifdef VRANS
+	      //VRANS account for drag terms, diagonal only here ... decide if need off diagonal terms too
+	      Lstar_u_u[i]+=ck.Reaction_adjoint(dmom_u_source[0],vel_test_dV[i]);
+	      Lstar_v_v[i]+=ck.Reaction_adjoint(dmom_v_source[1],vel_test_dV[i]);
+	      Lstar_w_w[i]+=ck.Reaction_adjoint(dmom_w_source[2],vel_test_dV[i]);
+#endif
+	      //
             }
 
 	  norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v + pdeResidual_w*pdeResidual_w);
@@ -476,6 +549,9 @@ extern "C" void calculateResidual_RANS2PV2(//element
 	      register int i_nSpace=i*nSpace;
 
 	      elementResidual_p[i] += ck.Advection_weak(mass_adv,&p_grad_test_dV[i_nSpace]) +
+#ifdef VRANS
+		ck.Reaction_weak(mass_source,p_test_dV[i])   + //VRANS source term for wave maker
+#endif
 		ck.SubgridError(subgridError_u,Lstar_u_p[i]) + 
 		ck.SubgridError(subgridError_v,Lstar_v_p[i]) + 
 		ck.SubgridError(subgridError_w,Lstar_w_p[i]);
@@ -684,6 +760,9 @@ extern "C" void calculateResidual_RANS2PV2(//element
 	    dS,p_test_dS[nDOF_test_element],vel_test_dS[nDOF_test_element],
 	    p_grad_trial_trace[nDOF_trial_element*nSpace],vel_grad_trial_trace[nDOF_trial_element*nSpace],
 	    normal[3],x_ext,y_ext,z_ext,
+#ifdef VRANS
+	    porosity_ext,
+#endif
 	    G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty;
 	  //compute information about mapping from reference element to physical element
 	  ck.calculateMapping_elementBoundary(eN,
@@ -764,6 +843,9 @@ extern "C" void calculateResidual_RANS2PV2(//element
 	  bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
 	  bc_v_ext = isDOFBoundary_v[ebNE_kb]*ebqe_bc_v_ext[ebNE_kb]+(1-isDOFBoundary_v[ebNE_kb])*v_ext;
 	  bc_w_ext = isDOFBoundary_w[ebNE_kb]*ebqe_bc_w_ext[ebNE_kb]+(1-isDOFBoundary_w[ebNE_kb])*w_ext;
+#ifdef VRANS
+	  porosity_ext = ebqe_porosity_ext[ebNE_kb];
+#endif
 	  // 
 	  //calculate the pde coefficients using the solution and the boundary values for the solution 
 	  // 
@@ -781,6 +863,9 @@ extern "C" void calculateResidual_RANS2PV2(//element
 					 ebqe_phi_ext[ebNE_kb],
 					 &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 					 ebqe_kappa_phi_ext[ebNE_kb],
+#ifdef VRANS
+					 porosity_ext,
+#endif
 					 p_ext,
 					 grad_p_ext,
 					 u_ext,
@@ -837,6 +922,9 @@ extern "C" void calculateResidual_RANS2PV2(//element
 					 ebqe_phi_ext[ebNE_kb],
 					 &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 					 ebqe_kappa_phi_ext[ebNE_kb],
+#ifdef VRANS
+					 porosity_ext,
+#endif
 					 bc_p_ext,
 					 grad_p_ext,//cek should't be used
 					 bc_u_ext,
@@ -1074,6 +1162,14 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 					   double Ct_sge,
 					   double Cd_sge,
 					   double C_dg,
+#ifdef VRANS
+					   //VRANS
+					   double linearDragFactor,
+					   double nonlinearDragFactor,
+					   const double* q_porosity,
+					   const double* q_meanGrain,
+					   const double* q_mass_source,
+#endif
 					   int* p_l2g, 
 					   int* vel_l2g,
 					   double* p_dof, double* u_dof, double* v_dof, double* w_dof,
@@ -1118,6 +1214,9 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 					   double* ebqe_phi_ext,
 					   double* ebqe_normal_phi_ext,
 					   double* ebqe_kappa_phi_ext,
+#ifdef VRANS
+					   const double* ebqe_porosity_ext,
+#endif					   
 					   int* isDOFBoundary_p,
 					   int* isDOFBoundary_u,
 					   int* isDOFBoundary_v,
@@ -1297,6 +1396,15 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 	    p_test_dV[nDOF_test_element],vel_test_dV[nDOF_test_element],
 	    p_grad_test_dV[nDOF_test_element*nSpace],vel_grad_test_dV[nDOF_test_element*nSpace],
 	    x,y,z,
+	    velocity_sge[nSpace],
+#ifdef VRANS
+	    porosity,
+	    meanGrainSize,
+	    dmom_u_source[nSpace],
+	    dmom_v_source[nSpace],
+	    dmom_w_source[nSpace],
+	    mass_source,
+#endif
 	    G[nSpace*nSpace],G_dd_G,tr_G,h_phi, velocity_star[nSpace];
 	  //get jacobian, etc for mapping reference element
 	  ck.calculateMapping_element(eN,
@@ -1370,6 +1478,14 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 	  //     std::cout<<"grad_v["<<I<<"] "<<grad_v[I]<<std::endl;
 	  //     std::cout<<"grad_w["<<I<<"] "<<grad_w[I]<<std::endl;
 	  //   }
+	  velocity_sge[0] = q_velocity_sge[eN_k_nSpace+0];
+	  velocity_sge[1] = q_velocity_sge[eN_k_nSpace+1];
+	  velocity_sge[2] = q_velocity_sge[eN_k_nSpace+2];
+#ifdef VRANS
+	  //VRANS
+	  porosity = q_porosity[eN_k];
+	  meanGrainSize = q_meanGrain[eN_k]; 
+#endif
           //
           //calculate pde coefficients and derivatives at quadrature points
           //
@@ -1387,6 +1503,9 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 					 phi[eN_k],
 					 &normal_phi[eN_k_nSpace],
 					 kappa_phi[eN_k],
+#ifdef VRANS
+					 porosity,
+#endif					 
 					 p,
 					 grad_p,
 					 u,
@@ -1432,6 +1551,30 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 					 dmom_v_ham_grad_p,
 					 mom_w_ham,
 					 dmom_w_ham_grad_p);          
+#ifdef VRANS
+	  //VRANS
+	  mass_source = q_mass_source[eN_k];
+	  RANS2PV2::updateDarcyForchheimerTerms_Ergun(linearDragFactor,
+						      nonlinearDragFactor,
+						      porosity,
+						      meanGrainSize,
+						      eps_rho,
+						      eps_mu,
+						      rho_0,
+						      nu_0,
+						      rho_1,
+						      nu_1,
+						      phi[eN_k],
+						      velocity_sge[0],//u
+						      velocity_sge[1],//v
+						      velocity_sge[2],//w
+						      mom_u_source,
+						      mom_v_source,
+						      mom_w_source,
+						      dmom_u_source,
+						      dmom_v_source,
+						      dmom_w_source);
+#endif
           //
           //moving mesh
           //
@@ -1479,6 +1622,13 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 	      dpdeResidual_w_p[j]=ck.HamiltonianJacobian_strong(dmom_w_ham_grad_p,&p_grad_trial[j_nSpace]);
 	      dpdeResidual_w_w[j]=ck.MassJacobian_strong(dmom_w_acc_w_t,vel_trial_ref[k*nDOF_trial_element+j]) + 
 		ck.AdvectionJacobian_strong(&q_velocity_sge[eN_k_nSpace],&vel_grad_trial[j_nSpace]);
+
+#ifdef VRANS
+	      //VRANS account for drag terms, diagonal only here ... decide if need off diagonal terms too
+	      dpdeResidual_u_u[j]+= ck.ReactionJacobian_strong(dmom_u_source[0],vel_trial_ref[k*nDOF_trial_element+j]);
+	      dpdeResidual_v_v[j]+= ck.ReactionJacobian_strong(dmom_v_source[1],vel_trial_ref[k*nDOF_trial_element+j]);
+	      dpdeResidual_w_w[j]+= ck.ReactionJacobian_strong(dmom_w_source[2],vel_trial_ref[k*nDOF_trial_element+j]);
+#endif
             }
           //calculate tau and tau*Res
 	  RANS2PV2::calculateSubgridError_tau(Ct_sge,
@@ -1486,10 +1636,10 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 					      G,
 					      G_dd_G,
 					      tr_G,
-					      dmom_u_acc_u,//rho
+					      dmom_u_acc_u,//rho, VRANS --> rho*porosity
 					      dmom_u_acc_u_t/dmom_u_acc_u,//Dt
-	  				      &q_velocity_sge[eN_k_nSpace],//v
-					      mom_u_diff_ten[1],//mu
+	  				      velocity_sge,//v*rho, VRANS --> v*rho*porosity
+					      mom_u_diff_ten[1],//mu, VRANS --> mu*porosity
 	  				      tau_p,
 					      tau_v,
 					      q_cfl[eN_k]);
@@ -1517,9 +1667,9 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 							    dsubgridError_w_p,
 							    dsubgridError_w_w);
           // velocity used in adjoint (VMS or RBLES, with or without lagging the grid scale velocity)
-          velocity_star[0] = q_velocity_sge[eN_k_nSpace+0] + useRBLES*subgridError_u;
-          velocity_star[1] = q_velocity_sge[eN_k_nSpace+1] + useRBLES*subgridError_v;
-          velocity_star[2] = q_velocity_sge[eN_k_nSpace+2] + useRBLES*subgridError_w;
+          velocity_star[0] = velocity_sge[0] + useRBLES*subgridError_u;
+          velocity_star[1] = velocity_sge[1] + useRBLES*subgridError_v;
+          velocity_star[2] = velocity_sge[2] + useRBLES*subgridError_w;
           
           //calculate the adjoint times the test functions
           for (int i=0;i<nDOF_test_element;i++)
@@ -1534,6 +1684,12 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 	      Lstar_p_u[i]=ck.Hamiltonian_adjoint(dmom_u_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
 	      Lstar_p_v[i]=ck.Hamiltonian_adjoint(dmom_v_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
 	      Lstar_p_w[i]=ck.Hamiltonian_adjoint(dmom_w_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
+#ifdef VRANS
+	      //VRANS account for drag terms, diagonal only here ... decide if need off diagonal terms too
+	      Lstar_u_u[i]+=ck.Reaction_adjoint(dmom_u_source[0],vel_test_dV[i]);
+	      Lstar_v_v[i]+=ck.Reaction_adjoint(dmom_v_source[1],vel_test_dV[i]);
+	      Lstar_w_w[i]+=ck.Reaction_adjoint(dmom_w_source[2],vel_test_dV[i]);
+#endif
             }
 
 
@@ -1560,42 +1716,69 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 		  elementJacobian_u_u[i][j] += ck.MassJacobian_weak(dmom_u_acc_u_t,vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) + 
 		    ck.AdvectionJacobian_weak(dmom_u_adv_u,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +
 		    ck.SimpleDiffusionJacobian_weak(sdInfo_u_u_rowptr,sdInfo_u_u_colind,mom_u_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+#ifdef VRANS
+		    ck.ReactionJacobian_weak(dmom_u_source[0],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
+#endif
 		    ck.SubgridErrorJacobian(dsubgridError_p_u[j],Lstar_p_u[i]) + 
 		    ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u_u[i]) + 
 		    ck.NumericalDiffusionJacobian(q_numDiff_u_last[eN_k],&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]); 
 		  elementJacobian_u_v[i][j] += ck.AdvectionJacobian_weak(dmom_u_adv_v,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) + 
 		    ck.SimpleDiffusionJacobian_weak(sdInfo_u_v_rowptr,sdInfo_u_v_colind,mom_uv_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+#ifdef VRANS
+		    ck.ReactionJacobian_weak(dmom_u_source[1],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
+#endif
 		    ck.SubgridErrorJacobian(dsubgridError_p_v[j],Lstar_p_u[i]); 
 		  elementJacobian_u_w[i][j] += ck.AdvectionJacobian_weak(dmom_u_adv_w,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) + 
 		    ck.SimpleDiffusionJacobian_weak(sdInfo_u_w_rowptr,sdInfo_u_w_colind,mom_uw_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+#ifdef VRANS
+		    ck.ReactionJacobian_weak(dmom_u_source[2],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
+#endif
 		    ck.SubgridErrorJacobian(dsubgridError_p_w[j],Lstar_p_u[i]); 
 
 		  elementJacobian_v_p[i][j] += ck.HamiltonianJacobian_weak(dmom_v_ham_grad_p,&p_grad_trial[j_nSpace],vel_test_dV[i]) + 
 		    ck.SubgridErrorJacobian(dsubgridError_v_p[j],Lstar_v_v[i]); 
 		  elementJacobian_v_u[i][j] += ck.AdvectionJacobian_weak(dmom_v_adv_u,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) + 
 		    ck.SimpleDiffusionJacobian_weak(sdInfo_v_u_rowptr,sdInfo_v_u_colind,mom_vu_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+#ifdef VRANS
+		    ck.ReactionJacobian_weak(dmom_v_source[0],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
+#endif
 		    ck.SubgridErrorJacobian(dsubgridError_p_u[j],Lstar_p_v[i]);
 		  elementJacobian_v_v[i][j] += ck.MassJacobian_weak(dmom_v_acc_v_t,vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) + 
 		    ck.AdvectionJacobian_weak(dmom_v_adv_v,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +
 		    ck.SimpleDiffusionJacobian_weak(sdInfo_v_v_rowptr,sdInfo_v_v_colind,mom_v_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+#ifdef VRANS
+		    ck.ReactionJacobian_weak(dmom_v_source[1],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
+#endif
 		    ck.SubgridErrorJacobian(dsubgridError_p_v[j],Lstar_p_v[i]) +
 		    ck.SubgridErrorJacobian(dsubgridError_v_v[j],Lstar_v_v[i]) + 
 		    ck.NumericalDiffusionJacobian(q_numDiff_v_last[eN_k],&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]); 
 		  elementJacobian_v_w[i][j] += ck.AdvectionJacobian_weak(dmom_v_adv_w,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +  
 		    ck.SimpleDiffusionJacobian_weak(sdInfo_v_w_rowptr,sdInfo_v_w_colind,mom_vw_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+#ifdef VRANS
+		    ck.ReactionJacobian_weak(dmom_v_source[2],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
+#endif
 		    ck.SubgridErrorJacobian(dsubgridError_p_w[j],Lstar_p_v[i]);
 
 		  elementJacobian_w_p[i][j] += ck.HamiltonianJacobian_weak(dmom_w_ham_grad_p,&p_grad_trial[j_nSpace],vel_test_dV[i]) + 
 		    ck.SubgridErrorJacobian(dsubgridError_w_p[j],Lstar_w_w[i]); 
 		  elementJacobian_w_u[i][j] += ck.AdvectionJacobian_weak(dmom_w_adv_u,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +  
 		    ck.SimpleDiffusionJacobian_weak(sdInfo_w_u_rowptr,sdInfo_w_u_colind,mom_wu_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+#ifdef VRANS
+		    ck.ReactionJacobian_weak(dmom_w_source[0],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
+#endif
 		    ck.SubgridErrorJacobian(dsubgridError_p_u[j],Lstar_p_w[i]); 
 		  elementJacobian_w_v[i][j] += ck.AdvectionJacobian_weak(dmom_w_adv_v,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) + 
 		    ck.SimpleDiffusionJacobian_weak(sdInfo_w_v_rowptr,sdInfo_w_v_colind,mom_wv_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+#ifdef VRANS
+		    ck.ReactionJacobian_weak(dmom_w_source[1],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
+#endif
 		    ck.SubgridErrorJacobian(dsubgridError_p_v[j],Lstar_p_w[i]); 
 		  elementJacobian_w_w[i][j] += ck.MassJacobian_weak(dmom_w_acc_w_t,vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) + 
 		    ck.AdvectionJacobian_weak(dmom_w_adv_w,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +  
 		    ck.SimpleDiffusionJacobian_weak(sdInfo_w_w_rowptr,sdInfo_w_w_colind,mom_w_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+#ifdef VRANS
+		    ck.ReactionJacobian_weak(dmom_w_source[2],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
+#endif
 		    ck.SubgridErrorJacobian(dsubgridError_p_w[j],Lstar_p_w[i]) + 
 		    ck.SubgridErrorJacobian(dsubgridError_w_w[j],Lstar_w_w[i]) + 
 		    ck.NumericalDiffusionJacobian(q_numDiff_w_last[eN_k],&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]); 
@@ -1818,6 +2001,9 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 	    vel_test_dS[nDOF_test_element],
 	    normal[3],
 	    x_ext,y_ext,z_ext,
+#ifdef VRANS
+	    porosity_ext,
+#endif
 	    G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty;
 	  ck.calculateMapping_elementBoundary(eN,
 					      ebN_local,
@@ -1895,6 +2081,9 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 	  bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
 	  bc_v_ext = isDOFBoundary_v[ebNE_kb]*ebqe_bc_v_ext[ebNE_kb]+(1-isDOFBoundary_v[ebNE_kb])*v_ext;
 	  bc_w_ext = isDOFBoundary_w[ebNE_kb]*ebqe_bc_w_ext[ebNE_kb]+(1-isDOFBoundary_w[ebNE_kb])*w_ext;
+#ifdef VRANS
+	  porosity_ext = ebqe_porosity_ext[ebNE_kb];
+#endif
 	  // 
 	  //calculate the internal and external trace of the pde coefficients 
 	  // 
@@ -1912,6 +2101,9 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 					 ebqe_phi_ext[ebNE_kb],
 					 &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 					 ebqe_kappa_phi_ext[ebNE_kb],
+#ifdef VRANS
+					 porosity_ext,
+#endif
 					 p_ext,
 					 grad_p_ext,
 					 u_ext,
@@ -1968,6 +2160,9 @@ extern "C" void calculateJacobian_RANS2PV2(//element
 					 ebqe_phi_ext[ebNE_kb],
 					 &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 					 ebqe_kappa_phi_ext[ebNE_kb],
+#ifdef VRANS
+					 porosity_ext,
+#endif
 					 bc_p_ext,
 					 grad_p_ext, //cek shouldn't be used
 					 bc_u_ext,
@@ -2341,3 +2536,4 @@ extern "C" void calculateVelocityAverage_RANS2PV2(int* permutations,
 	}//ebNI
     }
 }
+

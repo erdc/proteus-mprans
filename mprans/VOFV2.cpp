@@ -27,6 +27,9 @@ extern "C" void VOFV2_RES(//element
 			double alphaBDF,
 			int lag_shockCapturing, /*mwf not used yet*/
 			double shockCapturingDiffusion,
+#ifdef VRANS
+			  const double* q_porosity,
+#endif
 			int* u_l2g, 
 			double* elementDiameter,
 			double* u_dof,
@@ -52,6 +55,9 @@ extern "C" void VOFV2_RES(//element
 			double* u_grad_trial_ext,
 			double* ebqe_velocity_ext,
 			double* ebqe_n_ext,
+#ifdef VRANS
+			  const double* ebqe_porosity_ext,
+#endif
 			int* isDOFBoundary_u,
 			double* ebqe_bc_u_ext,
 			int* isFluxBoundary_u,
@@ -103,6 +109,9 @@ extern "C" void VOFV2_RES(//element
 	    u_test_dV[nDOF_trial_element],
 	    u_grad_test_dV[nDOF_test_element*nSpace],
 	    dV,x,y,z,
+#ifdef VRANS
+	    porosity,
+#endif
 	    G[nSpace*nSpace],G_dd_G,tr_G,norm_Rv;
           // //
           // //compute solution and gradients at quadrature points
@@ -151,11 +160,17 @@ extern "C" void VOFV2_RES(//element
 		  u_grad_test_dV[j*nSpace+I]   = u_grad_trial[j*nSpace+I]*dV;//cek warning won't work for Petrov-Galerkin
 		}
 	    }
+#ifdef VRANS
+	  porosity = q_porosity[eN_k];
+#endif
           //
           //calculate pde coefficients at quadrature points
           //
           VOFV2_NAME::evaluateCoefficients(&velocity[eN_k_nSpace],
                                            u,
+#ifdef VRANS
+					   porosity,
+#endif
                                            m,
                                            dm,
                                            f,
@@ -187,7 +202,12 @@ extern "C" void VOFV2_RES(//element
 	      Lstar_u[i]  = ck.Advection_adjoint(df,&u_grad_test_dV[i_nSpace]);
             }
           //calculate tau and tau*Res
-          VOFV2_NAME::calculateSubgridError_tau(elementDiameter[eN],dm_t,df,cfl[eN_k],tau);
+          VOFV2_NAME::calculateSubgridError_tau(elementDiameter[eN],
+						dm_t,
+						dm,
+						df,
+						cfl[eN_k],
+						tau);
           subgridError_u = tau*pdeResidual_u;
           //
           //calcualte shock capturing diffusion
@@ -273,6 +293,9 @@ extern "C" void VOFV2_RES(//element
             u_test_dS[nDOF_test_element],
 	    u_grad_trial_trace[nDOF_trial_element*nSpace],
 	    normal[3],x_ext,y_ext,z_ext,
+#ifdef VRANS
+	    porosity_ext,
+#endif
 	    G[nSpace*nSpace],G_dd_G,tr_G;
 	  // 
 	  //calculate the solution and gradients at quadrature points 
@@ -332,21 +355,30 @@ extern "C" void VOFV2_RES(//element
 	  //load the boundary values
 	  //
 	  bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
+#ifdef VRANS
+	  porosity_ext = ebqe_porosity_ext[ebNE_kb];
+#endif
 	  // 
 	  //calculate the pde coefficients using the solution and the boundary values for the solution 
 	  // 
 	  VOFV2_NAME::evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
-				 u_ext,
-				 m_ext,
-				 dm_ext,
-				 f_ext,
-				 df_ext);
+					   u_ext,
+#ifdef VRANS
+					   porosity_ext,
+#endif
+					   m_ext,
+					   dm_ext,
+					   f_ext,
+					   df_ext);
           VOFV2_NAME::evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
-				 bc_u_ext,
-				 bc_m_ext,
-				 bc_dm_ext,
-				 bc_f_ext,
-				 bc_df_ext);    
+					   bc_u_ext,
+#ifdef VRANS
+					   porosity_ext,
+#endif
+					   bc_m_ext,
+					   bc_dm_ext,
+					   bc_f_ext,
+					   bc_df_ext);    
 	  //save for other models?
 	  ebqe_u[ebNE_kb] = u_ext;
 	  // 
@@ -358,7 +390,11 @@ extern "C" void VOFV2_RES(//element
                                                      bc_u_ext,
                                                      ebqe_bc_flux_u_ext[ebNE_kb],
                                                      u_ext,//smoothedHeaviside(eps,ebqe_phi[ebNE_kb]),
+#ifdef VRANS
+						     df_ext,//includes porosity
+#else
                                                      &ebqe_velocity_ext[ebNE_kb_nSpace],
+#endif
                                                      flux_ext);
 	  ebqe_flux[ebNE_kb] = flux_ext;
 	  //
@@ -411,6 +447,9 @@ extern "C" void VOFV2_JAC (//element
 			 double alphaBDF,
 			 int lag_shockCapturing,/*mwf not used yet*/
 			 double shockCapturingDiffusion,
+#ifdef VRANS
+			  const double* q_porosity,
+#endif
 			 int* u_l2g,
 			 double* elementDiameter,
 			 double* u_dof, 
@@ -432,6 +471,9 @@ extern "C" void VOFV2_JAC (//element
 			 double* u_grad_trial_ext,
 			 double* ebqe_velocity_ext,
 			 double* ebqe_n_ext,
+#ifdef VRANS
+			  const double* ebqe_porosity_ext,
+#endif
 			 int* isDOFBoundary_u,
 			 double* ebqe_bc_u_ext,
 			 int* isFluxBoundary_u,
@@ -475,6 +517,9 @@ extern "C" void VOFV2_JAC (//element
 	    u_test_dV[nDOF_test_element],
 	    u_grad_test_dV[nDOF_test_element*nSpace],
 	    x,y,z,
+#ifdef VRANS
+	    porosity,
+#endif
 	    G[nSpace*nSpace],G_dd_G,tr_G;
           //
           //calculate solution and gradients at quadrature points
@@ -525,11 +570,17 @@ extern "C" void VOFV2_JAC (//element
 		  u_grad_test_dV[j*nSpace+I]   = u_grad_trial[j*nSpace+I]*dV;//cek warning won't work for Petrov-Galerkin
 		}
 	    }
+#ifdef VRANS
+	  porosity = q_porosity[eN_k];
+#endif
           //
           //calculate pde coefficients and derivatives at quadrature points
           //
           VOFV2_NAME::evaluateCoefficients(&velocity[eN_k_nSpace],
                                            u,
+#ifdef VRANS
+					   porosity,
+#endif
                                            m,
                                            dm,
                                            f,
@@ -569,10 +620,11 @@ extern "C" void VOFV2_JAC (//element
             }
           //tau and tau*Res
           VOFV2_NAME::calculateSubgridError_tau(elementDiameter[eN],
-				      dm_t,
-				      df,
-				      cfl[eN_k],
-				      tau);
+						dm_t,
+						dm,
+						df,
+						cfl[eN_k],
+						tau);
           for(int j=0;j<nDOF_trial_element;j++)
             dsubgridError_u_u[j] = tau*dpdeResidual_u_u[j];
  	  for(int i=0;i<nDOF_test_element;i++)
@@ -645,6 +697,9 @@ extern "C" void VOFV2_JAC (//element
             u_test_dS[nDOF_test_element],
 	    u_grad_trial_trace[nDOF_trial_element*nSpace],
 	    normal[3],x_ext,y_ext,z_ext,
+#ifdef VRANS
+	    porosity_ext,
+#endif
 	    G[nSpace*nSpace],G_dd_G,tr_G;
   	  // 
   	  //calculate the solution and gradients at quadrature points 
@@ -702,28 +757,41 @@ extern "C" void VOFV2_JAC (//element
   	  //load the boundary values
   	  //
   	  bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
+#ifdef VRANS
+	  porosity_ext = ebqe_porosity_ext[ebNE_kb];
+#endif
   	  // 
   	  //calculate the internal and external trace of the pde coefficients 
   	  // 
           VOFV2_NAME::evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
-  				 u_ext,
-  				 m_ext,
-  				 dm_ext,
-  				 f_ext,
-  				 df_ext);
+					   u_ext,
+#ifdef VRANS
+					   porosity_ext,
+#endif
+					   m_ext,
+					   dm_ext,
+					   f_ext,
+					   df_ext);
           VOFV2_NAME::evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
-  				 bc_u_ext,
-  				 bc_m_ext,
-  				 bc_dm_ext,
-  				 bc_f_ext,
-  				 bc_df_ext);
+					   bc_u_ext,
+#ifdef VRANS
+					   porosity_ext,
+#endif
+					   bc_m_ext,
+					   bc_dm_ext,
+					   bc_f_ext,
+					   bc_df_ext);
   	  // 
   	  //calculate the numerical fluxes 
   	  // 
           VOFV2_NAME::exteriorNumericalAdvectiveFluxDerivative(isDOFBoundary_u[ebNE_kb],
                                                                isFluxBoundary_u[ebNE_kb],
                                                                normal,
+#ifdef VRANS
+							       df_ext,
+#else
                                                                &ebqe_velocity_ext[ebNE_kb_nSpace],
+#endif
                                                                dflux_u_u_ext);
   	  //DoNothing for now
   	  //

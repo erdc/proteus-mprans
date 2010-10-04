@@ -75,8 +75,17 @@ static PyObject* cVOFV2_calculateResidual(PyObject* self,
     *u_ext,
     *flux_ext,
     *phi_ext;
+#ifdef VRANS
+  PyObject
+    *q_porosity,
+    *ebqe_porosity_ext;
+#endif
   if (!PyArg_ParseTuple(args,
+#ifndef VRANS
                         "OOOOOOOOOOOOOOOOOOididOOOOOOOOOOOOOOOiiOiOOOOOOOOOOOOOdOO",
+#else
+                        "OOOOOOOOOOOOOOOOOOididOOOOOOOOOOOOOOOOiiOiOOOOOOOOOOOOOOdOO",
+#endif
 			//testing
 			&mesh_trial_ref,
 			&mesh_grad_trial_ref,
@@ -100,6 +109,9 @@ static PyObject* cVOFV2_calculateResidual(PyObject* self,
 			&dt,
 			&lag_shockCapturing,
 			&shockCapturingDiffusion,
+#ifdef VRANS
+			&q_porosity,
+#endif
 			&u_l2g, 
 			&elementDiameter,
 			&u_dof, 
@@ -125,6 +137,9 @@ static PyObject* cVOFV2_calculateResidual(PyObject* self,
                         &u_grad_trial_ext,
                         &velocity_ext,
                         &n_ext,
+#ifdef VRANS
+			&ebqe_porosity_ext,
+#endif
                         &isDOFBoundary_u,
                         &bc_u_ext,
                         &isFluxBoundary_u,
@@ -160,6 +175,9 @@ static PyObject* cVOFV2_calculateResidual(PyObject* self,
 		    dt,
 		    lag_shockCapturing,
 		    shockCapturingDiffusion,
+#ifdef VRANS
+			   DDATA(q_porosity),
+#endif
 		    IDATA(u_l2g), 
 		    DDATA(elementDiameter),
 		    DDATA(u_dof), 
@@ -185,6 +203,9 @@ static PyObject* cVOFV2_calculateResidual(PyObject* self,
 		    DDATA(u_grad_trial_ext),
 		    DDATA(velocity_ext),
 		    DDATA(n_ext),
+#ifdef VRANS
+			   DDATA(ebqe_porosity_ext),
+#endif
 		    IDATA(isDOFBoundary_u),
 		    DDATA(bc_u_ext),
 		    IDATA(isFluxBoundary_u),
@@ -251,8 +272,17 @@ static PyObject* cVOFV2_calculateJacobian(PyObject* self,
     *bc_flux_u_ext,
     *u_test_dS_ext;
   PyObject *csrColumnOffsets_eb_u_u;
+#ifdef VRANS
+  PyObject
+    *q_porosity,
+    *ebqe_porosity_ext;
+#endif
   if (!PyArg_ParseTuple(args,
+#ifndef VRANS
                         "OOOOOOOOOOOOOOOOOOididOOOOOOOOOOOOOOiOOOOOOOOOOOOO",
+#else
+                        "OOOOOOOOOOOOOOOOOOididOOOOOOOOOOOOOOOiOOOOOOOOOOOOOO",
+#endif
                        //testing
 			&mesh_trial_ref,
 			&mesh_grad_trial_ref,
@@ -277,6 +307,9 @@ static PyObject* cVOFV2_calculateJacobian(PyObject* self,
 			&dt,
 			&lag_shockCapturing,
 			&shockCapturingDiffusion,
+#ifdef VRANS
+			&q_porosity,
+#endif
 			&u_l2g, 
 			&elementDiameter,
 			&u_dof, 
@@ -299,6 +332,9 @@ static PyObject* cVOFV2_calculateJacobian(PyObject* self,
 			&u_grad_trial_ext,
                         &velocity_ext,
                         &n_ext,
+#ifdef VRANS
+			&ebqe_porosity_ext,
+#endif
                         &isDOFBoundary_u,
                         &bc_u_ext,
                         &isFluxBoundary_u,
@@ -331,6 +367,9 @@ nElements_global,
 		    dt,
 		    lag_shockCapturing,
 		    shockCapturingDiffusion,
+#ifdef VRANS
+			     DDATA(q_porosity),
+#endif
 		    IDATA(u_l2g), 
 		    DDATA(elementDiameter),
 		    DDATA(u_dof), 
@@ -352,6 +391,9 @@ nElements_global,
 		    DDATA( u_grad_trial_ext),
 		    DDATA(velocity_ext),
 		    DDATA(n_ext),
+#ifdef VRANS
+			     DDATA(ebqe_porosity_ext),
+#endif
 		    IDATA(isDOFBoundary_u),
 		    DDATA(bc_u_ext),
 		    IDATA(isFluxBoundary_u),

@@ -43,12 +43,24 @@ namespace VOFV2_NAME
 {
   inline
     void evaluateCoefficients(const double v[nSpace],
-				const double& u,
+			      const double& u,
+#ifdef VRANS
+			      const double& porosity,
+#endif
 				double& m,
 				double& dm,
 				double f[nSpace],
 				double df[nSpace])
   {
+#ifdef VRANS
+    m = porosity*u;
+    dm= porosity;
+    for (int I=0; I < nSpace; I++)
+      {
+	f[I] = v[I]*porosity*u;
+	df[I] = v[I]*porosity;
+      }
+#else
     m = u;
     dm = 1.0;
     for (int I=0; I < nSpace; I++)
@@ -56,20 +68,23 @@ namespace VOFV2_NAME
 	f[I] = v[I]*u;
 	df[I] = v[I];
       }
+#endif
   }
   inline
     void calculateSubgridError_tau(const double& elementDiameter,
-				     const double& dmt,
-				     const double dH[nSpace],
-				     double& cfl,
-				     double& tau)
+				   const double& dmt,
+				   const double& dm,
+				   const double df[nSpace],
+				   double& cfl,
+				   double& tau)
   {
     double h,nrm_v,oneByAbsdt;
     h = elementDiameter;
     nrm_v=0.0;
     for(int I=0;I<nSpace;I++)
-      nrm_v+=dH[I]*dH[I];
+      nrm_v+=df[I]*df[I];
     nrm_v = sqrt(nrm_v);
+    nrm_v /= dm+1.0e-12;
     cfl = nrm_v/h;
     oneByAbsdt =  fabs(dmt);
     tau = 1.0/(2.0*nrm_v/h + oneByAbsdt + 1.0e-8);
@@ -202,69 +217,78 @@ extern "C"
                           double* normal_ref,
                           double* boundaryJac_ref,
                           int nElements_global,
-		double alphaBDF,
-		int lag_shockCapturing, /*mwf not used yet*/
-		double shockCapturingDiffusion,
-		int* u_l2g, 
-		double* elementDiameter,
-		double* u_dof,
-		double* u_trial, 
-		double* u_grad_trial, 
-		double* u_test_dV, 
-		double* u_grad_test_dV, 
-		double* velocity,
-		double* q_m,
-		double* q_u,
-		double* q_m_betaBDF,
-		double* q_cfl,
-		double* q_numDiff_u, 
-		double* q_numDiff_u_last, 
-		double* q_elementResidual_u, 
-		int offset_u, int stride_u, 
-		double* globalResidual,
-		int nExteriorElementBoundaries_global,
-		int* exteriorElementBoundariesArray,
-		int* elementBoundaryElementsArray,
-		int* elementBoundaryLocalElementBoundariesArray,
-		double* u_trial_ext,
-		double* u_grad_trial_ext,
-		double* ebqe_velocity_ext,
-		double* ebqe_n_ext,
-		int* isDOFBoundary_u,
-		double* ebqe_bc_u_ext,
-		int* isFluxBoundary_u,
-		double* ebqe_bc_flux_u_ext,
-		double* u_test_dS_ext,
-                double* phi,double eps,
-		double* ebqe_u,
-		double* ebqe_flux);
+			  double alphaBDF,
+			  int lag_shockCapturing, /*mwf not used yet*/
+			  double shockCapturingDiffusion,
+#ifdef VRANS
+			  const double* q_porosity,
+#endif
+			  int* u_l2g, 
+			  double* elementDiameter,
+			  double* u_dof,
+			  double* u_trial, 
+			  double* u_grad_trial, 
+			  double* u_test_dV, 
+			  double* u_grad_test_dV, 
+			  double* velocity,
+			  double* q_m,
+			  double* q_u,
+			  double* q_m_betaBDF,
+			  double* q_cfl,
+			  double* q_numDiff_u, 
+			  double* q_numDiff_u_last, 
+			  double* q_elementResidual_u, 
+			  int offset_u, int stride_u, 
+			  double* globalResidual,
+			  int nExteriorElementBoundaries_global,
+			  int* exteriorElementBoundariesArray,
+			  int* elementBoundaryElementsArray,
+			  int* elementBoundaryLocalElementBoundariesArray,
+			  double* u_trial_ext,
+			  double* u_grad_trial_ext,
+			  double* ebqe_velocity_ext,
+			  double* ebqe_n_ext,
+#ifdef VRANS
+			  const double* ebqe_porosity_ext,
+#endif
+			  int* isDOFBoundary_u,
+			  double* ebqe_bc_u_ext,
+			  int* isFluxBoundary_u,
+			  double* ebqe_bc_flux_u_ext,
+			  double* u_test_dS_ext,
+			  double* phi,double eps,
+			  double* ebqe_u,
+			  double* ebqe_flux);
   //void calculateJacobian_VOFV2(int nElements_global,
   void VOFV2_JAC(//element
-                          double* mesh_trial_ref,
-                          double* mesh_grad_trial_ref,
-                          double* mesh_dof,
-                          int* mesh_l2g,
-                          double* dV_ref,
-                          double* u_trial_ref,
-                          double* u_grad_trial_ref,
-                          double* u_test_ref,
-                          double* u_grad_test_ref,
-                          //element boundary
-                          double* mesh_trial_trace_ref,
-                          double* mesh_grad_trial_trace_ref,
-                          double* dS_ref,
-                          double* u_trial_trace_ref,
-                          double* u_grad_trial_trace_ref,
-                          double* u_test_trace_ref,
-                          double* u_grad_test_trace_ref,
-                          double* normal_ref,
-                          double* boundaryJac_ref,
-                          //physics
-                          int nElements_global,
-	       double alphaBDF,
-	       int lag_shockCapturing,/*mwf not used yet*/
-	       double shockCapturingDiffusion,
-	       int* u_l2g,
+		 double* mesh_trial_ref,
+		 double* mesh_grad_trial_ref,
+		 double* mesh_dof,
+		 int* mesh_l2g,
+		 double* dV_ref,
+		 double* u_trial_ref,
+		 double* u_grad_trial_ref,
+		 double* u_test_ref,
+		 double* u_grad_test_ref,
+		 //element boundary
+		 double* mesh_trial_trace_ref,
+		 double* mesh_grad_trial_trace_ref,
+		 double* dS_ref,
+		 double* u_trial_trace_ref,
+		 double* u_grad_trial_trace_ref,
+		 double* u_test_trace_ref,
+		 double* u_grad_test_trace_ref,
+		 double* normal_ref,
+		 double* boundaryJac_ref,
+		 //physics
+		 int nElements_global,
+		 double alphaBDF,
+		 int lag_shockCapturing,/*mwf not used yet*/
+		 double shockCapturingDiffusion,
+#ifdef VRANS
+		 const double* q_porosity,
+#endif
+		 int* u_l2g,
 	       double* elementDiameter,
 	       double* u_dof, 
 	       double* u_trial, 
@@ -285,6 +309,9 @@ extern "C"
 	       double* u_grad_trial_ext,
 	       double* ebqe_velocity_ext,
 	       double* ebqe_n,
+#ifdef VRANS
+		 const double* ebqe_porosity_ext,
+#endif
 	       int* isDOFBoundary_u,
 	       double* ebqe_bc_u_ext,
 	       int* isFluxBoundary_u,

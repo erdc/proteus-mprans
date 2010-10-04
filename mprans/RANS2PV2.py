@@ -367,6 +367,9 @@ class OneLevelRANS2PV2(OneLevelTransport):
         self.ebqe[('velocity',1)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
         self.ebqe[('velocity',2)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
         self.ebqe[('velocity',3)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
+        #VRANS start, defaults to RANS 
+        self.q[('r',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        #VRANS end
         self.points_elementBoundaryQuadrature= set()
         self.scalars_elementBoundaryQuadrature= set([('u',ci) for ci in range(self.nc)])
         self.vectors_elementBoundaryQuadrature= set()
@@ -551,7 +554,10 @@ class OneLevelRANS2PV2(OneLevelTransport):
         self.elementResidual[3].fill(0.0)
         self.Ct_sge = 4.0
         self.Cd_sge = 144.0
- 
+        #TODO how to request problem specific evaluations from coefficient class
+        if 'evaluateForcingTerms' in dir(self.coefficients):
+            self.coefficients.evaluateForcingTerms(self.timeIntegration.t,self.q,self.mesh,
+                                                   self.u[0].femSpace.elementMaps.psi,self.mesh.elementNodesArray)
         if self.forceStrongConditions:
             for cj in range(len(self.dirichletConditionsForceDOF)):
                 for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
@@ -599,6 +605,13 @@ class OneLevelRANS2PV2(OneLevelTransport):
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
+            #VRANS start
+            self.coefficients.linearDragFactor,
+            self.coefficients.nonlinearDragFactor,
+            self.coefficients.q_porosity,
+            self.coefficients.q_meanGrain,
+            self.q[('r',0)],
+            #VRANS end
             self.u[0].femSpace.dofMap.l2g,
             self.u[1].femSpace.dofMap.l2g,
             self.u[0].dof,
@@ -647,6 +660,9 @@ class OneLevelRANS2PV2(OneLevelTransport):
             self.coefficients.ebqe_phi,
             self.coefficients.ebqe_n,
             self.coefficients.ebqe_kappa,
+            #VRANS start
+            self.coefficients.ebqe_porosity,
+            #VRANS end
             self.numericalFlux.isDOFBoundary[0],
             self.numericalFlux.isDOFBoundary[1],
             self.numericalFlux.isDOFBoundary[2],
@@ -740,6 +756,13 @@ class OneLevelRANS2PV2(OneLevelTransport):
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
+            #VRANS start
+            self.coefficients.linearDragFactor,
+            self.coefficients.nonlinearDragFactor,
+            self.coefficients.q_porosity,
+            self.coefficients.q_meanGrain,
+            self.q[('r',0)],
+            #VRANS end
             self.u[0].femSpace.dofMap.l2g,
             self.u[1].femSpace.dofMap.l2g,
             self.u[0].dof,
@@ -791,6 +814,9 @@ class OneLevelRANS2PV2(OneLevelTransport):
             self.coefficients.ebqe_phi,
             self.coefficients.ebqe_n,
             self.coefficients.ebqe_kappa,
+            #VRANS start
+            self.coefficients.ebqe_porosity,
+            #VRANS end
             self.numericalFlux.isDOFBoundary[0],
             self.numericalFlux.isDOFBoundary[1],
             self.numericalFlux.isDOFBoundary[2],
@@ -845,7 +871,6 @@ class OneLevelRANS2PV2(OneLevelTransport):
                             self.nzval[i] = 0.0
                             #print "RBLES zeroing residual cj = %s dofN= %s global_dofN= %s " % (cj,dofN,global_dofN)
         log("Jacobian ",level=10,data=jacobian)
-        #mwf decide if this is reasonable for solver statistics
         self.nonlinear_function_jacobian_evaluations += 1
         return jacobian
     def calculateElementQuadrature(self):
@@ -1101,3 +1126,5 @@ class OneLevelRANS2PV2(OneLevelTransport):
         #     self.ebqe[('velocity',0)],
         #     self.ebq_global[('velocityAverage',0)])
         OneLevelTransport.calculateAuxiliaryQuantitiesAfterStep(self)
+
+

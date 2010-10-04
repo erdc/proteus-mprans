@@ -74,6 +74,9 @@ namespace RANS2PV2
 			      const double& phi,
 			      const double n[nSpace],
 			      const double& kappa,
+#ifdef VRANS
+			      const double porosity,
+#endif
 			      const double& p,
 			      const double grad_p[nSpace],
 			      const double& u,
@@ -129,7 +132,13 @@ namespace RANS2PV2
     rho = rho_0*(1.0-H_rho)+rho_1*H_rho;
     nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
     mu  = rho_0*nu_0*(1.0-H_mu)+rho_1*nu_1*H_mu;
-  
+#ifdef VRANS
+    //VRANS
+    rho   *= porosity;
+    mu    *= porosity;
+    d_rho *= porosity;
+    d_mu  *= porosity;
+#endif  
     //u momentum accumulation
     mom_u_acc=rho*u;
     dmom_u_acc_u=rho;
@@ -142,7 +151,25 @@ namespace RANS2PV2
     mom_w_acc=rho*w;
     dmom_w_acc_w=rho;
   
+#ifdef VRANS
+    //mass advective flux
+    mass_adv[0]=porosity*u;
+    mass_adv[1]=porosity*v;
+    mass_adv[2]=porosity*w;
   
+    dmass_adv_u[0]=porosity;
+    dmass_adv_u[1]=0.0;
+    dmass_adv_u[2]=0.0;
+
+    dmass_adv_v[0]=0.0;
+    dmass_adv_v[1]=porosity;
+    dmass_adv_v[2]=0.0;
+
+    dmass_adv_w[0]=0.0;
+    dmass_adv_w[1]=0.0;
+    dmass_adv_w[2]=porosity;
+
+#else  
     //mass advective flux
     mass_adv[0]=u;
     mass_adv[1]=v;
@@ -159,6 +186,7 @@ namespace RANS2PV2
     dmass_adv_w[0]=0.0;
     dmass_adv_w[1]=0.0;
     dmass_adv_w[2]=1.0;
+#endif
 
     //u momentum advective flux
     mom_u_adv[0]=rho*u*u;
@@ -261,34 +289,106 @@ namespace RANS2PV2
     dmom_w_ham_grad_p[0]=0.0;
     dmom_w_ham_grad_p[1]=0.0;
     dmom_w_ham_grad_p[2]=1.0;
-  }
-  
 
+#ifdef VRANS
+    //u momentum Hamiltonian (pressure)
+    mom_u_ham *= porosity;
+    dmom_u_ham_grad_p[0] *= porosity;
+
+    //v momentum Hamiltonian (pressure)
+    mom_v_ham *= porosity;
+    dmom_v_ham_grad_p[1] *= porosity;
+    
+    //w momentum Hamiltonian (pressure)
+    mom_w_ham *= porosity;
+    dmom_w_ham_grad_p[2] *= porosity;
+#endif
+  }
+
+#ifdef VRANS
+  inline
+    void updateDarcyForchheimerTerms_Ergun(const double linearDragFactor,
+					   const double nonlinearDragFactor,
+					   const double porosity,
+					   const double meanGrainSize,
+					   const double eps_rho,
+					   const double eps_mu,
+					   const double rho_0,
+					   const double nu_0,
+					   const double rho_1,
+					   const double nu_1,
+					   const double& phi,
+					   const double u,
+					   const double v,
+					   const double w,
+					   double& mom_u_source,
+					   double& mom_v_source,
+					   double& mom_w_source,
+					   double dmom_u_source[nSpace],
+					   double dmom_v_source[nSpace],
+					   double dmom_w_source[nSpace])
+  {
+    const double epsZero=1.0e-6;
+    double mu,nu,H_mu,uc,Ftilde=0.0,Kinv=0.0,voidFrac=1.0-porosity;
+
+    H_mu = smoothedHeaviside(eps_mu,phi);
+    nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
+    mu  = rho_0*nu_0*(1.0-H_mu)+rho_1*nu_1*H_mu;
+    
+    //end up with extra porosity term in final expression because multiply whole momentum 
+    //equation through by porosity
+    uc = sqrt(u*u+v*v*+w*w); 
+    if (voidFrac > epsZero)
+      Ftilde = porosity*meanGrainSize*1.0e-2/(voidFrac*mu); //viscosity term cancels below 
+    Ftilde *= nonlinearDragFactor;
+
+    if (porosity > epsZero && meanGrainSize > epsZero)
+      Kinv = 180.0*voidFrac*voidFrac/(meanGrainSize*meanGrainSize*porosity*porosity*porosity);
+    
+    Kinv *= linearDragFactor;
+
+    mom_u_source += porosity*porosity*mu*Kinv*(1.0+Ftilde*uc)*u;
+    mom_v_source += porosity*porosity*mu*Kinv*(1.0+Ftilde*uc)*v;
+    mom_w_source += porosity*porosity*mu*Kinv*(1.0+Ftilde*uc)*w;
+
+    dmom_u_source[0] = porosity*porosity*mu*Kinv*(1.0 + Ftilde*(uc + u*u/(uc+1.0e-12)));
+    dmom_u_source[1] = porosity*porosity*mu*Kinv*(0.0 + Ftilde*(u*v/(uc+1.0e-12)));
+    dmom_u_source[2] = porosity*porosity*mu*Kinv*(0.0 + Ftilde*(u*w/(uc+1.0e-12)));
+    
+    dmom_v_source[0] = porosity*porosity*mu*Kinv*(0.0 + Ftilde*(u*v/(uc+1.0e-12)));
+    dmom_v_source[1] = porosity*porosity*mu*Kinv*(1.0 + Ftilde*(uc + v*v/(uc+1.0e-12)));
+    dmom_v_source[2] = porosity*porosity*mu*Kinv*(0.0 + Ftilde*(w*v/(uc+1.0e-12)));
+
+    dmom_w_source[0] = porosity*porosity*mu*Kinv*(0.0 + Ftilde*(w*u/(uc+1.0e-12)));
+    dmom_w_source[1] = porosity*porosity*mu*Kinv*(0.0 + Ftilde*(w*v/(uc+1.0e-12)));
+    dmom_w_source[2] = porosity*porosity*mu*Kinv*(1.0 + Ftilde*(uc + w*w/(uc+1.0e-12)));
+  }
+#endif
   inline
     void calculateSubgridError_tau(const double&  Ct_sge,
 				   const double&  Cd_sge,
 				   const double* G,
 				   const double& G_dd_G,
 				   const double& tr_G,
-				   const double& rho,
+				   const double& dm,//rho
 				   const double& Dt,
-				   const double v[nSpace],
-				   const double& mu,
+				   const double df[nSpace],//v*rho
+				   const double& da,//mu
 				   double& tau_p,
 				   double& tau_v,
 				   double& cfl)
   {
-    const double rho2=rho*rho,Dt2=Dt*Dt,mu2=mu*mu;
-    register double v_d_Gv=0.0;
+    const double dm2=dm*dm,Dt2=Dt*Dt,da2=da*da;
+    register double df_d_Gdf=0.0;
     for(int I=0;I<nSpace;I++)
       for (int J=0;J<nSpace;J++)
-	v_d_Gv += v[I]*G[I*nSpace+J]*v[J];
-    cfl = 2.0*sqrt(v_d_Gv);
+	df_d_Gdf += df[I]*G[I*nSpace+J]*df[J];
+    cfl = 2.0*sqrt(df_d_Gdf)/(dm+1.0e-12);
     //cek 1.0/sqrt(rho2*Dt2 + 4*v_d_Gv + 144*mu2*G_dd_G); ?
     /* tau_v = 1.0/sqrt(rho2*Dt2 + 4*v_d_Gv + 144*mu2*G_dd_G); */
     /* tau_p = 1.0/(tr_G*tau_v);  */
     //cek "correct" tau
-    tau_v = 1.0/sqrt(Ct_sge*rho2*Dt2 + rho2*v_d_Gv + Cd_sge*mu2*G_dd_G);
+    tau_v = 1.0/sqrt(Ct_sge*dm2*Dt2 + dm*df_d_Gdf + Cd_sge*da2*G_dd_G);
     tau_p = 1.0/(tr_G*tau_v);
     //debug
     /* double tau_v_old = tau_v,tau_p_old = tau_p; */
@@ -858,6 +958,14 @@ extern "C"
 				  double Ct_sge,
 				  double Cd_sge,
 				  double C_dc,
+#ifdef VRANS
+				   //VRANS
+				  double linearDragFactor,
+				  double nonlinearDragFactor,
+				  const double* q_porosity,
+				  const double* q_meanGrain,
+				  const double* q_mass_source,
+#endif
 				  int* p_l2g, int* vel_l2g,
 				  double* p_dof, double* u_dof, double* v_dof, double* w_dof,
 				  double* g,
@@ -891,6 +999,9 @@ extern "C"
 				  double* ebqe_phi_ext,
 				  double* ebqe_n_ext,
 				  double* ebqe_kappa_ext,
+#ifdef VRANS
+				  const double* ebqe_porosity_ext,
+#endif	
 				  int* isDOFBoundary_p,
 				  int* isDOFBoundary_u,
 				  int* isDOFBoundary_v,
@@ -960,6 +1071,14 @@ extern "C"
 				  double Ct_sge,
 				  double Cd_sge,
 				  double C_dc,
+#ifdef VRANS
+				  double linearDragFactor,
+				  double nonlinearDragFactor,
+				  //VRANS
+				  const double* q_porosity,
+				  const double* q_meanGrain,
+				  const double* q_mass_source,
+#endif
 				  int* p_l2g, int* vel_l2g,
 				  double* p_dof, double* u_dof, double* v_dof, double* w_dof,
 				  double* g,
@@ -1003,6 +1122,9 @@ extern "C"
 				  double* ebqe_phi_ext,
 				  double* ebqe_n_ext,
 				  double* ebqe_kappa_ext,
+#ifdef VRANS
+				  const double* ebqe_porosity_ext,
+#endif					   
 				  int* isDOFBoundary_p,
 				  int* isDOFBoundary_u,
 				  int* isDOFBoundary_v,

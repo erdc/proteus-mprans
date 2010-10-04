@@ -529,6 +529,9 @@ class OneLevelVOFV2(OneLevelTransport):
                   self.timeIntegration.alpha_bdf,
                   self.shockCapturing.lag,
                   self.shockCapturing.shockCapturingFactor,
+            #VRANS start
+            self.coefficients.q_porosity,
+            #VRANS end
                   self.u[0].femSpace.dofMap.l2g,
                   self.mesh.elementDiametersArray,
                   self.u[0].dof,
@@ -554,6 +557,9 @@ class OneLevelVOFV2(OneLevelTransport):
                   self.ebqe[('grad(v)',0)],
                   self.coefficients.ebqe_v,
                   self.ebqe[('n')],
+            #VRANS start
+            self.coefficients.ebqe_porosity,
+            #VRANS end
                   self.numericalFlux.isDOFBoundary[0],
                   self.numericalFlux.ebqe[('u',0)],
                   self.ebqe[('advectiveFlux_bc_flag',0)],
@@ -618,6 +624,9 @@ class OneLevelVOFV2(OneLevelTransport):
                   self.timeIntegration.alpha_bdf,
                   self.shockCapturing.lag,
                   self.shockCapturing.shockCapturingFactor,
+            #VRANS start
+            self.coefficients.q_porosity,
+            #VRANS end
                   self.u[0].femSpace.dofMap.l2g,
                   self.mesh.elementDiametersArray,
                   self.u[0].dof,
@@ -639,6 +648,9 @@ class OneLevelVOFV2(OneLevelTransport):
                   self.ebqe[('grad(v)',0)],
                   self.coefficients.ebqe_v,
                   self.ebqe[('n')],
+            #VRANS start
+            self.coefficients.ebqe_porosity,
+            #VRANS end
                   self.numericalFlux.isDOFBoundary[0],
                   self.numericalFlux.ebqe[('u',0)],
                   self.ebqe[('advectiveFlux_bc_flag',0)],
