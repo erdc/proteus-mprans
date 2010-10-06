@@ -35,7 +35,7 @@ elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
 elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
 
 subgridErrorType = HamiltonJacobi_ASGS
-if LevelModelType == RDLSV2.OneLevelRDLSV2 and not RDLSV2.debugRDLS:
+if LevelModelType == RDLS.LevelModel:#RDLSV2.OneLevelRDLSV2 and not RDLSV2.debugRDLS:
     subgridErrorType = HamiltonJacobi_ASGS_opt
 if rdtimeIntegration == 'newton':
     subgridError = subgridErrorType(coefficients,nd,stabFlag='2',lag=False)
@@ -72,21 +72,15 @@ nl_atol_res = 0.01*L[0]/nn
 atol_res[0] = 1.0e-6 #for pseudo transient
 rtol_res[0] = 0.0
 
-if LevelModelType == RDLSV2.OneLevelRDLSV2:
-    numericalFluxType = DoNothing
-else:    
-    numericalFluxType = NF_base#None
+numericalFluxType = DoNothing
 
 maxNonlinearIts = 50 #1 for PTC
 
 matrix = SparseMatrix
 
 if usePETSc:
-    if LevelModelType == RDLSV2.OneLevelRDLSV2:
-        numericalFluxType = DoNothing
-    else:    
-        numericalFluxType = NF_base#None
-
+    numericalFluxType = DoNothing
+    
     multilevelLinearSolver = PETSc
     
     levelLinearSolver = PETSc

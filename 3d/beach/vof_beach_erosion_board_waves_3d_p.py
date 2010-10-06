@@ -1,18 +1,20 @@
 from proteus import *
 from proteus.default_p import *
 from beach_erosion_board_waves_3d import *
-from proteus.mprans import VOFV2
+from proteus.mprans import VOF#VOFV2
 from proteus import VolumeAveragedVOF
 
 
 if useSpongeLayer:
     if useVOF:
         #LevelModelType = VolumeAveragedVOF.OneLevelVolumeAveragedVOF
-        LevelModelType = VOFV2.OneLevelVOFV2
-    coefficients = VolumeAveragedVOFCoefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,
-                                                 setParamsFunc=spongeLayerFunc,checkMass=checkMass)
+        #LevelModelType = VOFV2.OneLevelVOFV2
+        LevelModelType = VOF.LevelModel
+    coefficients = VOF.Coefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,checkMass=checkMass)
+    #coefficients = VolumeAveragedVOFCoefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,
+    #                                             setParamsFunc=spongeLayerFunc,checkMass=checkMass)
 else:
-    coefficients = VOFCoefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,checkMass=checkMass)
+    coefficients = VOF.Coefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,checkMass=checkMass)
 
 dirichletConditions = {0:getDBC_vof}
 

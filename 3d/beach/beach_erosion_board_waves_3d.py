@@ -14,14 +14,14 @@ useVOF   =True
 useRDLS  =True
 useMCorr =True
 
-applyCorrection  =True#True#False
-applyRedistancing=True#right now the solution is more symmetric without redistancing
+applyCorrection  =True
+applyRedistancing=True
 rdtimeIntegration='osher'#'osher-psitc'#tte
 sloshbox_quad_order = 3 #need 4 for quadratics
 
-checkMass = True
-useBackwardEuler=True#True#False
-useBackwardEuler_ls=True#False
+checkMass = False
+useBackwardEuler=True
+useBackwardEuler_ls=True
 
 nonlinearSolverNorm = LinearAlgebraTools.l2NormAvg
 
@@ -153,8 +153,8 @@ smagorinskyConstant_1 = 0.5
 sigma_01 = 0.0#72.8e-3
 
 import math
-T =0.3#wavePeriod*5.0#*10.0#10.#*10.0#2.5#3.0#10.0
-nDTout = 3#math.ceil(T/wavePeriod)*10+1#51#101#None#2#None, can't be 1
+T =wavePeriod*5.0#*10.0#10.#*10.0#2.5#3.0#10.0
+nDTout = math.ceil(T/wavePeriod)*10+1#51#101#None#2#None, can't be 1
 runCFL = 0.33
 
 dt_init = min(0.01*wavePeriod,T)

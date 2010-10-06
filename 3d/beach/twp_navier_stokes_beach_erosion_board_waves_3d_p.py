@@ -2,7 +2,7 @@ from proteus import *
 from proteus.default_p import *
 from beach_erosion_board_waves_3d import *
 from proteus import VANS2P
-from proteus.mprans import RANS2PV2
+from proteus.mprans import RANS2P#RANS2PV2
 """
 Two-phase incompressible Navier-Stokes flow of air and water in a perturbed box
 """
@@ -37,57 +37,39 @@ Two-phase incompressible Navier-Stokes flow of air and water in a perturbed box
 #
 if useVANS2P:
     #LevelModelType = VANS2P.OneLevelVANS2P
-    LevelModelType = RANS2PV2.OneLevelRANS2PV2
+    #LevelModelType = RANS2PV2.OneLevelRANS2PV2
+    LevelModelType = RANS2P.LevelModel
  
 
-coefficients = VolumeAveragedTwophaseNavierStokes(epsFact=epsFact_viscosity,
-                                                  sigma=sigma_01,
-                                                  rho_0 = rho_0,
-                                                  nu_0 = nu_0,
-                                                  rho_1 = rho_1,
-                                                  nu_1 = nu_1,
-                                                  g=g,
-                                                  nd=nd,
-                                                  LS_model=1,
-                                                  epsFact_density=epsFact_density,
-                                                  stokes=useStokes,
-                                                  sd = True,
-                                                  turbulenceClosureFlag=turbulenceClosureFlag,
-                                                  smagorinskyConstant_0=smagorinskyConstant_0,
-                                                  smagorinskyConstant_1=smagorinskyConstant_1,
-                                                  setParamsFunc=spongeLayerFunc,
-                                                  meanGrainSize=spongeGrainSize,
-                                                  porosityTypes=porosityTypes,
-                                                  meanGrainSizeTypes=meanGrainSizeTypes,
-                                                  killNonlinearDrag = killNonlinearDragInSpongeLayer,
-                                                  waveFlag=waveFlag,
-                                                  waveHeight=waveHeight,
-                                                  waveCelerity=waveCelerity,
-                                                  waveFrequency=waveFrequency,
-                                                  waveNumber=waveNumber,
-                                                  waterDepth=waterLevelBase,
-                                                  Omega_s=Omega_s,
-                                                  epsFact_source=epsFact_source)
-# coefficients = TwophaseNavierStokesWithWaveMaker_ST_LS_SO(epsFact=epsFact_viscosity,
-#                                                           sigma=sigma_01,
-#                                                           rho_0 = rho_0,
-#                                                           nu_0 = nu_0,
-#                                                           rho_1 = rho_1,
-#                                                           nu_1 = nu_1,
-#                                                           g=g,
-#                                                           nd=nd,
-#                                                           LS_model=2,
-#                                                           KN_model=0,
-#                                                           epsFact_density=epsFact_density,
-#                                                           stokes=useStokes,
-#                                                           waveFlag=waveFlag,
-#                                                           waveHeight=waveHeight,
-#                                                           waveCelerity=waveCelerity,
-#                                                           waveFrequency=waveFrequency,
-#                                                           waveNumber=waveNumber,
-#                                                           waterDepth=waterLevelBase,
-#                                                           Omega_s=Omega_s,
-#                                                           epsFact_source=epsFact_source)
+#coefficients = VolumeAveragedTwophaseNavierStokes(epsFact=epsFact_viscosity,
+coefficients = RANS2P.VolumeAveragedCoefficients(epsFact=epsFact_viscosity,
+                                                sigma=sigma_01,
+                                                rho_0 = rho_0,
+                                                nu_0 = nu_0,
+                                                rho_1 = rho_1,
+                                                nu_1 = nu_1,
+                                                g=g,
+                                                nd=nd,
+                                                LS_model=1,
+                                                epsFact_density=epsFact_density,
+                                                stokes=useStokes,
+                                                sd = True,
+                                                #turbulenceClosureFlag=turbulenceClosureFlag,
+                                                #smagorinskyConstant_0=smagorinskyConstant_0,
+                                                #smagorinskyConstant_1=smagorinskyConstant_1,
+                                                setParamsFunc=spongeLayerFunc,
+                                                meanGrainSize=spongeGrainSize,
+                                                porosityTypes=porosityTypes,
+                                                meanGrainSizeTypes=meanGrainSizeTypes,
+                                                killNonlinearDrag = killNonlinearDragInSpongeLayer,
+                                                waveFlag=waveFlag,
+                                                waveHeight=waveHeight,
+                                                waveCelerity=waveCelerity,
+                                                waveFrequency=waveFrequency,
+                                                waveNumber=waveNumber,
+                                                waterDepth=waterLevelBase,
+                                                Omega_s=Omega_s,
+                                                epsFact_source=epsFact_source)
 
 
 
@@ -96,32 +78,4 @@ fluxBoundaryConditions = fluxBoundaryConditions_ns
 advectiveFluxBoundaryConditions = advectiveFluxBoundaryConditions_ns
 diffusiveFluxBoundaryConditions = diffusiveFluxBoundaryConditions_ns
 initialConditions = initialConditions_ns
-# coefficients = TwophaseNavierStokes_LS_SO(epsFact=epsFact_viscosity,
-#                                              rho_0 = rho_0,
-#                                              nu_0 = nu_0,
-#                                              rho_1 = rho_1,
-#                                              nu_1 = nu_1,
-#                                              g=g,
-#                                              nd=nd,
-#                                              LS_model=2)
-# if VOF:
-#     coefficients = TwophaseNavierStokes_VOF_SO(epsFact=epsFact,
-#                                                rho_0 = rho_0,
-#                                                nu_0 = nu_0,
-#                                                rho_1 = rho_1,
-#                                                nu_1 = nu_1,
-#                                                g=g,
-#                                                nd=nd)
-# else:
-#     coefficients = TwophaseNavierStokes_LS_SO(epsFact=epsFact,
-#                                               rho_0 = rho_0,
-#                                               nu_0 = nu_0,
-#                                               rho_1 = rho_1,
-#                                               nu_1 = nu_1,
-#                                               g=g,
-#                                               nd=nd,
-#                                               LS_model=1)
-#coefficients = TwophaseStokes_LS_SO(g=[0.0,9.8],nd=nd,steady=True)
-#coefficients.rho_1 = coefficients.rho_0
-#coefficients.mu_1 = coefficients.mu_0
 
