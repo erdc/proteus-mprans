@@ -35,6 +35,8 @@ namespace proteus
 			   {
 			     if (nQuadraturePoints_elementIn == 5)
 			       return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,4,4,4>,3,5,4,4,4,4>());
+			     else if (nQuadraturePoints_elementIn == 4)
+			       return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,4,4,4>,3,4,4,4,4,3>());
 			     else
 			       abort();
 			   }

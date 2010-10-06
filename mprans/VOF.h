@@ -433,7 +433,7 @@ namespace proteus
 		}
 	      //calculate tau and tau*Res
 	      calculateSubgridError_tau(elementDiameter[eN],dm_t,df,cfl[eN_k],tau);
-	      subgridError_u = tau*pdeResidual_u;
+	      subgridError_u = -tau*pdeResidual_u;
 	      //
 	      //calcualte shock capturing diffusion
 	      //
@@ -808,7 +808,7 @@ namespace proteus
 					cfl[eN_k],
 					tau);
 	      for(int j=0;j<nDOF_trial_element;j++)
-		dsubgridError_u_u[j] = tau*dpdeResidual_u_u[j];
+		dsubgridError_u_u[j] = -tau*dpdeResidual_u_u[j];
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
 		  int eN_k_i=eN_k*nDOF_test_element+i;
