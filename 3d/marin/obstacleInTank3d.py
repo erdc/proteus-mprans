@@ -34,8 +34,9 @@ box_length = 0.161
 box_xy = [2.3955,.2985]
 #
 he = 0.75*box_width#
-#he = 0.4*box_width/(2.0**(1.0/3.0))#2G
-he = 0.4*box_width/2.0#16G
+he = 0.4*box_width#
+he = 0.2*box_width#
+#he = 0.4*box_width/2.0#16G
 #he = 0.25*0.4*box_width#64*2G
 #he = 0.5*0.25*0.4*box_width#64*2G
 
@@ -104,9 +105,9 @@ def shockSignedDistance(x):
 #
 #time interval etc.
 #
-dt_init=he*0.001
-T = .025
-nDTout=3#500
+dt_init=he*0.01
+T = 6.0
+nDTout=100#500
 runCFL = 1.0#0.33
 useFixedStep = False
 #
@@ -126,6 +127,7 @@ useBackwardEuler_ls=True
 lag_ns_subgridError=True
 lag_ns_shockCapturing=True
 lag_ls_shockCapturing=True
+lag_vof_shockCapturing=True
 #shock capturing diffusion
 ns_shockCapturingFactor=0.33
 ls_shockCapturingFactor=0.33
@@ -141,7 +143,7 @@ epsFact_consrv_dirac=1.5
 epsFact_consrv_diffusion=10.0
 epsFact_vof=1.5
 #
-usePETSc=False
+usePETSc=True#False
 spaceOrder=1
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node

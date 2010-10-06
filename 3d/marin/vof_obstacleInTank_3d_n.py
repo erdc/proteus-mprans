@@ -17,8 +17,8 @@ dtNLgrowFactor  = 2.0
 dtNLreduceFactor= 0.5#75
 #stepController = HeuristicNL_dt_controller
 femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)#linear
-subgridError = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)
+shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=lag_vof_shockCapturing)#linear
+subgridError = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)#it's linear anyway
 massLumping = False
 numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
 
@@ -39,13 +39,15 @@ maxNonlinearIts = 50
 matrix = SparseMatrix
 
 if usePETSc:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
+     multilevelLinearSolver = KSP_petsc4py
+     levelLinearSolver = KSP_petsc4py
+     linear_solver_options_prefix = 'vof_'
+     #linearSmoother = None
+     linearSmoother = StarILU
+     linearSolverConvergenceTest = 'r-true'
 else:
     multilevelLinearSolver = LU
     levelLinearSolver = LU
-
-linearSmoother = GaussSeidel
 
 linTolFac = 0.001
 

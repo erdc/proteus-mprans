@@ -24,7 +24,6 @@ elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,obstacleInTank_quad_orde
 
 if rdtimeIntegration != 'newton':    
     subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=True)
-    
     shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=True)
 else:
     subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=False)
@@ -38,6 +37,7 @@ multilevelNonlinearSolver  = MultilevelEikonalSolver
 levelNonlinearSolver = UnstructuredFMMandFSWsolvers.FMMEikonalSolver
 multilevelNonlinearSolver  = NLNI
 levelNonlinearSolver = Newton
+
 if rdtimeIntegration != 'newton':    
     maxLineSearches = 0
 nonlinearSmoother = NLGaussSeidel
@@ -57,14 +57,15 @@ maxNonlinearIts = 50 #1 for PTC
 matrix = SparseMatrix
 
 if usePETSc:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver = KSP_petsc4py
+    linear_solver_options_prefix = 'rdls_'
+    linearSmoother = None
+    linearSolverConvergenceTest = 'r-true'
 else:
     multilevelLinearSolver = LU
     levelLinearSolver = LU
     
-linearSmoother = GaussSeidel
-
 linTolFac = 0.001
 
 conservativeFlux = None

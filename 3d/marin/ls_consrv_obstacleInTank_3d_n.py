@@ -4,24 +4,14 @@ from obstacleInTank3d import *
 from ls_consrv_obstacleInTank_3d_p import *
 
 
-timeIntegrator = ForwardIntegrator
-timeIntegration = BackwardEuler#NoIntegration
+stepController = FixedStep
 timeIntegration = NoIntegration
 
 femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-#femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
-#femSpaces = {0:DG_AffineQuadraticOnSimplexWithNodalBasis}
-#femSpaces = {0:DG_AffineLinearOnSimplexWithNodalBasis}
-#femSpaces = {0:DG_Constants}
-#femSpaces = {0:DG_AffineP2_OnSimplexWithMonomialBasis}
 
 elementQuadrature = SimplexGaussQuadrature(nd,obstacleInTank_quad_order)
 
 elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,obstacleInTank_quad_order)
-
-# elementQuadrature = SimplexLobattoQuadrature(nd,1)
-
-# elementBoundaryQuadrature = SimplexLobattoQuadrature(nd-1,1)
 
 subgridError = None
 
@@ -41,7 +31,7 @@ fullNewtonFlag = True
 
 tolFac = 0.0
 
-nl_atol_res = 0.001*he#1.0e-10
+nl_atol_res = 0.001*he
 
 maxNonlinearIts = 10
 maxLineSearches =0
@@ -49,13 +39,15 @@ maxLineSearches =0
 matrix = SparseMatrix
 
 if usePETSc:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver = KSP_petsc4py
+    linear_solver_options_prefix = 'mcorr_'
+    linearSmoother = None
+    linearSolverConvergenceTest = 'r-true'
 else:
     multilevelLinearSolver = LU
     levelLinearSolver = LU
 
-linearSmoother = GaussSeidel
 
 linTolFac = 1.0e-6
 

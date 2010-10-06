@@ -13,12 +13,6 @@ if useBackwardEuler:
     nonlinearIterationsCeil=5
     dtNLgrowFactor  = 2.0
     dtNLreduceFactor= 0.5#75
-#    timeIntegration = FLCBDF
-#    stepController = FLCBDF_controller_sys
-#    rtol_u[1] = 1.0e-2
-#    rtol_u[2] = 1.0e-2
-#    atol_u[1] = 1.0e-2#1.0e-3
-#    atol_u[2] = 1.0e-2#1.0e-3
 else:
     timeIntegration = FLCBDF
     stepController = FLCBDF_controller_sys
@@ -48,13 +42,10 @@ elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,obstacleInTank_quad_orde
 
 subgridError = None
 
-#subgridError = NavierStokesASGS_velocity_pressure(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
-#subgridError = NavierStokesASGS_velocity_pressure_opt(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
 subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
 
 massLumping = False
 
-#shockCapturing = NavierStokes_SC(coefficients,nd,ns_shockCapturingFactor,lag=True)
 shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=lag_ns_shockCapturing)
 
 numericalFluxType = None
@@ -79,8 +70,11 @@ matrix = SparseMatrix
 numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_IIPG_exterior #need weak for parallel and global conservation
 
 if usePETSc:    
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver = KSP_petsc4py
+    linear_solver_options_prefix = 'rans2p_'
+    linearSmoother = StarILU
+    linearSolverConvergenceTest = 'r-true'
 else:
     multilevelLinearSolver = LU
     levelLinearSolver = LU

@@ -387,6 +387,7 @@ class LevelModel(OneLevelTransport):
         self.q[('m_last',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('m_tmp',0)] = self.q[('u',0)]#numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('m',0)] = self.q[('u',0)]#numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        #cek todo for NCLS we really don't need dH because it's just q_v from the flow model
         self.q[('dH',0,0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
         self.q[('dH_sge',0,0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
         self.q[('cfl',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')

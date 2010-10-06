@@ -4,9 +4,7 @@ from ls_obstacleInTank_3d_p import *
 
 if useBackwardEuler_ls:
     timeIntegration = BackwardEuler_cfl
-    #timeIntegration = BackwardEuler
     stepController = Min_dt_controller
-    #stepController = HeuristicNL_dt_controller
     stepController = HeuristicNL_dt_controller
     nonlinearIterationsFloor = 3
     nonlinearIterationsCeil=5
@@ -29,7 +27,6 @@ elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,obstacleInTank_quad_orde
 
 
 subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)#it's  linear anyway
-#subgridError = HamiltonJacobi_ASGS(coefficients,nd,lag=False)#it's  linear anyway
 
 massLumping = False
 
@@ -56,13 +53,14 @@ maxNonlinearIts = 50
 matrix = SparseMatrix
 
 if usePETSc:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver = KSP_petsc4py
+    linear_solver_options_prefix = 'ncls_'
+    linearSmoother = None
+    linearSolverConvergenceTest = 'r-true'
 else:
     multilevelLinearSolver = LU
     levelLinearSolver = LU
-    
-linearSmoother = GaussSeidel
 
 linTolFac = 0.001
 

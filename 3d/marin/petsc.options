@@ -1,0 +1,5 @@
+-rans2p_ksp_type bcgsl -rans2p_ksp_rtol 0.0 -rans2p_ksp_atol 1.0e-8 -rans2p_ksp_monitor_true_residual
+-ncls_ksp_type bcgs -ncls_pc_type jacobi -ncls_ksp_rtol 0.0 -ncls_ksp_atol 1.0e-8 -ncls_ksp_monitor_true_residual
+-vof_ksp_type bcgs -vof_ksp_rtol 0.0 -vof_ksp_atol 1.0e-8 -vof_ksp_monitor_true_residual
+-rdls_ksp_type bcgs -rdls_pc_type jacobi -rdls_ksp_rtol 0.0 -rdls_ksp_atol 1.0e-8 -rdls_ksp_monitor_true_residual
+-mcorr_ksp_type bcgs -mcorr_pc_type jacobi -mcorr_ksp_rtol 0.0 -mcorr_ksp_atol 1.0e-8 -mcorr_ksp_monitor_true_residual
