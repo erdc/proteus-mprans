@@ -11,7 +11,7 @@ else:
     stepController = Osher_PsiTC_controller
     runCFL=1.0
     rtol_res[0] = 0.0
-    atol_res[0] = he*0.1#1.0e-6
+    atol_res[0] = he*0.01#1.0e-6
 
 if spaceOrder == 1:
     femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
@@ -49,10 +49,15 @@ tolFac = 0.0
 
 if rdtimeIntegration != 'newton':
     nl_atol_res = 0.1*he
+    maxNonlinearIts = 1
+    maxLineSearches =0
+    nonlinearSolverConvergenceTest = 'its'
+    levelNonlinearSolverConvergenceTest = 'its'
 else:
-    nl_atol_res = 0.1*he#1.0e-7#0.01*L[0]/nnx
+    nl_atol_res = 0.01*he#1.0e-7#0.01*L[0]/nnx
+    maxNonlinearIts = 50
+    maxLineSearches =100
 
-maxNonlinearIts = 50 #1 for PTC
 
 matrix = SparseMatrix
 

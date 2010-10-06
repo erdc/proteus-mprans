@@ -76,13 +76,14 @@ matrix = SparseMatrix
 numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_IIPG_exterior #need weak for parallel and global conservation
 
 if usePETSc:    
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver = KSP_petsc4py
+    linear_solver_options_prefix = 'rans2p_'
+    linearSmoother = StarILU
+    linearSolverConvergenceTest = 'r-true'
 else:
     multilevelLinearSolver = LU
     levelLinearSolver = LU
-
-linearSmoother = GaussSeidel
 
 linTolFac = 0.001
 

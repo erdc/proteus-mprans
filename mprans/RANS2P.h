@@ -4,7 +4,7 @@
 #include <iostream>
 #include "CompKernel.h"
 #include "ModelFactory.h"
-
+//#define COMPRESSIBLE_FORM
 namespace proteus
 {
   class RANS2P_base
@@ -380,6 +380,8 @@ namespace proteus
       rho = rho_0*(1.0-H_rho)+rho_1*H_rho;
       nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
       mu  = rho_0*nu_0*(1.0-H_mu)+rho_1*nu_1*H_mu;
+
+#ifdef COMPRESSIBLE_FORM
       //u momentum accumulation
       mom_u_acc=rho*u;
       dmom_u_acc_u=rho;
@@ -490,9 +492,9 @@ namespace proteus
   
       //momentum sources
       norm_n = sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
-      mom_u_source = -rho*g[0] - d_mu*sigma*kappa*n[0];
-      mom_v_source = -rho*g[1] - d_mu*sigma*kappa*n[1];
-      mom_w_source = -rho*g[2] - d_mu*sigma*kappa*n[2];
+      mom_u_source = -rho*g[0];// - d_mu*sigma*kappa*n[0];
+      mom_v_source = -rho*g[1];// - d_mu*sigma*kappa*n[1];
+      mom_w_source = -rho*g[2];// - d_mu*sigma*kappa*n[2];
    
       //u momentum Hamiltonian (pressure)
       mom_u_ham = grad_p[0];
@@ -511,6 +513,139 @@ namespace proteus
       dmom_w_ham_grad_p[0]=0.0;
       dmom_w_ham_grad_p[1]=0.0;
       dmom_w_ham_grad_p[2]=1.0;
+#else
+      //u momentum accumulation
+      mom_u_acc=u;
+      dmom_u_acc_u=1.0;
+  
+      //v momentum accumulation
+      mom_v_acc=v;
+      dmom_v_acc_v=1.0;
+  
+      //w momentum accumulation
+      mom_w_acc=w;
+      dmom_w_acc_w=1.0;
+  
+  
+      //mass advective flux
+      mass_adv[0]=u;
+      mass_adv[1]=v;
+      mass_adv[2]=w;
+  
+      dmass_adv_u[0]=1.0;
+      dmass_adv_u[1]=0.0;
+      dmass_adv_u[2]=0.0;
+
+      dmass_adv_v[0]=0.0;
+      dmass_adv_v[1]=1.0;
+      dmass_adv_v[2]=0.0;
+
+      dmass_adv_w[0]=0.0;
+      dmass_adv_w[1]=0.0;
+      dmass_adv_w[2]=1.0;
+
+      //u momentum advective flux
+      mom_u_adv[0]=u*u;
+      mom_u_adv[1]=u*v;
+      mom_u_adv[2]=u*w;
+  
+      dmom_u_adv_u[0]=2.0*u;
+      dmom_u_adv_u[1]=v;
+      dmom_u_adv_u[2]=w;
+  
+      dmom_u_adv_v[0]=0.0;
+      dmom_u_adv_v[1]=u;
+      dmom_u_adv_v[2]=0.0;
+  
+      dmom_u_adv_w[0]=0.0;
+      dmom_u_adv_w[1]=0.0;
+      dmom_u_adv_w[2]=u;
+  
+      //v momentum advective_flux
+      mom_v_adv[0]=v*u;
+      mom_v_adv[1]=v*v;
+      mom_v_adv[2]=v*w;
+  
+      dmom_v_adv_u[0]=v;
+      dmom_v_adv_u[1]=0.0;
+      dmom_v_adv_u[2]=0.0;
+  
+      dmom_v_adv_w[0]=0.0;
+      dmom_v_adv_w[1]=0.0;
+      dmom_v_adv_w[2]=v;
+  
+      dmom_v_adv_v[0]=u;
+      dmom_v_adv_v[1]=2.0*v;
+      dmom_v_adv_v[2]=w;
+  
+      //w momentum advective_flux
+      mom_w_adv[0]=w*u;
+      mom_w_adv[1]=w*v;
+      mom_w_adv[2]=w*w;
+  
+      dmom_w_adv_u[0]=w;
+      dmom_w_adv_u[1]=0.0;
+      dmom_w_adv_u[2]=0.0;
+  
+      dmom_w_adv_v[0]=0.0;
+      dmom_w_adv_v[1]=w;
+      dmom_w_adv_v[2]=0.0;
+  
+      dmom_w_adv_w[0]=u;
+      dmom_w_adv_w[1]=v;
+      dmom_w_adv_w[2]=2.0*w;
+
+      //u momentum diffusion tensor
+      mom_u_diff_ten[0] = 2.0*nu;
+      mom_u_diff_ten[1] = nu;
+      mom_u_diff_ten[2] = nu;
+  
+      mom_uv_diff_ten[0]=nu;
+  
+      mom_uw_diff_ten[0]=nu;
+  
+      //v momentum diffusion tensor
+      mom_v_diff_ten[0] = nu;
+      mom_v_diff_ten[1] = 2.0*nu;
+      mom_v_diff_ten[2] = nu;
+  
+      mom_vu_diff_ten[0]=nu;
+  
+      mom_vw_diff_ten[0]=nu;
+  
+      //w momentum diffusion tensor
+      mom_w_diff_ten[0] = nu;
+      mom_w_diff_ten[1] = nu;
+      mom_w_diff_ten[2] = 2.0*nu;
+  
+      mom_wu_diff_ten[0]=nu;
+  
+      mom_wv_diff_ten[0]=nu;
+  
+      //momentum sources
+      norm_n = sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+      mom_u_source = -g[0];// - d_mu*sigma*kappa*n[0]/(rho*(norm_n+1.0e-8));
+      mom_v_source = -g[1];// - d_mu*sigma*kappa*n[1]/(rho*(norm_n+1.0e-8));
+      mom_w_source = -g[2];// - d_mu*sigma*kappa*n[2]/(rho*(norm_n+1.0e-8));
+   
+      //u momentum Hamiltonian (pressure)
+      mom_u_ham = grad_p[0]/rho;
+      dmom_u_ham_grad_p[0]=1.0/rho;
+      dmom_u_ham_grad_p[1]=0.0;
+      dmom_u_ham_grad_p[2]=0.0;
+  
+      //v momentum Hamiltonian (pressure)
+      mom_v_ham = grad_p[1]/rho;
+      dmom_v_ham_grad_p[0]=0.0;
+      dmom_v_ham_grad_p[1]=1.0/rho;
+      dmom_v_ham_grad_p[2]=0.0;
+  
+      //w momentum Hamiltonian (pressure)
+      mom_w_ham = grad_p[2]/rho;
+      dmom_w_ham_grad_p[0]=0.0;
+      dmom_w_ham_grad_p[1]=0.0;
+      dmom_w_ham_grad_p[2]=1.0/rho;
+#endif
     }
   
     inline
@@ -518,24 +653,24 @@ namespace proteus
 				   const double& elementDiameter,
 				   const double& dmt,
 				   const double& dm,
-				   const double f[nSpace],
+				   const double df[nSpace],
 				   const double& a,
 				   double& tau_v,
 				   double& tau_p,
 				   double& cfl)
     {
-      double h,oneByAbsdt,density,viscosity,nrm_v;
+      double h,oneByAbsdt,density,viscosity,nrm_df;
       h = hFactor*elementDiameter;
       density = dm;
       viscosity =  a;
-      nrm_v=0.0;
+      nrm_df=0.0;
       for(int I=0;I<nSpace;I++)
-	nrm_v+=f[I]*f[I];
-      nrm_v = sqrt(nrm_v);
-      cfl = nrm_v/h;
+	nrm_df+=df[I]*df[I];
+      nrm_df = sqrt(nrm_df);
+      cfl = nrm_df/(h*density);
       oneByAbsdt =  fabs(dmt);
-      tau_v = 1.0/(4.0*viscosity/(h*h) + 2.0*density*nrm_v/h + oneByAbsdt);
-      tau_p = 4.0*viscosity + 2.0*density*nrm_v*h + oneByAbsdt*h*h;
+      tau_v = 1.0/(4.0*viscosity/(h*h) + 2.0*nrm_df/h + oneByAbsdt);
+      tau_p = 4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h;
     }
 
     /* inline */
@@ -1298,7 +1433,7 @@ namespace proteus
 		p_test_dV[nDOF_trial_element],vel_test_dV[nDOF_trial_element],
 		p_grad_test_dV[nDOF_test_element*nSpace],vel_grad_test_dV[nDOF_test_element*nSpace],
 		dV,x,y,z,
-		G[nSpace*nSpace],G_dd_G,tr_G,norm_Rv,h_phi, velocity_star[nSpace];
+		G[nSpace*nSpace],G_dd_G,tr_G,norm_Rv,h_phi, dmom_adv_star[nSpace],dmom_adv_sge[nSpace];
 	      //get jacobian, etc for mapping reference element
 	      ck.calculateMapping_element(eN,
 					  k,
@@ -1453,18 +1588,22 @@ namespace proteus
 		ck.Advection_strong(dmass_adv_v,grad_v) +
 		ck.Advection_strong(dmass_adv_w,grad_w);
 	  
+              dmom_adv_sge[0] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+0];
+              dmom_adv_sge[1] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+1];
+              dmom_adv_sge[2] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+2];
+
 	      pdeResidual_u = ck.Mass_strong(mom_u_acc_t) +
-		ck.Advection_strong(&q_velocity_sge[eN_k_nSpace],grad_u) +
+		ck.Advection_strong(dmom_adv_sge,grad_u) +
 		ck.Hamiltonian_strong(dmom_u_ham_grad_p,grad_p) +
 		ck.Reaction_strong(mom_u_source);
 	  
 	      pdeResidual_v = ck.Mass_strong(mom_v_acc_t) +
-		ck.Advection_strong(&q_velocity_sge[eN_k_nSpace],grad_v) +
+		ck.Advection_strong(dmom_adv_sge,grad_v) +
 		ck.Hamiltonian_strong(dmom_v_ham_grad_p,grad_p) + 
 		ck.Reaction_strong(mom_v_source);
 	  
 	      pdeResidual_w = ck.Mass_strong(mom_w_acc_t) + 
-		ck.Advection_strong(&q_velocity_sge[eN_k_nSpace],grad_w) +
+		ck.Advection_strong(dmom_adv_sge,grad_w) +
 		ck.Hamiltonian_strong(dmom_w_ham_grad_p,grad_p) +
 		ck.Reaction_strong(mom_w_source);
 	
@@ -1473,7 +1612,7 @@ namespace proteus
 					elementDiameter[eN],
 					dmom_u_acc_u_t,
 					dmom_u_acc_u,
-					&q_velocity_sge[eN_k_nSpace],
+					dmom_adv_sge,
 					mom_u_diff_ten[1],
 					tau_v,
 					tau_p,
@@ -1501,9 +1640,9 @@ namespace proteus
 					   subgridError_v,
 					   subgridError_w);
 	      // velocity used in adjoint (VMS or RBLES, with or without lagging the grid scale velocity)
-	      velocity_star[0] = q_velocity_sge[eN_k_nSpace+0] + useRBLES*subgridError_u;
-	      velocity_star[1] = q_velocity_sge[eN_k_nSpace+1] + useRBLES*subgridError_v;
-	      velocity_star[2] = q_velocity_sge[eN_k_nSpace+2] + useRBLES*subgridError_w;
+	      dmom_adv_star[0] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+0] + useRBLES*subgridError_u);
+	      dmom_adv_star[1] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+1] + useRBLES*subgridError_v);
+              dmom_adv_star[2] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+2] + useRBLES*subgridError_w);
         
 	      // adjoint times the test functions 
 	      for (int i=0;i<nDOF_test_element;i++)
@@ -1512,9 +1651,10 @@ namespace proteus
 		  Lstar_u_p[i]=ck.Advection_adjoint(dmass_adv_u,&p_grad_test_dV[i_nSpace]);
 		  Lstar_v_p[i]=ck.Advection_adjoint(dmass_adv_v,&p_grad_test_dV[i_nSpace]);
 		  Lstar_w_p[i]=ck.Advection_adjoint(dmass_adv_w,&p_grad_test_dV[i_nSpace]);
-		  Lstar_u_u[i]=ck.Advection_adjoint(velocity_star,&vel_grad_test_dV[i_nSpace]);
-		  Lstar_v_v[i]=ck.Advection_adjoint(velocity_star,&vel_grad_test_dV[i_nSpace]);
-		  Lstar_w_w[i]=ck.Advection_adjoint(velocity_star,&vel_grad_test_dV[i_nSpace]);
+                  //use the same advection adjoint for all three since we're approximating the linearized adjoint
+		  Lstar_u_u[i]=ck.Advection_adjoint(dmom_adv_star,&vel_grad_test_dV[i_nSpace]);
+		  Lstar_v_v[i]=ck.Advection_adjoint(dmom_adv_star,&vel_grad_test_dV[i_nSpace]);
+		  Lstar_w_w[i]=ck.Advection_adjoint(dmom_adv_star,&vel_grad_test_dV[i_nSpace]);
 		  Lstar_p_u[i]=ck.Hamiltonian_adjoint(dmom_u_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
 		  Lstar_p_v[i]=ck.Hamiltonian_adjoint(dmom_v_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
 		  Lstar_p_w[i]=ck.Hamiltonian_adjoint(dmom_w_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
@@ -1952,8 +2092,8 @@ namespace proteus
 	      //
 	      ck.calculateGScale(G,normal,h_penalty);
 	      h_penalty = 10.0/h_penalty;
-	      //cek debug
-	      h_penalty = 100.0/elementDiameter[eN];
+	      //cek debug, do it the old way
+	      h_penalty = 10.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
 	      exteriorNumericalAdvectiveFlux(isDOFBoundary_p[ebNE_kb],
 					     isDOFBoundary_u[ebNE_kb],
 					     isDOFBoundary_v[ebNE_kb],
@@ -2356,7 +2496,7 @@ namespace proteus
 		p_test_dV[nDOF_test_element],vel_test_dV[nDOF_test_element],
 		p_grad_test_dV[nDOF_test_element*nSpace],vel_grad_test_dV[nDOF_test_element*nSpace],
 		x,y,z,
-		G[nSpace*nSpace],G_dd_G,tr_G,h_phi, velocity_star[nSpace];
+		G[nSpace*nSpace],G_dd_G,tr_G,h_phi, dmom_adv_star[nSpace], dmom_adv_sge[nSpace];
 	      //get jacobian, etc for mapping reference element
 	      ck.calculateMapping_element(eN,
 					  k,
@@ -2523,6 +2663,10 @@ namespace proteus
 	      //
 	      //calculate subgrid error contribution to the Jacobian (strong residual, adjoint, jacobian of strong residual)
 	      //
+              dmom_adv_sge[0] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+0];
+              dmom_adv_sge[1] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+1];
+              dmom_adv_sge[2] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+2];
+
 	      //calculate the Jacobian of strong residual
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
@@ -2533,22 +2677,22 @@ namespace proteus
 
 		  dpdeResidual_u_p[j]=ck.HamiltonianJacobian_strong(dmom_u_ham_grad_p,&p_grad_trial[j_nSpace]);
 		  dpdeResidual_u_u[j]=ck.MassJacobian_strong(dmom_u_acc_u_t,vel_trial_ref[k*nDOF_trial_element+j]) +
-		    ck.AdvectionJacobian_strong(&q_velocity_sge[eN_k_nSpace],&vel_grad_trial[j_nSpace]);
+		    ck.AdvectionJacobian_strong(dmom_adv_sge,&vel_grad_trial[j_nSpace]);
 	      
 		  dpdeResidual_v_p[j]=ck.HamiltonianJacobian_strong(dmom_v_ham_grad_p,&p_grad_trial[j_nSpace]);
 		  dpdeResidual_v_v[j]=ck.MassJacobian_strong(dmom_v_acc_v_t,vel_trial_ref[k*nDOF_trial_element+j]) +
-		    ck.AdvectionJacobian_strong(&q_velocity_sge[eN_k_nSpace],&vel_grad_trial[j_nSpace]);
+		    ck.AdvectionJacobian_strong(dmom_adv_sge,&vel_grad_trial[j_nSpace]);
 	      
 		  dpdeResidual_w_p[j]=ck.HamiltonianJacobian_strong(dmom_w_ham_grad_p,&p_grad_trial[j_nSpace]);
 		  dpdeResidual_w_w[j]=ck.MassJacobian_strong(dmom_w_acc_w_t,vel_trial_ref[k*nDOF_trial_element+j]) + 
-		    ck.AdvectionJacobian_strong(&q_velocity_sge[eN_k_nSpace],&vel_grad_trial[j_nSpace]);
+		    ck.AdvectionJacobian_strong(dmom_adv_sge,&vel_grad_trial[j_nSpace]);
 		}
 	      //calculate tau and tau*Res
 	      calculateSubgridError_tau(hFactor,
 					elementDiameter[eN],
 					dmom_u_acc_u_t,
 					dmom_u_acc_u,
-					&q_velocity_sge[eN_k_nSpace],
+					dmom_adv_sge,
 					mom_u_diff_ten[1],
 					tau_v,
 					tau_p,
@@ -2589,9 +2733,9 @@ namespace proteus
 						      dsubgridError_w_p,
 						      dsubgridError_w_w);
 	      // velocity used in adjoint (VMS or RBLES, with or without lagging the grid scale velocity)
-	      velocity_star[0] = q_velocity_sge[eN_k_nSpace+0] + useRBLES*subgridError_u;
-	      velocity_star[1] = q_velocity_sge[eN_k_nSpace+1] + useRBLES*subgridError_v;
-	      velocity_star[2] = q_velocity_sge[eN_k_nSpace+2] + useRBLES*subgridError_w;
+	      dmom_adv_star[0] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+0] + useRBLES*subgridError_u);
+	      dmom_adv_star[1] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+1] + useRBLES*subgridError_v);
+	      dmom_adv_star[2] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+2] + useRBLES*subgridError_w);
           
 	      //calculate the adjoint times the test functions
 	      for (int i=0;i<nDOF_test_element;i++)
@@ -2600,9 +2744,9 @@ namespace proteus
 		  Lstar_u_p[i]=ck.Advection_adjoint(dmass_adv_u,&p_grad_test_dV[i_nSpace]);
 		  Lstar_v_p[i]=ck.Advection_adjoint(dmass_adv_v,&p_grad_test_dV[i_nSpace]);
 		  Lstar_w_p[i]=ck.Advection_adjoint(dmass_adv_w,&p_grad_test_dV[i_nSpace]);
-		  Lstar_u_u[i]=ck.Advection_adjoint(velocity_star,&vel_grad_test_dV[i_nSpace]);
-		  Lstar_v_v[i]=ck.Advection_adjoint(velocity_star,&vel_grad_test_dV[i_nSpace]);
-		  Lstar_w_w[i]=ck.Advection_adjoint(velocity_star,&vel_grad_test_dV[i_nSpace]);
+		  Lstar_u_u[i]=ck.Advection_adjoint(dmom_adv_star,&vel_grad_test_dV[i_nSpace]);
+		  Lstar_v_v[i]=ck.Advection_adjoint(dmom_adv_star,&vel_grad_test_dV[i_nSpace]);
+		  Lstar_w_w[i]=ck.Advection_adjoint(dmom_adv_star,&vel_grad_test_dV[i_nSpace]);
 		  Lstar_p_u[i]=ck.Hamiltonian_adjoint(dmom_u_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
 		  Lstar_p_v[i]=ck.Hamiltonian_adjoint(dmom_v_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
 		  Lstar_p_w[i]=ck.Hamiltonian_adjoint(dmom_w_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
@@ -3121,8 +3265,8 @@ namespace proteus
 	      //
 	      ck.calculateGScale(G,normal,h_penalty);
 	      h_penalty = 10.0/h_penalty;
-	      //cek debug
-	      h_penalty = 100.0/elementDiameter[eN];
+	      //cek debug, do it the old way
+	      h_penalty = 10.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
 		  register int j_nSpace = j*nSpace,ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;

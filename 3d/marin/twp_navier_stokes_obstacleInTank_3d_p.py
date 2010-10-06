@@ -16,7 +16,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    LS_model=1,
                                    epsFact_density=epsFact_density,
                                    stokes=useStokes,
-                                   useRBLES=1.0)
+                                   useRBLES=0.0)
 
 def getDBC_p_obstacleInTank(x,flag):
     if flag == boundaryTags['top']:

@@ -26,9 +26,14 @@ if sloshbox3d.useBackwardEuler:
     systemStepControllerType = Sequential_MinAdaptiveModelStep
 else:
     systemStepControllerType = Sequential_MinFLCBDFModelStep
+if sloshbox3d.useFixedStep:
+    systemStepControllerType = Sequential_FixedStep
+    
 needEBQ_GLOBAL = False#True
 needEBQ = False#True
 useOneArchive = True
 
 tnList = [0.0,sloshbox3d.dt_init]+[sloshbox3d.dt_init+i*(sloshbox3d.T-sloshbox3d.dt_init)/float(sloshbox3d.nDTout-1) for i in range(1,sloshbox3d.nDTout)]
+if sloshbox3d.useFixedStep:
+    tnList = [0.0,sloshbox3d.dt_init]+[i*sloshbox3d.dt_fixed for i in range(1,sloshbox3d.nDTout)] 
 #tnList = [0.0,sloshbox3d.dt_init,1.0,2.0,10.0,20.0]

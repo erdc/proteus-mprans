@@ -34,8 +34,11 @@ box_length = 0.161
 box_xy = [2.3955,.2985]
 #
 he = 0.75*box_width#
-he = 0.4*box_width#
-he = 0.2*box_width#
+he = 0.4*box_width
+he = 0.25*box_width
+#he = 0.4*box_width/2.0#/(2.0**(1.0/3.0))#16G
+#he = 0.4*box_width#
+#he = 0.2*box_width#
 #he = 0.4*box_width/2.0#16G
 #he = 0.25*0.4*box_width#64*2G
 #he = 0.5*0.25*0.4*box_width#64*2G
@@ -105,11 +108,12 @@ def shockSignedDistance(x):
 #
 #time interval etc.
 #
-dt_init=he*0.01
+dt_init=he*0.001
 T = 6.0
-nDTout=100#500
-runCFL = 1.0#0.33
-useFixedStep = False
+dt_fixed = 0.01
+nDTout=int(T/dt_fixed)
+dt_init=min(he*0.01,0.5*dt_fixed)
+useFixedStep = True
 #
 #numerics
 #
@@ -118,7 +122,8 @@ triangleOptions="VApq1.25q12ena%f" % ((he**3)/6.0,)
 print triangleOptions
 applyCorrection=True
 applyRedistancing=True
-rdtimeIntegration='osher'
+#rdtimeIntegration='osher'
+rdtimeIntegration='newton'
 freezeLevelSet=True
 obstacleInTank_quad_order = 3
 useBackwardEuler=True

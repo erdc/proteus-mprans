@@ -62,10 +62,11 @@ multilevelLinearSolver = LU
 levelLinearSolver = LU
 
 if usePETSc:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
-    
-linearSmoother = GaussSeidel
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver = KSP_petsc4py
+    linear_solver_options_prefix = 'mcorr_'
+    linearSmoother = None
+    linearSolverConvergenceTest = 'r-true'
 
 linTolFac = 1.0e-6
 

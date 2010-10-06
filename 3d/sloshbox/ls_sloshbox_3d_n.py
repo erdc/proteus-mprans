@@ -56,10 +56,11 @@ matrix = SparseMatrix
 
 if usePETSc:
     numericalFluxType = DoNothing
-
-    multilevelLinearSolver = PETSc
-    
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver = KSP_petsc4py
+    linear_solver_options_prefix = 'ncls_'
+    linearSmoother = None
+    linearSolverConvergenceTest = 'r-true'
 else:
     numericalFluxType = DoNothing
     
@@ -67,8 +68,6 @@ else:
     
     levelLinearSolver = LU
    
-linearSmoother = GaussSeidel
-
 linTolFac = 0.001
 
 conservativeFlux = None

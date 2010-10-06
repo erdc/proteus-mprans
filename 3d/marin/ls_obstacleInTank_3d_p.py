@@ -10,7 +10,7 @@ if applyCorrection:
 elif applyRedistancing:
     coefficients = NCLS.Coefficients(V_model=0,RD_model=2,ME_model=1,checkMass=False)
 else:
-    coefficients = NCLS_Coefficients(V_model=0,ME_model=1,checkMass=False)
+    coefficients = NCLS.Coefficients(V_model=0,ME_model=1,checkMass=False)
 
 def getDBC_ls(x,flag):
     pass

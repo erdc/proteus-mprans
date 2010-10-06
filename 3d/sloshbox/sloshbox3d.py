@@ -3,9 +3,8 @@ import proteus.MeshTools
 checkMass=False
 applyCorrection=True
 applyRedistancing=True
-#rdtimeIntegration='newton'
-#freezeLevelSet=False
-rdtimeIntegration='osher'
+rdtimeIntegration='newton'
+#rdtimeIntegration='osher'
 freezeLevelSet=True#False
 spaceOrder=1
 if spaceOrder == 1:
@@ -17,11 +16,14 @@ nodalPartitioning=False#True
 nd = 3
 useBackwardEuler=True
 useBackwardEuler_ls=True
+useFixedStep=True
+dt_fixed = 0.01
 timeOrder = 1
-
 dt_init=1.0e-4
-T=20.0#3.0#20.0
+T=3.0#20.0
 nDTout = 100
+if useFixedStep:
+    nDTout = int(round(T/dt_fixed))
 runCFL = 0.33
 
 lag_ns_subgridError=True
@@ -43,7 +45,7 @@ epsFact_consrv_dirac=1.5
 epsFact_consrv_diffusion=10.0
 epsFact_vof=1.5
 
-usePETSc=False
+usePETSc=True
 
 
 L = (10.0,10.0,2.0)
@@ -78,10 +80,10 @@ shock_y = -L[0]
 shock_z = 0.5*L[2]
 
 #replace with unstructured grid
-lRefinement=0
+lRefinement=2
 he=1.25*he*(0.5**lRefinement)
 #to make 2D
-#L=[L[0],he,L[2]]
+L=[L[0],2*he,L[2]]
 regularGrid=False
 from tank3dDomain import *
 domain = tank3d(L=L)
