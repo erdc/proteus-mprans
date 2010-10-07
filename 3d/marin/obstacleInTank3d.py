@@ -34,8 +34,8 @@ box_length = 0.161
 box_xy = [2.3955,.2985]
 #
 he = 0.75*box_width#
-he = 0.4*box_width
-he = 0.25*box_width
+he = 0.33*box_width
+#he = 0.25*box_width
 #he = 0.4*box_width/2.0#/(2.0**(1.0/3.0))#16G
 #he = 0.4*box_width#
 #he = 0.2*box_width#
@@ -122,8 +122,8 @@ triangleOptions="VApq1.25q12ena%f" % ((he**3)/6.0,)
 print triangleOptions
 applyCorrection=True
 applyRedistancing=True
-#rdtimeIntegration='osher'
-rdtimeIntegration='newton'
+rdtimeIntegration='osher'
+#rdtimeIntegration='newton'
 freezeLevelSet=True
 obstacleInTank_quad_order = 3
 useBackwardEuler=True
@@ -148,7 +148,7 @@ epsFact_consrv_dirac=1.5
 epsFact_consrv_diffusion=10.0
 epsFact_vof=1.5
 #
-usePETSc=True#False
+usePETSc=False
 spaceOrder=1
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
