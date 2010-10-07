@@ -79,8 +79,10 @@ setup(name='proteus_mprans',
                    Extension("cNCLS",["mprans/cNCLS.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
                    Extension("cMCorr",["mprans/cMCorr.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
                    Extension("cRANS2P",["mprans/cRANS2P.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cVRANS2P",["mprans/cVRANS2P.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
                    Extension("cRDLS",["mprans/cRDLS.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
                    Extension("cVOF",["mprans/cVOF.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cVolumeAveragedVOF",["mprans/cVolumeAveragedVOF.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
                    ],
       requires=['numpy']
       )
