@@ -39,7 +39,7 @@ length=2.0*hull_length
 #he = 0.5*hull_draft#length
 he = hull_draft#length
 width=2.0*hull_beam
-#he = 0.25*hull_draft#length (64 procs)
+he = 0.5*hull_draft
 n_points_draft=max(2,int(ceil(hull_draft/he))) + 1
 n_points_length=max(2,int(ceil(hull_length/he))) + 1
 
