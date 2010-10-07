@@ -18,10 +18,13 @@ except:
 ##\todo Finishing cleaning up setup.py/setup.cfg, config.py...
 from distutils import sysconfig
 cv = sysconfig.get_config_vars()
-cv["OPT"] = cv["OPT"].replace("-DNDEBUG","-DDEBUG")
-cv["OPT"] = cv["OPT"].replace("-O3","-g")
-cv["CFLAGS"] = cv["CFLAGS"].replace("-DNDEBUG","-DDEBUG")
-cv["CFLAGS"] = cv["CFLAGS"].replace("-O3","-g")
+cv["OPT"] = cv["OPT"].replace("-g","")
+#cv["OPT"] +=" -funroll-all-loops"
+cv["CFLAGS"] = cv["CFLAGS"].replace("-g","")
+#cv["CFLAGS"] += " -funroll-all-loops"
+#cv["OPT"] = cv["OPT"].replace("-DNDEBUG","-DDEBUG")
+#cv["CFLAGS"] = cv["CFLAGS"].replace("-DNDEBUG","-DDEBUG")
+#cv["CFLAGS"] = cv["CFLAGS"].replace("-O3","-g")
 
 setup(name='proteus_mprans',
       version='0.9.0',
