@@ -3,6 +3,7 @@ from proteus.default_p import *
 from beach_erosion_board_waves_3d import *
 from proteus import VANS2P
 from proteus.mprans import RANS2P#RANS2PV2
+from proteus.mprans import VRANS2P
 """
 Two-phase incompressible Navier-Stokes flow of air and water in a perturbed box
 """
@@ -38,11 +39,12 @@ Two-phase incompressible Navier-Stokes flow of air and water in a perturbed box
 if useVANS2P:
     #LevelModelType = VANS2P.OneLevelVANS2P
     #LevelModelType = RANS2PV2.OneLevelRANS2PV2
-    LevelModelType = RANS2P.LevelModel
+    #LevelModelType = RANS2P.LevelModel
+    LevelModelType = VRANS2P.LevelModel
  
 
 #coefficients = VolumeAveragedTwophaseNavierStokes(epsFact=epsFact_viscosity,
-coefficients = RANS2P.VolumeAveragedCoefficients(epsFact=epsFact_viscosity,
+coefficients = VRANS2P.Coefficients(epsFact=epsFact_viscosity,
                                                 sigma=sigma_01,
                                                 rho_0 = rho_0,
                                                 nu_0 = nu_0,
