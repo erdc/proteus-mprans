@@ -42,8 +42,8 @@ if usePETSc:
      multilevelLinearSolver = KSP_petsc4py
      levelLinearSolver = KSP_petsc4py
      linear_solver_options_prefix = 'vof_'
-     #linearSmoother = None
-     linearSmoother = StarILU
+#     linearSmoother = StarILU
+     linearSmoother = None
      linearSolverConvergenceTest = 'r-true'
 else:
     multilevelLinearSolver = LU

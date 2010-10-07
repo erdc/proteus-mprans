@@ -56,6 +56,7 @@ if usePETSc:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver = KSP_petsc4py
     linear_solver_options_prefix = 'ncls_'
+#    linearSmoother = StarILU
     linearSmoother = None
     linearSolverConvergenceTest = 'r-true'
 else:
