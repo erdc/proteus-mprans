@@ -12,7 +12,8 @@ else:
     runCFL=1.0
     rtol_res[0] = 0.0
     atol_res[0] = he*0.01#1.0e-6
-
+    psitc['nStepsForce']=3
+    psitc['nStepsMax']=5
 if spaceOrder == 1:
     femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
 if spaceOrder == 2:

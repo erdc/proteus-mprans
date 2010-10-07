@@ -34,7 +34,9 @@ tolFac = 0.0
 
 nl_atol_res = 0.001*he#1.0e-8
 
-maxNonlinearIts = 50
+maxNonlinearIts = 3
+nonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'rits'
 
 matrix = SparseMatrix
 
