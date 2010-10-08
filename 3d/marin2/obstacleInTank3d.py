@@ -34,8 +34,8 @@ box_length = 0.161
 box_xy = [2.3955,.2985]
 #
 he = 0.75*box_width#
-he = 0.33*box_width
-#he = 0.25*box_width
+he = 0.4*box_width
+he = 0.25*box_width
 
 he = 0.4*box_width
 
@@ -112,11 +112,10 @@ def shockSignedDistance(x):
 #
 #time interval etc.
 #
-dt_init=he*0.001
 T = 6.0
 dt_fixed = 0.01
 nDTout=int(T/dt_fixed)
-dt_init=min(he*0.01,0.5*dt_fixed)
+dt_init=0.01
 useFixedStep = True
 #
 #numerics
@@ -126,22 +125,22 @@ triangleOptions="VApq1.25q12ena%f" % ((he**3)/6.0,)
 print triangleOptions
 applyCorrection=True
 applyRedistancing=True
-rdtimeIntegration='osher'
-#rdtimeIntegration='newton'
+#rdtimeIntegration='osher'
+rdtimeIntegration='pseudoTime'#'newton'
 freezeLevelSet=True
 obstacleInTank_quad_order = 3
 useBackwardEuler=True
 useBackwardEuler_ls=True
 #subgrid error
-lag_ns_subgridError=True
-lag_ns_shockCapturing=True
-lag_ls_shockCapturing=True
-lag_vof_shockCapturing=True
+lag_ns_subgridError=False
+lag_ns_shockCapturing=False
+lag_ls_shockCapturing=False
+lag_vof_shockCapturing=False
 #shock capturing diffusion
-ns_shockCapturingFactor=0.33
-ls_shockCapturingFactor=0.33
-vof_shockCapturingFactor=0.33
-rd_shockCapturingFactor=0.33
+ns_shockCapturingFactor=0.2
+ls_shockCapturingFactor=0.2
+vof_shockCapturingFactor=0.2
+rd_shockCapturingFactor=0.5
 #epsilons for Heaviside/Dirac/etc smoothing
 epsFact_density = 1.5
 epsFact_viscosity = 1.5
@@ -152,7 +151,7 @@ epsFact_consrv_dirac=1.5
 epsFact_consrv_diffusion=10.0
 epsFact_vof=1.5
 #
-usePETSc=False
+usePETSc=True#False
 spaceOrder=1
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
