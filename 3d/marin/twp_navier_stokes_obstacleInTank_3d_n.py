@@ -84,7 +84,7 @@ linearSmoother = GaussSeidel
 
 linTolFac = 0.001
 
-conservativeFlux = {0:'pwl-bdm-opt'}
+#conservativeFlux = {0:'pwl-bdm-opt'}
 #conservativeFlux = {0:'pwl'}#,1:'pwl-bdm',2:'pwl-bdm'}
 #conservativeFlux = {0:'pwc'}#,1:'pwc',2:'pwc'}
 #conservativeFlux = {0:'point-eval',1:'point-eval',2:'point-eval'}
