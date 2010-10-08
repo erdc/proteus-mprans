@@ -179,7 +179,7 @@ namespace proteus
 	}
     }
 
-    inline
+/*    inline
     void calculateSubgridError_tau(const double& elementDiameter,
 				   const double& dmt,
 				   const double dH[nSpace],
@@ -201,6 +201,20 @@ namespace proteus
       //mwf debug
       //std::cout<<"tau calc h= "<<h<<" dmt= "<<dmt<<" dH[0]= "<<dH[0]<<" cfl= "<<cfl<<" tau= "<<tau<<std::endl;
   
+    }*/
+
+    inline
+    void calculateSubgridError_tau(     const double   G[nSpace*nSpace],
+					const double   Ai[nSpace],
+					double& tau_v,
+					double& q_cfl)
+    {
+      double v_d_Gv=0.0; 
+      for(int I=0;I<nSpace;I++) 
+         for (int J=0;J<nSpace;J++) 
+           v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
+    
+      tau_v = 1.0/(sqrt(v_d_Gv) + 10e-8);    
     }
 
 #undef CKDEBUG
@@ -291,7 +305,7 @@ namespace proteus
 	{
 	  //declare local storage for element residual and initialize
 	  register double elementResidual_u[nDOF_test_element];
-	  const double epsilon_redist= epsFact_redist*elementDiameter[eN];
+	  double epsilon_redist,h_phi, dir[nSpace], norm;
 	  for (int i=0;i<nDOF_test_element;i++)
 	    {
 	      elementResidual_u[i]=0.0;
@@ -336,6 +350,9 @@ namespace proteus
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
+	      
+	      
+	      
 	      //get the trial function gradients
 	      ck.gradTrialFromRef(&u_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,u_grad_trial);
 	      //get the solution
@@ -354,6 +371,17 @@ namespace proteus
 	      //
 	      //calculate pde coefficients at quadrature points
 	      //
+	      norm = sqrt(grad_u[0]*grad_u[0] + grad_u[1]*grad_u[1] + grad_u[2]*grad_u[2]) + 1.0e-8;
+	      
+	      dir[0] = grad_u[0]/norm;
+	      dir[1] = grad_u[1]/norm;
+	      dir[2] = grad_u[2]/norm;
+	      
+	      ck.calculateGScale(G,dir,h_phi);
+	      
+	      epsilon_redist = epsFact_redist*h_phi;
+	      
+	      
 	      evaluateCoefficients(epsilon_redist,
 				   phi_ls[eN_k],
 				   u,
@@ -435,15 +463,23 @@ namespace proteus
 		  //reaction is constant
 		}
 	      //calculate tau and tau*Res
-	      calculateSubgridError_tau(elementDiameter[eN],
-					dm_t,dH_tau,
-					q_cfl[eN_k],
-					tau);
+//	      calculateSubgridError_tau(elementDiameter[eN],
+//					dm_t,dH_tau,
+//					q_cfl[eN_k],
+//					tau);
+              calculateSubgridError_tau(G,
+					dH_tau,
+					tau,
+					q_cfl[eN_k]);	
+
+	      //std::cout<<tau<<std::endl;
+
+
 	      subgridError_u = -tau*pdeResidual_u;
 	      //
-	      //calcualte shock capturing diffusion
+	      //calculate shock capturing diffusion
 	      //
-	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u,q_numDiff_u[eN_k]);
+	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u,q_numDiff_u[eN_k]);
 #ifdef CKDEBUG
 	      std::cout<<"q_numDiff_u[eN_k] "<<q_numDiff_u[eN_k]<<" q_numDiff_u_last[eN_k] "<<q_numDiff_u_last[eN_k]<<" lag "<<lag_shockCapturingScale<<std::endl;
 #endif
@@ -598,6 +634,7 @@ namespace proteus
 	      // 
 	      //calculate the pde coefficients using the solution and the boundary values for the solution 
 	      // 
+
 	      evaluateCoefficients(epsilon_redist,
 				   ebqe_phi_ls_ext[ebNE_kb],
 				   u_ext,
@@ -718,7 +755,7 @@ namespace proteus
       for(int eN=0;eN<nElements_global;eN++)
 	{
 	  register double  elementJacobian_u_u[nDOF_test_element][nDOF_trial_element];
-	  const double epsilon_redist=epsFact_redist*elementDiameter[eN];
+	  double epsilon_redist,h_phi, dir[nSpace], norm;
 	  for (int i=0;i<nDOF_test_element;i++)
 	    for (int j=0;j<nDOF_trial_element;j++)
 	      {
@@ -786,6 +823,16 @@ namespace proteus
 	      //
 	      //calculate pde coefficients and derivatives at quadrature points
 	      //
+	      norm = sqrt(grad_u[0]*grad_u[0] + grad_u[1]*grad_u[1] + grad_u[2]*grad_u[2]) + 1.0e-8;
+	      
+	      dir[0] = grad_u[0]/norm;
+	      dir[1] = grad_u[1]/norm;
+	      dir[2] = grad_u[2]/norm;
+	      
+	      ck.calculateGScale(G,dir,h_phi);
+	      
+	      epsilon_redist = epsFact_redist*h_phi;
+	      
 	      evaluateCoefficients(epsilon_redist,
 				   phi_ls[eN_k],
 				   u,
@@ -857,11 +904,16 @@ namespace proteus
 
 		}
 	      //tau and tau*Res
-	      calculateSubgridError_tau(elementDiameter[eN],
-					dm_t,
+//	      calculateSubgridError_tau(elementDiameter[eN],
+//					dm_t,
+//					dH_tau,
+//					q_cfl[eN_k],
+//					tau);
+              calculateSubgridError_tau(G,
 					dH_tau,
-					q_cfl[eN_k],
-					tau);
+					tau,
+					q_cfl[eN_k]);	
+
 	      for (int j=0;j<nDOF_trial_element;j++)
 		dsubgridError_u_u[j] =  -tau*dpdeResidual_u_u[j];
 

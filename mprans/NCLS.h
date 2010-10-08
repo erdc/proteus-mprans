@@ -135,7 +135,7 @@ namespace proteus
 	}
     }
     
-    inline void calculateSubgridError_tau(const double& elementDiameter,
+/*    inline void calculateSubgridError_tau(const double& elementDiameter,
 					  const double& dmt,
 					  const double dH[nSpace],
 					  double& cfl,
@@ -150,7 +150,25 @@ namespace proteus
       cfl = nrm_v/h;
       oneByAbsdt =  fabs(dmt);
       tau = 1.0/(2.0*nrm_v/h + oneByAbsdt + 1.0e-8);
-    }  
+    } */ 
+ 
+    inline
+    void calculateSubgridError_tau(     const double&  Ct_sge,
+                                        const double   G[nSpace*nSpace],
+					const double&  A0,
+					const double   Ai[nSpace],
+					double& tau_v,
+					double& cfl)	
+    {
+      double v_d_Gv=0.0; 
+      for(int I=0;I<nSpace;I++) 
+         for (int J=0;J<nSpace;J++) 
+           v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
+    
+      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv);  
+        
+    } 
+ 
     
     void calculateResidual(//element
 			   double* mesh_trial_ref,
@@ -208,6 +226,10 @@ namespace proteus
       //eN_j is the element trial function index
       //eN_k_j is the quadrature point index for a trial function
       //eN_k_i is the quadrature point index for a trial function
+      
+      double Ct_sge = 4.0;
+      
+      
       for(int eN=0;eN<nElements_global;eN++)
 	{
 	  //declare local storage for element residual and initialize
@@ -312,16 +334,28 @@ namespace proteus
 		}
 	      //calculate tau and tau*Res
 	      //cek/ido todo add element metric form
-	      calculateSubgridError_tau(elementDiameter[eN],
+	      /*calculateSubgridError_tau(elementDiameter[eN],
 					dm_t,
 					dH,
 					cfl[eN_k],
-					tau);
+					tau);*/
+
+              calculateSubgridError_tau(Ct_sge,
+                                        G,
+					dm_t,
+					dH,
+					tau,
+				        cfl[eN_k]);	
+
+
+
 	      subgridError_u = -tau*pdeResidual_u;
 	      //
 	      //calcualte shock capturing diffusion
 	      //
-	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u,q_numDiff_u[eN_k]);
+	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u,q_numDiff_u[eN_k]);
+
+              //std::cout<<tau<<"   "<<q_numDiff_u[eN_k]<<std::endl;
 	      // 
 	      //update element residual 
 	      // 
@@ -516,6 +550,9 @@ namespace proteus
 			   double* ebqe_bc_u_ext,
 			   int* csrColumnOffsets_eb_u_u)
     {
+      double Ct_sge=4.0;
+
+
       //
       //loop over elements to compute volume integrals and load them into the element Jacobians and global Jacobian
       //
@@ -631,11 +668,21 @@ namespace proteus
 		}
 	      //tau and tau*Res
 	      //cek/ido todo add element metric form
-	      calculateSubgridError_tau(elementDiameter[eN],
+	    //  calculateSubgridError_tau(elementDiameter[eN],
+	//				dm_t,
+	//				dH,
+	//				cfl[eN_k],
+	//				tau);
+          
+	      calculateSubgridError_tau(Ct_sge,
+                                        G,
 					dm_t,
 					dH,
-					cfl[eN_k],
-					tau);
+					tau,
+				        cfl[eN_k]);	
+
+
+
 	      for(int j=0;j<nDOF_trial_element;j++) 
 		dsubgridError_u_u[j] = -tau*dpdeResidual_u_u[j];
 

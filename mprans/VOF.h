@@ -137,7 +137,8 @@ namespace proteus
 	  df[I] = v[I];
 	}
     }
-    inline
+
+/*    inline
     void calculateSubgridError_tau(const double& elementDiameter,
 				   const double& dmt,
 				   const double dH[nSpace],
@@ -153,7 +154,26 @@ namespace proteus
       cfl = nrm_v/h;
       oneByAbsdt =  fabs(dmt);
       tau = 1.0/(2.0*nrm_v/h + oneByAbsdt + 1.0e-8);
-    }
+    }*/
+
+ 
+    inline
+    void calculateSubgridError_tau(     const double&  Ct_sge,
+                                        const double   G[nSpace*nSpace],
+					const double&  A0,
+					const double   Ai[nSpace],
+					double& tau_v,
+					double& q_cfl)	
+    {
+      double v_d_Gv=0.0; 
+      for(int I=0;I<nSpace;I++) 
+         for (int J=0;J<nSpace;J++) 
+           v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
+    
+      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv);    
+    } 
+ 
+ 
 
     inline 
     void calculateNumericalDiffusion(const double& shockCapturingDiffusion,
@@ -308,6 +328,8 @@ namespace proteus
     {
       CompKernel<nSpace,nDOF_mesh_trial_element,nDOF_trial_element,nDOF_test_element> ck;
 
+      double Ct_sge = 4.0;
+
       //loop over elements to compute volume integrals and load them into element and global residual
       //
       //eN is the element index
@@ -432,12 +454,20 @@ namespace proteus
 		  Lstar_u[i]  = ck.Advection_adjoint(df,&u_grad_test_dV[i_nSpace]);
 		}
 	      //calculate tau and tau*Res
-	      calculateSubgridError_tau(elementDiameter[eN],dm_t,df,cfl[eN_k],tau);
+	   //   calculateSubgridError_tau(elementDiameter[eN],dm_t,df,cfl[eN_k],tau);
+              calculateSubgridError_tau(Ct_sge,
+                                        G,
+					dm_t,
+					df,
+					tau,
+				        cfl[eN_k]);
+
+
 	      subgridError_u = -tau*pdeResidual_u;
 	      //
 	      //calcualte shock capturing diffusion
 	      //
-	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u,q_numDiff_u[eN_k]);
+	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u,q_numDiff_u[eN_k]);
 	      // 
 	      //update element residual 
 	      // 
@@ -626,7 +656,7 @@ namespace proteus
 	      globalResidual[offset_u+stride_u*u_l2g[eN_i]] += elementResidual_u[i];
 	    }//i
 	}//ebNE
-      std::cout<<"VOFV2 global conservation============================================================="<<globalConservation<<std::endl;
+     // std::cout<<"VOFV2 global conservation============================================================="<<globalConservation<<std::endl;
     }
 
     void calculateJacobian(//element
@@ -674,6 +704,8 @@ namespace proteus
 			   double* ebqe_bc_flux_u_ext,
 			   int* csrColumnOffsets_eb_u_u)
     {
+      double Ct_sge = 4.0;
+    
       //
       //loop over elements to compute volume integrals and load them into the element Jacobians and global Jacobian
       //
@@ -802,11 +834,20 @@ namespace proteus
 		    ck.AdvectionJacobian_strong(df,&u_grad_trial[j_nSpace]);
 		}
 	      //tau and tau*Res
-	      calculateSubgridError_tau(elementDiameter[eN],
+//	      calculateSubgridError_tau(elementDiameter[eN],
+//					dm_t,
+//					df,
+//					cfl[eN_k],
+//					tau);
+  
+              calculateSubgridError_tau(Ct_sge,
+                                        G,
 					dm_t,
 					df,
-					cfl[eN_k],
-					tau);
+					tau,
+				        cfl[eN_k]);
+
+
 	      for(int j=0;j<nDOF_trial_element;j++)
 		dsubgridError_u_u[j] = -tau*dpdeResidual_u_u[j];
 	      for(int i=0;i<nDOF_test_element;i++)

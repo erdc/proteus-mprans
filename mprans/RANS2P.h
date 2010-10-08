@@ -648,7 +648,7 @@ namespace proteus
 #endif
     }
   
-    inline
+/*    inline
     void calculateSubgridError_tau(const double&  hFactor,
 				   const double& elementDiameter,
 				   const double& dmt,
@@ -671,7 +671,32 @@ namespace proteus
       oneByAbsdt =  fabs(dmt);
       tau_v = 1.0/(4.0*viscosity/(h*h) + 2.0*nrm_df/h + oneByAbsdt);
       tau_p = 4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h;
+    }*/
+
+
+    inline
+    void calculateSubgridError_tau(     const double&  Ct_sge,
+                                        const double&  Cd_sge,
+			                const double   G[nSpace*nSpace],
+					const double&  G_dd_G,
+					const double&  tr_G,
+					const double&  A0,
+					const double   Ai[nSpace],
+					const double&  Kij,
+					double& tau_v,
+					double& tau_p,
+					double& q_cfl)	
+    {
+      double v_d_Gv=0.0; 
+      for(int I=0;I<nSpace;I++) 
+         for (int J=0;J<nSpace;J++) 
+           v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
+    
+      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + Cd_sge*Kij*Kij*G_dd_G); 
+      tau_p = 1.0/(tr_G*tau_v);     
     }
+
+
 
     /* inline */
     /*   void calculateSubgridError_tau(const double&  Ct_sge, */
@@ -1608,15 +1633,29 @@ namespace proteus
 		ck.Reaction_strong(mom_w_source);
 	
 	      //calculate tau and tau*Res
-	      calculateSubgridError_tau(hFactor,
-					elementDiameter[eN],
+//	      calculateSubgridError_tau(hFactor,
+//					elementDiameter[eN],
+//					dmom_u_acc_u_t,
+//					dmom_u_acc_u,
+//					dmom_adv_sge,
+//					mom_u_diff_ten[1],
+//					tau_v,
+//					tau_p,
+//					q_cfl[eN_k]);
+
+
+	      calculateSubgridError_tau(Ct_sge,Cd_sge,
+			                G,G_dd_G,tr_G,
 					dmom_u_acc_u_t,
-					dmom_u_acc_u,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
 					tau_v,
 					tau_p,
-					q_cfl[eN_k]);
+					q_cfl[eN_k]);	
+
+
+
+
 	      //calculateSubgridError_tau(Ct_sge,
 	      // 				      Cd_sge,
 	      // 				      G,
@@ -2688,15 +2727,29 @@ namespace proteus
 		    ck.AdvectionJacobian_strong(dmom_adv_sge,&vel_grad_trial[j_nSpace]);
 		}
 	      //calculate tau and tau*Res
-	      calculateSubgridError_tau(hFactor,
-					elementDiameter[eN],
+//	      calculateSubgridError_tau(hFactor,
+//					elementDiameter[eN],
+//					dmom_u_acc_u_t,
+//					dmom_u_acc_u,
+//					dmom_adv_sge,
+//					mom_u_diff_ten[1],
+//					tau_v,
+//					tau_p,
+//					q_cfl[eN_k]);
+					
+	      calculateSubgridError_tau(Ct_sge,Cd_sge,
+			                G,G_dd_G,tr_G,
 					dmom_u_acc_u_t,
-					dmom_u_acc_u,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
 					tau_v,
 					tau_p,
-					q_cfl[eN_k]);
+					q_cfl[eN_k]);					
+					
+					
+					
+					
+					
 	      //calculateSubgridError_tau(Ct_sge,
 	      // 				      Cd_sge,
 	      // 				      G,
