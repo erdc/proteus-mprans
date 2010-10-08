@@ -28,10 +28,16 @@ else:
     raise RuntimeError
 
 if cDegree_vof==0:
-    if pDegree_vof==1:
-        femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-    elif pDegree_vof==2:
-        femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
+    if useHex:
+        if pDegree_vof==1:
+            femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
+        elif pDegree_vof==2:
+            femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis}
+    else:
+        if pDegree_vof==1:
+            femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
+        elif pDegree_vof==2:
+            femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
     subgridError = Advection_ASGS(coefficients,nd,lag=False)
     shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=shockCapturingFactor_vof,lag=True)
     if parallel or LevelModelType == VOF.LevelModel:
@@ -49,9 +55,12 @@ elif cDegree_vof==-1:
     numericalFluxType = Advection_DiagonalUpwind
     limiterType =   {0:TimeIntegration.DGlimiterPkMonomial2d}
 
-elementQuadrature = SimplexGaussQuadrature(nd,vortex_quad_order)
-
-elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,vortex_quad_order)
+if useHex:
+    elementQuadrature = CubeGaussQuadrature(nd,vortex_quad_order)
+    elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,vortex_quad_order)
+else:
+    elementQuadrature = SimplexGaussQuadrature(nd,vortex_quad_order)
+    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,vortex_quad_order)
 
 #elementQuadrature = SimplexLobattoQuadrature(nd,1)
 #

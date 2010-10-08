@@ -24,35 +24,36 @@ elif timeIntegration_ls == "RK":
 else:
     raise RuntimeError
 
-if pDegree_ls == 1:
-    femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-elif pDegree_ls == 2:
-    femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
+if useHex:
+    if pDegree_ls == 1:
+        femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
+    elif pDegree_ls == 2:
+        femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis}#this is hardwired to p2 right now
+    else:
+        print "pDegree_ls = %s not recognized " % pDegree_ls
+    elementQuadrature = CubeGaussQuadrature(nd,vortex_quad_order)
+    elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,vortex_quad_order)
 else:
-    print "pDegree_ls = %s not recognized " % pDegree_ls
-#femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-
-elementQuadrature = SimplexGaussQuadrature(nd,vortex_quad_order)
-
-elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,vortex_quad_order)
-
+    if pDegree_ls == 1:
+        femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
+    elif pDegree_ls == 2:
+        femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
+    else:
+        print "pDegree_ls = %s not recognized " % pDegree_ls
+    elementQuadrature = SimplexGaussQuadrature(nd,vortex_quad_order)
+    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,vortex_quad_order)
 
 subgridError = None
-if useHJ:
-    if LevelModelType == NCLS.LevelModel:
-        subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=True)
-    else:
-        subgridError = HamiltonJacobi_ASGS(coefficients,nd,lag=True)
-else:
-    subgridError = Advection_ASGS(coefficients,nd,lag=True)
+
+subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=True)
 
 massLumping = False
 
 numericalFluxType = None
 
 shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=shockCapturingFactor_ls,lag=True)
-if LevelModelType == NCLS.LevelModel or parallel:
-        numericalFluxType = DoNothing
+
+numericalFluxType = DoNothing
 
 
 multilevelNonlinearSolver  = Newton

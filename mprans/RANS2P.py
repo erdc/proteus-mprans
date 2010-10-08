@@ -484,6 +484,34 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  reuse_trial_and_test_quadrature=True,
                  sd = True,
                  movingDomain=False):
+        self.postProcessing = False#this is a hack to test the effect of post-processing
+        if self.postProcessing:
+            from proteus import RANS2P as oldRANS2P
+            self.tmpvt = oldRANS2P.OneLevelRANS2P(uDict,
+                 phiDict,
+                 testSpaceDict,
+                 matType,
+                 dofBoundaryConditionsDict,
+                 dofBoundaryConditionsSetterDict,
+                 coefficients,
+                 elementQuadrature,
+                 elementBoundaryQuadrature,
+                 fluxBoundaryConditionsDict,
+                 advectiveFluxBoundaryConditionsSetterDict,
+                 diffusiveFluxBoundaryConditionsSetterDictDict,
+                 stressTraceBoundaryConditionsSetterDictDict,
+                 stabilization,
+                 shockCapturing,
+                 conservativeFluxDict,
+                 numericalFluxType,
+                 TimeIntegrationClass,
+                 massLumping,
+                 reactionLumping,
+                 options,
+                 name,
+                 reuse_trial_and_test_quadrature,
+                 sd,
+                 movingDomain)
         #
         #set the objects describing the method and boundary conditions
         #
@@ -741,6 +769,13 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #
         # allocate residual and Jacobian storage
         #
+        #
+        # allocate residual and Jacobian storage
+        #
+        self.elementResidual = [numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.nDOF_test_element[ci]),
+                'd')]
 	self.inflowBoundaryBC = {}
 	self.inflowBoundaryBC_values = {}
 	self.inflowFlux = {}
@@ -827,6 +862,17 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         log(memory("numericalFlux","OneLevelTransport"),level=4)
         self.elementEffectiveDiametersArray  = self.mesh.elementInnerDiametersArray
         #use post processing tools to get conservative fluxes, None by default
+        if self.postProcessing:
+            self.q[('v',0)] = self.tmpvt.q[('v',0)]
+            self.ebq[('v',0)] = self.tmpvt.ebq[('v',0)]  
+            self.ebq[('w',0)] = self.tmpvt.ebq[('w',0)]
+            self.ebq['sqrt(det(g))'] = self.tmpvt.ebq['sqrt(det(g))']
+            self.ebq['n'] = self.tmpvt.ebq['n']
+            self.ebq[('dS_u',0)] = self.tmpvt.ebq[('dS_u',0)]
+            self.ebqe['dS'] = self.tmpvt.ebqe['dS']
+            self.ebqe['n'] = self.tmpvt.ebqe['n']
+            self.ebq_global['n'] = self.tmpvt.ebq_global['n']
+            self.ebq_global['x'] = self.tmpvt.ebq_global['x']
         from proteus import PostProcessingTools
         self.velocityPostProcessor = PostProcessingTools.VelocityPostProcessingChooser(self)  
         log(memory("velocity postprocessor","OneLevelTransport"),level=4)
@@ -862,7 +908,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                    self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
                                    self.nElementBoundaryQuadraturePoints_elementBoundary,
                                    compKernelFlag)
-
     def getResidual(self,u,r):
         """
         Calculate the element residuals and add in to the global residual
@@ -1009,7 +1054,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('diffusiveFlux_bc',3,3)],
             self.q[('velocity',0)],
             self.ebqe[('velocity',0)],
-            self.ebq_global[('totalFlux',0)])
+            self.ebq_global[('totalFlux',0)],
+            self.elementResidual[0])
 
 	if self.forceStrongConditions:#
 	    for cj in range(len(self.dirichletConditionsForceDOF)):#
@@ -1182,6 +1228,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         
         This function should be called only when the mesh changes.
         """
+        if self.postProcessing:
+            self.tmpvt.calculateElementQuadrature()
         self.u[0].femSpace.elementMaps.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.elementMaps.getBasisGradientValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.getBasisValuesRef(self.elementQuadraturePoints)
@@ -1201,6 +1249,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 
         This function should be called only when the mesh changes.
         """
+        if self.postProcessing:
+            self.tmpvt.calculateElementBoundaryQuadrature()
         pass
     def calculateExteriorElementBoundaryQuadrature(self):
         """
@@ -1209,6 +1259,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 
         This function should be called only when the mesh changes.
         """
+        if self.postProcessing:
+            self.tmpvt.calculateExteriorElementBoundaryQuadrature()
         #
         #get physical locations of element boundary quadrature points
         #
@@ -1233,19 +1285,39 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def calculateSolutionAtQuadrature(self):
         pass
     def calculateAuxiliaryQuantitiesAfterStep(self):
-        #cek todo memory optimized version
-        #self.rans2p.calculateVelocityAverage(self.u[1].femSpace.elementMaps.permutations,
-        #     self.mesh.nExteriorElementBoundaries_global,
-        #     self.mesh.exteriorElementBoundariesArray,
-        #     self.mesh.nInteriorElementBoundaries_global,
-        #     self.mesh.interiorElementBoundariesArray,
-        #     self.mesh.elementBoundaryElementsArray,
-        #     self.mesh.elementBoundaryLocalElementBoundariesArray,
-        #     self.u[1].femSpace.dofMap.l2g,
-        #     self.u[1].dof,
-        #     self.u[2].dof,
-        #     self.u[3].dof,
-        #     self.ebq[('v',0)], 
-        #     self.ebqe[('velocity',0)],
-        #     self.ebq_global[('velocityAverage',0)])
+        if self.postProcessing:
+            from proteus.cRANS2P import calculateVelocityAverage as cva
+            cva(self.mesh.nExteriorElementBoundaries_global,
+                self.mesh.exteriorElementBoundariesArray,
+                self.mesh.nInteriorElementBoundaries_global,
+                self.mesh.interiorElementBoundariesArray,
+                self.mesh.elementBoundaryElementsArray,
+                self.mesh.elementBoundaryLocalElementBoundariesArray,
+                self.u[1].femSpace.dofMap.l2g,
+                self.u[1].dof,
+                self.u[2].dof,
+                self.u[3].dof,
+                self.ebq[('v',0)], 
+                self.ebqe[('velocity',0)],
+                self.ebq_global[('velocityAverage',0)])
+        # self.rans2p.calculateVelocityAverage(self.mesh.nExteriorElementBoundaries_global,
+        #                                      self.mesh.exteriorElementBoundariesArray,
+        #                                      self.mesh.nInteriorElementBoundaries_global,
+        #                                      self.mesh.interiorElementBoundariesArray,
+        #                                      self.mesh.elementBoundaryElementsArray,
+        #                                      self.mesh.elementBoundaryLocalElementBoundariesArray,
+        #                                      self.mesh.nodeArray,
+        #                                      self.mesh.elementNodesArray,
+        #                                      self.u[0].femSpace.elementMaps.psi_trace,
+        #                                      self.u[0].femSpace.elementMaps.grad_psi_trace,
+        #                                      self.u[0].femSpace.elementMaps.boundaryNormals,
+        #                                      self.u[0].femSpace.elementMaps.boundaryJacobians,
+        #                                      self.u[1].femSpace.dofMap.l2g,
+        #                                      self.u[1].dof,
+        #                                      self.u[2].dof,
+        #                                      self.u[3].dof,
+        #                                      self.u[1].femSpace.psi_trace,
+        #                                      self.ebqe[('velocity',0)],
+        #                                      self.ebq_global[('velocityAverage',0)])
         OneLevelTransport.calculateAuxiliaryQuantitiesAfterStep(self)
+

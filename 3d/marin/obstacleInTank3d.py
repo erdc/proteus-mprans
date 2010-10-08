@@ -9,10 +9,10 @@ from proteus import *
 #
 #water
 rho_0=1000.0#998.2
-nu_0=0.001#1.004e-6
+nu_0=0.001/rho_0#1.004e-6
 #air
 rho_1=1.0#1.205
-nu_1= 0.00002#1.500e-5
+nu_1= 0.00002/rho_1#1.500e-5
 #rho_1=rho_0
 #nu_1=nu_0
 #rho_0=rho_1
@@ -34,7 +34,7 @@ box_length = 0.161
 box_xy = [2.3955,.2985]
 #
 he = 0.75*box_width#
-he = 0.33*box_width
+#he = 0.33*box_width
 #he = 0.25*box_width
 
 he = 0.4*box_width
@@ -127,7 +127,7 @@ print triangleOptions
 applyCorrection=True
 applyRedistancing=True
 rdtimeIntegration='osher'
-#rdtimeIntegration='newton'
+rdtimeIntegration='newton'
 freezeLevelSet=True
 obstacleInTank_quad_order = 3
 useBackwardEuler=True

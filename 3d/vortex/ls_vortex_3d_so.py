@@ -22,19 +22,11 @@ else:
     systemStepControllerType = Sequential_MinAdaptiveModelStep
 
 name=soname
-if tryOpt:
-    needEBQ_GLOBAL  = False
-    needEBQ = False
-else:
-    needEBQ_GLOBAL  = True
-    needEBQ = True
 
-if tryOpt:
-    nDTout = 21
-    archiveFlag = ArchiveFlags.EVERY_USER_STEP
-    
-else:
-    nDTout = 1
+needEBQ_GLOBAL  = False
+needEBQ = False
+
+archiveFlag = ArchiveFlags.EVERY_USER_STEP
 DT = T/float(nDTout)
 tnList = [i*DT for i  in range(nDTout+1)]
 #cek hard coded steps for article snapshots

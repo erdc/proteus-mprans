@@ -656,7 +656,6 @@ namespace proteus
 	      globalResidual[offset_u+stride_u*u_l2g[eN_i]] += elementResidual_u[i];
 	    }//i
 	}//ebNE
-     // std::cout<<"VOFV2 global conservation============================================================="<<globalConservation<<std::endl;
     }
 
     void calculateJacobian(//element

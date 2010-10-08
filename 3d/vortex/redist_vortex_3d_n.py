@@ -7,10 +7,20 @@ timeIntegration = NoIntegration
 stepController = Newton_controller
 
 if cDegree_ls==0:
-    if pDegree_ls==1:
-        femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-    elif pDegree_ls==2:
-        femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
+    if useHex:
+        if pDegree_ls==1:
+            femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
+        elif pDegree_ls==2:
+            femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis}
+        elementQuadrature = CubeGaussQuadrature(nd,vortex_quad_order)
+        elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,vortex_quad_order)
+    else:    
+        if pDegree_ls==1:
+            femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
+        elif pDegree_ls==2:
+            femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
+        elementQuadrature = SimplexGaussQuadrature(nd,vortex_quad_order)    
+        elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,vortex_quad_order)
     if LevelModelType == RDLS.LevelModel:
         subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=False)
     else:
@@ -32,9 +42,6 @@ elif cDegree_ls==-1:
         femSpaces = {0:DG_AffineP2_OnSimplexWithMonomialBasis}
     numericalFluxType=HamiltonJacobi_DiagonalLesaintRaviart
 
-elementQuadrature = SimplexGaussQuadrature(nd,vortex_quad_order)
-
-elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,vortex_quad_order)
 
 multilevelNonlinearSolver  = Newton
 levelNonlinearSolver = Newton

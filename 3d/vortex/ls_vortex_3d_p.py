@@ -5,12 +5,12 @@ from vortex import *
 from proteus.mprans import NCLS
 #import Profiling
 
+LevelModelType = NCLS.LevelModel
 logEvent = Profiling.logEvent
 name=soname+"_ls"
 
 nd=3
-if tryNCLS:
-    LevelModelType = NCLS.LevelModel
+
 ## \page Tests Test Problems 
 # \ref ls_vortex_2d_p.py "Linear advection of a circular level set function in an oscillating vortex velocity field"
 # 
@@ -86,16 +86,14 @@ class UnitSquareVortex(TransportCoefficients.TC_base):
         self.model = modelList[0]
         self.q_v = numpy.zeros(self.model.q[('dH',0,0)].shape,'d')
         self.ebqe_v = numpy.zeros(self.model.ebqe[('dH',0,0)].shape,'d')
-        if tryNCLS:
-            #mwf hack trying to test NCLS
-            self.unitSquareVortexLevelSetEvaluate(self.model.timeIntegration.tLast,
-                                                  self.model.q['x'],
-                                                  self.model.q[('u',0)],self.model.q[('grad(u)',0)],
-                                                  self.model.q[('m',0)],self.model.q[('dm',0,0)],
-                                                  self.model.q[('dH',0,0)],self.model.q[('dH',0,0)],
-                                                  self.model.q[('H',0)],self.q_v)
-            self.model.q[('velocity',0)]=self.q_v
-            self.model.ebqe[('velocity',0)]=self.ebqe_v
+        self.unitSquareVortexLevelSetEvaluate(self.model.timeIntegration.tLast,
+                                              self.model.q['x'],
+                                              self.model.q[('u',0)],self.model.q[('grad(u)',0)],
+                                              self.model.q[('m',0)],self.model.q[('dm',0,0)],
+                                              self.model.q[('dH',0,0)],self.model.q[('dH',0,0)],
+                                              self.model.q[('H',0)],self.q_v)
+        self.model.q[('velocity',0)]=self.q_v
+        self.model.ebqe[('velocity',0)]=self.ebqe_v
         if self.checkMass:
             self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
                                                                      self.model.mesh.elementDiametersArray,
@@ -110,14 +108,12 @@ class UnitSquareVortex(TransportCoefficients.TC_base):
             self.fluxArray = [0.0]
             self.timeArray = [self.model.timeIntegration.t]
     def preStep(self,t,firstStep=False):
-        if tryNCLS:
-            #mwf hack trying to test NCLS
-            self.unitSquareVortexLevelSetEvaluate(t,
-                                                  self.model.q['x'],
-                                                  self.model.q[('u',0)],self.model.q[('grad(u)',0)],
-                                                  self.model.q[('m',0)],self.model.q[('dm',0,0)],
-                                                  self.model.q[('dH',0,0)],self.model.q[('dH',0,0)],
-                                                  self.model.q[('H',0)],self.q_v)
+        self.unitSquareVortexLevelSetEvaluate(t,
+                                              self.model.q['x'],
+                                              self.model.q[('u',0)],self.model.q[('grad(u)',0)],
+                                              self.model.q[('m',0)],self.model.q[('dm',0,0)],
+                                              self.model.q[('dH',0,0)],self.model.q[('dH',0,0)],
+                                              self.model.q[('H',0)],self.q_v)
         if self.checkMass:
             self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
                                                              self.model.mesh.elementDiametersArray,
@@ -179,7 +175,7 @@ class UnitSquareVortex(TransportCoefficients.TC_base):
                                           c[('m',0)],c[('dm',0,0)],
                                           c[('f',0)],c[('df',0,0)])
         c[('velocity',0)]=c[('df',0,0)]
-coefficients = UnitSquareVortex(useHJ=useHJ,epsFact=epsFactHeaviside,checkMass=checkMass)
+coefficients = UnitSquareVortex(useHJ=True,epsFact=epsFactHeaviside,checkMass=checkMass)
 
 coefficients.variableNames=['u']
 

@@ -3,8 +3,8 @@ from proteus.default_p import *
 from math import *
 from vortex import *
 from proteus.mprans import RDLS
-if tryRDLS:
-    LevelModelType = RDLS.LevelModel
+
+LevelModelType = RDLS.LevelModel
 
 coefficients = RDLS.Coefficients(applyRedistancing=applyRedistancing,
                                   epsFact=epsFactRedistance,

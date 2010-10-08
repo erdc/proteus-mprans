@@ -9,8 +9,7 @@ name=soname+"_vof"
 The non-conservative level set description of a bubble in a two-phase flow
 """
 
-if tryVOF:
-   LevelModelType = VOF.LevelModel
+LevelModelType = VOF.LevelModel
 
 ##\ingroup test
 #\file vof_vortex_2d_p.py

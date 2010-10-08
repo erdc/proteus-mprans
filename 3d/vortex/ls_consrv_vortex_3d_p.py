@@ -4,8 +4,9 @@ from vortex import *
 name=soname+"_phicor"
 from proteus.mprans import MCorr
 
-if tryMCorr:
-    LevelModelType = MCorr.LevelModel
+
+LevelModelType = MCorr.LevelModel
+
 coefficients = MCorr.Coefficients(applyCorrection=applyCorrection,
                                     epsFactHeaviside=epsFactHeaviside,
                                     epsFactDirac=epsFactDirac,

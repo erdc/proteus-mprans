@@ -25,6 +25,19 @@ namespace proteus
 					      int nQuadraturePoints_elementBoundaryIn,
 					      int CompKernelFlag)//0=Parametric
 	   {
+	     std::cout<<"Constructing model object from template class:"<<std::endl
+		      <<"return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<"
+		      <<nSpaceIn<<","
+		      <<nDOF_mesh_trial_elementIn<<","
+		      <<nDOF_trial_elementIn<<","
+		      <<nDOF_test_elementIn<<">,"
+		      <<nSpaceIn<<","
+		      <<nQuadraturePoints_elementIn<<","
+		      <<nDOF_mesh_trial_elementIn<<","
+		      <<nDOF_trial_elementIn<<","
+		      <<nDOF_test_elementIn<<","
+		      <<nQuadraturePoints_elementBoundaryIn<<">());"
+		      <<std::endl<<std::flush;
 	     if (CompKernelFlag == 0)
 	       {
 		 if (nSpaceIn == 3)
@@ -42,7 +55,8 @@ namespace proteus
 			   }
 			 else if (nDOF_mesh_trial_elementIn == 8)
 			   {
-			     abort();//ido todo, add q1 iso
+			     if (nQuadraturePoints_elementIn == 27)
+			       return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,8,8>,3,27,8,8,8,9>());
 			   }
 			 else if (nDOF_mesh_trial_elementIn == 10)
 			   {
@@ -67,7 +81,9 @@ namespace proteus
 		       }
 		     else if (nDOF_mesh_trial_elementIn == 8)//sub-parametric hexes
 		       {
-			 abort();//todo ito add q2 on hex mesh
+			 if (nDOF_trial_elementIn == 27)
+			   if (nQuadraturePoints_elementIn == 125)
+			     return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,125,8,27,27,25>());
 		       }
 		     else
 		       abort();
