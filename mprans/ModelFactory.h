@@ -82,7 +82,21 @@ namespace proteus
 			   }
 			 else if (nDOF_mesh_trial_elementIn == 27)
 			   {
-			     abort();//ido todo, add q2 iso
+			     if (nQuadraturePoints_elementIn == 8)
+			       if ( nQuadraturePoints_elementBoundaryIn == 4)
+			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,27,27,27>,3,8,27,27,27,4>());
+			       else if ( nQuadraturePoints_elementBoundaryIn == 9)
+			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,27,27,27>,3,8,27,27,27,9>());
+			       else  
+				 abort();
+			     else if (nQuadraturePoints_elementIn == 27)
+			       if ( nQuadraturePoints_elementBoundaryIn == 4)
+			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,27,27,27>,3,27,27,27,27,4>());
+			       else if ( nQuadraturePoints_elementBoundaryIn == 9)			     			     
+			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,27,27,27>,3,27,27,27,27,9>());
+			       else
+			         abort();	 
+			     else
 			   }
 			 else
 			   abort();
