@@ -7,7 +7,10 @@ from ls_consrv_obstacleInTank_3d_p import *
 stepController = FixedStep
 timeIntegration = NoIntegration
 
-femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
+if spaceOrder == 1:
+    femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
+elif spaceOrder == 2:
+    femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis}
 
 elementQuadrature = CubeGaussQuadrature(nd,obstacleInTank_quad_order)
 

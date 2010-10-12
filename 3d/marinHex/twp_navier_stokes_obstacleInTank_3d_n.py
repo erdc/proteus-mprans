@@ -31,11 +31,11 @@ if spaceOrder==1:
                  3:C0_AffineLinearOnCubeWithNodalBasis}
     hFactor=1.0
 if spaceOrder==2:
-    femSpaces = {0:C0_AffineQuadraticOnCubeWithNodalBasis,
-                 1:C0_AffineQuadraticOnCubeWithNodalBasis,
-                 2:C0_AffineQuadraticOnCubeWithNodalBasis,
-                 3:C0_AffineQuadraticOnCubeWithNodalBasis}
-    hFactor=0.5
+    femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis,
+                 1:C0_AffineLagrangeOnCubeWithNodalBasis,
+                 2:C0_AffineLagrangeOnCubeWithNodalBasis,
+                 3:C0_AffineLagrangeOnCubeWithNodalBasis}
+    hFactor=1.0
 elementQuadrature = CubeGaussQuadrature(nd,obstacleInTank_quad_order)
 
 elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,obstacleInTank_quad_order)

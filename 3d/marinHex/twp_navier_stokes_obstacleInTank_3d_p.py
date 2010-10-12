@@ -32,14 +32,38 @@ dirichletConditions = {0:getDBC_p_obstacleInTank,
                        2:getDBC_v_obstacleInTank,
                        3:getDBC_w_obstacleInTank}
 
+eps=1.0e-4
+
 def getAFBC_p_obstacleInTank(x,flag):
-    return lambda x,t: 0.0
+    if x[0] in [0.0, 3.22] or x[1] in [0.0,1.0] or x[2] in [0.0,1.0]:
+        return lambda x,t: 0.0
+    if x[0]>=2.3955-eps and x[0]<=2.5565+eps and x[1]>=0.2985-eps and x[1]<=0.7015+eps and x[2]>=0.0-eps and x[2]<=0.161+eps:
+        return lambda x,t: 0.0
 def getAFBC_u_obstacleInTank(x,flag):
-    return lambda x,t: 0.0
+    if x[0] in [0.0, 3.22] or x[1] in [0.0,1.0] or x[2] in [0.0,1.0]:
+        return lambda x,t: 0.0
+    if x[0]>=2.3955-eps and x[0]<=2.5565+eps and x[1]>=0.2985-eps and x[1]<=0.7015+eps and x[2]>=0.0-eps and x[2]<=0.161+eps:
+        return lambda x,t: 0.0
 def getAFBC_v_obstacleInTank(x,flag):
-    return lambda x,t: 0.0
+    if x[0] in [0.0, 3.22] or x[1] in [0.0,1.0] or x[2] in [0.0,1.0]:
+        return lambda x,t: 0.0
+    if x[0]>=2.3955-eps and x[0]<=2.5565+eps and x[1]>=0.2985-eps and x[1]<=0.7015+eps and x[2]>=0.0-eps and x[2]<=0.161+eps:
+        return lambda x,t: 0.0
 def getAFBC_w_obstacleInTank(x,flag):
-    return lambda x,t: 0.0
+    if x[0] in [0.0, 3.22] or x[1] in [0.0,1.0] or x[2] in [0.0,1.0]:
+        return lambda x,t: 0.0
+    if x[0]>=2.3955-eps and x[0]<=2.5565+eps and x[1]>=0.2985-eps and x[1]<=0.7015+eps and x[2]>=0.0-eps and x[2]<=0.161+eps:
+        return lambda x,t: 0.0
+#def getDFBC_u_obstacleInTank(x,flag):
+#    if x[0] in [0.0, 3.22] or x[1] in [0.0,1.0] or x[2] in [0.0,1.0]:
+#        return lambda x,t: 0.0
+#def getDFBC_v_obstacleInTank(x,flag):
+#    if x[0] in [0.0, 3.22] or x[1] in [0.0,1.0] or x[2] in [0.0,1.0]:
+#        return lambda x,t: 0.0
+#def getDFBC_w_obstacleInTank(x,flag):
+#    if x[0] in [0.0, 3.22] or x[1] in [0.0,1.0] or x[2] in [0.0,1.0]:
+#        return lambda x,t: 0.0
+
 def getDFBC_u_obstacleInTank(x,flag):
     return lambda x,t: 0.0
 def getDFBC_v_obstacleInTank(x,flag):

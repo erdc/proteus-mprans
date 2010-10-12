@@ -14,7 +14,7 @@ else:
 if spaceOrder == 1:
     femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
 elif spaceOrder == 2:
-    femSpaces = {0:C0_AffineQuadraticOnCubeWithNodalBasis}
+    femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis}
 
 elementQuadrature = CubeGaussQuadrature(nd,obstacleInTank_quad_order)
 

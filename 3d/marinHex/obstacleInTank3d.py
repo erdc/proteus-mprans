@@ -98,7 +98,11 @@ applyRedistancing=True
 #rdtimeIntegration='osher'
 rdtimeIntegration='pseudoTime'#'newton'
 freezeLevelSet=True
-obstacleInTank_quad_order = 3
+
+
+spaceOrder=2
+obstacleInTank_quad_order = spaceOrder+1
+
 useBackwardEuler=True
 useBackwardEuler_ls=True
 #subgrid error
@@ -122,7 +126,6 @@ epsFact_consrv_diffusion=10.0
 epsFact_vof=1.5
 #
 usePETSc=True#False
-spaceOrder=1
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 1

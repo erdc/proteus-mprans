@@ -10,7 +10,13 @@ elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,obstacleInTank_quad_order)
 
 timeIntegration = BackwardEuler_cfl
 stepController = FixedStep
-femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
+
+if spaceOrder == 1:
+    femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
+elif spaceOrder == 2:
+    femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis}
+
+
 shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=lag_vof_shockCapturing)#linear
 subgridError = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)#it's linear anyway
 massLumping = False
