@@ -9,13 +9,12 @@ coefficients = VOF.Coefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFa
 
 class Shock_H:
     def uOfXT(self,x,t):
-        return smoothedHeaviside(epsFact_consrv_heaviside*he,shockSignedDistance(x))
+        return smoothedHeaviside(epsFact_consrv_heaviside*0.1,shockSignedDistance(x))
 
 analyticalSolutions = None
 
 def getDBC_vof(x,flag):
-    if flag == boundaryTags['top']:
-        return lambda x,t: 1.0
+    pass
 
 dirichletConditions = {0:getDBC_vof}
 
@@ -24,8 +23,7 @@ initialConditions  = {0:Shock_H()}
 fluxBoundaryConditions = {0:'mixedFlow'}
 
 def getAFBC_vof(x,flag):
-    if flag != boundaryTags['top']:
-        return lambda x,t: 0.0
+    return lambda x,t: 0.0
 
 advectiveFluxBoundaryConditions =  {0:getAFBC_vof}
 

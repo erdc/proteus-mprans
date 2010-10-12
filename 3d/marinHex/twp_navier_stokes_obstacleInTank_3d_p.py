@@ -19,8 +19,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    useRBLES=1.0)
 
 def getDBC_p_obstacleInTank(x,flag):
-    if flag == boundaryTags['top']:
-        return lambda x,t: 0.0
+    return None
 def getDBC_u_obstacleInTank(x,flag):
     return None
 def getDBC_v_obstacleInTank(x,flag):
@@ -34,37 +33,13 @@ dirichletConditions = {0:getDBC_p_obstacleInTank,
                        3:getDBC_w_obstacleInTank}
 
 def getAFBC_p_obstacleInTank(x,flag):
-    if(flag == boundaryTags['obstacle'] or
-       flag == boundaryTags['left'] or
-       flag == boundaryTags['right'] or
-       flag == boundaryTags['front'] or
-       flag == boundaryTags['back'] or
-       flag == boundaryTags['bottom']):
-        return lambda x,t: 0.0
+    return lambda x,t: 0.0
 def getAFBC_u_obstacleInTank(x,flag):
-    if(flag == boundaryTags['obstacle'] or
-       flag == boundaryTags['left'] or
-       flag == boundaryTags['right'] or
-       flag == boundaryTags['front'] or
-       flag == boundaryTags['back'] or
-       flag == boundaryTags['bottom']):
-        return lambda x,t: 0.0
+    return lambda x,t: 0.0
 def getAFBC_v_obstacleInTank(x,flag):
-    if(flag == boundaryTags['obstacle'] or
-       flag == boundaryTags['left'] or
-       flag == boundaryTags['right'] or
-       flag == boundaryTags['front'] or
-       flag == boundaryTags['back'] or
-       flag == boundaryTags['bottom']):
-        return lambda x,t: 0.0
+    return lambda x,t: 0.0
 def getAFBC_w_obstacleInTank(x,flag):
-    if(flag == boundaryTags['obstacle'] or
-       flag == boundaryTags['left'] or
-       flag == boundaryTags['right'] or
-       flag == boundaryTags['front'] or
-       flag == boundaryTags['back'] or
-       flag == boundaryTags['bottom']):
-        return lambda x,t: 0.0
+    return lambda x,t: 0.0
 def getDFBC_u_obstacleInTank(x,flag):
     return lambda x,t: 0.0
 def getDFBC_v_obstacleInTank(x,flag):
@@ -91,8 +66,8 @@ class Shock_p:
     def uOfXT(self,x,t):
         if shockSignedDistance(x) < 0:
             return -g[2]*(rho_0*(height - x[2])
-                          -(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,height-waterColumn_z)
-                          +(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,x[2]-waterColumn_z))
+                          -(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*0.1,height-waterColumn_z)
+                          +(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*0.1,x[2]-waterColumn_z))
         else:
             return -rho_1*g[2]
 
