@@ -8,18 +8,26 @@ timeIntegrator = ForwardIntegrator
 timeIntegration = BackwardEuler#NoIntegration
 timeIntegration = NoIntegration
 
-if spaceOrder == 1:
-    femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-elif spaceOrder == 2:
-    femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
+if useHex:
+    if spaceOrder == 1:
+        femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
+    elif spaceOrder == 2:
+        femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis}
+    elementQuadrature = CubeGaussQuadrature(nd,sloshbox_quad_order)
+    elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,sloshbox_quad_order)
+else:
+    if spaceOrder == 1:
+        femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
+    elif spaceOrder == 2:
+        femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
+    elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
+    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
+
 #femSpaces = {0:DG_AffineQuadraticOnSimplexWithNodalBasis}
 #femSpaces = {0:DG_AffineLinearOnSimplexWithNodalBasis}
 #femSpaces = {0:DG_Constants}
 #femSpaces = {0:DG_AffineP2_OnSimplexWithMonomialBasis}
 
-elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
-
-elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
 
 # elementQuadrature = SimplexLobattoQuadrature(nd,1)
 

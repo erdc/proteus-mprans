@@ -27,31 +27,43 @@ else:
     atol_u[3] = 1.0e-2
 
 noPressureStabilization=False
-if spaceOrder==1:
-    femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis,
-                 1:C0_AffineLinearOnSimplexWithNodalBasis,
-                 2:C0_AffineLinearOnSimplexWithNodalBasis,
-                 3:C0_AffineLinearOnSimplexWithNodalBasis}
-    hFactor=1.0
-if spaceOrder==2:
-    femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis,
-                 1:C0_AffineQuadraticOnSimplexWithNodalBasis,
-                 2:C0_AffineQuadraticOnSimplexWithNodalBasis,
-                 3:C0_AffineQuadraticOnSimplexWithNodalBasis}
-    hFactor=0.5
-elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
-
-elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
+if useHex:
+    if spaceOrder==1:
+        femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis,
+                     1:C0_AffineLinearOnCubeWithNodalBasis,
+                     2:C0_AffineLinearOnCubeWithNodalBasis,
+                     3:C0_AffineLinearOnCubeWithNodalBasis}
+        hFactor=1.0
+    if spaceOrder==2:
+        femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis,
+                     1:C0_AffineLagrangeOnCubeWithNodalBasis,
+                     2:C0_AffineLagrangeOnCubeWithNodalBasis,
+                     3:C0_AffineLagrangeOnCubeWithNodalBasis}
+        hFactor=0.5
+    elementQuadrature = CubeGaussQuadrature(nd,sloshbox_quad_order)
+    elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,sloshbox_quad_order)
+else:
+    if spaceOrder==1:
+        femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis,
+                     1:C0_AffineLinearOnSimplexWithNodalBasis,
+                     2:C0_AffineLinearOnSimplexWithNodalBasis,
+                     3:C0_AffineLinearOnSimplexWithNodalBasis}
+        hFactor=1.0
+    if spaceOrder==2:
+        femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis,
+                     1:C0_AffineQuadraticOnSimplexWithNodalBasis,
+                     2:C0_AffineQuadraticOnSimplexWithNodalBasis,
+                     3:C0_AffineQuadraticOnSimplexWithNodalBasis}
+        hFactor=0.5
+    elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
+    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
 
 subgridError = None
 
-#subgridError = NavierStokesASGS_velocity_pressure(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
-#subgridError = NavierStokesASGS_velocity_pressure_opt(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
 subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
 
 massLumping = False
 
-#shockCapturing = NavierStokes_SC(coefficients,nd,ns_shockCapturingFactor,lag=True)
 shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=lag_ns_shockCapturing)
 
 numericalFluxType = None

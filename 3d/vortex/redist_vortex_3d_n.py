@@ -55,7 +55,8 @@ tolFac = 0.0
 
 nl_atol_res = atolRedistance
 
-maxNonlinearIts = 50 #1 for PTC
+maxNonlinearIts = 100 #1 for PTC
+maxLineSearches = 100
 levelNonlinearSolverConvergenceTest='rits'
 
 matrix = SparseMatrix

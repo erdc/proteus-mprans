@@ -16,25 +16,28 @@ else:
     rtol_u[0] = 1.0e-2
     atol_u[0] = 1.0e-2
 
-if spaceOrder == 1:
-    femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-elif spaceOrder == 2:
-    femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
+if useHex:
+    if spaceOrder == 1:
+        femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
+    elif spaceOrder == 2:
+        femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis}
+    elementQuadrature = CubeGaussQuadrature(nd,sloshbox_quad_order)
+    elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,sloshbox_quad_order)
+else:
+    if spaceOrder == 1:
+        femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
+    elif spaceOrder == 2:
+        femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
+    elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
+    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
 
-elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
 
-elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
-
-
-subgridError = HamiltonJacobi_ASGS(coefficients,nd,lag=False)#it's  linear anyway
 subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)#it's  linear anyway
 
 massLumping = False
 
 numericalFluxType = None
 
-shockCapturing = None
-#shockCapturing = ResGrad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=lag_ls_shockCapturing)
 shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=lag_ls_shockCapturing)
 
 multilevelNonlinearSolver  = Newton#NLNI

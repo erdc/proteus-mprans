@@ -13,18 +13,23 @@ else:
     rtol_res[0] = 0.0
     atol_res[0] = he*0.01#1.0e-6
 
-if spaceOrder == 1:
-    femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-if spaceOrder == 2:
-    femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
-
-elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
-
-elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
-
+if useHex:
+    if spaceOrder == 1:
+        femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
+    if spaceOrder == 2:
+        femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis}
+    elementQuadrature = CubeGaussQuadrature(nd,sloshbox_quad_order)
+    elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,sloshbox_quad_order)
+else:
+    if spaceOrder == 1:
+        femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
+    if spaceOrder == 2:
+        femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
+    elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
+    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
+    
 if rdtimeIntegration != 'newton':    
     subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=True)
-    
     shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=True)
 else:
     subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=False)
@@ -39,7 +44,14 @@ levelNonlinearSolver = UnstructuredFMMandFSWsolvers.FMMEikonalSolver
 multilevelNonlinearSolver  = NLNI
 levelNonlinearSolver = Newton
 if rdtimeIntegration != 'newton':    
+    maxNonlinearIts = 1
     maxLineSearches = 0
+else:
+    maxNonlinearIts = 50
+    maxLineSearches = 20
+    nonlinearSolverConvergenceTest = 'rits'
+    levelNonlinearSolverConvergenceTest = 'rits'
+
 nonlinearSmoother = NLGaussSeidel
 
 fullNewtonFlag = True
@@ -50,9 +62,8 @@ tolFac = 0.0
 if rdtimeIntegration != 'newton':
     nl_atol_res = 0.1*he
 else:
-    nl_atol_res = 0.01*he#1.0e-7#0.01*L[0]/nnx
+    nl_atol_res = 0.1*he#1.0e-7#0.01*L[0]/nnx
 
-maxNonlinearIts = 50 #1 for PTC
 
 matrix = SparseMatrix
 

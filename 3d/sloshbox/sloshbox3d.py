@@ -1,22 +1,26 @@
 from math import *
 import proteus.MeshTools
+
 checkMass=False
 applyCorrection=True
 applyRedistancing=True
 rdtimeIntegration='newton'
 #rdtimeIntegration='osher'
 freezeLevelSet=True#False
-spaceOrder=1
+
+spaceOrder=2
+useHex=True
 if spaceOrder == 1:
     sloshbox_quad_order = 3
 elif spaceOrder == 2:
     sloshbox_quad_order = 5
 
-nodalPartitioning=False#True
+nodalPartitioning=True
 nd = 3
 useBackwardEuler=True
 useBackwardEuler_ls=True
 useFixedStep=True
+runCFL = 0.33
 dt_fixed = 0.01
 timeOrder = 1
 dt_init=1.0e-4
@@ -24,7 +28,6 @@ T=3.0#20.0
 nDTout = 100
 if useFixedStep:
     nDTout = int(round(T/dt_fixed))
-runCFL = 0.33
 
 lag_ns_subgridError=True
 lag_ns_shockCapturing=True
@@ -45,55 +48,51 @@ epsFact_consrv_dirac=1.5
 epsFact_consrv_diffusion=10.0
 epsFact_vof=1.5
 
-usePETSc=True
-
+usePETSc=False#True
 
 L = (10.0,10.0,2.0)
-#L = (0.1,10.0,2.0)
 useStokes=False
 
-#nnx=41;nny=2;nnz=41
-nnx=21;nny=21;nnz=11#good on ranger on 16
-#nnx=81;nny=81;nnz=21#trying on ranger 256
-#nnx=21;nny=3;nnz=21
-#nnx=31;nny=31;nnz=7
-#nnx=2;nny=101;nnz=21
-#nnx=11;nny=11;nnz=3
-#nnx=41;nny=41;nnz=9
-he = L[0]/float(nnx-1)
 nLevels = 1#
-
 useShock=True
-shock_x = 0.5*L[0]
-shock_y = 0.5*L[1]
-shock_z = 0.9*L[2]
 
-#2D sloshbox
-#nnx=201;nny=2;nnz=41
-#nnx=101;nny=2;nnz=21
-#nnx=51;nny=2;nnz=11
-nnx=26;nny=2;nnz=6
+lRefinement=1
+nnx=(2**lRefinement)*10+1
+nnz = (nnx-1)/5 + 1
 he = 10.0/float(nnx-1)
-L = (10.0,he,2.0)
-shock_x = 0.5*L[0]
-shock_y = -L[0]
-shock_z = 0.5*L[2]
 
-#replace with unstructured grid
-lRefinement=2
-he=1.25*he*(0.5**lRefinement)
-#to make 2D
-L=[L[0],2*he,L[2]]
-regularGrid=False
-from tank3dDomain import *
-domain = tank3d(L=L)
-bt = domain.boundaryTags
-domain.writePoly("tank3d")
-domain.writePLY("tank3d")
-domain.writeAsymptote("tank3d")
+if useHex:
+    hex=True
+    soname="sloshbox_c0q"+`spaceOrder`+"_bdf_"+`timeOrder`+"_level_"+`lRefinement`
+else:
+    soname="sloshbox_c0p"+`spaceOrder`+"_bdf_"+`timeOrder`+"_level_"+`lRefinement`
 
-triangleOptions="VApq1.25q12ena%21.16e" % ((he**3)/6.0,)
+pseudo2D=True
+if pseudo2D:
+    nny=2
+    L=(L[0],he,L[2])
+    shock_x = 0.5*L[0]
+    shock_y = -L[0]#hack to get signed distance right in 2D
+    shock_z = 0.5*L[2]
+else:
+    nny=nnx
+    shock_x = 0.5*L[0]
+    shock_y = 0.5*L[1]
+    shock_z = 0.9*L[2]
 
+regularGrid=True
+if regularGrid:
+    from proteus.Domain import RectangularDomain
+    domain = RectangularDomain(L)
+else:
+    from tank3dDomain import *
+    domain = tank3d(L=L)
+    domain.writePoly("tank3d")
+    domain.writePLY("tank3d")
+    domain.writeAsymptote("tank3d")
+    triangleOptions="VApq1.25q12ena%21.16e" % ((he**3)/6.0,)
+    bt = domain.boundaryTags
+    
 waterLevel = 0.5*L[2]
 slopeAngle = 0.5*(pi/2.0)
 

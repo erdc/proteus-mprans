@@ -32,7 +32,7 @@ if sloshbox3d.useFixedStep:
 needEBQ_GLOBAL = False#True
 needEBQ = False#True
 useOneArchive = True
-
+name=soname
 tnList = [0.0,sloshbox3d.dt_init]+[sloshbox3d.dt_init+i*(sloshbox3d.T-sloshbox3d.dt_init)/float(sloshbox3d.nDTout-1) for i in range(1,sloshbox3d.nDTout)]
 if sloshbox3d.useFixedStep:
     tnList = [0.0,sloshbox3d.dt_init]+[i*sloshbox3d.dt_fixed for i in range(1,sloshbox3d.nDTout)] 

@@ -45,6 +45,20 @@ class Vortex_phi:
     #end
 #end Vortex_phi
 
+class Vortex_phi_cylinder:
+    def __init__(self,center=[0.5,0.75,0.5],radius=0.15):
+        self.radius  = radius
+        self.center  = center
+    def uOfX(self,X):
+        dx = X[0]-self.center[0]; dy = X[1]-self.center[1]; dz = X[2]-self.center[2]
+        dBubble = self.radius - sqrt(dx**2 + dy**2)
+        return smoothedHeaviside(epsFactHeaviside*he,dBubble)#Heaviside(dBubble)
+    #end
+    def uOfXT(self,X,t):
+        return self.uOfX(X)
+    #end
+#end Vortex_phi
+
 analyticalSolutions = None
 
 def getDBC(x,flag):
@@ -53,7 +67,10 @@ def getDBC(x,flag):
 dirichletConditions = {0:getDBC}
 
 #cek changed to put sphere inside arbitrary box with dim L
-initialConditions  = {0:Vortex_phi(center=[0.5*L[0],0.75*L[1],0.5*L[2]],radius=0.15*L[0])}
+if pseudo2D:
+    initialConditions  = {0:Vortex_phi_cylinder(center=[0.5*L[0],0.75*L[1],0.5*L[2]],radius=0.15*L[0])}
+else:
+    initialConditions  = {0:Vortex_phi(center=[0.5*L[0],0.75*L[1],0.5*L[2]],radius=0.15*L[0])}
 
 fluxBoundaryConditions = {0:'outFlow'}
 

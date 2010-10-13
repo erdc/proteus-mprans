@@ -55,8 +55,11 @@ class OscillatingVortex3Dcylinder:
         self.yc=0.75*L[1]
     def uOfXT(self,x,t):
         return self.radius - math.sqrt((x[0]-self.xc)**2 + (x[1]-self.yc)**2)
-        
-analyticalSolution = {0:OscillatingVortex3Dcylinder(L)}
+
+if pseudo2D:        
+    analyticalSolution = {0:OscillatingVortex3Dcylinder(L)}
+else:
+    analyticalSolution = {0:OscillatingVortex3D(L)}
 
 class UnitSquareVortex(TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import unitSquareVortexEvaluate

@@ -19,8 +19,8 @@ def getDBC(x,flag):
 dirichletConditions = {0:getDBC}
 
 if LevelModelType == RDLS.LevelModel:
-    #weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCs}
-    weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCsSimple}
+    weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCs}
+    #weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCsSimple}
 else:
     weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs}
 

@@ -19,7 +19,7 @@ runCFL = 0.3#0.3,0.185,0.125 for dgp1,dgp2,dgpk(3)
 #spatial approximation orders
 cDegree_ls=0 #0 -- CG. -1 -- DG
 cDegree_vof=0
-pDegree_ls=1 #level set 
+pDegree_ls=2 #level set 
 pDegree_vof=pDegree_ls #volume of fluid should match ls for now
 useHex=True
 #
@@ -41,7 +41,7 @@ if useHex:
     soname="vortex_c0q"+`pDegree_ls`+"_bdf_"+`timeOrder`+"_level_"+`lRefinement`
 else:
     soname="vortex_c0p"+`pDegree_ls`+"_bdf_"+`timeOrder`+"_level_"+`lRefinement`
-pseudo2D=True
+pseudo2D=False#True
 if pseudo2D:
     nn=nnx=nny=(2**lRefinement)*10+1
     nnz=2
@@ -49,6 +49,7 @@ if pseudo2D:
     L=[1.0,1.0,he]
 else:
     nn=nnx=nny=nnz=(2**lRefinement)*10+1
+    he=1.0/(nnx-1.0)
     L = [1.0,1.0,1.0]
 unstructured=False#True#True for tetgen, false for tet or hex from rectangular grid
 if unstructured:
@@ -79,7 +80,7 @@ epsFact_vof=1.5
 #
 shockCapturingFactor_vof=0.33
 shockCapturingFactor_ls=0.33
-shockCapturingFactor_rd=0.33
+shockCapturingFactor_rd=0.99
 #use absolute tolerances on al models
 atolRedistance = 0.01*he
 atolConservation = 1.0e-6

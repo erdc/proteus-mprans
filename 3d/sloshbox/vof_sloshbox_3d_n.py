@@ -3,9 +3,6 @@ from proteus.default_n import *
 from sloshbox3d import *
 from vof_sloshbox_3d_p import *
 
-elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
-
-elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
 
 
 timeIntegration = BackwardEuler_cfl
@@ -15,11 +12,21 @@ if timeOrder == 2:
     stepController = Min_dt_cfl_controller
 #timeIntegration = BackwardEuler
 #stepController=FixedStep
-if spaceOrder == 1:
-    femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-elif spaceOrder == 2:
-    femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
-    
+if useHex:
+    if spaceOrder == 1:
+        femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
+    elif spaceOrder == 2:
+        femSpaces = {0:C0_AffineLagrangeOnCubeWithNodalBasis}
+    elementQuadrature = CubeGaussQuadrature(nd,sloshbox_quad_order)
+    elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,sloshbox_quad_order)
+else:
+    if spaceOrder == 1:
+        femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
+    elif spaceOrder == 2:
+        femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
+    elementQuadrature = SimplexGaussQuadrature(nd,sloshbox_quad_order)
+    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,sloshbox_quad_order)
+
 shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)#linear
 subgridError = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)
 massLumping = False
