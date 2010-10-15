@@ -33,6 +33,7 @@ namespace proteus
 			   double* boundaryJac_ref,
 			   //physics
 			   int nElements_global,
+			   double useMetrics, 
 			   double alphaBDF,
 			   double epsFact_redist,
 			   int freezeLevelSet,
@@ -88,6 +89,7 @@ namespace proteus
 				double* boundaryJac_ref,
 				//physics
 				int nElements_global,
+			        double useMetrics, 
 				double alphaBDF,
 				double epsFact_redist,
 				int freezeLevelSet,
@@ -179,7 +181,7 @@ namespace proteus
 	}
     }
 
-/*    inline
+    inline
     void calculateSubgridError_tau(const double& elementDiameter,
 				   const double& dmt,
 				   const double dH[nSpace],
@@ -201,7 +203,7 @@ namespace proteus
       //mwf debug
       //std::cout<<"tau calc h= "<<h<<" dmt= "<<dmt<<" dH[0]= "<<dH[0]<<" cfl= "<<cfl<<" tau= "<<tau<<std::endl;
   
-    }*/
+    }
 
     inline
     void calculateSubgridError_tau(     const double   G[nSpace*nSpace],
@@ -240,6 +242,7 @@ namespace proteus
 			   double* boundaryJac_ref,
 			   //physics
 			   int nElements_global,
+			   double useMetrics, 
 			   double alphaBDF,
 			   double epsFact_redist,
 			   int freezeLevelSet,
@@ -327,7 +330,8 @@ namespace proteus
 		pdeResidual_u=0.0,
 		Lstar_u[nDOF_test_element],
 		subgridError_u=0.0,
-		tau=0.0,
+		tau=0.0,tau0=0.0,tau1=0.0,
+		numDiff0=0.0,numDiff1=0.0,
 		nu_sc=0.0,
 		jac[nSpace*nSpace],
 		jacDet,
@@ -457,20 +461,22 @@ namespace proteus
 	      //calculate adjoint
 	      for (int i=0;i<nDOF_test_element;i++)
 		{
-		  register int eN_k_i_nSpace = (eN_k*nDOF_trial_element+i)*nSpace,
-		    i_nSpace=i*nSpace;
+		  //register int eN_k_i_nSpace = (eN_k*nDOF_trial_element+i)*nSpace;
+		  register int  i_nSpace=i*nSpace;
 		  Lstar_u[i]  = ck.Hamiltonian_adjoint(dH_strong,&u_grad_test_dV[i_nSpace]);
 		  //reaction is constant
 		}
 	      //calculate tau and tau*Res
-//	      calculateSubgridError_tau(elementDiameter[eN],
-//					dm_t,dH_tau,
-//					q_cfl[eN_k],
-//					tau);
+	      calculateSubgridError_tau(elementDiameter[eN],
+					dm_t,dH_tau,
+					q_cfl[eN_k],
+					tau0);
               calculateSubgridError_tau(G,
 					dH_tau,
-					tau,
+					tau1,
 					q_cfl[eN_k]);	
+
+              tau = useMetrics*tau1+(1.0-useMetrics)*tau0;
 
 	      //std::cout<<tau<<std::endl;
 
@@ -479,7 +485,10 @@ namespace proteus
 	      //
 	      //calculate shock capturing diffusion
 	      //
-	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u,q_numDiff_u[eN_k]);
+	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u,numDiff0);	      
+	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u,numDiff1);
+	      q_numDiff_u[eN_k] = useMetrics*numDiff1+(1.0-useMetrics)*numDiff0;	      
+	      
 #ifdef CKDEBUG
 	      std::cout<<"q_numDiff_u[eN_k] "<<q_numDiff_u[eN_k]<<" q_numDiff_u_last[eN_k] "<<q_numDiff_u_last[eN_k]<<" lag "<<lag_shockCapturingScale<<std::endl;
 #endif
@@ -489,9 +498,9 @@ namespace proteus
 	      // 
 	      for(int i=0;i<nDOF_test_element;i++) 
 		{ 
-		  register int i_nSpace = i*nSpace,
-		    eN_k_i=eN_k*nDOF_test_element+i,
-		    eN_k_i_nSpace = eN_k_i*nSpace;
+		  register int i_nSpace = i*nSpace;
+		  //register int eN_k_i=eN_k*nDOF_test_element+i;
+		  //register int eN_k_i_nSpace = eN_k_i*nSpace;
 
 #ifdef CKDEBUG
 		  std::cout<<"shock capturing input  nu_sc "<<nu_sc<<'\t'<<grad_u[0]<<'\t'<<grad_u[1]<<'\t'<<grad_u[1]<<'\t'<<u_grad_test_dV[i_nSpace]<<std::endl;
@@ -564,7 +573,7 @@ namespace proteus
 	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++) 
 	    { 
 	      register int ebNE_kb = ebNE*nQuadraturePoints_elementBoundary+kb,
-		ebNE_kb_nSpace = ebNE_kb*nSpace,
+		//ebNE_kb_nSpace = ebNE_kb*nSpace,
 		ebN_local_kb = ebN_local*nQuadraturePoints_elementBoundary+kb,
 		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
 	      register double u_ext=0.0,
@@ -669,7 +678,7 @@ namespace proteus
 	      // 	    }
 	      for (int i=0;i<nDOF_test_element;i++)
 		{
-		  int ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
+		  //int ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
 		  //mwf debug
 		  assert(flux_ext == 0.0);
 		  elementResidual_u[i] += ck.ExteriorElementBoundaryFlux(flux_ext,u_test_dS[i]);
@@ -713,6 +722,7 @@ namespace proteus
 				double* boundaryJac_ref,
 				//physics
 				int nElements_global,
+			        double useMetrics, 
 				double alphaBDF,
 				double epsFact_redist,
 				int freezeLevelSet,
@@ -778,7 +788,7 @@ namespace proteus
 		dpdeResidual_u_u[nDOF_trial_element],
 		Lstar_u[nDOF_test_element],
 		dsubgridError_u_u[nDOF_trial_element],
-		tau=0.0,
+		tau=0.0,tau0=0.0,tau1=0.0,
 		nu_sc=0.0,
 		jac[nSpace*nSpace],
 		jacDet,
@@ -887,8 +897,8 @@ namespace proteus
 	      //calculate the adjoint times the test functions
 	      for (int i=0;i<nDOF_test_element;i++)
 		{
-		  int eN_k_i_nSpace = (eN_k*nDOF_trial_element+i)*nSpace,
-		    i_nSpace=i*nSpace;
+		  //int eN_k_i_nSpace = (eN_k*nDOF_trial_element+i)*nSpace;
+		  int i_nSpace=i*nSpace;
 
 		  Lstar_u[i]=ck.Hamiltonian_adjoint(dH_strong,&u_grad_test_dV[i_nSpace]);
 	      
@@ -896,23 +906,25 @@ namespace proteus
 	      //calculate the Jacobian of strong residual
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
-		  int eN_k_j=eN_k*nDOF_trial_element+j;
-		  int eN_k_j_nSpace = eN_k_j*nSpace;
+		  //int eN_k_j=eN_k*nDOF_trial_element+j;
+		  //int eN_k_j_nSpace = eN_k_j*nSpace;
 		  int j_nSpace = j*nSpace;
 		  dpdeResidual_u_u[j]=ck.MassJacobian_strong(dm_t,u_trial_ref[k*nDOF_trial_element+j]) +
 		    ck.HamiltonianJacobian_strong(dH_strong,&u_grad_trial[j_nSpace]);
 
 		}
 	      //tau and tau*Res
-//	      calculateSubgridError_tau(elementDiameter[eN],
-//					dm_t,
-//					dH_tau,
-//					q_cfl[eN_k],
-//					tau);
+	      calculateSubgridError_tau(elementDiameter[eN],
+					dm_t,
+					dH_tau,
+					q_cfl[eN_k],
+					tau0);
               calculateSubgridError_tau(G,
 					dH_tau,
-					tau,
+					tau1,
 					q_cfl[eN_k]);	
+
+              tau = useMetrics*tau1+(1.0-useMetrics)*tau0;
 
 	      for (int j=0;j<nDOF_trial_element;j++)
 		dsubgridError_u_u[j] =  -tau*dpdeResidual_u_u[j];
@@ -921,12 +933,12 @@ namespace proteus
 
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
-		  int eN_k_i=eN_k*nDOF_test_element+i;
-		  int eN_k_i_nSpace=eN_k_i*nSpace;
+		  //int eN_k_i=eN_k*nDOF_test_element+i;
+		  //int eN_k_i_nSpace=eN_k_i*nSpace;
 		  for(int j=0;j<nDOF_trial_element;j++) 
 		    { 
-		      int eN_k_j=eN_k*nDOF_trial_element+j;
-		      int eN_k_j_nSpace = eN_k_j*nSpace;
+		      //int eN_k_j=eN_k*nDOF_trial_element+j;
+		      //int eN_k_j_nSpace = eN_k_j*nSpace;
 		      int j_nSpace = j*nSpace;
 		      int i_nSpace = i*nSpace;
 		  
@@ -986,10 +998,10 @@ namespace proteus
 	  const double epsilon_redist= epsFact_redist*elementDiameter[eN];
 	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++) 
 	    { 
-	      register int ebNE_kb = ebNE*nQuadraturePoints_elementBoundary+kb,
-		ebNE_kb_nSpace = ebNE_kb*nSpace,
-		ebN_local_kb = ebN_local*nQuadraturePoints_elementBoundary+kb,
-		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
+	      register int ebNE_kb = ebNE*nQuadraturePoints_elementBoundary+kb;
+              //register int ebNE_kb_nSpace = ebNE_kb*nSpace;
+	      register int ebN_local_kb = ebN_local*nQuadraturePoints_elementBoundary+kb;
+	      register int ebN_local_kb_nSpace = ebN_local_kb*nSpace;
 
 	      register double u_ext=0.0,
 		grad_u_ext[nSpace],
@@ -998,8 +1010,8 @@ namespace proteus
 		H_ext=0.0,
 		dH_ext[nSpace],
 		r_ext=0.0,
-		flux_ext=0.0,
-		dflux_u_u_ext=0.0,
+//		flux_ext=0.0,
+ 		dflux_u_u_ext=0.0,
 		bc_u_ext=0.0,
 		bc_grad_u_ext[nSpace],
 		bc_m_ext=0.0,
@@ -1087,9 +1099,10 @@ namespace proteus
 	      //
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
-		  register int ebNE_kb_j = ebNE_kb*nDOF_trial_element+j,
-		    ebNE_kb_j_nSpace = ebNE_kb_j*nSpace;
-		  register int j_nSpace = j*nSpace,ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
+		  //register int ebNE_kb_j = ebNE_kb*nDOF_trial_element+j;
+		  //register int ebNE_kb_j_nSpace = ebNE_kb_j*nSpace;
+		  //register int j_nSpace = j*nSpace;
+		  register int ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
 
 		  fluxJacobian_u_u[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_u_u_ext,u_trial_trace_ref[ebN_local_kb_j]);
 		}//j
@@ -1098,8 +1111,8 @@ namespace proteus
 	      //
 	      for (int i=0;i<nDOF_test_element;i++)
 		{
-		  register int eN_i = eN*nDOF_test_element+i,
-		    ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
+		  register int eN_i = eN*nDOF_test_element+i;
+		  //register int ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
 		  for (int j=0;j<nDOF_trial_element;j++)
 		    {
 		      register int ebN_i_j = ebN*4*nDOF_test_X_trial_element + i*nDOF_trial_element + j;

@@ -5,7 +5,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import VOFCoefficientsEvaluate
     from proteus.UnstructuredFMMandFSWsolvers import FMMEikonalSolver,FSWEikonalSolver
     from proteus.NonlinearSolvers import EikonalSolver
-    def __init__(self,LS_model=-1,V_model=0,RD_model=-1,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0):
+    def __init__(self,LS_model=-1,V_model=0,RD_model=-1,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0,useMetrics=0.0):
+        self.useMetrics = useMetrics
         self.variableNames=['vof']
         nc=1
         mass={0:{0:'linear'}}
@@ -570,6 +571,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.nElements_global,
+	    self.coefficients.useMetrics, 
             self.timeIntegration.alpha_bdf,
             self.shockCapturing.lag,
             self.shockCapturing.shockCapturingFactor,
@@ -630,6 +632,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             self.mesh.nElements_global,
+	    self.coefficients.useMetrics, 
                   self.timeIntegration.alpha_bdf,
                   self.shockCapturing.lag,
                   self.shockCapturing.shockCapturingFactor,

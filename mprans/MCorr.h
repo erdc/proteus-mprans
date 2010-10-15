@@ -33,6 +33,7 @@ namespace proteus
 				   double* boundaryJac_ref,
 				   //physics
 				   int nElements_global,
+				   double useMetrics,
 				   double epsFactHeaviside,
 				   double epsFactDirac,
 				   double epsFactDiffusion,
@@ -40,6 +41,7 @@ namespace proteus
 				   double* elementDiameter,
 				   double* u_dof,
 				   double* q_phi,
+				   double* q_normal_phi,
 				   double* q_H,
 				   double* q_u,
 				   double* q_r,
@@ -67,6 +69,7 @@ namespace proteus
 				   double* boundaryJac_ref,
 				   //physics
 				   int nElements_global,
+				   double useMetrics,
 				   double epsFactHeaviside,
 				   double epsFactDirac,
 				   double epsFactDiffusion,
@@ -74,6 +77,7 @@ namespace proteus
 				   double* elementDiameter,
 				   double* u_dof, 
 				   double* q_phi,
+				   double* q_normal_phi,
 				   double* q_H,
 				   int* csrRowIndeces_u_u,int* csrColumnOffsets_u_u,
 				   double* globalJacobian)=0;
@@ -170,6 +174,7 @@ namespace proteus
 			   double* boundaryJac_ref,
 			   //physics
 			   int nElements_global,
+			   double useMetrics,
 			   double epsFactHeaviside,
 			   double epsFactDirac,
 			   double epsFactDiffusion,
@@ -177,6 +182,7 @@ namespace proteus
 			   double* elementDiameter,
 			   double* u_dof,
 			   double* q_phi,
+			   double* q_normal_phi,
 			   double* q_H,
 			   double* q_u,
 			   double* q_r,
@@ -198,9 +204,7 @@ namespace proteus
 	{
 	  //declare local storage for element residual and initialize
 	  register double elementResidual_u[nDOF_test_element];
-	  const double epsHeaviside=epsFactHeaviside*elementDiameter[eN],
-	    epsDirac=epsFactDirac*elementDiameter[eN],
-	    epsDiffusion=epsFactDiffusion*elementDiameter[eN];
+	  double epsHeaviside,epsDirac,epsDiffusion;
 	  for (int i=0;i<nDOF_test_element;i++)
 	    {
 	      elementResidual_u[i]=0.0;
@@ -221,7 +225,7 @@ namespace proteus
 		u_test_dV[nDOF_trial_element],
 		u_grad_test_dV[nDOF_test_element*nSpace],
 		dV,x,y,z,
-		G[nSpace*nSpace],G_dd_G,tr_G;
+		G[nSpace*nSpace],G_dd_G,tr_G,h_phi;
 	      //
 	      //compute solution and gradients at quadrature points
 	      //
@@ -238,6 +242,9 @@ namespace proteus
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
+              ck.calculateGScale(G,&q_normal_phi[eN_k_nSpace],h_phi);
+
+	      
 	      //get the trial function gradients
 	      ck.gradTrialFromRef(&u_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,u_grad_trial);
 	      //get the solution
@@ -253,9 +260,16 @@ namespace proteus
 		      u_grad_test_dV[j*nSpace+I]   = u_grad_trial[j*nSpace+I]*dV;//cek warning won't work for Petrov-Galerkin
 		    }
 		}
+		
+		
+		
 	      //
 	      //calculate pde coefficients at quadrature points
 	      //
+              epsHeaviside=epsFactHeaviside*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      epsDirac    =epsFactDirac*    (useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      epsDiffusion=epsFactDiffusion*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN])
+	                                   *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);	      
 	      evaluateCoefficients(epsHeaviside,
 						 epsDirac,
 						 q_phi[eN_k],
@@ -268,12 +282,12 @@ namespace proteus
 	      // 
 	      for(int i=0;i<nDOF_test_element;i++) 
 		{ 
-		  register int eN_k_i=eN_k*nDOF_test_element+i,
-		    eN_k_i_nSpace = eN_k_i*nSpace,
-		    i_nSpace=i*nSpace;
+		  //register int eN_k_i=eN_k*nDOF_test_element+i;
+		  //register int eN_k_i_nSpace = eN_k_i*nSpace;
+		  register int  i_nSpace=i*nSpace;
 	      
 		  elementResidual_u[i] += ck.Reaction_weak(r,u_test_dV[i]) + 
-		    ck.NumericalDiffusion(epsDiffusion*elementDiameter[eN],grad_u,&u_grad_test_dV[i_nSpace]);
+		    ck.NumericalDiffusion(epsDiffusion,grad_u,&u_grad_test_dV[i_nSpace]);
 		}//i
 	      //
 	      //save momentum for time history and velocity for subgrid error
@@ -316,6 +330,7 @@ namespace proteus
 			   double* boundaryJac_ref,
 			   //physics
 			   int nElements_global,
+			   double useMetrics,
 			   double epsFactHeaviside,
 			   double epsFactDirac,
 			   double epsFactDiffusion,
@@ -327,6 +342,7 @@ namespace proteus
 			   // double* u_test_dV, 
 			   // double* u_grad_test_dV, 
 			   double* q_phi,
+			   double* q_normal_phi,
 			   double* q_H,
 			   int* csrRowIndeces_u_u,int* csrColumnOffsets_u_u,
 			   double* globalJacobian)
@@ -338,9 +354,7 @@ namespace proteus
       for(int eN=0;eN<nElements_global;eN++)
 	{
 	  register double  elementJacobian_u_u[nDOF_test_element][nDOF_trial_element];
-	  const double epsHeaviside=epsFactHeaviside*elementDiameter[eN],
-	    epsDirac=epsFactDirac*elementDiameter[eN],
-	    epsDiffusion=epsFactDiffusion*elementDiameter[eN];
+	  double epsHeaviside,epsDirac,epsDiffusion;
 	  for (int i=0;i<nDOF_test_element;i++)
 	    for (int j=0;j<nDOF_trial_element;j++)
 	      {
@@ -364,7 +378,7 @@ namespace proteus
 		u_test_dV[nDOF_test_element],
 		u_grad_test_dV[nDOF_test_element*nSpace],
 		x,y,z,
-		G[nSpace*nSpace],G_dd_G,tr_G;
+		G[nSpace*nSpace],G_dd_G,tr_G,h_phi;
 	      //
 	      //calculate solution and gradients at quadrature points
 	      //
@@ -381,6 +395,10 @@ namespace proteus
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
+              
+	      ck.calculateGScale(G,&q_normal_phi[eN_k_nSpace],h_phi);
+
+	      
 	      //get the trial function gradients
 	      ck.gradTrialFromRef(&u_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,u_grad_trial);
 	      //get the solution 	
@@ -399,6 +417,10 @@ namespace proteus
 	      //
 	      //calculate pde coefficients and derivatives at quadrature points
 	      //
+              epsHeaviside=epsFactHeaviside*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      epsDirac    =epsFactDirac*    (useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      epsDiffusion=epsFactDiffusion*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN])
+	                                   *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	      evaluateCoefficients(epsHeaviside,
 						 epsDirac,
 						 q_phi[eN_k],
@@ -408,17 +430,17 @@ namespace proteus
 						 dr);
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
-		  int eN_k_i=eN_k*nDOF_test_element+i;
-		  int eN_k_i_nSpace=eN_k_i*nSpace,
-		    i_nSpace=i*nSpace;
+		  //int eN_k_i=eN_k*nDOF_test_element+i;
+		  //int eN_k_i_nSpace=eN_k_i*nSpace;
+		  int i_nSpace=i*nSpace;
 		  for(int j=0;j<nDOF_trial_element;j++) 
 		    { 
-		      int eN_k_j=eN_k*nDOF_trial_element+j;
-		      int eN_k_j_nSpace = eN_k_j*nSpace,
-			j_nSpace = j*nSpace;
+		      //int eN_k_j=eN_k*nDOF_trial_element+j;
+		      //int eN_k_j_nSpace = eN_k_j*nSpace;
+		      int j_nSpace = j*nSpace;
 		  
 		      elementJacobian_u_u[i][j] += ck.ReactionJacobian_weak(dr,u_trial_ref[k*nDOF_trial_element+j],u_test_dV[i]) + 
-			ck.NumericalDiffusionJacobian(epsDiffusion*elementDiameter[eN],&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]); 
+			ck.NumericalDiffusionJacobian(epsDiffusion,&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]); 
 		    }//j
 		}//i
 	    }//k

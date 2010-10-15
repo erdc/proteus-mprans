@@ -34,6 +34,7 @@ namespace proteus
 				   double* boundaryJac_ref,
 				   //physics
 				   int nElements_global,
+			           double useMetrics, 
 				   double alphaBDF,
 				   int lag_shockCapturing, /*mwf not used yet*/
 				   double shockCapturingDiffusion,
@@ -80,6 +81,7 @@ namespace proteus
 				   double* boundaryJac_ref,
 				   //physics
 				   int nElements_global,
+			           double useMetrics, 
 				   double alphaBDF,
 				   int lag_shockCapturing,/*mwf not used yet*/
 				   double shockCapturingDiffusion,
@@ -135,7 +137,7 @@ namespace proteus
 	}
     }
     
-/*    inline void calculateSubgridError_tau(const double& elementDiameter,
+    inline void calculateSubgridError_tau(const double& elementDiameter,
 					  const double& dmt,
 					  const double dH[nSpace],
 					  double& cfl,
@@ -150,7 +152,7 @@ namespace proteus
       cfl = nrm_v/h;
       oneByAbsdt =  fabs(dmt);
       tau = 1.0/(2.0*nrm_v/h + oneByAbsdt + 1.0e-8);
-    } */ 
+    }  
  
     inline
     void calculateSubgridError_tau(     const double&  Ct_sge,
@@ -192,6 +194,7 @@ namespace proteus
 			   double* boundaryJac_ref,
 			   //physics
 			   int nElements_global,
+			   double useMetrics, 
 			   double alphaBDF,
 			   int lag_shockCapturing, /*mwf not used yet*/
 			   double shockCapturingDiffusion,
@@ -252,7 +255,8 @@ namespace proteus
 		pdeResidual_u=0.0,
 		Lstar_u[nDOF_test_element],
 		subgridError_u=0.0,
-		tau=0.0,
+		tau=0.0,tau0=0.0,tau1=0.0,
+		numDiff0=0.0,numDiff1=0.0,
 		jac[nSpace*nSpace],
 		jacDet,
 		jacInv[nSpace*nSpace],
@@ -260,7 +264,7 @@ namespace proteus
 		u_test_dV[nDOF_trial_element],
 		u_grad_test_dV[nDOF_test_element*nSpace],
 		dV,x,y,z,
-		G[nSpace*nSpace],G_dd_G,tr_G,norm_Rv;
+		G[nSpace*nSpace],G_dd_G,tr_G;//,norm_Rv;
 	      //
 	      //compute solution and gradients at quadrature points
 	      //
@@ -333,28 +337,29 @@ namespace proteus
 		  Lstar_u[i]  = ck.Hamiltonian_adjoint(dH,&u_grad_test_dV[i_nSpace]);
 		}
 	      //calculate tau and tau*Res
-	      //cek/ido todo add element metric form
-	      /*calculateSubgridError_tau(elementDiameter[eN],
+	      calculateSubgridError_tau(elementDiameter[eN],
 					dm_t,
 					dH,
 					cfl[eN_k],
-					tau);*/
+					tau0);
 
               calculateSubgridError_tau(Ct_sge,
                                         G,
 					dm_t,
 					dH,
-					tau,
+					tau1,
 				        cfl[eN_k]);	
 
+              tau = useMetrics*tau1+(1.0-useMetrics)*tau0;
 
 
 	      subgridError_u = -tau*pdeResidual_u;
 	      //
 	      //calcualte shock capturing diffusion
 	      //
-	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u,q_numDiff_u[eN_k]);
-
+	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u,numDiff0);	      
+	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u,numDiff1);
+	      q_numDiff_u[eN_k] = useMetrics*numDiff1+(1.0-useMetrics)*numDiff0;
               //std::cout<<tau<<"   "<<q_numDiff_u[eN_k]<<std::endl;
 	      // 
 	      //update element residual 
@@ -425,7 +430,7 @@ namespace proteus
 		dm_ext=0.0,
 		H_ext=0.0,
 		dH_ext[nSpace],
-		flux_ext=0.0,
+		//flux_ext=0.0,
 		bc_u_ext=0.0,
 		bc_grad_u_ext[nSpace],
 		bc_m_ext=0.0,
@@ -529,6 +534,7 @@ namespace proteus
 			   double* boundaryJac_ref,
 			   //physics
 			   int nElements_global,
+			   double useMetrics, 
 			   double alphaBDF,
 			   int lag_shockCapturing,/*mwf not used yet*/
 			   double shockCapturingDiffusion,
@@ -579,7 +585,7 @@ namespace proteus
 		dpdeResidual_u_u[nDOF_trial_element],
 		Lstar_u[nDOF_test_element],
 		dsubgridError_u_u[nDOF_trial_element],
-		tau=0.0,
+		tau=0.0,tau0=0.0,tau1=0.0,
 		jac[nSpace*nSpace],
 		jacDet,
 		jacInv[nSpace*nSpace],
@@ -659,41 +665,40 @@ namespace proteus
 	      //calculate the Jacobian of strong residual
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
-		  int eN_k_j=eN_k*nDOF_trial_element+j;
-		  int eN_k_j_nSpace = eN_k_j*nSpace;
+		  //int eN_k_j=eN_k*nDOF_trial_element+j;
+		  //int eN_k_j_nSpace = eN_k_j*nSpace;
 		  int j_nSpace = j*nSpace;
 		  dpdeResidual_u_u[j]=ck.MassJacobian_strong(dm_t,u_trial_ref[k*nDOF_trial_element+j]) +
 		    ck.HamiltonianJacobian_strong(dH,&u_grad_trial[j_nSpace]);
 
 		}
 	      //tau and tau*Res
-	      //cek/ido todo add element metric form
-	    //  calculateSubgridError_tau(elementDiameter[eN],
-	//				dm_t,
-	//				dH,
-	//				cfl[eN_k],
-	//				tau);
+	      calculateSubgridError_tau(elementDiameter[eN],
+					dm_t,
+					dH,
+	   	         		cfl[eN_k],
+					tau0);
           
 	      calculateSubgridError_tau(Ct_sge,
                                         G,
 					dm_t,
 					dH,
-					tau,
+					tau1,
 				        cfl[eN_k]);	
 
-
+              tau = useMetrics*tau1+(1.0-useMetrics)*tau0;
 
 	      for(int j=0;j<nDOF_trial_element;j++) 
 		dsubgridError_u_u[j] = -tau*dpdeResidual_u_u[j];
 
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
-		  int eN_k_i=eN_k*nDOF_test_element+i;
-		  int eN_k_i_nSpace=eN_k_i*nSpace;
+		  //int eN_k_i=eN_k*nDOF_test_element+i;
+		  //int eN_k_i_nSpace=eN_k_i*nSpace;
 		  for(int j=0;j<nDOF_trial_element;j++) 
 		    { 
-		      int eN_k_j=eN_k*nDOF_trial_element+j;
-		      int eN_k_j_nSpace = eN_k_j*nSpace;
+		      //int eN_k_j=eN_k*nDOF_trial_element+j;
+		      //int eN_k_j_nSpace = eN_k_j*nSpace;
 		      int j_nSpace = j*nSpace;
 		      int i_nSpace = i*nSpace;
 		      elementJacobian_u_u[i][j] += ck.MassJacobian_weak(dm_t,u_trial_ref[k*nDOF_trial_element+j],u_test_dV[i]) + 

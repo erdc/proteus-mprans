@@ -3,8 +3,9 @@ from proteus.mprans.cRDLS import *
 
 class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import redistanceLevelSetCoefficientsEvaluate
-    def __init__(self,applyRedistancing=True,epsFact=2.0,nModelId=None,u0=None,rdModelId=0,penaltyParameter=0.0):
-        variableNames=['phid']
+    def __init__(self,applyRedistancing=True,epsFact=2.0,nModelId=None,u0=None,rdModelId=0,penaltyParameter=0.0,useMetrics=0.0):
+        self.useMetrics=useMetrics
+	variableNames=['phid']
         nc=1
         mass={0:{0:'linear'}}
         hamiltonian={0:{0:'nonlinear'}}
@@ -675,6 +676,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.nElements_global,
+	    self.coefficients.useMetrics,
                   alpha_bdf,
                   self.coefficients.epsFact,
                   self.freezeLevelSet,
@@ -759,6 +761,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             self.mesh.nElements_global,
+	    self.coefficients.useMetrics,
                   alpha_bdf,
                   self.coefficients.epsFact,
                   self.freezeLevelSet,

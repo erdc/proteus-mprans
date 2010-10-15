@@ -97,6 +97,7 @@ namespace proteus
 			       else
 			         abort();	 
 			     else
+			       abort();
 			   }
 			 else
 			   abort();
@@ -121,7 +122,8 @@ namespace proteus
 		   abort();
 	       }
 	     else
-	       abort();
-	   }
+	       abort();	       
+	     return NULL;   
+	   }	  		      
 }
 #endif

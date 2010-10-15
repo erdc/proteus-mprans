@@ -11,7 +11,9 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  RD_model=None,
                  ME_model=1,
                  EikonalSolverFlag=0,
-                 checkMass=True,epsFact=1.5):
+                 checkMass=True,epsFact=1.5,
+                 useMetrics=0.0):
+	self.useMetrics=useMetrics
         self.epsFact=epsFact
         self.variableNames=['phi']
         nc=1
@@ -572,6 +574,7 @@ class LevelModel(OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.nElements_global,
+	    self.coefficients.useMetrics,
             self.timeIntegration.alpha_bdf,#mwf was self.timeIntegration.dt,
             self.shockCapturing.lag,
             self.shockCapturing.shockCapturingFactor,
@@ -637,6 +640,7 @@ class LevelModel(OneLevelTransport):
 	    self.u[0].femSpace.elementMaps.boundaryNormals,
 	    self.u[0].femSpace.elementMaps.boundaryJacobians,
 	    self.mesh.nElements_global,
+	    self.coefficients.useMetrics,
             self.timeIntegration.alpha_bdf,#mwf was dt
             self.shockCapturing.lag,
             self.shockCapturing.shockCapturingFactor,

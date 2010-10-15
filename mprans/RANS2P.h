@@ -44,6 +44,7 @@ namespace proteus
 				   double hFactor,
 				   int nElements_global,
 				   double useRBLES,
+			           double useMetrics, 
 				   double alphaBDF,
 				   double epsFact_rho,
 				   double epsFact_mu, 
@@ -153,6 +154,7 @@ namespace proteus
 				   double hFactor,
 				   int nElements_global,
 				   double useRBLES,
+			           double useMetrics, 
 				   double alphaBDF,
 				   double epsFact_rho,
 				   double epsFact_mu,
@@ -667,7 +669,7 @@ namespace proteus
 #endif
     }
   
-/*    inline
+    inline
     void calculateSubgridError_tau(const double&  hFactor,
 				   const double& elementDiameter,
 				   const double& dmt,
@@ -690,7 +692,7 @@ namespace proteus
       oneByAbsdt =  fabs(dmt);
       tau_v = 1.0/(4.0*viscosity/(h*h) + 2.0*nrm_df/h + oneByAbsdt);
       tau_p = 4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h;
-    }*/
+    }
 
 
     inline
@@ -1299,6 +1301,7 @@ namespace proteus
 			   double hFactor,
 			   int nElements_global,
 			   double useRBLES,
+			   double useMetrics, 
 			   double alphaBDF,
 			   double epsFact_rho,
 			   double epsFact_mu, 
@@ -1471,8 +1474,8 @@ namespace proteus
 		subgridError_u=0.0,
 		subgridError_v=0.0,
 		subgridError_w=0.0,
-		tau_p=0.0,
-		tau_v=0.0,
+		tau_p=0.0,tau_p0=0.0,tau_p1=0.0,
+		tau_v=0.0,tau_v0=0.0,tau_v1=0.0,
 		jac[nSpace*nSpace],
 		jacDet,
 		jacInv[nSpace*nSpace],
@@ -1496,12 +1499,10 @@ namespace proteus
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
 	      ck.calculateGScale(G,&normal_phi[eN_k_nSpace],h_phi);
-	      eps_rho = epsFact_rho*h_phi;
-	      eps_mu = epsFact_mu*h_phi;
-	      //cek debug, do it the old way
-	      eps_rho = epsFact_rho*elementDiameter[eN];
-	      eps_mu = epsFact_mu*elementDiameter[eN];
-	      //cek end debug
+	      
+	      eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	     
 	      //get the trial function gradients
 	      ck.gradTrialFromRef(&p_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,p_grad_trial);
 	      ck.gradTrialFromRef(&vel_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,vel_grad_trial);
@@ -1655,15 +1656,15 @@ namespace proteus
 		ck.Reaction_strong(mom_w_source);
 	
 	      //calculate tau and tau*Res
-//	      calculateSubgridError_tau(hFactor,
-//					elementDiameter[eN],
-//					dmom_u_acc_u_t,
-//					dmom_u_acc_u,
-//					dmom_adv_sge,
-//					mom_u_diff_ten[1],
-//					tau_v,
-//					tau_p,
-//					q_cfl[eN_k]);
+	      calculateSubgridError_tau(hFactor,
+					elementDiameter[eN],
+					dmom_u_acc_u_t,
+					dmom_u_acc_u,
+					dmom_adv_sge,
+					mom_u_diff_ten[1],
+					tau_v0,
+					tau_p0,
+					q_cfl[eN_k]);
 
 
 	      calculateSubgridError_tau(Ct_sge,Cd_sge,
@@ -1671,11 +1672,13 @@ namespace proteus
 					dmom_u_acc_u_t,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
-					tau_v,
-					tau_p,
+					tau_v1,
+					tau_p1,
 					q_cfl[eN_k]);	
 
 
+	      tau_v = useMetrics*tau_v1+(1.0-useMetrics)*tau_v0;
+	      tau_p = useMetrics*tau_v1+(1.0-useMetrics)*tau_p0;
 
 
 	      //calculateSubgridError_tau(Ct_sge,
@@ -1722,7 +1725,8 @@ namespace proteus
 		}
 
 	      norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v + pdeResidual_w*pdeResidual_w);
-	      q_numDiff_u[eN_k] = C_dc*norm_Rv/sqrt(G_dd_G);
+	      q_numDiff_u[eN_k] = C_dc*norm_Rv*(useMetrics/sqrt(G_dd_G)  + 
+	                                        (1.0-useMetrics)*hFactor*hFactor*elementDiameter[eN]*elementDiameter[eN]);
 	      q_numDiff_v[eN_k] = q_numDiff_u[eN_k];
 	      q_numDiff_w[eN_k] = q_numDiff_u[eN_k];
 	      // //cek debug
@@ -1970,12 +1974,10 @@ namespace proteus
 	      //cek todo use symmetry
 	      ck.calculateG(jacInv_ext,G,G_dd_G,tr_G);
 	      ck.calculateGScale(G,&ebqe_normal_phi_ext[ebNE_kb_nSpace],h_phi);
-	      eps_rho = epsFact_rho*h_phi;
-	      eps_mu = epsFact_mu*h_phi;
-	      //cek debug, do it the old way
-	      eps_rho = epsFact_rho*elementDiameter[eN];
-	      eps_mu = epsFact_mu*elementDiameter[eN];
-	      //cek end debug
+	      
+	      eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      
 	      //compute shape and solution information
 	      //shape
 	      ck.gradTrialFromRef(&p_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,p_grad_trial_trace);
@@ -2328,6 +2330,7 @@ namespace proteus
 			   double hFactor,
 			   int nElements_global,
 			   double useRBLES,
+			   double useMetrics, 
 			   double alphaBDF,
 			   double epsFact_rho,
 			   double epsFact_mu,
@@ -2551,8 +2554,8 @@ namespace proteus
 		dsubgridError_v_v[nDOF_trial_element],
 		dsubgridError_w_p[nDOF_trial_element],
 		dsubgridError_w_w[nDOF_trial_element],
-		tau_p=0.0,
-		tau_v=0.0,
+		tau_p=0.0,tau_p0=0.0,tau_p1=0.0,
+		tau_v=0.0,tau_v0=0.0,tau_v1=0.0,
 		jac[nSpace*nSpace],
 		jacDet,
 		jacInv[nSpace*nSpace],
@@ -2577,12 +2580,10 @@ namespace proteus
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
 	      ck.calculateGScale(G,&normal_phi[eN_k_nSpace],h_phi);
-	      eps_rho = epsFact_rho*h_phi;
-	      eps_mu = epsFact_mu*h_phi;
-	      //cek debug, do it the old way
-	      eps_rho = epsFact_rho*elementDiameter[eN];
-	      eps_mu = epsFact_mu*elementDiameter[eN];
-	      //cek end debug
+	
+	      eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      
 	      //get the trial function gradients
 	      ck.gradTrialFromRef(&p_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,p_grad_trial);
 	      ck.gradTrialFromRef(&vel_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,vel_grad_trial);
@@ -2732,6 +2733,29 @@ namespace proteus
               dmom_adv_sge[1] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+1];
               dmom_adv_sge[2] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+2];
 
+
+	      //
+	      //calculate strong residual
+	      //
+	      pdeResidual_p = ck.Advection_strong(dmass_adv_u,grad_u) +
+		ck.Advection_strong(dmass_adv_v,grad_v) +
+		ck.Advection_strong(dmass_adv_w,grad_w);
+	      
+	      pdeResidual_u = ck.Mass_strong(mom_u_acc_t) +
+		ck.Advection_strong(dmom_adv_sge,grad_u) +
+		ck.Hamiltonian_strong(dmom_u_ham_grad_p,grad_p) +
+		ck.Reaction_strong(mom_u_source);
+	  
+	      pdeResidual_v = ck.Mass_strong(mom_v_acc_t) +
+		ck.Advection_strong(dmom_adv_sge,grad_v) +
+		ck.Hamiltonian_strong(dmom_v_ham_grad_p,grad_p) + 
+		ck.Reaction_strong(mom_v_source);
+	  
+	      pdeResidual_w = ck.Mass_strong(mom_w_acc_t) + 
+		ck.Advection_strong(dmom_adv_sge,grad_w) +
+		ck.Hamiltonian_strong(dmom_w_ham_grad_p,grad_p) +
+		ck.Reaction_strong(mom_w_source);
+
 	      //calculate the Jacobian of strong residual
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
@@ -2753,27 +2777,28 @@ namespace proteus
 		    ck.AdvectionJacobian_strong(dmom_adv_sge,&vel_grad_trial[j_nSpace]);
 		}
 	      //calculate tau and tau*Res
-//	      calculateSubgridError_tau(hFactor,
-//					elementDiameter[eN],
-//					dmom_u_acc_u_t,
-//					dmom_u_acc_u,
-//					dmom_adv_sge,
-//					mom_u_diff_ten[1],
-//					tau_v,
-//					tau_p,
-//					q_cfl[eN_k]);
+	      calculateSubgridError_tau(hFactor,
+					elementDiameter[eN],
+					dmom_u_acc_u_t,
+					dmom_u_acc_u,
+					dmom_adv_sge,
+					mom_u_diff_ten[1],
+					tau_v0,
+					tau_p0,
+					q_cfl[eN_k]);
 					
 	      calculateSubgridError_tau(Ct_sge,Cd_sge,
 			                G,G_dd_G,tr_G,
 					dmom_u_acc_u_t,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
-					tau_v,
-					tau_p,
+					tau_v1,
+					tau_p1,
 					q_cfl[eN_k]);					
 					
 					
-					
+	      tau_v = useMetrics*tau_v1+(1.0-useMetrics)*tau_v0;
+	      tau_p = useMetrics*tau_v1+(1.0-useMetrics)*tau_p0;					
 					
 					
 	      //calculateSubgridError_tau(Ct_sge,
@@ -2791,6 +2816,19 @@ namespace proteus
 	      //cek debug
 	      //tau_p = 0.0;
 	      //tau_v = 0.0;
+	      
+	      
+	      calculateSubgridError_tauRes(tau_p,
+					   tau_v,
+					   pdeResidual_p,
+					   pdeResidual_u,
+					   pdeResidual_v,
+					   pdeResidual_w,
+					   subgridError_p,
+					   subgridError_u,
+					   subgridError_v,
+					   subgridError_w);	      
+	      
 	      calculateSubgridErrorDerivatives_tauRes(tau_p,
 						      tau_v,
 						      dpdeResidual_p_u,
@@ -3106,12 +3144,10 @@ namespace proteus
 	      dS = metricTensorDetSqrt*dS_ref[kb];
 	      ck.calculateG(jacInv_ext,G,G_dd_G,tr_G);
 	      ck.calculateGScale(G,&ebqe_normal_phi_ext[ebNE_kb_nSpace],h_phi);
-	      eps_rho = epsFact_rho*h_phi;
-	      eps_mu = epsFact_mu*h_phi;
-	      //cek debug, do it the old way
-	      eps_rho = epsFact_rho*elementDiameter[eN];
-	      eps_mu = epsFact_mu*elementDiameter[eN];
-	      //cek end debug
+
+	      eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+
 	      //compute shape and solution information
 	      //shape
 	      ck.gradTrialFromRef(&p_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,p_grad_trial_trace);
@@ -3588,8 +3624,8 @@ namespace proteus
     	    metricTensor[(nSpace-1)*(nSpace-1)],
     	    metricTensorDetSqrt,
     	    normal[3],
-    	    x,y,z,
-    	    G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty;
+    	    x,y,z;
+    	  //double G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty;
 	  
     	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++)
     	    {

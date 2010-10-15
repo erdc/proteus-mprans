@@ -22,8 +22,10 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  stokes=False,
                  sd=True,
                  movingDomain=False,
-                 useRBLES=0.0):
+                 useRBLES=0.0,
+		 useMetrics=0.0):
         self.useRBLES=useRBLES
+        self.useMetrics=useMetrics
         self.sd=sd
         if epsFact_density != None:
             self.epsFact_density = epsFact_density
@@ -974,6 +976,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
+            self.coefficients.useMetrics,
             self.timeIntegration.alpha_bdf,
             self.coefficients.epsFact_density,
             self.coefficients.epsFact,
@@ -1102,6 +1105,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
+            self.coefficients.useMetrics,
             self.timeIntegration.alpha_bdf,
             self.coefficients.epsFact_density,
             self.coefficients.epsFact,

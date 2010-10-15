@@ -4,7 +4,8 @@ from proteus.mprans.cMCorr import *
 class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import levelSetConservationCoefficientsEvaluate
     from proteus.ctransportCoefficients import levelSetConservationCoefficientsEvaluate_sd
-    def __init__(self,applyCorrection=True,epsFactHeaviside=0.0,epsFactDirac=1.0,epsFactDiffusion=2.0,LSModel_index=3,V_model=2,me_model=5,VOFModel_index=4,checkMass=True,sd=True,nd=None,applyCorrectionToDOF=True):
+    def __init__(self,applyCorrection=True,epsFactHeaviside=0.0,epsFactDirac=1.0,epsFactDiffusion=2.0,LSModel_index=3,V_model=2,me_model=5,VOFModel_index=4,checkMass=True,sd=True,nd=None,applyCorrectionToDOF=True,useMetrics=0.0):
+        self.useMetrics=useMetrics
         self.sd=sd
         self.checkMass=checkMass
         self.variableNames=['phiCorr']
@@ -56,7 +57,9 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         log("Attaching models in LevelSetConservation")
         #level set
         self.lsModel = modelList[self.levelSetModelIndex]
-        self.q_u_ls    = modelList[self.levelSetModelIndex].q[('u',0)]
+        self.q_u_ls  = modelList[self.levelSetModelIndex].q[('u',0)]
+	self.q_n_ls  = modelList[self.levelSetModelIndex].q[('grad(u)',0)]
+	
         self.ebqe_u_ls = modelList[self.levelSetModelIndex].ebqe[('u',0)]
         if modelList[self.levelSetModelIndex].ebq.has_key(('u',0)):
             self.ebq_u_ls = modelList[self.levelSetModelIndex].ebq[('u',0)]
@@ -545,6 +548,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         r.fill(0.0)
         #Load the unknowns into the finite element dof
         self.setUnknowns(u)
+	
+
+	
         #no flux boundary conditions
         self.mcorr.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
@@ -568,6 +574,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.nElements_global,
+	    self.coefficients.useMetrics,
                                  self.coefficients.epsFactHeaviside,
                                  self.coefficients.epsFactDirac,
                                  self.coefficients.epsFactDiffusion,
@@ -575,6 +582,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                  self.mesh.elementDiametersArray,
                                  self.u[0].dof,
                                  self.coefficients.q_u_ls,
+				 self.coefficients.q_n_ls,
                                  self.coefficients.q_H_vof,
                                  self.q[('u',0)],
                                  self.q[('r',0)],
@@ -610,6 +618,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             self.mesh.nElements_global,
+	    self.coefficients.useMetrics,
                                  self.coefficients.epsFactHeaviside,
                                  self.coefficients.epsFactDirac,
                                  self.coefficients.epsFactDiffusion,
@@ -617,6 +626,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                  self.mesh.elementDiametersArray,
                                  self.u[0].dof,
                                  self.coefficients.q_u_ls,
+				 self.coefficients.q_n_ls,
                                  self.coefficients.q_H_vof,
                                  self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
                                  jacobian)
