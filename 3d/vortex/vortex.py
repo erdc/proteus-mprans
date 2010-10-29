@@ -1,5 +1,6 @@
 #if True uses PETSc solvers
-parallel = False
+parallel = True#False
+linearSmoother = None
 #compute mass balance statistics or not
 checkMass=False#True
 #number of space dimensions
@@ -19,9 +20,9 @@ runCFL = 0.3#0.3,0.185,0.125 for dgp1,dgp2,dgpk(3)
 #spatial approximation orders
 cDegree_ls=0 #0 -- CG. -1 -- DG
 cDegree_vof=0
-pDegree_ls=2 #level set 
+pDegree_ls=1 #level set 
 pDegree_vof=pDegree_ls #volume of fluid should match ls for now
-useHex=True
+useHex=False#True
 #
 #spatial quadrature orders
 #2*max(pDegree_vof,pDegree_ls)+1
@@ -33,7 +34,7 @@ else:
 from proteus import MeshTools
 partitioningType = MeshTools.MeshParallelPartitioningTypes.node
 #spatial mesh
-lRefinement=1
+lRefinement=3
 #tag simulation name to level of refinement
 #soname="vortexcgp2_bdf2_mc"+`lRefinement`
 if useHex:
@@ -49,9 +50,9 @@ if pseudo2D:
     L=[1.0,1.0,he]
 else:
     nn=nnx=nny=nnz=(2**lRefinement)*10+1
-    he=1.0/(nnx-1.0)
+    he = 1.0/(nnx-1.0)
     L = [1.0,1.0,1.0]
-unstructured=False#True#True for tetgen, false for tet or hex from rectangular grid
+unstructured=False#True for tetgen, false for tet or hex from rectangular grid
 if unstructured:
     from tank3dDomain import *
     domain = tank3d(L=L)
@@ -82,10 +83,10 @@ shockCapturingFactor_vof=0.33
 shockCapturingFactor_ls=0.33
 shockCapturingFactor_rd=0.99
 #use absolute tolerances on al models
-atolRedistance = 0.01*he
-atolConservation = 1.0e-6
-atolVolumeOfFluid= 1.0e-6
-atolLevelSet     = 1.0e-6
+atolRedistance = 1.0e-4
+atolConservation = 1.0e-4
+atolVolumeOfFluid= 1.0e-4
+atolLevelSet     = 1.0e-4
 #controls 
 linearSolverConvergenceTest = 'r-true' #rits is do a set number of iterations, r-true uses true residual, PETSc default is preconditioned residual
 #redist solver

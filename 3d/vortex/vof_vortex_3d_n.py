@@ -70,22 +70,21 @@ nonlinearSmoother = NLGaussSeidel
 
 tolFac = 0.0
 
-nl_atol_res = 1.0e-8
+nl_atol_res = atolVolumeOfFluid
 
 maxNonlinearIts = 50
 
 matrix = SparseMatrix
 
 if parallel:
-    multilevelLinearSolver = PETSc
-    
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver = KSP_petsc4py
+    linear_solver_options_prefix = 'vof_'
+    linearSolverConvergenceTest = 'r-true'
 else:
     multilevelLinearSolver = LU
 
     levelLinearSolver = LU
-
-linearSmoother = GaussSeidel
 
 linTolFac = 0.001
 
