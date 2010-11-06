@@ -11,8 +11,9 @@ else:
     stepController = Osher_PsiTC_controller
     runCFL=1.0
     rtol_res[0] = 0.0
-    atol_res[0] = he*0.01#1.0e-6
-
+    atol_res[0] = he*0.1#1.0e-6
+    psitc['nStepsForce']=3
+    psitc['nStepsMax']=5    
 if useHex:
     if spaceOrder == 1:
         femSpaces = {0:C0_AffineLinearOnCubeWithNodalBasis}
@@ -46,6 +47,8 @@ levelNonlinearSolver = Newton
 if rdtimeIntegration != 'newton':    
     maxNonlinearIts = 1
     maxLineSearches = 0
+    nonlinearSolverConvergenceTest = 'its'
+    levelNonlinearSolverConvergenceTest = 'its'
 else:
     maxNonlinearIts = 50
     maxLineSearches = 20

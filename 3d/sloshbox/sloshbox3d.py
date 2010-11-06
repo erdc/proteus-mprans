@@ -5,7 +5,7 @@ checkMass=False
 applyCorrection=True
 applyRedistancing=True
 rdtimeIntegration='newton'
-#rdtimeIntegration='osher'
+rdtimeIntegration='osher'
 freezeLevelSet=True#False
 
 spaceOrder=2
@@ -56,7 +56,7 @@ useStokes=False
 nLevels = 1#
 useShock=True
 
-lRefinement=1
+lRefinement=0
 nnx=(2**lRefinement)*10+1
 nnz = (nnx-1)/5 + 1
 he = 10.0/float(nnx-1)

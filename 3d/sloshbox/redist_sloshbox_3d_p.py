@@ -32,8 +32,8 @@ dirichletConditions = {0:getDBC_rd}
 
 if freezeLevelSet:
     if LevelModelType == RDLS.LevelModel:
-        weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCs}
-        #weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCsSimple}
+        #weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCs}
+        weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCsSimple}
     else:
         weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs}
 
