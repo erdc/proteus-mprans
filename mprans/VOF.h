@@ -342,7 +342,6 @@ namespace proteus
       //eN_j is the element trial function index
       //eN_k_j is the quadrature point index for a trial function
       //eN_k_i is the quadrature point index for a trial function
-      double globalConservation=0.0;
       for(int eN=0;eN<nElements_global;eN++)
 	{
 	  //declare local storage for element residual and initialize
@@ -504,7 +503,6 @@ namespace proteus
 	    { 
 	      register int eN_i=eN*nDOF_test_element+i;
           
-	      globalConservation += elementResidual_u[i];
 	      globalResidual[offset_u+stride_u*u_l2g[eN_i]] += elementResidual_u[i];
 	    }//i
 	}//elements
@@ -559,23 +557,6 @@ namespace proteus
 	      // 
 	      //calculate the solution and gradients at quadrature points 
 	      // 
-	      // u_ext=0.0;
-	      // for (int I=0;I<nSpace;I++)
-	      //   {
-	      //     grad_u_ext[I] = 0.0;
-	      //     bc_grad_u_ext[I] = 0.0;/*mwf need way to evaluate this*/
-	      //   }
-	      // for (int j=0;j<nDOF_trial_element;j++) 
-	      //   { 
-	      //     int eN_j = eN*nDOF_trial_element+j;
-	      //     int ebNE_kb_j = ebNE_kb*nDOF_trial_element+j;
-	      //     int ebNE_kb_j_nSpace= ebNE_kb_j*nSpace;
-	      //     u_ext += valFromDOF_c(u_dof[u_l2g[eN_j]],u_trial_ext[ebNE_kb_j]); 
-	      //     for (int I=0;I<nSpace;I++)
-	      //       {
-	      //         grad_u_ext[I] += gradFromDOF_c(u_dof[u_l2g[eN_j]],u_grad_trial_ext[ebNE_kb_j_nSpace+I]); 
-	      //       } 
-	      //   }
 	      //compute information about mapping from reference element to physical element
 	      ck.calculateMapping_elementBoundary(eN,
 						  ebN_local,
@@ -660,7 +641,6 @@ namespace proteus
 	    {
 	      int eN_i = eN*nDOF_test_element+i;
 
-	      globalConservation += elementResidual_u[i];
 	      globalResidual[offset_u+stride_u*u_l2g[eN_i]] += elementResidual_u[i];
 	    }//i
 	}//ebNE
