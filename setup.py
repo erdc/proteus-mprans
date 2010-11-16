@@ -83,6 +83,7 @@ setup(name='proteus_mprans',
                    Extension("cRDLS",["mprans/cRDLS.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
                    Extension("cVOF",["mprans/cVOF.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
                    Extension("cVolumeAveragedVOF",["mprans/cVolumeAveragedVOF.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cMoveMesh",["mprans/cMoveMesh.pyx"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
                    ],
       requires=['numpy']
       )

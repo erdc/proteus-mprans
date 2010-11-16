@@ -1,7 +1,6 @@
 from proteus import *
 from proteus.default_n import *
-from twp_navier_stokes_obstacleInTank_3d_p import *
-from obstacleInTank3d import *
+from twp_navier_stokes_floatingCylinder_3d_p import *
 
 if useBackwardEuler:
     timeIntegration = BackwardEuler_cfl
@@ -23,39 +22,32 @@ else:
     atol_u[2] = 1.0e-2
     atol_u[3] = 1.0e-2
 
-noPressureStabilization=False
-if spaceOrder==1:
-    femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis,
-                 1:C0_AffineLinearOnSimplexWithNodalBasis,
-                 2:C0_AffineLinearOnSimplexWithNodalBasis,
-                 3:C0_AffineLinearOnSimplexWithNodalBasis}
-    hFactor=1.0
-if spaceOrder==2:
-    femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis,
-                 1:C0_AffineQuadraticOnSimplexWithNodalBasis,
-                 2:C0_AffineQuadraticOnSimplexWithNodalBasis,
-                 3:C0_AffineQuadraticOnSimplexWithNodalBasis}
-    hFactor=0.5
-elementQuadrature = SimplexGaussQuadrature(nd,obstacleInTank_quad_order)
+femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis,
+             1:C0_AffineLinearOnSimplexWithNodalBasis,
+             2:C0_AffineLinearOnSimplexWithNodalBasis,
+             3:C0_AffineLinearOnSimplexWithNodalBasis}
+# femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis,
+#             1:C0_AffineQuadraticOnSimplexWithNodalBasis,
+#             2:C0_AffineQuadraticOnSimplexWithNodalBasis,
+#             3:C0_AffineQuadraticOnSimplexWithNodalBasis}
 
-elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,obstacleInTank_quad_order)
+elementQuadrature = SimplexGaussQuadrature(nd,quad_order)
 
-subgridError = None
+elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,quad_order)
 
 subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
+
+numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_IIPG_exterior #need weak for parallel and global conservation
 
 massLumping = False
 
 shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=lag_ns_shockCapturing)
 
-numericalFluxType = None
-
 multilevelNonlinearSolver  = NLNI
 
 levelNonlinearSolver = Newton
 
-maxNonlinearIts = 10
-maxLineSearches =0
+maxNonlinearIts = 25
 
 nonlinearSmoother = NLGaussSeidel
 
@@ -63,11 +55,9 @@ fullNewtonFlag = True
 
 tolFac = 0.0
 
-nl_atol_res = 1.0e-4#0.0001*he
+nl_atol_res = 1.0e-6
 
 matrix = SparseMatrix
-
-numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_IIPG_exterior #need weak for parallel and global conservation
 
 if usePETSc:    
     multilevelLinearSolver = KSP_petsc4py
@@ -82,8 +72,7 @@ else:
 
 linTolFac = 0.001
 
-#conservativeFlux = {0:'pwl-bdm-opt'}
-#conservativeFlux = {0:'pwl'}#,1:'pwl-bdm',2:'pwl-bdm'}
+#conservativeFlux = {0:'pwl-bdm-opt'}#,1:'pwl-bdm',2:'pwl-bdm'}
 #conservativeFlux = {0:'pwc'}#,1:'pwc',2:'pwc'}
 #conservativeFlux = {0:'point-eval',1:'point-eval',2:'point-eval'}
-#auxiliaryVariables=[rc]
+auxiliaryVariables=[rc]
