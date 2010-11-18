@@ -23,6 +23,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    epsFact_density=epsFact_density,
                                    stokes=useStokes,
                                    useRBLES=0.0,
+                                   useMetrics=0.0,
                                    movingDomain=movingDomain)
 
 coefficients.waterLevel=waterLevel
@@ -167,7 +168,7 @@ def getDBC_u(x,flag):
         return lambda x,t: Um
     if flag == boundaryTags['obstacle']:
         if movingDomain:
-            return lambda x,t: rc.get_u()
+            return lambda x,t: 0.0#rc.get_u()
         else:
             return lambda x,t: 0.0
 
@@ -176,7 +177,7 @@ def getDBC_v(x,flag):
         return lambda x,t: 0.0
     if flag == boundaryTags['obstacle']:
         if movingDomain:
-            return lambda x,t: rc.get_v()
+            return lambda x,t: 0.0#rc.get_v()
         else:
             return lambda x,t: 0.0
 

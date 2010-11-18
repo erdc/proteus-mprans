@@ -33,6 +33,8 @@ fullNewtonFlag = True
 tolFac = 0.01
 
 nl_atol_res = 1.0e-8
+maxNonlinearIts = 2#should be linear
+maxLineSearches =0
 
 matrix = SparseMatrix
 

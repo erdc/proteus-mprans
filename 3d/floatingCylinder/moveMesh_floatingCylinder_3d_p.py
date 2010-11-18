@@ -13,7 +13,7 @@ nMediaTypes=1
 smTypes      = numpy.zeros((nMediaTypes,2),'d')
 smFlags      = numpy.zeros((nMediaTypes,),'i')
 
-E=1.0e5 #kN/m^2 Young's modulus
+E=he**3/6.0#1.0e5 #kN/m^2 Young's modulus
 nu=0.3  #- Poisson's ratio
 
 smTypes[0,0] = E
@@ -26,16 +26,18 @@ fixedBoundary =  [boundaryTags['bottom'],boundaryTags['top'],boundaryTags['front
 class TranslatingObstacle(AuxiliaryVariables.AV_base):
     def __init__(self):
         self.current_center=cylinder_center
-        self.r = 0.5*cylinder_radius
-        self.omega=1.0/1.0
-        self.cx = cylinder_center[0]+self.r
+        self.r = 1.0*cylinder_radius
+        self.omega=1.0#1.0/1.0
+        self.cx = cylinder_center[0]
         self.cy = cylinder_center[1]
         self.cz = cylinder_center[2]
+        self.h=[0.0,0.0,0.0]
     def attachModel(self,model,ar):
         self.model=model
         return self
     def center(self,t):
         return (self.cx+self.r*cos(self.omega*2.0*math.pi*t+math.pi),
+                self.cy,
                 self.cz+self.r*sin(self.omega*2.0*math.pi*t +math.pi))
     def hx(self,t):
         h = tro.center(t)[0]-tro.current_center[0]
@@ -47,6 +49,10 @@ class TranslatingObstacle(AuxiliaryVariables.AV_base):
         h = tro.center(t)[2]-tro.current_center[2]
         return h
     def calculate(self):
+        self.h[0] = self.hx(self.model.stepController.t_model)
+        self.h[1] = self.hy(self.model.stepController.t_model)
+        self.h[2] = self.hz(self.model.stepController.t_model)
+        print "displacement------------------------------------",self.h[0],self.h[1],self.h[2]
         self.current_center=self.center(self.model.stepController.t_model_last)
 
 class TranslatingFreeObstacle(AuxiliaryVariables.AV_base):
@@ -54,7 +60,7 @@ class TranslatingFreeObstacle(AuxiliaryVariables.AV_base):
         self.current_center=cylinder_center
         self.r = 0.5*cylinder_radius
         self.omega=1.0/1.0
-        self.cx = cylinder_center[0]+self.r
+        self.cx = cylinder_center[0]
         self.cy = cylinder_center[1]
         self.cz = cylinder_center[2]
         self.body=None
@@ -81,29 +87,26 @@ class TranslatingFreeObstacle(AuxiliaryVariables.AV_base):
         else:
             return self.object.h[2]
     def calculate(self):
-        self.h=(self.object.position[0]-self.object.last_position[0],
-                self.object.position[1]-self.object.last_position[1],
-                self.object.position[2]-self.object.last_position[2])
         self.h=self.object.h#(self.object.position[0]-self.object.last_position[0],
-                #self.object.position[1]-self.object.last_position[1])
-        print "displacement------------------------------------",self.h[0],self.h[1]
+        print "displacement------------------------------------",self.h[0],self.h[1],self.h[2]
 
 tro = TranslatingFreeObstacle()
+tro = TranslatingObstacle()
 
 def getDBC_hx(x,flag):
-    if flag in fixedBoundary:
+    if flag in [boundaryTags['upstream'],boundaryTags['downstream']]:
         return lambda x,t: 0.0
     if flag == boundaryTags['obstacle']:
         return lambda x,t: tro.hx(t)
-
+    
 def getDBC_hy(x,flag):
-    if flag in fixedBoundary:
+    if flag in [boundaryTags['front'],boundaryTags['back']]:
         return lambda x,t: 0.0
     if flag == boundaryTags['obstacle']:
         return lambda x,t: tro.hy(t)
-
+    
 def getDBC_hz(x,flag):
-    if flag in fixedBoundary:
+    if flag in [boundaryTags['top'],boundaryTags['bottom']]:
         return lambda x,t: 0.0
     if flag == boundaryTags['obstacle']:
         return lambda x,t: tro.hz(t)
@@ -118,19 +121,24 @@ fluxBoundaryConditions = {0:'noFlow',
 
 advectiveFluxBoundaryConditions =  {}
 
-diffusiveFluxBoundaryConditions = {0:{},1:{},2:{}}
+diffusiveFluxBoundaryConditions = {0:{},
+                                   1:{},
+                                   2:{}}
 
 def stress_u(x,flag):
-    if flag == 0:
-        return None
-
+    if flag not in [boundaryTags['upstream'],
+                    boundaryTags['downstream']]:
+        return 0.0
+    
 def stress_v(x,flag):
-    if flag == 0:
-        return None
+    if flag not in [boundaryTags['front'],
+                    boundaryTags['back']]:
+        return 0.0
 
 def stress_w(x,flag):
-    if flag == 0:
-        return None
+    if flag not in [boundaryTags['top'],
+                    boundaryTags['bottom']]:
+        return 0.0
 
 stressFluxBoundaryConditions = {0:stress_u,
                                 1:stress_v,

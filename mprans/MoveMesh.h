@@ -186,6 +186,7 @@ namespace proteus
 				     double* stress,
 				     double* dstress)
     {
+      //cek hack/todo need to set E based on reference configuration
       const double strainTrace=(strain[sXX]+strain[sYY]+strain[sZZ]),
 	E=materialProperties[0]/det_J,//for mesh motion penalize small elements
 	nu=materialProperties[1];
@@ -522,12 +523,12 @@ namespace proteus
 		{ 
 		  register int i_nSpace=i*nSpace;
 
-		  elementResidual_u[i] += ck.Stress_u_weak(stress,&disp_grad_test_dV[i_nSpace]) + 
-		    ck.Reaction_weak(-bodyForce[eN_k_nSpace+0],disp_test_dV[i]); 
-		  elementResidual_v[i] += ck.Stress_v_weak(stress,&disp_grad_test_dV[i_nSpace]) + 
-		    ck.Reaction_weak(-bodyForce[eN_k_nSpace+1],disp_test_dV[i]); 
-		  elementResidual_w[i] += ck.Stress_w_weak(stress,&disp_grad_test_dV[i_nSpace]) + 
-		    ck.Reaction_weak(-bodyForce[eN_k_nSpace+2],disp_test_dV[i]); 
+		  elementResidual_u[i] += ck.Stress_u_weak(stress,&disp_grad_test_dV[i_nSpace]);// + 
+		  //ck.Reaction_weak(-bodyForce[eN_k_nSpace+0],disp_test_dV[i]); 
+		  elementResidual_v[i] += ck.Stress_v_weak(stress,&disp_grad_test_dV[i_nSpace]);// + 
+		  //ck.Reaction_weak(-bodyForce[eN_k_nSpace+1],disp_test_dV[i]); 
+		  elementResidual_w[i] += ck.Stress_w_weak(stress,&disp_grad_test_dV[i_nSpace]);// + 
+		  //ck.Reaction_weak(-bodyForce[eN_k_nSpace+2],disp_test_dV[i]); 
 		  // if (k == nQuadraturePoints_element-1)
 		  // 	{
 		  // 	  std::cout<<"element residual "<<eN<<'\t'<<i<<std::endl;
@@ -657,8 +658,9 @@ namespace proteus
 	      //ebqe_penalty_ext[ebNE_kb] = 10.0;
 	      //
 	      ck.calculateGScale(G,normal,h_penalty);
+	      //cek hack
 	      h_penalty = 10.0/h_penalty;
-	      h_penalty=1.0e5;
+	      h_penalty=100.0;
 	      // for (int II=0;II<nSymTen;II++)
 	      //   stress[II] = 0.0;
 	      exteriorNumericalStressFlux(isDOFBoundary_u[ebNE_kb],
@@ -1022,8 +1024,9 @@ namespace proteus
 	      //calculate the flux jacobian
 	      //
 	      ck.calculateGScale(G,normal,h_penalty);
+	      //cek hack
 	      h_penalty = 10.0/h_penalty;
-	      h_penalty = 1.0e5;
+	      h_penalty = 100.0;
 	      // for (int II=0;II<nSymTen;II++)
 	      //   for (int JJ=0;<nSymTen;JJ++)
 	      //     dstress[II*nSymTen+JJ] = 0.0;

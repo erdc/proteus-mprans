@@ -942,7 +942,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             for cj in range(len(self.dirichletConditionsForceDOF)):
                 for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
                     self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
- 
         self.rans2p.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,

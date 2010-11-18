@@ -1205,11 +1205,10 @@ namespace proteus
 					const double& penalty,
 					double& flux)
     {
-      double diffusiveVelocityComponent_I,penaltyFlux,max_a;
+      double diffusiveVelocityComponent_I,penaltyFlux,max_a=a[0];
       if(isDOFBoundary == 1)
 	{
 	  flux = 0.0;
-	  max_a=0.0;
 	  for(int I=0;I<nSpace;I++)
 	    {
 	      diffusiveVelocityComponent_I=0.0;
@@ -1223,7 +1222,9 @@ namespace proteus
 	  penaltyFlux = penalty*(u-bc_u);
 	  flux += penaltyFlux;
 	  //contact line slip
-	  flux*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
+	  //flux*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
+	  //std::cout<<"Dirichlet boundary condition"<<bc_u<<'\t'<<u<<std::endl;
+	  //std::cout<<"Dirichlet boundary flux"<<flux<<std::endl;
 	}
       else if(isFluxBoundary == 1)
 	{
@@ -1249,7 +1250,7 @@ namespace proteus
 						  const double grad_v[nSpace],
 						  const double& penalty)
     {
-      double dvel_I,tmp=0.0;
+      double dvel_I,tmp=0.0,max_a=a[0];
       if(isDOFBoundary >= 1)
 	{
 	  for(int I=0;I<nSpace;I++)
@@ -1258,12 +1259,13 @@ namespace proteus
 	      for(int m=rowptr[I];m<rowptr[I+1];m++)
 		{
 		  dvel_I -= a[m]*grad_v[colind[m]];
+		  max_a = fmax(max_a,a[m]);
 		}
 	      tmp += dvel_I*n[I];
 	    }
-	  tmp +=penalty*v;
+	  tmp += penalty*v;
 	  //contact line slip
-	  tmp*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
+	  //tmp*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
 	}
       return tmp;
     }
@@ -2158,7 +2160,7 @@ namespace proteus
 	      ck.calculateGScale(G,normal,h_penalty);
 	      h_penalty = 10.0/h_penalty;
 	      //cek debug, do it the old way
-	      h_penalty = 10.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
+	      h_penalty = 10000.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
 	      exteriorNumericalAdvectiveFlux(isDOFBoundary_p[ebNE_kb],
 					     isDOFBoundary_u[ebNE_kb],
 					     isDOFBoundary_v[ebNE_kb],
@@ -3381,7 +3383,7 @@ namespace proteus
 	      ck.calculateGScale(G,normal,h_penalty);
 	      h_penalty = 10.0/h_penalty;
 	      //cek debug, do it the old way
-	      h_penalty = 10.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
+	      h_penalty = 10000.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
 		  register int j_nSpace = j*nSpace,ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;

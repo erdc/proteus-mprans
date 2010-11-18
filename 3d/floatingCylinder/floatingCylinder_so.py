@@ -28,7 +28,7 @@ archiveFlag = ArchiveFlags.EVERY_USER_STEP
 
 if floatingCylinder.nDTout != None:
     tnList = [0.0,floatingCylinder.dt_init] + \
-    [floatingCylinder.dt_init+i*(floatingCylinder.T-floatingCylinder.dt_init)/(float(floatingCylinder.nDTout)-1) 
-     for i in range(1,floatingCylinder.nDTout)]
+        [floatingCylinder.dt_init+(floatingCylinder.T-floatingCylinder.dt_init)*float(i)/float(floatingCylinder.nDTout-1) 
+         for i in range(1,floatingCylinder.nDTout)]
 else:
     tnList = [0.0,floatingCylinder.dt_init,floatingCylinder.T]

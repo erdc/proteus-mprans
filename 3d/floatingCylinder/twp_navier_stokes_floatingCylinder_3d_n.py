@@ -47,7 +47,8 @@ multilevelNonlinearSolver  = NLNI
 
 levelNonlinearSolver = Newton
 
-maxNonlinearIts = 25
+maxNonlinearIts = 10
+maxLineSearches =0
 
 nonlinearSmoother = NLGaussSeidel
 
@@ -55,9 +56,11 @@ fullNewtonFlag = True
 
 tolFac = 0.0
 
-nl_atol_res = 1.0e-6
+nl_atol_res = 1.0e-8#0.0001*he
 
 matrix = SparseMatrix
+
+numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_IIPG_exterior #need weak for parallel and global conservation
 
 if usePETSc:    
     multilevelLinearSolver = KSP_petsc4py

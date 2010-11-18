@@ -45,7 +45,7 @@ domain.writePLY("cylinder")
 boundaryTags = domain.boundaryTags
 waterLevel = 0.5*inflow_height
 useShock=False#True
-movingDomain=True
+movingDomain=False#True
 #
 #residence time based on mean velocity
 #
@@ -58,9 +58,9 @@ residence_time = bottom_length/Um
 #
 #time interval etc.
 #
-dt_init=0.001*residence_time
-T = 20#10.0*residence_time
-nDTout=1000
+dt_init=0.01#0.001*residence_time
+T = 1.0#10.0*residence_time
+nDTout=100
 runCFL = 0.33
 #
 #numerics
@@ -81,10 +81,10 @@ lag_ns_subgridError=True
 lag_ns_shockCapturing=True
 lag_ls_shockCapturing=True
 #shock capturing diffusion
-ns_shockCapturingFactor=0.9
-ls_shockCapturingFactor=0.9
-vof_shockCapturingFactor=0.9
-rd_shockCapturingFactor=0.9
+ns_shockCapturingFactor=0.33
+ls_shockCapturingFactor=0.33
+vof_shockCapturingFactor=0.33
+rd_shockCapturingFactor=0.33
 #epsilons for Heaviside/Dirac/etc smoothing
 hFactor=1.0
 noPressureStabilization=False
@@ -101,4 +101,4 @@ usePETSc=False#True
 spaceOrder=1
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
-nLayersOfOverlapForParallel = 2
+nLayersOfOverlapForParallel = 1
