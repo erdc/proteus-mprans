@@ -43,7 +43,8 @@ namespace proteus
 				   double* u_dof,
 				   double* velocity,
 				   double* q_m,
-				   double* q_u,
+				   double* q_u,				   
+				   double* q_n,
 				   double* q_dH,
 				   double* q_m_betaBDF,
 				   double* cfl,
@@ -203,7 +204,8 @@ namespace proteus
 			   double* u_dof,
 			   double* velocity,
 			   double* q_m,
-			   double* q_u,
+			   double* q_u,				   
+			   double* q_n,
 			   double* q_dH,
 			   double* q_m_betaBDF,
 			   double* cfl,
@@ -298,6 +300,9 @@ namespace proteus
 		}
 	      //save solution at quadrature points for other models to use
 	      q_u[eN_k]=u;
+	      q_n[eN_k_nSpace+0]  = grad_u[0];
+	      q_n[eN_k_nSpace+1]  = grad_u[1];	      
+	      q_n[eN_k_nSpace+2]  = grad_u[2];	      
 	      //
 	      //calculate pde coefficients at quadrature points
 	      //

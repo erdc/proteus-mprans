@@ -151,7 +151,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                              sparseDiffusionTensors=sdInfo,
                              useSparseDiffusion = sd,
                              movingDomain=movingDomain)
-            self.vectorComponents=[1,2,3]
+            self.vectorComponents=[1,2,3] 
         
     def attachModels(self,modelList):
         #level set
@@ -914,6 +914,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         """
         Calculate the element residuals and add in to the global residual
         """
+
         #Load the unknowns into the finite element dof
         self.timeIntegration.calculateCoefs()
         self.timeIntegration.calculateU(u)

@@ -391,7 +391,7 @@ cdef class cRANS2P_base:
                          numpy.ndarray q_velocity,
                          numpy.ndarray ebqe_velocity,
                          numpy.ndarray flux,
-                         numpy.ndarray elementResidual_p):
+                         numpy.ndarray elementResidual_p):			 
        self.thisptr.calculateResidual(<double*> mesh_trial_ref.data,
                                        <double*> mesh_grad_trial_ref.data,
                                        <double*> mesh_dof.data,
@@ -499,6 +499,7 @@ cdef class cRANS2P_base:
                                        <double*> ebqe_velocity.data,
                                        <double*> flux.data,
                                        <double*> elementResidual_p.data)
+			       
    def calculateJacobian(self,
                          numpy.ndarray mesh_trial_ref,
                          numpy.ndarray mesh_grad_trial_ref,

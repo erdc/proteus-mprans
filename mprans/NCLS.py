@@ -552,6 +552,7 @@ class LevelModel(OneLevelTransport):
         #flux boundary conditions, SHOULDN'T HAVE
         #cNCLS.calculateResidual(self.mesh.nElements_global,
         #try to use 1d,2d,3d specific modules
+	
         self.ncls.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -584,6 +585,7 @@ class LevelModel(OneLevelTransport):
             self.coefficients.q_v,
             self.timeIntegration.m_tmp[0],
             self.q[('u',0)],
+	    self.q[('grad(u)',0)],
             self.q[('dH_sge',0,0)],
             self.timeIntegration.beta_bdf[0],#mwf was self.timeIntegration.m_last[0],
             self.q[('cfl',0)],

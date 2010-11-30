@@ -519,7 +519,7 @@ namespace proteus
 	    ebN_local = elementBoundaryLocalElementBoundariesArray[ebN*2+0],
 	    eN_nDOF_trial_element = eN*nDOF_trial_element;
 	  register double elementResidual_u[nDOF_test_element];
-	  const double eps=epsFact*elementDiameter[eN];
+	  //const double eps=epsFact*elementDiameter[eN];
 	  for (int i=0;i<nDOF_test_element;i++)
 	    {
 	      elementResidual_u[i]=0.0;

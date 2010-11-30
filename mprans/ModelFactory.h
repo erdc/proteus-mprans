@@ -112,8 +112,24 @@ namespace proteus
 		     else if (nDOF_mesh_trial_elementIn == 8)//sub-parametric hexes
 		       {
 			 if (nDOF_trial_elementIn == 27)
-			   if (nQuadraturePoints_elementIn == 125)
-			     return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,125,8,27,27,25>());
+			     if (nQuadraturePoints_elementIn == 8)
+			       if ( nQuadraturePoints_elementBoundaryIn == 4)
+			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,8,8,27,27,4>());
+			       else if ( nQuadraturePoints_elementBoundaryIn == 9)
+			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,8,8,27,27,9>());
+			       else  
+				 abort();
+			     else if (nQuadraturePoints_elementIn == 27)
+			       if ( nQuadraturePoints_elementBoundaryIn == 4)
+			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,27,8,27,27,4>());
+			       else if ( nQuadraturePoints_elementBoundaryIn == 9)			     			     
+			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,27,8,27,27,9>());
+			       else
+			         abort();	 
+			     else if (nQuadraturePoints_elementIn == 125)
+			        return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,125,8,27,27,25>());
+			     else
+			        abort();	
 		       }
 		     else
 		       abort();

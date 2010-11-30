@@ -1,9 +1,464 @@
-from proteus import *
-from proteus.Transport import *
-import cRBLES
-from proteus import cRANS2P2D,cRANS2PQ#,cRANS2P2DQ
+import proteus
+from proteus.mprans.cRBLES import *
 
-class OneLevelRBLES(OneLevelTransport):
+class Coefficients(proteus.TransportCoefficients.TC_base):
+    """
+    The coefficients for two incompresslble fluids governed by the Navier-Stokes equations and separated by a sharp interface represented by a level set function
+    """
+    from proteus.ctransportCoefficients import TwophaseNavierStokes_ST_LS_SO_2D_Evaluate
+    from proteus.ctransportCoefficients import TwophaseNavierStokes_ST_LS_SO_3D_Evaluate
+    from proteus.ctransportCoefficients import TwophaseNavierStokes_ST_LS_SO_2D_Evaluate_sd
+    from proteus.ctransportCoefficients import TwophaseNavierStokes_ST_LS_SO_3D_Evaluate_sd
+    def __init__(self,
+                 epsFact=1.5,
+                 sigma=72.8,
+                 rho_0=998.2,nu_0=1.004e-6,
+                 rho_1=1.205,nu_1=1.500e-5,
+                 g=[0.0,-9.8],
+                 nd=2,
+                 LS_model=None,
+                 KN_model=None,
+                 epsFact_density=None,
+                 stokes=False,
+                 sd=True,
+                 movingDomain=False,
+                 useRBLES=0.0,
+		 useMetrics=0.0):
+        self.useRBLES=useRBLES
+        self.useMetrics=useMetrics
+        self.sd=sd
+        if epsFact_density != None:
+            self.epsFact_density = epsFact_density
+        else:
+            self.epsFact_density = epsFact
+        self.stokes=stokes
+        self.LS_model=LS_model
+        self.KN_model=KN_model
+        self.epsFact=epsFact
+        self.eps=None
+        self.sigma=sigma
+        self.rho_0 = rho_0
+        self.nu_0 = nu_0
+        #cek for debugging using single phase test problems
+        self.rho=rho_0
+        self.nu=nu_0
+        self.rho_1 = rho_1
+        self.nu_1 = nu_1
+        self.g = numpy.array(g)
+        self.nd=nd
+        
+        mass={}
+        advection={}
+        diffusion={}
+        potential={}
+        reaction={}
+        hamiltonian={}
+        if nd==2:
+            variableNames=['p','u','v']
+            mass= {1:{1:'linear'},
+                   2:{2:'linear'}}
+            advection = {0:{0:'linear',
+                            1:'linear',
+                            2:'linear'},
+                         1:{0:'nonlinear',
+                            1:'nonlinear',
+                            2:'nonlinear'},
+                         2:{0:'nonlinear',
+                            1:'nonlinear',
+                            2:'nonlinear'}}
+            diffusion  = {1:{1:{1:'constant'},2:{2:'constant'}},
+                          2:{2:{2:'constant'},1:{1:'constant'}}}
+            sdInfo  = {(1,1):(numpy.array([0,1,2],dtype='i'),
+                             numpy.array([0,1],dtype='i')),
+                       (1,2):(numpy.array([0,0,1],dtype='i'),
+                              numpy.array([0],dtype='i')),
+                       (2,2):(numpy.array([0,1,2],dtype='i'),
+                              numpy.array([0,1],dtype='i')),
+                       (2,1):(numpy.array([0,1,1],dtype='i'),
+                              numpy.array([1],dtype='i'))}
+            potential= {1:{1:'u'},
+                        2:{2:'u'}}
+            reaction = {0:{0:'constant'},#added for Lin, Liu wave forcing
+                        1:{1:'constant'},
+                        2:{2:'constant'}}
+            hamiltonian = {1:{0:'linear'},
+                           2:{0:'linear'}}
+            TC_base.__init__(self,
+                             3,
+                             mass,
+                             advection,
+                             diffusion,
+                             potential,
+                             reaction,
+                             hamiltonian,
+                             variableNames,
+                             sparseDiffusionTensors=sdInfo,
+                             useSparseDiffusion = sd,
+                             movingDomain=movingDomain)
+            self.vectorComponents=[1,2]
+        elif nd==3:
+            variableNames=['p','u','v','w']
+            mass = {1:{1:'linear'},
+                    2:{2:'linear'},
+                    3:{3:'linear'}}
+            advection = {0:{1:'linear',
+                            2:'linear',
+                            3:'linear'},
+                         1:{0:'nonlinear',
+                            1:'nonlinear',
+                            2:'nonlinear',
+                            3:'nonlinear'},
+                         2:{0:'nonlinear',
+                            1:'nonlinear',
+                            2:'nonlinear',
+                            3:'nonlinear'},
+                         3:{0:'nonlinear',
+                            1:'nonlinear',
+                            2:'nonlinear',
+                            3:'nonlinear'}}
+            diffusion = {1:{1:{1:'constant'},2:{2:'constant'},3:{3:'constant'}},
+                         2:{1:{1:'constant'},2:{2:'constant'},3:{3:'constant'}},
+                         3:{1:{1:'constant'},2:{2:'constant'},3:{3:'constant'}}}
+            sdInfo={}
+            sdInfo  = {(1,1):(numpy.array([0,1,2,3],dtype='i'),numpy.array([0,1,2],dtype='i')),
+                       (1,2):(numpy.array([0,0,1,1],dtype='i'),numpy.array([0],dtype='i')),
+                       (1,3):(numpy.array([0,0,0,1],dtype='i'),numpy.array([0],dtype='i')),
+                       (2,1):(numpy.array([0,1,1,1],dtype='i'),numpy.array([1],dtype='i')),
+                       (2,2):(numpy.array([0,1,2,3],dtype='i'),numpy.array([0,1,2],dtype='i')),
+                       (2,3):(numpy.array([0,0,0,1],dtype='i'),numpy.array([1],dtype='i')),
+                       (3,1):(numpy.array([0,1,1,1],dtype='i'),numpy.array([2],dtype='i')),
+                       (3,2):(numpy.array([0,0,1,1],dtype='i'),numpy.array([2],dtype='i')),
+                       (3,3):(numpy.array([0,1,2,3],dtype='i'),numpy.array([0,1,2],dtype='i'))}
+            potential= {1:{1:'u'},
+                        2:{2:'u'},
+                        3:{3:'u'}}
+            reaction = {0:{0:'constant'},#added for Lin, Liu wave forcing,
+                        1:{1:'constant'},
+                        2:{2:'constant'},
+                        3:{3:'constant'}}
+            hamiltonian = {1:{0:'linear'},
+                           2:{0:'linear'},
+                           3:{0:'linear'}}
+            TC_base.__init__(self,
+                             4,
+                             mass,
+                             advection,
+                             diffusion,
+                             potential,
+                             reaction,
+                             hamiltonian,
+                             variableNames,
+                             sparseDiffusionTensors=sdInfo,
+                             useSparseDiffusion = sd,
+                             movingDomain=movingDomain)
+            self.vectorComponents=[1,2,3]
+        
+    def attachModels(self,modelList):
+        #level set
+        self.model = modelList[0]
+        if self.LS_model != None:
+            self.q_phi = modelList[self.LS_model].q[('u',0)]
+            if modelList[self.LS_model].ebq.has_key(('u',0)):
+                self.ebq_phi = modelList[self.LS_model].ebq[('u',0)]
+            else:
+                self.ebq_phi = None
+            self.ebqe_phi = modelList[self.LS_model].ebqe[('u',0)]
+            #normal
+            self.q_n = modelList[self.LS_model].q[('grad(u)',0)]
+            if modelList[self.LS_model].ebq.has_key(('grad(u)',0)):
+                self.ebq_n = modelList[self.LS_model].ebq[('grad(u)',0)]
+            else:
+                self.ebq_n   = None
+            self.ebqe_n    = modelList[self.LS_model].ebqe[('grad(u)',0)]
+        #curvature
+        if self.KN_model != None:
+            self.q_kappa    = modelList[self.KN_model].q[('u',0)]
+            self.ebqe_kappa = modelList[self.KN_model].ebqe[('u',0)]
+            if modelList[self.KN_model].ebq.has_key(('u',0)):
+                self.ebq_kappa = modelList[self.KN_model].ebq[('u',0)]
+            else:
+                self.ebq_kappa = None
+    def initializeMesh(self,mesh):
+        #cek we eventually need to use the local element diameter
+        self.eps_density = self.epsFact_density*mesh.h
+        self.eps_viscosity = self.epsFact*mesh.h
+    #initialize so it can run as single phase
+    def initializeElementQuadrature(self,t,cq):
+        if self.LS_model == None:
+            self.q_phi = -numpy.ones(cq[('u',1)].shape,'d')
+            self.q_n = -numpy.ones(cq[('velocity',0)].shape,'d')
+        if self.KN_model == None:
+            self.q_kappa = -numpy.zeros(cq[('u',1)].shape,'d')
+            
+    def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
+        if self.LS_model == None:
+            self.ebq_phi = -numpy.ones(cebq[('u',1)].shape,'d')
+            self.ebq_n = -numpy.ones(cebq[('velocity',0)].shape,'d')
+        if self.KN_model == None:
+            self.ebq_kappa = -numpy.zeros(cebq[('u',1)].shape,'d')
+    def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
+        if self.LS_model == None:
+            self.ebqe_phi = -numpy.ones(cebqe[('u',1)].shape,'d')
+            self.ebqe_n = -numpy.ones(cebqe[('velocity',0)].shape,'d')
+        if self.KN_model == None:
+            self.ebqe_kappa = -numpy.zeros(cebqe[('u',1)].shape,'d')
+    def updateToMovingDomain(self,t,c):
+        from proteus import cfemIntegrals
+        assert(self.movingDomain)
+        if self.movingDomain:
+            cfemIntegrals.update_f_movingDomain_constantMass(c['xt'],c[('f',0)])
+            cfemIntegrals.update_f_movingDomain(c['xt'],c[('m',1)],c[('f',1)])
+            cfemIntegrals.update_df_movingDomain(c['xt'],c[('dm',1,1)],c[('df',1,1)])
+            cfemIntegrals.update_f_movingDomain(c['xt'],c[('m',2)],c[('f',2)])
+            cfemIntegrals.update_df_movingDomain(c['xt'],c[('dm',2,2)],c[('df',2,2)])
+            if self.nd == 3:
+                cfemIntegrals.update_f_movingDomain(c['xt'],c[('m',3)],c[('f',3)])
+                cfemIntegrals.update_df_movingDomain(c['xt'],c[('dm',3,3)],c[('df',3,3)])
+    def evaluate(self,t,c):
+        import math
+        #self.rho_0 = 1000.0*self.rho_1
+        #self.nu_0 = 0.1*self.nu_1
+        if c[('u',0)].shape == self.q_phi.shape:
+            phi = self.q_phi
+            n   = self.q_n
+            kappa = self.q_kappa
+            #slopeAngle=0.1*math.pi/2.0#math.pi/4.0
+            #surfaceNormal = [-sin(slopeAngle),cos(slopeAngle)]
+            #waterLevel=0.5
+            #for eN in range(phi.shape[0]):
+            #   for k in range(phi.shape[1]):
+            #       phi[eN,k] = (c['x'][eN,k,0] - 0.5)*surfaceNormal[0]+(c['x'][eN,k,1] - waterLevel)*surfaceNormal[1]
+        elif c[('u',0)].shape == self.ebqe_phi.shape:
+            phi   = self.ebqe_phi
+            n     = self.ebqe_n
+            kappa = self.ebqe_kappa
+        else:
+            phi   = self.ebq_phi
+            n     = self.ebq_n
+            kappa = self.ebq_kappa
+        #mwf debug
+        #waterLevelBase = 0.529
+        #for i in range(len(phi.flat)):
+            #if abs(phi.flat[i]) > 0.0:
+            #    assert abs(phi.flat[i] - (c['x'].flat[3*i+1] - waterLevelBase)) <= 1.0e-5, "Problem with phi t=%s phi.shape=%s i=%s phi=%s y=%s wl=%s " % (t,phi.shape,i,phi.flat[i],c['x'].flat[3*i+1],waterLevelBase)
+            #phi.flat[i] = c['x'].flat[3*i+1] - waterLevelBase#self.waterLevel
+        #self.sd=False
+        if self.nd==2:
+            if self.sd:
+                self.TwophaseNavierStokes_ST_LS_SO_2D_Evaluate_sd(self.eps_density,
+                                                                  self.eps_viscosity,
+                                                                  self.sigma,
+                                                                  self.rho_0,
+                                                                  self.nu_0,
+                                                                  self.rho_1,
+                                                                  self.nu_1,
+                                                                  self.g,
+                                                                  phi,
+                                                                  n,
+                                                                  kappa,
+                                                                  c[('u',0)],
+                                                                  c[('grad(u)',0)],
+                                                                  c[('u',1)],
+                                                                  c[('u',2)],
+                                                                  c[('m',1)],
+                                                                  c[('dm',1,1)],
+                                                                  c[('m',2)],
+                                                                  c[('dm',2,2)],
+                                                                  c[('f',0)],
+                                                                  c[('df',0,1)],
+                                                                  c[('df',0,2)],
+                                                                  c[('f',1)],
+                                                                  c[('df',1,1)],
+                                                                  c[('df',1,2)],
+                                                                  c[('f',2)],
+                                                                  c[('df',2,1)],
+                                                                  c[('df',2,2)],
+                                                                  c[('a',1,1)],
+                                                                  c[('a',2,2)],
+                                                                  c[('a',1,2)],
+                                                                  c[('a',2,1)],
+                                                                  c[('r',1)],
+                                                                  c[('r',2)],
+                                                                  c[('H',1)],
+                                                                  c[('dH',1,0)],
+                                                                  c[('H',2)],
+                                                                  c[('dH',2,0)])
+            else:
+                self.TwophaseNavierStokes_ST_LS_SO_2D_Evaluate(self.eps_density,
+                                                           self.eps_viscosity,
+                                                           self.sigma,
+                                                           self.rho_0,
+                                                           self.nu_0,
+                                                           self.rho_1,
+                                                           self.nu_1,
+                                                           self.g,
+                                                           phi,
+                                                           n,
+                                                           kappa,
+                                                           c[('u',0)],
+                                                           c[('grad(u)',0)],
+                                                           c[('u',1)],
+                                                           c[('u',2)],
+                                                           c[('m',1)],
+                                                           c[('dm',1,1)],
+                                                           c[('m',2)],
+                                                           c[('dm',2,2)],
+                                                           c[('f',0)],
+                                                           c[('df',0,1)],
+                                                           c[('df',0,2)],
+                                                           c[('f',1)],
+                                                           c[('df',1,1)],
+                                                           c[('df',1,2)],
+                                                           c[('f',2)],
+                                                           c[('df',2,1)],
+                                                           c[('df',2,2)],
+                                                           c[('a',1,1)],
+                                                           c[('a',2,2)],
+                                                           c[('a',1,2)],
+                                                           c[('a',2,1)],
+                                                           c[('r',1)],
+                                                           c[('r',2)],
+                                                           c[('H',1)],
+                                                           c[('dH',1,0)],
+                                                           c[('H',2)],
+                                                           c[('dH',2,0)])
+            if self.stokes:
+                c[('f',1)].flat[:] = 0.0
+                c[('df',1,1)].flat[:] = 0.0
+                c[('df',1,2)].flat[:] = 0.0
+                c[('f',2)].flat[:] = 0.0
+                c[('df',2,1)].flat[:] = 0.0
+                c[('df',2,2)].flat[:] = 0.0
+        elif  self.nd==3:
+            if self.sd:
+                self.TwophaseNavierStokes_ST_LS_SO_3D_Evaluate_sd(self.eps_density,
+                                                                  self.eps_viscosity,
+                                                                  self.sigma,
+                                                                  self.rho_0,
+                                                                  self.nu_0,
+                                                                  self.rho_1,
+                                                                  self.nu_1,
+                                                                  self.g,
+                                                                  phi,
+                                                                  n,
+                                                                  kappa,
+                                                                  c[('u',0)],
+                                                                  c[('grad(u)',0)],
+                                                                  c[('u',1)],
+                                                                  c[('u',2)],
+                                                                  c[('u',3)],
+                                                                  c[('m',1)],
+                                                                  c[('dm',1,1)],
+                                                                  c[('m',2)],
+                                                                  c[('dm',2,2)],
+                                                                  c[('m',3)],
+                                                                  c[('dm',3,3)],
+                                                                  c[('f',0)],
+                                                                  c[('df',0,1)],
+                                                                  c[('df',0,2)],
+                                                                  c[('df',0,3)],
+                                                                  c[('f',1)],
+                                                                  c[('df',1,1)],
+                                                                  c[('df',1,2)],
+                                                                  c[('df',1,3)],
+                                                                  c[('f',2)],
+                                                                  c[('df',2,1)],
+                                                                  c[('df',2,2)],
+                                                                  c[('df',2,3)],
+                                                                  c[('f',3)],
+                                                                  c[('df',3,1)],
+                                                                  c[('df',3,2)],
+                                                                  c[('df',3,3)],
+                                                                  c[('a',1,1)],
+                                                                  c[('a',2,2)],
+                                                                  c[('a',3,3)],
+                                                                  c[('a',1,2)],
+                                                                  c[('a',1,3)],
+                                                                  c[('a',2,1)],
+                                                                  c[('a',2,3)],
+                                                                  c[('a',3,1)],
+                                                                  c[('a',3,2)],
+                                                                  c[('r',1)],
+                                                                  c[('r',2)],
+                                                                  c[('r',3)],
+                                                                  c[('H',1)],
+                                                                  c[('dH',1,0)],
+                                                                  c[('H',2)],
+                                                                  c[('dH',2,0)],
+                                                                  c[('H',3)],
+                                                                  c[('dH',3,0)])
+            else:
+                self.TwophaseNavierStokes_ST_LS_SO_3D_Evaluate(self.eps_density,
+                                                           self.eps_viscosity,
+                                                           self.sigma,
+                                                           self.rho_0,
+                                                           self.nu_0,
+                                                           self.rho_1,
+                                                           self.nu_1,
+                                                           self.g,
+                                                           phi,
+                                                           n,
+                                                           kappa,
+                                                           c[('u',0)],
+                                                           c[('grad(u)',0)],
+                                                           c[('u',1)],
+                                                           c[('u',2)],
+                                                           c[('u',3)],
+                                                           c[('m',1)],
+                                                           c[('dm',1,1)],
+                                                           c[('m',2)],
+                                                           c[('dm',2,2)],
+                                                           c[('m',3)],
+                                                           c[('dm',3,3)],
+                                                           c[('f',0)],
+                                                           c[('df',0,1)],
+                                                           c[('df',0,2)],
+                                                           c[('df',0,3)],
+                                                           c[('f',1)],
+                                                           c[('df',1,1)],
+                                                           c[('df',1,2)],
+                                                           c[('df',1,3)],
+                                                           c[('f',2)],
+                                                           c[('df',2,1)],
+                                                           c[('df',2,2)],
+                                                           c[('df',2,3)],
+                                                           c[('f',3)],
+                                                           c[('df',3,1)],
+                                                           c[('df',3,2)],
+                                                           c[('df',3,3)],
+                                                           c[('a',1,1)],
+                                                           c[('a',2,2)],
+                                                           c[('a',3,3)],
+                                                           c[('a',1,2)],
+                                                           c[('a',1,3)],
+                                                           c[('a',2,1)],
+                                                           c[('a',2,3)],
+                                                           c[('a',3,1)],
+                                                           c[('a',3,2)],
+                                                           c[('r',1)],
+                                                           c[('r',2)],
+                                                           c[('r',3)],
+                                                           c[('H',1)],
+                                                           c[('dH',1,0)],
+                                                           c[('H',2)],
+                                                           c[('dH',2,0)],
+                                                           c[('H',3)],
+                                                           c[('dH',3,0)])
+            if self.stokes:
+                c[('f',1)].flat[:] = 0.0
+                c[('df',1,1)].flat[:] = 0.0
+                c[('df',1,2)].flat[:] = 0.0
+                c[('df',1,3)].flat[:] = 0.0
+                c[('f',2)].flat[:] = 0.0
+                c[('df',2,1)].flat[:] = 0.0
+                c[('df',2,2)].flat[:] = 0.0
+                c[('df',2,3)].flat[:] = 0.0
+                c[('f',3)].flat[:] = 0.0
+                c[('df',3,1)].flat[:] = 0.0
+                c[('df',3,2)].flat[:] = 0.0
+                c[('df',3,3)].flat[:] = 0.0
+
+class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
     def __init__(self,
                  uDict,
@@ -31,6 +486,34 @@ class OneLevelRBLES(OneLevelTransport):
                  reuse_trial_and_test_quadrature=True,
                  sd = True,
                  movingDomain=False):
+        self.postProcessing = False#this is a hack to test the effect of post-processing
+        if self.postProcessing:
+            from proteus import RBLES as oldRBLES
+            self.tmpvt = oldRBLES.OneLevelRBLES(uDict,
+                 phiDict,
+                 testSpaceDict,
+                 matType,
+                 dofBoundaryConditionsDict,
+                 dofBoundaryConditionsSetterDict,
+                 coefficients,
+                 elementQuadrature,
+                 elementBoundaryQuadrature,
+                 fluxBoundaryConditionsDict,
+                 advectiveFluxBoundaryConditionsSetterDict,
+                 diffusiveFluxBoundaryConditionsSetterDictDict,
+                 stressTraceBoundaryConditionsSetterDictDict,
+                 stabilization,
+                 shockCapturing,
+                 conservativeFluxDict,
+                 numericalFluxType,
+                 TimeIntegrationClass,
+                 massLumping,
+                 reactionLumping,
+                 options,
+                 name,
+                 reuse_trial_and_test_quadrature,
+                 sd,
+                 movingDomain)
         #
         #set the objects describing the method and boundary conditions
         #
@@ -197,22 +680,23 @@ class OneLevelRBLES(OneLevelTransport):
         self.nElementBoundaryQuadraturePoints_global = (self.mesh.nElements_global*
                                                         self.mesh.nElementBoundaries_element*
                                                         self.nElementBoundaryQuadraturePoints_elementBoundary)
-        if isinstance(self.u[0].femSpace,C0_AffineLinearOnSimplexWithNodalBasis):
-            print self.nQuadraturePoints_element
-            if self.nSpace_global == 3:
-                assert(self.nQuadraturePoints_element == 4)
-            elif self.nSpace_global == 2:
-                assert(self.nQuadraturePoints_element == 6)
-            elif self.nSpace_global == 1:
-                assert(self.nQuadraturePoints_element == 3)
 
-            print self.nElementBoundaryQuadraturePoints_elementBoundary
-            if self.nSpace_global == 3:
-                assert(self.nElementBoundaryQuadraturePoints_elementBoundary == 3)
-            elif self.nSpace_global == 2:
-                assert(self.nElementBoundaryQuadraturePoints_elementBoundary == 4)
-            elif self.nSpace_global == 1:
-                assert(self.nElementBoundaryQuadraturePoints_elementBoundary == 1)
+#        if isinstance(self.u[0].femSpace,C0_AffineLinearOnSimplexWithNodalBasis):
+#            print self.nQuadraturePoints_element
+#            if self.nSpace_global == 3:
+#                assert(self.nQuadraturePoints_element == 5)
+#            elif self.nSpace_global == 2:
+#                assert(self.nQuadraturePoints_element == 6)
+#            elif self.nSpace_global == 1:
+#                assert(self.nQuadraturePoints_element == 3)
+#
+#            print self.nElementBoundaryQuadraturePoints_elementBoundary
+#            if self.nSpace_global == 3:
+#                assert(self.nElementBoundaryQuadraturePoints_elementBoundary == 4)
+#            elif self.nSpace_global == 2:
+#                assert(self.nElementBoundaryQuadraturePoints_elementBoundary == 4)
+#            elif self.nSpace_global == 1:
+#                assert(self.nElementBoundaryQuadraturePoints_elementBoundary == 1)
         #
         #simplified allocations for test==trial and also check if space is mixed or not
         #
@@ -222,110 +706,9 @@ class OneLevelRBLES(OneLevelTransport):
         self.ebqe={}
         self.phi_ip={}
         #mesh
-        #self.q['x'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,3),'d')
-        #self.q['det(J)'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
-        #self.q['abs(det(J))'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
-        #self.q['J'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global,self.nSpace_global),'d')
-        #self.q['inverse(J)'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global,self.nSpace_global),'d')
         self.ebqe['x'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
-	#self.ebqe['g'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,
-	#			       self.nElementBoundaryQuadraturePoints_elementBoundary,
-        #max(1,self.nSpace_global-1),
-        #max(1,self.nSpace_global-1)),
-        #'d')
-        #self.ebqe['inverse(J)'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global,self.nSpace_global),'d')
-        #self.ebqe['hat(x)'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
-        #self.ebqe['bar(x)'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
-        #self.ebqe['sqrt(det(g))'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
-        #self.ebqe[('n')] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
-        #ebq for post-processing
-        #self.ebq['x'] = numpy.zeros((self.mesh.nElements_global,self.mesh.nElementBoundaries_element,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
-	#self.ebq['g'] = numpy.zeros((self.mesh.nElements_global,self.mesh.nElementBoundaries_element,
-				      #  self.nElementBoundaryQuadraturePoints_elementBoundary,
-				      #  max(1,self.nSpace_global-1),
-				      #  max(1,self.nSpace_global-1)),
-				      # 'd')
-        #self.ebq['inverse(J)'] = numpy.zeros((self.mesh.nElements_global,self.mesh.nElementBoundaries_element,self.nElementBoundaryQuadraturePoints_elementBoundary,
-                                              # self.nSpace_global,self.nSpace_global),'d')
-        #self.ebq['hat(x)'] = numpy.zeros((self.mesh.nElements_global,self.mesh.nElementBoundaries_element,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
-        #self.ebq['bar(x)'] = numpy.zeros((self.mesh.nElements_global,self.mesh.nElementBoundaries_element,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
-        #self.ebq['sqrt(det(g))'] = numpy.zeros((self.mesh.nElements_global,self.mesh.nElementBoundaries_element,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
-        #self.ebq[('n')] = numpy.zeros((self.mesh.nElements_global,self.mesh.nElementBoundaries_element,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
-        #ebq_global for post-processing
-        #self.ebq_global['x'] = numpy.zeros((self.mesh.nElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
-	#self.ebq_global['g'] = numpy.zeros((self.mesh.nElementBoundaries_global,
-        #                                    self.nElementBoundaryQuadraturePoints_elementBoundary,
-        #                                    max(1,self.nSpace_global-1),
-        #                                    max(1,self.nSpace_global-1)),
-        #                                   'd')
-        #self.ebq_global['inverse(J)'] = numpy.zeros((self.mesh.nElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,
-        #                                             self.nSpace_global,self.nSpace_global),'d')
-        #self.ebq_global['hat(x)'] = numpy.zeros((self.mesh.nElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
-        #self.ebq_global['bar(x)'] = numpy.zeros((self.mesh.nElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
-        #self.ebq_global['sqrt(det(g))'] = numpy.zeros((self.mesh.nElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
-        #self.ebq_global[('n')] = numpy.zeros((self.mesh.nElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
-        #need to calculate
         self.ebq_global[('totalFlux',0)] = numpy.zeros((self.mesh.nElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.ebq_global[('velocityAverage',0)] = numpy.zeros((self.mesh.nElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
-        #shape
-        #self.q[('v',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[0]),'d')
-        #self.q[('grad(v)',0)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[0],self.nSpace_global),'d')
-        #self.q[('w*dV_r',0)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[1]),'d')
-        #self.q[('grad(w)*dV_f',0)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[1],self.nSpace_global),'d')
-        #self.ebqe[('v',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nDOF_trial_element[0]),'d')
-        #self.ebqe[('grad(v)',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nDOF_trial_element[0],self.nSpace_global),'d')
-        #self.ebqe[('w*dS_f',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nDOF_trial_element[0]),'d')
-        #if self.nDOF_trial_element[1] != self.nDOF_trial_element[0]:
-        #    self.q[('v',1)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[1]),'d')
-        #    self.q[('grad(v)',1)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[1],self.nSpace_global),'d')
-        #    self.q[('w*dV_r',1)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[1]),'d')
-        #    self.q[('grad(w)*dV_f',1)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[1],self.nSpace_global),'d')
-        #    self.ebqe[('v',1)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nDOF_trial_element[1]),'d')
-        #    self.ebqe[('grad(v)',1)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nDOF_trial_element[1],self.nSpace_global),'d')
-        #self.ebqe[('w*dS_f',1)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nDOF_trial_element[1]),'d')
-        #else:
-        #    self.q[('v',1)] = self.q[('v',0)]
-        #    self.q[('grad(v)',1)] = self.q[('grad(v)',0)]
-        #    self.q[('w*dV_r',1)] =  self.q[('w*dV_r',0)]
-        #    self.q[('grad(w)*dV_f',1)] = self.q[('grad(w)*dV_f',0)] 
-        #    self.ebqe[('v',1)] = self.ebqe[('v',0)]
-        #    self.ebqe[('grad(v)',1)] = self.ebqe[('grad(v)',0)]
-        #    self.ebqe[('w*dS_f',1)] = self.ebqe[('w*dS_f',0)]
-        #if self.Hess:
-        #    self.q[('Hess(w)',1)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[1],self.nSpace_global,self.nSpace_global),'d')
-        #    self.q[('Hess(w)*dV_a',1,1)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nDOF_trial_element[1],self.nSpace_global,self.nSpace_global),'d')
-        #else:
-        #    #dummy
-        #    self.q[('Hess(w)',1)] =  numpy.zeros((1,),'d')
-        #    self.q[('Hess(w)*dV_a',1,1)] =  self.q[('Hess(w)',1)]
-        #self.q[('Hess(v)',1)] =  self.q[('Hess(w)',1)]
-        #self.q[('Hess(v)',2)] =  self.q[('Hess(w)',1)]
-        #self.q[('Hess(v)',3)] =  self.q[('Hess(w)',1)]
-        #self.q[('Hess(w)',2)] =  self.q[('Hess(w)',1)]
-        #self.q[('Hess(w)',3)] =  self.q[('Hess(w)',1)]
-        #self.q[('Hess(w)*dV_a',2,2)] =  self.q[('Hess(w)*dV_a',1,1)]
-        #self.q[('Hess(w)*dV_a',3,3)] =  self.q[('Hess(w)*dV_a',1,1)]
-        #self.q[('v',2)] = self.q[('v',1)]
-        #self.q[('grad(v)',2)] = self.q[('grad(v)',1)]
-        #self.q[('w*dV_r',2)] =  self.q[('w*dV_r',1)]
-        #self.q[('grad(w)*dV_f',2)] = self.q[('grad(w)*dV_f',1)] 
-        #self.ebqe[('v',2)] = self.ebqe[('v',1)]
-        #self.ebqe[('grad(v)',2)] = self.ebqe[('grad(v)',1)]
-        #self.ebqe[('w*dS_f',2)] = self.ebqe[('w*dS_f',1)]
-        #self.q[('v',3)] = self.q[('v',1)]
-        #self.q[('grad(v)',3)] = self.q[('grad(v)',1)]
-        #self.q[('w*dV_r',3)] =  self.q[('w*dV_r',1)]
-        #self.q[('grad(w)*dV_f',3)] = self.q[('grad(w)*dV_f',1)] 
-        #self.ebqe[('v',3)] = self.ebqe[('v',1)]
-        #self.ebqe[('grad(v)',3)] = self.ebqe[('grad(v)',1)]
-        #self.ebqe[('w*dS_f',3)] = self.ebqe[('w*dS_f',1)]
-        #for ci in range(self.nc):
-        #    self.q[('w*dV_m',ci)] = self.q[('w*dV_r',ci)]
-        #    self.q[('w',ci)] = self.q[('v',ci)]
-        #    self.q[('grad(w)',ci)] = self.q[('grad(v)',ci)]
-        #    self.ebqe[('w',ci)] = self.ebqe[('v',ci)]
-        #    self.ebqe[('grad(w)',ci)] = self.ebqe[('grad(v)',ci)]
-        #self.q[('u',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('u',1)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('u',2)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('u',3)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
@@ -367,7 +750,6 @@ class OneLevelRBLES(OneLevelTransport):
         self.ebqe[('velocity',1)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
         self.ebqe[('velocity',2)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
         self.ebqe[('velocity',3)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
-
         self.points_elementBoundaryQuadrature= set()
         self.scalars_elementBoundaryQuadrature= set([('u',ci) for ci in range(self.nc)])
         self.vectors_elementBoundaryQuadrature= set()
@@ -389,14 +771,13 @@ class OneLevelRBLES(OneLevelTransport):
         #
         # allocate residual and Jacobian storage
         #
+        #
+        # allocate residual and Jacobian storage
+        #
         self.elementResidual = [numpy.zeros(
-            (self.mesh.nElements_global,
-             self.nDOF_test_element[ci]),
-            'd') for ci in range(self.nc)]
-        self.elementSpatialResidual = [numpy.zeros(
-            (self.mesh.nElements_global,
-             self.nDOF_test_element[ci]),
-            'd') for ci in range(self.nc)]
+                (self.mesh.nElements_global,
+                 self.nDOF_test_element[ci]),
+                'd')]
 	self.inflowBoundaryBC = {}
 	self.inflowBoundaryBC_values = {}
 	self.inflowFlux = {}
@@ -483,6 +864,17 @@ class OneLevelRBLES(OneLevelTransport):
         log(memory("numericalFlux","OneLevelTransport"),level=4)
         self.elementEffectiveDiametersArray  = self.mesh.elementInnerDiametersArray
         #use post processing tools to get conservative fluxes, None by default
+        if self.postProcessing:
+            self.q[('v',0)] = self.tmpvt.q[('v',0)]
+            self.ebq[('v',0)] = self.tmpvt.ebq[('v',0)]  
+            self.ebq[('w',0)] = self.tmpvt.ebq[('w',0)]
+            self.ebq['sqrt(det(g))'] = self.tmpvt.ebq['sqrt(det(g))']
+            self.ebq['n'] = self.tmpvt.ebq['n']
+            self.ebq[('dS_u',0)] = self.tmpvt.ebq[('dS_u',0)]
+            self.ebqe['dS'] = self.tmpvt.ebqe['dS']
+            self.ebqe['n'] = self.tmpvt.ebqe['n']
+            self.ebq_global['n'] = self.tmpvt.ebq_global['n']
+            self.ebq_global['x'] = self.tmpvt.ebq_global['x']
         from proteus import PostProcessingTools
         self.velocityPostProcessor = PostProcessingTools.VelocityPostProcessingChooser(self)  
         log(memory("velocity postprocessor","OneLevelTransport"),level=4)
@@ -502,34 +894,31 @@ class OneLevelRBLES(OneLevelTransport):
                 for t,g in diffusiveFluxBoundaryConditionsDict.iteritems():
                     self.ebqe[('diffusiveFlux_bc',ck,ci)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
                     self.ebqe[('diffusiveFlux_bc_flag',ck,ci)][t[0],t[1]] = 1
-        #self.numericalFlux.setDirichletValues(self.ebqe)
+        self.numericalFlux.setDirichletValues(self.ebqe)
 
         #cek/ido todo replace python loops in modules with optimized code if possible/necessary
-        self.forceStrongConditions=True ##False
+        self.forceStrongConditions=True
         self.dirichletConditionsForceDOF = {}
         if self.forceStrongConditions:
             for cj in range(self.nc):
                 self.dirichletConditionsForceDOF[cj] = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False)
-
+        compKernelFlag = 0
+        self.RBLES = cRBLES_base(self.nSpace_global,
+                                   self.nQuadraturePoints_element,
+                                   self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
+                                   self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
+                                   self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
+                                   self.nElementBoundaryQuadraturePoints_elementBoundary,
+                                   compKernelFlag)
     def getResidual(self,u,r):
         """
         Calculate the element residuals and add in to the global residual
         """
-        if isinstance(self.u[0].femSpace,C0_AffineLinearOnSimplexWithNodalBasis):
-        #if isinstance(self.u[0].femSpace,C0_AffineLinearOnCubeWithNodalBasis):
-            cResidual = cRBLES.calculateResidual
-            if self.nSpace_global == 2:
-                cResidual = cRANS2P2D.calculateResidual
-        elif isinstance(self.u[0].femSpace,C0_AffineQuadraticOnSimplexWithNodalBasis):
-            cResidual = cRANS2PQ.calculateResidual
-        #ido todo add cases for hex's and nurbs
-            #if self.nSpace_global == 2:
-            #    cResidual = cRANS2P2DQ.calculateResidual
+
         #Load the unknowns into the finite element dof
         self.timeIntegration.calculateCoefs()
         self.timeIntegration.calculateU(u)
         self.setUnknowns(self.timeIntegration.u)
-	
         #cek todo put in logic to skip if BC's don't depend on t or u
         #hack
         if self.bcsTimeDependent or not self.bcsSet:
@@ -547,31 +936,15 @@ class OneLevelRBLES(OneLevelTransport):
                         self.ebqe[('diffusiveFlux_bc',ck,ci)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
                         self.ebqe[('diffusiveFlux_bc_flag',ck,ci)][t[0],t[1]] = 1
         r.fill(0.0)
-        self.elementResidual[0].fill(0.0)
-        self.elementResidual[1].fill(0.0) 
-        self.elementResidual[2].fill(0.0) 
-        self.elementResidual[3].fill(0.0)
         self.Ct_sge = 4.0
         self.Cd_sge = 144.0
  
+        if self.forceStrongConditions:
+            for cj in range(len(self.dirichletConditionsForceDOF)):
+                for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
+                    self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
  
- 	#print len(self.dirichletConditionsForceDOF),(len(self.u[0].dof))
-	self.IBC = numpy.zeros((len(self.dirichletConditionsForceDOF),(len(self.u[0].dof))),'i')
-	
-	
- 
-        #if self.forceStrongConditions:
-        #    for cj in range(len(self.dirichletConditionsForceDOF)):
-        #        for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
-	#	    #self.IBC[cj][dofN]   = 1
-        #            self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
-        #print self.IBC
- 
-        #self.IBC[1][0:10] = 1
-        #self.IBC[2][20:30] = 1
-        #self.IBC[3][50:60] = 1
- 
-        cResidual(#element
+        self.RBLES.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
@@ -600,8 +973,11 @@ class OneLevelRBLES(OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
+            self.mesh.elementDiametersArray,
+            self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
+            self.coefficients.useMetrics,
             self.timeIntegration.alpha_bdf,
             self.coefficients.epsFact_density,
             self.coefficients.epsFact,
@@ -619,10 +995,6 @@ class OneLevelRBLES(OneLevelTransport):
             self.u[1].dof,
             self.u[2].dof,
             self.u[3].dof,
-            self.IBC[0],
-            self.IBC[1],
-            self.IBC[2],
-            self.IBC[3],
             self.coefficients.g,
             self.coefficients.q_phi,
             self.coefficients.q_n,
@@ -642,10 +1014,6 @@ class OneLevelRBLES(OneLevelTransport):
             self.shockCapturing.numDiff_last[1],
             self.shockCapturing.numDiff_last[2],
             self.shockCapturing.numDiff_last[3],
-            self.elementResidual[0], 
-            self.elementResidual[1], 
-            self.elementResidual[2], 
-            self.elementResidual[3],
             self.coefficients.sdInfo[(1,1)][0],self.coefficients.sdInfo[(1,1)][1],
             self.coefficients.sdInfo[(1,2)][0],self.coefficients.sdInfo[(1,2)][1],
             self.coefficients.sdInfo[(1,3)][0],self.coefficients.sdInfo[(1,3)][1],
@@ -690,12 +1058,14 @@ class OneLevelRBLES(OneLevelTransport):
             self.ebqe[('diffusiveFlux_bc',3,3)],
             self.q[('velocity',0)],
             self.ebqe[('velocity',0)],
-            self.ebq_global[('totalFlux',0)])
+            self.ebq_global[('totalFlux',0)],
+            self.elementResidual[0])
 
-	#if self.forceStrongConditions:#
-	#    for cj in range(len(self.dirichletConditionsForceDOF)):#
-	#	for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
-        #             r[self.offset[cj]+self.stride[cj]*dofN] = 0
+	if self.forceStrongConditions:#
+	    for cj in range(len(self.dirichletConditionsForceDOF)):#
+		for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
+                    r[self.offset[cj]+self.stride[cj]*dofN] = 0
+		    print dofN,g
 
         if self.stabilization:
             self.stabilization.accumulateSubgridMassHistory(self.q)
@@ -703,38 +1073,9 @@ class OneLevelRBLES(OneLevelTransport):
         #mwf decide if this is reasonable for keeping solver statistics
         self.nonlinear_function_evaluations += 1
     def getJacobian(self,jacobian):
-        #import superluWrappers
-        #import numpy
-        if isinstance(self.u[0].femSpace,C0_AffineLinearOnSimplexWithNodalBasis):
-        #if isinstance(self.u[0].femSpace,C0_AffineLinearOnCubeWithNodalBasis):
-            cJacobian = cRBLES.calculateJacobian
-            if self.nSpace_global == 2:
-                cJacobian = cRANS2P2D.calculateJacobian
-        elif isinstance(self.u[0].femSpace,C0_AffineQuadraticOnSimplexWithNodalBasis):
-            cJacobian = cRANS2PQ.calculateJacobian
-            #if self.nSpace_global == 2:
-            #    cJacobian = cRANS2P2DQ.calculateJacobian
-        #ido todo add cases for hex/nurbs
 	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
 				       jacobian)
-
-
-	self.IBC = numpy.zeros((len(self.dirichletConditionsForceDOF),(len(self.u[0].dof))),'i')
-	
-	 
-        #if self.forceStrongConditions:
-        #    for cj in range(len(self.dirichletConditionsForceDOF)):
-        #        for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
-	#	    #self.IBC[cj][dofN]   = 1
-        #            self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
-
-        #self.IBC[1][0:10] = 1
-        #self.IBC[2][20:30] = 1
-        #self.IBC[3][50:60] = 1
- 
-        #print self.IBC
-
-        cJacobian(#element
+        self.RBLES.calculateJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
@@ -762,8 +1103,11 @@ class OneLevelRBLES(OneLevelTransport):
             self.u[1].femSpace.grad_psi_trace,
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
+            self.mesh.elementDiametersArray,
+            self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
+            self.coefficients.useMetrics,
             self.timeIntegration.alpha_bdf,
             self.coefficients.epsFact_density,
             self.coefficients.epsFact,
@@ -781,10 +1125,6 @@ class OneLevelRBLES(OneLevelTransport):
             self.u[1].dof,
             self.u[2].dof,
             self.u[3].dof,
-            self.IBC[0],
-            self.IBC[1],
-            self.IBC[2],
-            self.IBC[3],
             self.coefficients.g,
             self.coefficients.q_phi,
             self.coefficients.q_n,
@@ -871,18 +1211,18 @@ class OneLevelRBLES(OneLevelTransport):
             self.csrColumnOffsets_eb[(3,3)])
 
         #Load the Dirichlet conditions directly into residual
-       # if self.forceStrongConditions:
-       #     scaling = 1.0#probably want to add some scaling to match non-dirichlet diagonals in linear system 
-       #     for cj in range(self.nc):
-       #         for dofN in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.keys():
-       #             global_dofN = self.offset[cj]+self.stride[cj]*dofN
-       #             for i in range(self.rowptr[global_dofN],self.rowptr[global_dofN+1]):
-       #                 if (self.colind[i] == global_dofN):
-       #                     #print "RBLES forcing residual cj = %s dofN= %s global_dofN= %s was self.nzval[i]= %s now =%s " % (cj,dofN,global_dofN,self.nzval[i],scaling)
-       #                     self.nzval[i] = scaling
-       #                 else:
-       #                     self.nzval[i] = 0.0
-       #                     #print "RBLES zeroing residual cj = %s dofN= %s global_dofN= %s " % (cj,dofN,global_dofN)
+        if self.forceStrongConditions:
+            scaling = 1.0#probably want to add some scaling to match non-dirichlet diagonals in linear system 
+            for cj in range(self.nc):
+                for dofN in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.keys():
+                    global_dofN = self.offset[cj]+self.stride[cj]*dofN
+                    for i in range(self.rowptr[global_dofN],self.rowptr[global_dofN+1]):
+                        if (self.colind[i] == global_dofN):
+                            #print "RBLES forcing residual cj = %s dofN= %s global_dofN= %s was self.nzval[i]= %s now =%s " % (cj,dofN,global_dofN,self.nzval[i],scaling)
+                            self.nzval[i] = scaling
+                        else:
+                            self.nzval[i] = 0.0
+                            #print "RBLES zeroing residual cj = %s dofN= %s global_dofN= %s " % (cj,dofN,global_dofN)
         log("Jacobian ",level=10,data=jacobian)
         #mwf decide if this is reasonable for solver statistics
         self.nonlinear_function_jacobian_evaluations += 1
@@ -894,64 +1234,14 @@ class OneLevelRBLES(OneLevelTransport):
         
         This function should be called only when the mesh changes.
         """
+        if self.postProcessing:
+            self.tmpvt.calculateElementQuadrature()
         self.u[0].femSpace.elementMaps.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.elementMaps.getBasisGradientValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.getBasisGradientValuesRef(self.elementQuadraturePoints)
         self.u[1].femSpace.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[1].femSpace.getBasisGradientValuesRef(self.elementQuadraturePoints)
-	#
-        #get physical locations of quadrature points and jacobian information there
-	#assume all components live on the same mesh
-        #
-        # self.u[0].femSpace.elementMaps.getValues(self.elementQuadraturePoints,
-        #                                           self.q['x'])
-        # if self.movingDomain: 
-        #     if self.tLast_mesh != None:
-        #         self.q['xt'][:]=self.q['x']
-        #         self.q['xt']-=self.q['x_last']
-        #         alpha = 1.0/(self.t_mesh - self.tLast_mesh)
-        #         self.q['xt']*=alpha
-        #     else:
-        #         self.q['xt'][:]=0.0
-        #     self.q['x_last'][:]=self.q['x']
-        # self.u[0].femSpace.elementMaps.getJacobianValues(self.elementQuadraturePoints,
-        #                                                  self.q['J'],
-        #                                                  self.q['inverse(J)'],
-        #                                                  self.q['det(J)'])
-        # self.q['abs(det(J))']=numpy.absolute(self.q['det(J)'])
-        # #
-        # # get physical space integration weights
-        # #
-        # self.q['dV'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
-        # cfemIntegrals.calculateIntegrationWeights(self.q['abs(det(J))'],
-        #                                           self.elementQuadratureWeights[('u',0)],
-        #                                           self.q['dV'])
-        # for ci in range(self.nc): self.q[('dV_u',ci)] = self.q['dV']
-        # #
-        # #get shape information at the quadrature points
-        # #
-        # self.testSpace[0].getBasisValues(self.elementQuadraturePoints,
-        #                                  self.q[('w',0)])
-        # cfemIntegrals.calculateWeightedShape(self.elementQuadratureWeights[('r',1)],
-        #                                      self.q['abs(det(J))'],
-        #                                      self.q[('w',1)],
-        #                                      self.q[('w*dV_r',1)])
-        # self.testSpace[1].getBasisGradientValues(self.elementQuadraturePoints,
-        #                                           self.q['inverse(J)'],
-        #                                           self.q[('grad(w)',1)])
-        # cfemIntegrals.calculateWeightedShapeGradients(self.elementQuadratureWeights[('f',0)],
-        #                                               self.q['abs(det(J))'],
-        #                                               self.q[('grad(w)',0)],
-        #                                               self.q[('grad(w)*dV_f',0)])
-        # if self.Hess:
-        #     self.testSpace[1].getBasisHessianValues(self.elementQuadraturePoints,
-        #                                             self.q['inverse(J)'],
-        #                                             self.q[('Hess(w)',1)])
-        #     cfemIntegrals.calculateWeightedShapeGradients(self.elementQuadratureWeights[('a',1,1)],
-        #                                                   self.q['abs(det(J))'],
-        #                                                   self.q[('Hess(w)',1)],
-        #                                                   self.q[('Hess(w)*dV_a',1,1)])
         self.coefficients.initializeElementQuadrature(self.timeIntegration.t,self.q)
         if self.stabilization != None:
             self.stabilization.initializeElementQuadrature(self.mesh,self.timeIntegration.t,self.q)
@@ -965,77 +1255,9 @@ class OneLevelRBLES(OneLevelTransport):
 
         This function should be called only when the mesh changes.
         """
-        #cek todo, a local calculation of the element boundary quadrature permuations
-        #
-        #get physical locations of element boundary quadrature points
-        #
-	#assume all components live on the same mesh
-        # self.u[0].femSpace.elementMaps.getValuesTrace(self.elementBoundaryQuadraturePoints,
-	# 					      self.ebq['x'])
-        #
-        #get metric tensor and unit normals
-        #
-        # if self.movingDomain:
-        #     if self.tLast_mesh != None:
-        #         self.ebq['xt'][:]=self.ebq['x']
-        #         self.ebq['xt']-=self.ebq['x_last']
-        #         alpha = 1.0/(self.t_mesh - self.tLast_mesh)
-        #         self.ebq['xt']*=alpha
-        #     else:
-        #         self.ebq['xt'][:]=0.0
-        #     self.ebq['x_last'][:]=self.ebq['x']
-        #     self.u[0].femSpace.elementMaps.getJacobianValuesTrace_movingDomain(self.elementBoundaryQuadraturePoints,
-        #                                                                        self.ebq['xt'],
-        #                                                                        self.ebq['inverse(J)'],
-        #                                                                        self.ebq['g'],
-        #                                                                        self.ebq['sqrt(det(g))'],
-        #                                                                        self.ebq['n'])
-        # else:
-        #     self.u[0].femSpace.elementMaps.getJacobianValuesTrace(self.elementBoundaryQuadraturePoints,
-        #                                                           self.ebq['inverse(J)'],
-        #                                                           self.ebq['g'],
-        #                                                           self.ebq['sqrt(det(g))'],
-        #                                                           self.ebq['n'])
-
-        # cfemIntegrals.copyLeftElementBoundaryInfo(self.mesh.elementBoundaryElementsArray,
-        #                                           self.mesh.elementBoundaryLocalElementBoundariesArray,
-        #                                           self.mesh.exteriorElementBoundariesArray,
-        #                                           self.mesh.interiorElementBoundariesArray,
-        #                                           self.ebq['x'],
-        #                                           self.ebq['n'],
-        #                                           self.ebq_global['x'],
-        #                                           self.ebq_global['n'])
-        # if self.movingDomain:
-        #     cfemIntegrals.copyLeftElementBoundaryInfo_movingDomain(self.mesh.elementBoundaryElementsArray,
-        #                                                            self.mesh.elementBoundaryLocalElementBoundariesArray,
-        #                                                            self.mesh.exteriorElementBoundariesArray,
-        #                                                            self.mesh.interiorElementBoundariesArray,
-        #                                                            self.ebq['xt'])
-        # #now map the physical points back to the reference element
-        # #assume all components live  on same mesh
-        # self.u[0].femSpace.elementMaps.getInverseValuesTrace(self.ebq['inverse(J)'],self.ebq['x'],self.ebq['hat(x)'])
-        # self.u[0].femSpace.elementMaps.getPermutations(self.ebq['hat(x)'])
-        #
-        #since the points on the reference boundary may be reordered on many right element boundaries, we
-        #have to use an array of reference boundary points on all element boundaries
-        #first copy the left reference element boundary quadrature points from the reference element boundary
-        #
-        #get the shape information at the reference element boundary quadrature points 
-	#
-        # self.testSpace[0].getBasisValuesTrace(self.u[0].femSpace.elementMaps.permutations,
-        #                                        self.ebq['hat(x)'],
-        #                                        self.ebq[('w',0)])
-        # cfemIntegrals.calculateWeightedShapeTrace(self.elementBoundaryQuadratureWeights[('u',0)],
-        #                                           self.ebq['sqrt(det(g))'],
-        #                                           self.ebq[('w',0)],
-        #                                           self.ebq[('w*dS_u',0)])
-        # self.u[0].femSpace.getBasisGradientValuesTrace(self.u[0].femSpace.elementMaps.permutations,
-        #                                                 self.ebq['hat(x)'],
-        #                                                 self.ebq['inverse(J)'],
-        #                                                 self.ebq[('grad(v)',0)])
-        # cfemIntegrals.calculateElementBoundaryIntegrationWeights(self.ebq['sqrt(det(g))'],
-        #                                                         self.elementBoundaryQuadratureWeights[('u',0)],
-        #                                                         self.ebq[('dS_u',0)])
+        if self.postProcessing:
+            self.tmpvt.calculateElementBoundaryQuadrature()
+        pass
     def calculateExteriorElementBoundaryQuadrature(self):
         """
         Calculate the physical location and weights of the quadrature rules
@@ -1043,6 +1265,8 @@ class OneLevelRBLES(OneLevelTransport):
 
         This function should be called only when the mesh changes.
         """
+        if self.postProcessing:
+            self.tmpvt.calculateExteriorElementBoundaryQuadrature()
         #
         #get physical locations of element boundary quadrature points
         #
@@ -1055,88 +1279,51 @@ class OneLevelRBLES(OneLevelTransport):
         self.u[1].femSpace.getBasisGradientValuesTraceRef(self.elementBoundaryQuadraturePoints)
         self.u[0].femSpace.elementMaps.getValuesGlobalExteriorTrace(self.elementBoundaryQuadraturePoints,
                                                                     self.ebqe['x'])
-        # #
-        # #get metric tensor and unit normals
-        # #
-        # if self.movingDomain:
-        #     if self.tLast_mesh != None:
-        #         self.ebqe['xt'][:]=self.ebqe['x']
-        #         self.ebqe['xt']-=self.ebqe['x_last']
-        #         alpha = 1.0/(self.t_mesh - self.tLast_mesh)
-        #         self.ebqe['xt']*=alpha
-        #     else:
-        #         self.ebqe['xt'][:]=0.0
-        #     self.ebqe['x_last'][:]=self.ebqe['x']
-        #     self.u[0].femSpace.elementMaps.getJacobianValuesGlobalExteriorTrace_movingDomain(self.elementBoundaryQuadraturePoints,
-        #                                                                                      self.ebqe['xt'],
-        #                                                                                      self.ebqe['inverse(J)'],
-        #                                                                                      self.ebqe['g'],
-        #                                                                                      self.ebqe['sqrt(det(g))'],
-        #                                                                                      self.ebqe['n'])
-        # else:
-        #     self.u[0].femSpace.elementMaps.getJacobianValuesGlobalExteriorTrace(self.elementBoundaryQuadraturePoints,
-        #                                                                         self.ebqe['inverse(J)'],
-        #                                                                         self.ebqe['g'],
-        #                                                                         self.ebqe['sqrt(det(g))'],
-        #                                                                         self.ebqe['n'])
-        # #now map the physical points back to the reference element
-        # #assume all components live  on same mesh
-        # self.u[0].femSpace.elementMaps.getInverseValuesGlobalExteriorTrace(self.ebqe['inverse(J)'],self.ebqe['x'],self.ebqe['hat(x)'])
-        # #
-        # #since the points on the reference boundary may be reordered on many right element boundaries, we
-        # #have to use an array of reference boundary points on all element boundaries
-        # #first copy the left reference element boundary quadrature points from the reference element boundary
-        # self.testSpace[0].getBasisValuesGlobalExteriorTrace(self.elementBoundaryQuadraturePoints,
-        #                                                      self.ebqe[('w',0)])
-        # cfemIntegrals.calculateWeightedShapeGlobalExteriorTrace(self.mesh.exteriorElementBoundariesArray,
-        #                                                         self.mesh.elementBoundaryElementsArray,
-        #                                                         self.mesh.elementBoundaryLocalElementBoundariesArray,
-        #                                                         self.elementBoundaryQuadratureWeights[('f',0)],
-        #                                                         self.ebqe['sqrt(det(g))'],
-        #                                                         self.ebqe[('w',0)],
-        #                                                         self.ebqe[('w*dS_f',0)])
-        # self.u[0].femSpace.getBasisGradientValuesGlobalExteriorTrace(self.elementBoundaryQuadraturePoints,
-        #                                                               self.ebqe['inverse(J)'],
-        #                                                               self.ebqe[('grad(v)',0)])
-        # #setup flux boundary conditions
         self.fluxBoundaryConditionsObjectsDict = dict([(cj,FluxBoundaryConditions(self.mesh,
                                                                                   self.nElementBoundaryQuadraturePoints_elementBoundary,
                                                                                   self.ebqe[('x')],
                                                                                   self.advectiveFluxBoundaryConditionsSetterDict[cj],
                                                                                   self.diffusiveFluxBoundaryConditionsSetterDictDict[cj]))
                                                        for cj in self.advectiveFluxBoundaryConditionsSetterDict.keys()])
-        # self.ebqe['dS'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
-        # cfemIntegrals.calculateIntegrationWeights(self.ebqe['sqrt(det(g))'],
-        #                                           self.elementBoundaryQuadratureWeights[('u',0)],
-        #                                           self.ebqe['dS'])
-        # for ci in range(self.nc): self.ebqe[('dS_u',ci)] = self.ebqe['dS']
         self.coefficients.initializeGlobalExteriorElementBoundaryQuadrature(self.timeIntegration.t,self.ebqe)
     def estimate_mt(self):
         pass
     def calculateSolutionAtQuadrature(self):
         pass
     def calculateAuxiliaryQuantitiesAfterStep(self):
-        if isinstance(self.u[0].femSpace,C0_AffineLinearOnSimplexWithNodalBasis):
-            cva = cRBLES.calculateVelocityAverage
-            if self.nSpace_global == 2:
-                cva = cRANS2P2D.calculateVelocityAverage
-        elif isinstance(self.u[0].femSpace,C0_AffineQuadraticOnSimplexWithNodalBasis):
-            cva = cRANS2PQ.calculateVelocityAverage
-            #if self.nSpace_global == 2:
-            #    cva = cRANS2P2DQ.calculateVelocityAverage
-        #cek todo memory optimized version
-        # cva(self.u[1].femSpace.elementMaps.permutations,
-        #     self.mesh.nExteriorElementBoundaries_global,
-        #     self.mesh.exteriorElementBoundariesArray,
-        #     self.mesh.nInteriorElementBoundaries_global,
-        #     self.mesh.interiorElementBoundariesArray,
-        #     self.mesh.elementBoundaryElementsArray,
-        #     self.mesh.elementBoundaryLocalElementBoundariesArray,
-        #     self.u[1].femSpace.dofMap.l2g,
-        #     self.u[1].dof,
-        #     self.u[2].dof,
-        #     self.u[3].dof,
-        #     self.ebq[('v',0)], 
-        #     self.ebqe[('velocity',0)],
-        #     self.ebq_global[('velocityAverage',0)])
+        if self.postProcessing:
+            from proteus.cRBLES import calculateVelocityAverage as cva
+            cva(self.mesh.nExteriorElementBoundaries_global,
+                self.mesh.exteriorElementBoundariesArray,
+                self.mesh.nInteriorElementBoundaries_global,
+                self.mesh.interiorElementBoundariesArray,
+                self.mesh.elementBoundaryElementsArray,
+                self.mesh.elementBoundaryLocalElementBoundariesArray,
+                self.u[1].femSpace.dofMap.l2g,
+                self.u[1].dof,
+                self.u[2].dof,
+                self.u[3].dof,
+                self.ebq[('v',0)], 
+                self.ebqe[('velocity',0)],
+                self.ebq_global[('velocityAverage',0)])
+        # self.RBLES.calculateVelocityAverage(self.mesh.nExteriorElementBoundaries_global,
+        #                                      self.mesh.exteriorElementBoundariesArray,
+        #                                      self.mesh.nInteriorElementBoundaries_global,
+        #                                      self.mesh.interiorElementBoundariesArray,
+        #                                      self.mesh.elementBoundaryElementsArray,
+        #                                      self.mesh.elementBoundaryLocalElementBoundariesArray,
+        #                                      self.mesh.nodeArray,
+        #                                      self.mesh.elementNodesArray,
+        #                                      self.u[0].femSpace.elementMaps.psi_trace,
+        #                                      self.u[0].femSpace.elementMaps.grad_psi_trace,
+        #                                      self.u[0].femSpace.elementMaps.boundaryNormals,
+        #                                      self.u[0].femSpace.elementMaps.boundaryJacobians,
+        #                                      self.u[1].femSpace.dofMap.l2g,
+        #                                      self.u[1].dof,
+        #                                      self.u[2].dof,
+        #                                      self.u[3].dof,
+        #                                      self.u[1].femSpace.psi_trace,
+        #                                      self.ebqe[('velocity',0)],
+        #                                      self.ebq_global[('velocityAverage',0)])
         OneLevelTransport.calculateAuxiliaryQuantitiesAfterStep(self)
+

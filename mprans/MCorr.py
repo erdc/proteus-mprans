@@ -11,7 +11,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.variableNames=['phiCorr']
         nc=1
         mass={}
-        advection={}
+        advection={} 
         hamiltonian={}
         diffusion={0:{0:{0:'constant'}}}
         potential={0:{0:'u'}}
@@ -61,6 +61,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
 	self.q_n_ls  = modelList[self.levelSetModelIndex].q[('grad(u)',0)]
 	
         self.ebqe_u_ls = modelList[self.levelSetModelIndex].ebqe[('u',0)]
+        self.ebqe_n_ls = modelList[self.levelSetModelIndex].ebqe[('grad(u)',0)]
+
         if modelList[self.levelSetModelIndex].ebq.has_key(('u',0)):
             self.ebq_u_ls = modelList[self.levelSetModelIndex].ebq[('u',0)]
         else:
@@ -425,6 +427,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.q[('u',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('grad(u)',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
         self.q[('r',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+
+        self.ebqe[('u',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
+        self.ebqe[('grad(u)',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
+
+
         self.points_elementBoundaryQuadrature= set()
         self.scalars_elementBoundaryQuadrature= set([('u',ci) for ci in range(self.nc)])
         self.vectors_elementBoundaryQuadrature= set()
@@ -583,11 +590,20 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                  self.u[0].dof,
                                  self.coefficients.q_u_ls,
 				 self.coefficients.q_n_ls,
+				 self.coefficients.ebqe_u_ls,
+                                 self.coefficients.ebqe_n_ls,
                                  self.coefficients.q_H_vof,
                                  self.q[('u',0)],
-                                 self.q[('r',0)],
-                                 self.offset[0],self.stride[0],
-                                 r)
+				 self.q[('grad(u)',0)],
+				 self.ebqe[('u',0)],
+				 self.ebqe[('grad(u)',0)], 
+                                 self.q[('r',0)],                 
+		                 self.offset[0],self.stride[0],
+                                 r,
+            self.mesh.nExteriorElementBoundaries_global,
+            self.mesh.exteriorElementBoundariesArray,
+            self.mesh.elementBoundaryElementsArray,
+            self.mesh.elementBoundaryLocalElementBoundariesArray,)
         log("Global residual",level=9,data=r)
         self.nonlinear_function_evaluations += 1
         if self.globalResidualDummy == None:

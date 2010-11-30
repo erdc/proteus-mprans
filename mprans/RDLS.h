@@ -383,7 +383,7 @@ namespace proteus
 	      
 	      ck.calculateGScale(G,dir,h_phi);
 	      
-	      epsilon_redist = epsFact_redist*h_phi;
+	      epsilon_redist = epsFact_redist*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	      
 	      
 	      evaluateCoefficients(epsilon_redist,
@@ -565,7 +565,8 @@ namespace proteus
 	    ebN_local = elementBoundaryLocalElementBoundariesArray[ebN*2+0],
 	    eN_nDOF_trial_element = eN*nDOF_trial_element;
 	  register double elementResidual_u[nDOF_test_element];
-	  const double epsilon_redist= epsFact_redist*elementDiameter[eN];
+	  
+	  double epsilon_redist, h_phi; 
 	  for (int i=0;i<nDOF_test_element;i++)
 	    {
 	      elementResidual_u[i]=0.0;
@@ -601,7 +602,7 @@ namespace proteus
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
 		normal[3],x_ext,y_ext,z_ext,
-		G[nSpace*nSpace],G_dd_G,tr_G;
+		G[nSpace*nSpace],G_dd_G,tr_G, dir[nSpace],norm;
 	      ck.calculateMapping_elementBoundary(eN,
 						  ebN_local,
 						  kb,
@@ -624,6 +625,8 @@ namespace proteus
 	      //get the metric tensor
 	      //cek todo use symmetry
 	      ck.calculateG(jacInv_ext,G,G_dd_G,tr_G);
+
+	      
 	      //compute shape and solution information
 	      //shape
 	      ck.gradTrialFromRef(&u_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,u_grad_trial_trace);
@@ -635,6 +638,18 @@ namespace proteus
 		{
 		  u_test_dS[j] = u_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
 		}
+
+
+	      norm = sqrt(grad_u_ext[0]*grad_u_ext[0] + grad_u_ext[1]*grad_u_ext[1] + grad_u_ext[2]*grad_u_ext[2]) + 1.0e-8;
+	      
+	      dir[0] = grad_u_ext[0]/norm;
+	      dir[1] = grad_u_ext[1]/norm;
+	      dir[2] = grad_u_ext[2]/norm;
+	      
+
+	      ck.calculateGScale(G,dir,h_phi);	     	      
+	      epsilon_redist = epsFact_redist*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+
 	      //
 	      //load the boundary values
 	      //
@@ -841,7 +856,7 @@ namespace proteus
 	      
 	      ck.calculateGScale(G,dir,h_phi);
 	      
-	      epsilon_redist = epsFact_redist*h_phi;
+	      epsilon_redist = epsFact_redist*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	      
 	      evaluateCoefficients(epsilon_redist,
 				   phi_ls[eN_k],
@@ -995,7 +1010,7 @@ namespace proteus
 	  register int eN  = elementBoundaryElementsArray[ebN*2+0],
             ebN_local = elementBoundaryLocalElementBoundariesArray[ebN*2+0],
             eN_nDOF_trial_element = eN*nDOF_trial_element;
-	  const double epsilon_redist= epsFact_redist*elementDiameter[eN];
+	  double epsilon_redist,h_phi;
 	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++) 
 	    { 
 	      register int ebNE_kb = ebNE*nQuadraturePoints_elementBoundary+kb;
@@ -1030,7 +1045,7 @@ namespace proteus
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
 		normal[3],x_ext,y_ext,z_ext,
-		G[nSpace*nSpace],G_dd_G,tr_G;
+		G[nSpace*nSpace],G_dd_G,tr_G, dir[nSpace],norm;
 	      // 
 	      //calculate the solution and gradients at quadrature points 
 	      // 
@@ -1065,6 +1080,17 @@ namespace proteus
 		{
 		  u_test_dS[j] = u_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
 		}
+
+	      norm = sqrt(grad_u_ext[0]*grad_u_ext[0] + grad_u_ext[1]*grad_u_ext[1] + grad_u_ext[2]*grad_u_ext[2]) + 1.0e-8;
+	      
+	      dir[0] = grad_u_ext[0]/norm;
+	      dir[1] = grad_u_ext[1]/norm;
+	      dir[2] = grad_u_ext[2]/norm;
+	      
+
+	      ck.calculateGScale(G,dir,h_phi);	     	      
+	      epsilon_redist = epsFact_redist*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+
 	      //
 	      //load the boundary values
 	      //
