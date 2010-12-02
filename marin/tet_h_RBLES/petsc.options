@@ -1,0 +1,7 @@
+-rans2p_ksp_type gmres -rans2p_pc_type jacobi -rans2p_ksp_rtol 5.0e-4 -rans2p_ksp_gmres_restart 250 -rans2p_ksp_gmres_modifiedgramschmidt
+-ncls_ksp_type   gmres -ncls_pc_type   jacobi -ncls_ksp_rtol   1.0e-3 -ncls_ksp_gmres_restart   250 -ncls_ksp_gmres_modifiedgramschmidt
+-vof_ksp_type    gmres -vof_pc_type    jacobi -vof_ksp_rtol    1.0e-3 -vof_ksp_gmres_restart    250 -vof_ksp_gmres_modifiedgramschmidt
+-rdls_ksp_type   gmres -rdls_pc_type   jacobi -rdls_ksp_rtol   1.0e-3 -rdls_ksp_gmres_restart   250 -rdls_ksp_gmres_modifiedgramschmidt
+-mcorr_ksp_type  gmres -mcorr_pc_type  jacobi -mcorr_ksp_rtol  1.0e-7 -mcorr_ksp_gmres_restart  250 -mcorr_ksp_gmres_modifiedgramschmidt
+
+
