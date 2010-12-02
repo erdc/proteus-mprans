@@ -121,10 +121,27 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         copyInstructions = {'clear_uList':True}
         return copyInstructions
     def postStep(self,t,firstStep=False):
+
+	#self.massCorrModel.q   [('u',0)]       += self.lsModel.q   [('u',0)]	      
+	#self.massCorrModel.ebqe[('u',0)]       += self.lsModel.ebqe[('u',0)]	      
+	
+	#self.massCorrModel.q   [('grad(u)',0)] += self.lsModel.q   [('grad(u)',0)]
+	#self.massCorrModel.ebqe[('grad(u)',0)] += self.lsModel.ebqe[('grad(u)',0)]
+	    
         if self.applyCorrection:
             
+
+	    
             self.vofModel.q[('m',0)] += self.massCorrModel.q[('r',0)]
-            self.lsModel.q[('m',0)] += self.massCorrModel.q[('u',0)]
+            self.lsModel .q[('m',0)] += self.massCorrModel.q[('u',0)]
+
+	    self.lsModel.q   [('u',0)] += self.massCorrModel.q   [('u',0)]
+	    self.lsModel.ebqe[('u',0)] += self.massCorrModel.ebqe[('u',0)]
+	    
+	    self.lsModel.q   [('grad(u)',0)] += self.massCorrModel.q   [('grad(u)',0)]
+	    self.lsModel.ebqe[('grad(u)',0)] += self.massCorrModel.ebqe[('grad(u)',0)]
+	    
+	    
             if self.vofModel.q[('u',0)] is not self.vofModel.q[('m',0)]:
                 self.vofModel.q[('u',0)][:]=self.vofModel.q[('m',0)]
             if self.lsModel.q[('u',0)] is not self.lsModel.q[('m',0)]:

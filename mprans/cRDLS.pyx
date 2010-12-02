@@ -39,6 +39,7 @@ cdef extern from "RDLS.h" namespace "proteus":
                                double* phi_ls,
                                double* q_m,
                                double* q_u,
+                               double* q_n,
                                double* q_dH,
                                double* u_weak_internal_bc_dofs,
                                double* q_m_betaBDF,
@@ -56,7 +57,8 @@ cdef extern from "RDLS.h" namespace "proteus":
                                double* ebqe_phi_ls_ext,
                                int* isDOFBoundary_u,
                                double* ebqe_bc_u_ext,
-                               double* ebqe_u)
+                               double* ebqe_u,
+                               double* ebqe_n)
         void calculateJacobian(double* mesh_trial_ref,
                                double* mesh_grad_trial_ref,
                                double* mesh_dof,
@@ -165,6 +167,7 @@ cdef class cRDLS_base:
                          numpy.ndarray phi_ls,
                          numpy.ndarray q_m,
                          numpy.ndarray q_u,
+                         numpy.ndarray q_n,
                          numpy.ndarray q_dH,
                          numpy.ndarray u_weak_internal_bc_dofs,
                          numpy.ndarray q_m_betaBDF,
@@ -182,7 +185,8 @@ cdef class cRDLS_base:
                          numpy.ndarray ebqe_phi_ls_ext,
                          numpy.ndarray isDOFBoundary_u,
                          numpy.ndarray ebqe_bc_u_ext,
-                         numpy.ndarray ebqe_u):
+                         numpy.ndarray ebqe_u,
+                         numpy.ndarray ebqe_n):
        self.thisptr.calculateResidual(<double*> mesh_trial_ref.data,
                                    <double*> mesh_grad_trial_ref.data,
                                    <double*> mesh_dof.data,
@@ -216,6 +220,7 @@ cdef class cRDLS_base:
                                    <double*> phi_ls.data,
                                    <double*> q_m.data,
                                    <double*> q_u.data,
+                                   <double*> q_n.data,
                                    <double*> q_dH.data,
                                    <double*> u_weak_internal_bc_dofs.data,
                                    <double*> q_m_betaBDF.data,
@@ -233,7 +238,8 @@ cdef class cRDLS_base:
                                    <double*> ebqe_phi_ls_ext.data,
                                    <int*> isDOFBoundary_u.data,
                                    <double*> ebqe_bc_u_ext.data,
-                                   <double*> ebqe_u.data)
+                                   <double*> ebqe_u.data,
+                                   <double*> ebqe_n.data)
    def calculateJacobian(self,
                          numpy.ndarray mesh_trial_ref,
                          numpy.ndarray mesh_grad_trial_ref,

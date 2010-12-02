@@ -692,6 +692,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                   self.coefficients.q_u0,
                   self.timeIntegration.m_tmp[0],
                   self.q[('u',0)],
+                  self.q[('grad(u)',0)],  
                   self.q[('dH',0,0)],
                   self.u_dof_last,
                   beta_bdf[0],
@@ -709,7 +710,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                   self.coefficients.ebqe_u0,
                   self.numericalFlux.isDOFBoundary[0],
                   self.numericalFlux.ebqe[('u',0)],
-                  self.ebqe[('u',0)])
+                  self.ebqe[('u',0)],
+                  self.ebqe[('grad(u)',0)] )
         #print "m_tmp",self.timeIntegration.m_tmp[0]
         #print "dH",self.q[('dH',0,0)]
         #print "dH_sge",self.q[('dH_sge',0,0)]

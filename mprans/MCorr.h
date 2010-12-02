@@ -260,16 +260,7 @@ namespace proteus
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
-	      
-	      
-              q_phi[eN_k] = q_phi[eN_k] - q_u[eN_k];
-      
-	      q_normal_phi[eN_k_nSpace+0] = q_normal_phi[eN_k_nSpace+0] - q_n[eN_k_nSpace+0];
-	      q_normal_phi[eN_k_nSpace+1] = q_normal_phi[eN_k_nSpace+1] - q_n[eN_k_nSpace+1];
-	      q_normal_phi[eN_k_nSpace+2] = q_normal_phi[eN_k_nSpace+2] - q_n[eN_k_nSpace+2];
-	
-	      
-	      
+	      	      	      
               ck.calculateGScale(G,&q_normal_phi[eN_k_nSpace],h_phi);
 	      
 	      //get the trial function gradients
@@ -320,17 +311,13 @@ namespace proteus
 	      //save momentum for time history and velocity for subgrid error
 	      //save solution for other models 	     	      
 	      //
-	      
-	      q_phi[eN_k] = q_phi[eN_k] + u;
-	      norm = 1.0;sqrt(grad_u[0]*grad_u[0]+grad_u[1]*grad_u[1]+grad_u[2]*grad_u[2]);	      
-
-	      q_normal_phi[eN_k_nSpace+0] = q_normal_phi[eN_k_nSpace+0]  + grad_u[0]/norm;
-	      q_normal_phi[eN_k_nSpace+1] = q_normal_phi[eN_k_nSpace+1]  + grad_u[1]/norm;
-	      q_normal_phi[eN_k_nSpace+2] = q_normal_phi[eN_k_nSpace+2]  + grad_u[2]/norm;
-	      	      	      
+	   	      	      	      
 	      q_r[eN_k] = r;
 	      q_u[eN_k] = u;
 	      
+
+	      norm = 1.0;sqrt(grad_u[0]*grad_u[0]+grad_u[1]*grad_u[1]+grad_u[2]*grad_u[2]);	      
+
 	      
 	      q_n[eN_k_nSpace+0] = grad_u[0]/norm;
 	      q_n[eN_k_nSpace+1] = grad_u[1]/norm;
@@ -425,13 +412,9 @@ namespace proteus
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_ext);
 
 
-	      ebqe_phi[ebNE_kb] =  ebqe_phi[ebNE_kb] -  ebqe_u[ebNE_kb] + u_ext;
 	      norm = 1.0;sqrt(grad_u_ext[0]*grad_u_ext[0]+grad_u_ext[1]*grad_u_ext[1]+grad_u_ext[2]*grad_u_ext[2]);	      
 
-	      ebqe_normal_phi[ebNE_kb_nSpace+0] = ebqe_normal_phi[ebNE_kb_nSpace+0] - ebqe_n[ebNE_kb_nSpace+0] + grad_u_ext[0]/norm;
-	      ebqe_normal_phi[ebNE_kb_nSpace+1] = ebqe_normal_phi[ebNE_kb_nSpace+1] - ebqe_n[ebNE_kb_nSpace+1] + grad_u_ext[1]/norm;
-	      ebqe_normal_phi[ebNE_kb_nSpace+2] = ebqe_normal_phi[ebNE_kb_nSpace+2] - ebqe_n[ebNE_kb_nSpace+2] + grad_u_ext[2]/norm;
-	      	      	      
+
 	      ebqe_u[ebNE_kb] = u_ext;
 	      
 	      

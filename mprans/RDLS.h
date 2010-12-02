@@ -49,6 +49,7 @@ namespace proteus
 			   double* phi_ls,
 			   double* q_m,
 			   double* q_u,
+                           double* q_n,
 			   double* q_dH,
 			   double* u_weak_internal_bc_dofs,//for freezing level set
 			   double* q_m_betaBDF,
@@ -66,7 +67,8 @@ namespace proteus
 			   double* ebqe_phi_ls_ext,
 			   int* isDOFBoundary_u,
 			   double* ebqe_bc_u_ext,
-			   double* ebqe_u)=0;
+			   double* ebqe_u,
+                           double* ebqe_n)=0;
     virtual void calculateJacobian(//element
 				double* mesh_trial_ref,
 				double* mesh_grad_trial_ref,
@@ -258,6 +260,7 @@ namespace proteus
 			   double* phi_ls,
 			   double* q_m,
 			   double* q_u,
+                           double* q_n,
 			   double* q_dH,
 			   double* u_weak_internal_bc_dofs,//for freezing level set
 			   double* q_m_betaBDF,
@@ -275,7 +278,8 @@ namespace proteus
 			   double* ebqe_phi_ls_ext,
 			   int* isDOFBoundary_u,
 			   double* ebqe_bc_u_ext,
-			   double* ebqe_u)
+			   double* ebqe_u,
+                           double* ebqe_n)
     {
 #ifdef CKDEBUG
       std::cout<<"stuff"<<"\t"
@@ -422,6 +426,10 @@ namespace proteus
 	      //
 	      q_m[eN_k] = m;
 	      q_u[eN_k] = u;
+              q_n[eN_k_nSpace+0] = dir[0];
+              q_n[eN_k_nSpace+1] = dir[1];
+              q_n[eN_k_nSpace+2] = dir[2];
+
 	      for (int I=0;I<nSpace;I++)
 		{
 		  int eN_k_nSpace_I = eN_k_nSpace+I;
@@ -574,7 +582,7 @@ namespace proteus
 	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++) 
 	    { 
 	      register int ebNE_kb = ebNE*nQuadraturePoints_elementBoundary+kb,
-		//ebNE_kb_nSpace = ebNE_kb*nSpace,
+		ebNE_kb_nSpace = ebNE_kb*nSpace,
 		ebN_local_kb = ebN_local*nQuadraturePoints_elementBoundary+kb,
 		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
 	      register double u_ext=0.0,
@@ -679,6 +687,11 @@ namespace proteus
 				   bc_r_ext);
 	      //save for other models?
 	      ebqe_u[ebNE_kb] = u_ext;
+
+              ebqe_n[ebNE_kb_nSpace+0] = dir[0];
+              ebqe_n[ebNE_kb_nSpace+2] = dir[1];
+              ebqe_n[ebNE_kb_nSpace+1] = dir[2];
+
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
