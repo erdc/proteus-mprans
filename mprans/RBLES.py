@@ -608,9 +608,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #
         NonlinearEquation.__init__(self,self.nFreeVDOF_global)
         #
-        #build the quadrature point dictionaries from the input (this
-        #is just for convenience so that the input doesn't have to be
-        #complete)
+        # build the quadrature point dictionaries from the input (this
+        # is just for convenience so that the input doesn't have to be
+        # complete)
         #
         elementQuadratureDict={}
         elemQuadIsDict = isinstance(elementQuadrature,dict)
@@ -938,6 +938,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         r.fill(0.0)
         self.Ct_sge = 4.0
         self.Cd_sge = 144.0
+	self.C_b    = 10.0
  
         if self.forceStrongConditions:
             for cj in range(len(self.dirichletConditionsForceDOF)):
@@ -989,6 +990,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
+	    self.C_b,
             self.u[0].femSpace.dofMap.l2g,
             self.u[1].femSpace.dofMap.l2g,
             self.u[0].dof,
@@ -1072,9 +1074,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         log("Global residual",level=9,data=r)
         #mwf decide if this is reasonable for keeping solver statistics
         self.nonlinear_function_evaluations += 1
+	
     def getJacobian(self,jacobian):
 	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
 				       jacobian)
+
         self.RBLES.calculateJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -1119,6 +1123,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
+	    self.C_b,
             self.u[0].femSpace.dofMap.l2g,
             self.u[1].femSpace.dofMap.l2g,
             self.u[0].dof,

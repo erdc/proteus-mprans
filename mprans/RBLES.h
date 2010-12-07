@@ -56,6 +56,7 @@ namespace proteus
 				   double Ct_sge,
 				   double Cd_sge,
 				   double C_dc,
+				   double C_b,
 				   int* p_l2g, 
 				   int* vel_l2g, 
 				   double* p_dof, 
@@ -166,6 +167,7 @@ namespace proteus
 				   double Ct_sge,
 				   double Cd_sge,
 				   double C_dg,
+				   double C_b,
 				   int* p_l2g, 
 				   int* vel_l2g,
 				   double* p_dof, double* u_dof, double* v_dof, double* w_dof,
@@ -336,40 +338,36 @@ namespace proteus
 
   
     inline
-    void calculateSubgridError_tau(const double&  hFactor,
-				   const double& elementDiameter,
-				   const double& dmt,
-				   const double& dm,
-				   const double df[nSpace],
-				   const double& a,
+    void calculate_h_tau(          const double& h,
+				   const double& Dt,
+				   const double& rho,
+				   const double& mu,
+				   const double  vel[nSpace],
 				   double& tau_v,
 				   double& tau_p,
 				   double& cfl)
     {
-      double h,oneByAbsdt,density,viscosity,nrm_df;
-      h = hFactor*elementDiameter;
-      density = dm;
-      viscosity =  a;
-      nrm_df=0.0;
+      double unrm=0.0;
       for(int I=0;I<nSpace;I++)
-	nrm_df+=df[I]*df[I];
-      nrm_df = sqrt(nrm_df);
-      cfl = nrm_df/(h*density);
-      oneByAbsdt =  fabs(dmt);
-      tau_v = 1.0/(4.0*viscosity/(h*h) + 2.0*nrm_df/h + oneByAbsdt);
-      tau_p = 4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h;
+	unrm+=vel[I]*vel[I];
+      unrm = sqrt(unrm);
+
+      tau_v = 1.0/(4.0*mu/(h*h) + 2.0*rho*unrm/h + rho/Dt);
+      tau_p = 4.0*mu + 2.0*rho*unrm*h + rho*h*h/Dt;     
+      cfl   = unrm*Dt/h;
     }
 
 
     inline
-    void calculateSubgridError_tau(     const double&  Ct_sge,
+    void calculate_metric_tau(          const double&  Ct_sge,
                                         const double&  Cd_sge,
 			                const double   G[nSpace*nSpace],
 					const double&  G_dd_G,
 					const double&  tr_G,
-					const double&  A0,
-					const double   Ai[nSpace],
-					const double&  Kij,
+					const double&  Dt,
+					const double&  rho,
+					const double&  mu,
+					const double   vel[nSpace],  
 					double& tau_v,
 					double& tau_p,
 					double& q_cfl)	
@@ -377,18 +375,17 @@ namespace proteus
       double v_d_Gv=0.0; 
       for(int I=0;I<nSpace;I++) 
          for (int J=0;J<nSpace;J++) 
-           v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
+           v_d_Gv += vel[I]*G[I*nSpace+J]*vel[J];     
     
-      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + Cd_sge*Kij*Kij*G_dd_G); 
+      tau_v = 1.0/sqrt(Ct_sge*rho*rho/(Dt*Dt) + rho*rho*v_d_Gv + Cd_sge*mu*mu*G_dd_G); 
       tau_p = 1.0/(tr_G*tau_v);     
     }
-
 
     void calculateResidual(//element
 			   double* mesh_trial_ref,
 			   double* mesh_grad_trial_ref,
 			   double* mesh_dof,
-			   int* mesh_l2g,
+			   int*    mesh_l2g,
 			   double* dV_ref,
 			   double* p_trial_ref,
 			   double* p_grad_trial_ref,
@@ -429,6 +426,7 @@ namespace proteus
 			   double Ct_sge,
 			   double Cd_sge,
 			   double C_dc,
+			   double C_b,
 			   int* p_l2g, 
 			   int* vel_l2g, 
 			   double* p_dof, 
@@ -542,8 +540,8 @@ namespace proteus
 	    subgrid_u=0.0,
 	    subgrid_v=0.0,
 	    subgrid_w=0.0, 
-	    tau_0=0.0,
-	    tau_1=0.0,
+	    tau_0=0.0,tau_h_0=0.0,tau_m_0=0.0,
+	    tau_1=0.0,tau_h_1=0.0,tau_m_1=0.0,
 	    jac[nSpace*nSpace],
 	    jacDet,
 	    jacInv[nSpace*nSpace],
@@ -569,13 +567,9 @@ namespace proteus
 	  ck.calculateG(jacInv,G,G_dd_G,tr_G);
 	  ck.calculateGScale(G,&normal_phi[eN_k_nSpace],h_phi);
 
-	  eps_rho = epsFact_rho*h_phi;
-	  eps_mu = epsFact_mu*h_phi;
-	  
-	      eps_rho = epsFact_rho*elementDiameter[eN];
-	      eps_mu  = epsFact_mu *elementDiameter[eN];
-	  
-	  
+	  eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	  eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	  	  
 	  //get the trial function gradients
 	  ck.gradTrialFromRef(&p_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,p_grad_trial);
 	  ck.gradTrialFromRef(&vel_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,vel_grad_trial);
@@ -656,18 +650,40 @@ namespace proteus
 		 mom_w_acc_t,
 		 dmom_w_acc_w_t);
 
-          double Dt=(dmom_u_acc_u_t/dmom_u_acc_u);
-          double v_d_Gv= 0.0;
+          double Dt=(dmom_u_acc_u/dmom_u_acc_u_t);
 	  double vel[nSpace] = {u,v,w};
-          for(int I=0;I<nSpace;I++)
+
+         /*
+	   double v_d_Gv= 0.0;
+	  for(int I=0;I<nSpace;I++)
             for (int J=0;J<nSpace;J++)
 	      v_d_Gv += vel[I]*G[I*nSpace+J]*vel[J];
   
-          tau_0 = 1.0/sqrt(Ct_sge*rho*rho*Dt*Dt + rho*rho*v_d_Gv + Cd_sge*mu*mu*G_dd_G);
-          tau_0 = 1.0/sqrt(Ct_sge*rho*rho*Dt*Dt  + Cd_sge*mu*mu*G_dd_G);
+          tau_0 = 1.0/sqrt(Ct_sge*rho*rho/(Dt*Dt) + rho*rho*v_d_Gv + Cd_sge*mu*mu*G_dd_G);
           tau_1 = 1.0/(tr_G*tau_0);
-          q_cfl[eN_k] = 2.0*sqrt(v_d_Gv);						
+          q_cfl[eN_k] = 2.0*sqrt(v_d_Gv);*/	
+	  
+	  //calculate tau and tau*Res
+	  calculate_h_tau(hFactor*elementDiameter[eN],				    
+	    			    Dt,rho,mu,vel,
+	    			    tau_h_0,
+	    			    tau_h_1,
+	    			    q_cfl[eN_k]);
 
+	  calculate_metric_tau(Ct_sge,Cd_sge,
+	    			    G,G_dd_G,tr_G,
+	    			    Dt,rho,mu,vel,
+	    			    tau_m_0,
+	    			    tau_m_1,
+	    			    q_cfl[eN_k]);   
+
+	  tau_0 = useMetrics*tau_m_0+(1.0-useMetrics)*tau_h_0;
+	  tau_1 = useMetrics*tau_m_1+(1.0-useMetrics)*tau_h_1;
+
+	  //if (eN<3){
+	  //  std::cout<<tau_0<<"  "<<tau_1<<std::endl;
+	  //}
+	  	  					
           //
           //calculate strong residual
           //
@@ -680,15 +696,6 @@ namespace proteus
 	                + grad_p[1]; // - mu poisson_u  ==> ommited as only first order right now !! 
 	                
 	  pdeResidual_w = rho *(mom_w_acc_t + u*grad_w[0] + v*grad_w[1] + w*grad_w[2] - g[2])
-	                + grad_p[2]; // - mu poisson_u  ==> ommited as only first order right now !! 
-
-	  pdeResidual_u = rho *(mom_u_acc_t - g[0])
-	                + grad_p[0]; // - mu poisson_u  ==> ommited as only first order right now !! 
-
-	  pdeResidual_v = rho *(mom_v_acc_t - g[1])
-	                + grad_p[1]; // - mu poisson_u  ==> ommited as only first order right now !! 
-	                
-	  pdeResidual_w = rho *(mom_w_acc_t - g[2])
 	                + grad_p[2]; // - mu poisson_u  ==> ommited as only first order right now !! 
 
           //
@@ -704,7 +711,8 @@ namespace proteus
           //calculate discontinuity capturing addition to viscosity
           //
 	  norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v + pdeResidual_w*pdeResidual_w);
-	  //mu += C_dc*norm_Rv/sqrt(G_dd_G);
+	  mu += C_dc*norm_Rv*(useMetrics/sqrt(G_dd_G)  + 
+	                     (1.0-useMetrics)*hFactor*hFactor*elementDiameter[eN]*elementDiameter[eN]);
 
           // 
           //update element residual 
@@ -719,33 +727,33 @@ namespace proteus
 	                            + subgrid_v*p_grad_test_dV[i_nSpace+1]
 	                            + subgrid_w*p_grad_test_dV[i_nSpace+2];
 
-	      elementResidual_u[i] += rho *(mom_u_acc_t - g[0])*vel_test_dV[i]	//rho *(mom_u_acc_t+ u*grad_u[0] + v*grad_u[1] + w*grad_u[2] - g[0])*vel_test_dV[i]				        
+	      elementResidual_u[i] += rho *(mom_u_acc_t +  u*grad_u[0] + v*grad_u[1] + w*grad_u[2] - g[0])*vel_test_dV[i]				        
 			               + mu*(grad_u[0] + grad_u[0])*vel_grad_test_dV[i_nSpace+0]
 			               + mu*(grad_u[1] + grad_v[0])*vel_grad_test_dV[i_nSpace+1]				   
 			               + mu*(grad_u[2] + grad_w[0])*vel_grad_test_dV[i_nSpace+2]	
 	                               -(p+subgrid_p)*vel_grad_test_dV[i_nSpace+0]     	 
-		                    ;//    -rho*vel_grad_test_dV[i_nSpace+0] * (subgrid_u*u) //+ u*subgrid_u + subgrid_u*subgrid_u)
-		                     //   -rho*vel_grad_test_dV[i_nSpace+1] * (subgrid_u*v) //+ u*subgrid_v + subgrid_u*subgrid_v)
-		                     //   -rho*vel_grad_test_dV[i_nSpace+2] * (subgrid_u*w);// + u*subgrid_w + subgrid_u*subgrid_w);
+		                        -rho*vel_grad_test_dV[i_nSpace+0] * (subgrid_u*u + useRBLES*(u*subgrid_u + subgrid_u*subgrid_u))
+		                        -rho*vel_grad_test_dV[i_nSpace+1] * (subgrid_u*v + useRBLES*(u*subgrid_v + subgrid_u*subgrid_v))
+		                        -rho*vel_grad_test_dV[i_nSpace+2] * (subgrid_u*w + useRBLES*(u*subgrid_w + subgrid_u*subgrid_w));
 		            
-	      elementResidual_v[i] +=  rho *(mom_v_acc_t - g[1])*vel_test_dV[i]	//rho *(mom_v_acc_t+ u*grad_v[0] + v*grad_v[1] + w*grad_v[2] - g[1])*vel_test_dV[i]
+	      elementResidual_v[i] +=  rho *(mom_v_acc_t +  u*grad_v[0] + v*grad_v[1] + w*grad_v[2] - g[1])*vel_test_dV[i]
 			               + mu*(grad_v[0] + grad_u[1])*vel_grad_test_dV[i_nSpace+0]
 			               + mu*(grad_v[1] + grad_v[1])*vel_grad_test_dV[i_nSpace+1]				   
 			               + mu*(grad_v[2] + grad_w[1])*vel_grad_test_dV[i_nSpace+2]	
 	                               -(p+subgrid_p)*vel_grad_test_dV[i_nSpace+1] 	                                  
-		                    ;//   -rho*vel_grad_test_dV[i_nSpace+0] * (subgrid_v*u) //+ v*subgrid_u + subgrid_v*subgrid_u)
-		                     //  -rho*vel_grad_test_dV[i_nSpace+1] * (subgrid_v*v) //+ v*subgrid_v + subgrid_v*subgrid_v)
-		                     //  -rho*vel_grad_test_dV[i_nSpace+2] * (subgrid_v*w);// + v*subgrid_w + subgrid_v*subgrid_w);
+		                       -rho*vel_grad_test_dV[i_nSpace+0] * (subgrid_v*u + useRBLES*(v*subgrid_u + subgrid_v*subgrid_u))
+		                       -rho*vel_grad_test_dV[i_nSpace+1] * (subgrid_v*v + useRBLES*(v*subgrid_v + subgrid_v*subgrid_v))
+		                       -rho*vel_grad_test_dV[i_nSpace+2] * (subgrid_v*w + useRBLES*(v*subgrid_w + subgrid_v*subgrid_w));
 
 
-	      elementResidual_w[i] +=  rho *(mom_w_acc_t - g[2])*vel_test_dV[i]	//rho *(mom_w_acc_t + u*grad_w[0] + v*grad_w[1] + w*grad_w[2] - g[2])*vel_test_dV[i]
+	      elementResidual_w[i] +=  rho *(mom_w_acc_t  + u*grad_w[0] + v*grad_w[1] + w*grad_w[2] - g[2])*vel_test_dV[i]
 			               + mu*(grad_w[0] + grad_u[2])*vel_grad_test_dV[i_nSpace+0]
 			               + mu*(grad_w[1] + grad_v[2])*vel_grad_test_dV[i_nSpace+1]				   
 			               + mu*(grad_w[2] + grad_w[2])*vel_grad_test_dV[i_nSpace+2]		 
 	                               -(p+subgrid_p)*vel_grad_test_dV[i_nSpace+2] 
-		                   ; //    -rho*vel_grad_test_dV[i_nSpace+0] * (subgrid_w*u) //+ w*subgrid_u + subgrid_w*subgrid_u)
-		                    //    -rho*vel_grad_test_dV[i_nSpace+1] * (subgrid_w*v) //+ w*subgrid_v + subgrid_w*subgrid_v)
-		                    //    -rho*vel_grad_test_dV[i_nSpace+2] * (subgrid_w*w);// + w*subgrid_w + subgrid_w*subgrid_w);
+		                        -rho*vel_grad_test_dV[i_nSpace+0] * (subgrid_w*u + useRBLES*(w*subgrid_u + subgrid_w*subgrid_u))
+		                        -rho*vel_grad_test_dV[i_nSpace+1] * (subgrid_w*v + useRBLES*(w*subgrid_v + subgrid_w*subgrid_v))
+		                        -rho*vel_grad_test_dV[i_nSpace+2] * (subgrid_w*w + useRBLES*(w*subgrid_w + subgrid_w*subgrid_w));
            }//i
 	}
 	  //
@@ -769,7 +777,7 @@ namespace proteus
       //ebNE is the Exterior element boundary INdex
       //ebN is the element boundary INdex
       //eN is the element index
-     for (int ebNE = 0; ebNE < nExteriorElementBoundaries_global; ebNE++) 
+      for (int ebNE = 0; ebNE < nExteriorElementBoundaries_global; ebNE++) 
 	{ 
 	  register int ebN = exteriorElementBoundariesArray[ebNE], 
 	    eN  = elementBoundaryElementsArray[ebN*2+0],
@@ -811,7 +819,8 @@ namespace proteus
 		dS,p_test_dS[nDOF_test_element],vel_test_dS[nDOF_test_element],vel_grad_test_dS[nDOF_test_element*nSpace],
 		p_grad_trial_trace[nDOF_trial_element*nSpace],vel_grad_trial_trace[nDOF_trial_element*nSpace],
 		normal[3],x_ext,y_ext,z_ext,
-		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty,penalty,gi[nSpace], unormal,gnormal,uneg;
+		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty,penalty,gi[nSpace], unormal,gnormal,uneg,
+		H_rho,d_rho, H_mu,d_mu, rho, mu;
 	      //compute information about mapping from reference element to physical element
 	      ck.calculateMapping_elementBoundary(eN,
 						  ebN_local,
@@ -837,11 +846,17 @@ namespace proteus
 	      ck.calculateG(jacInv_ext,G,G_dd_G,tr_G);
 	      ck.calculateGScale(G,&ebqe_normal_phi_ext[ebNE_kb_nSpace],h_phi);
 	      
-	      //eps_rho = epsFact_rho*h_phi;
-	      //eps_mu  = epsFact_mu *h_phi;
+	      eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 
-	      eps_rho = epsFact_rho*elementDiameter[eN];
-	      eps_mu  = epsFact_mu *elementDiameter[eN];
+              H_rho = RBLES::smoothedHeaviside(eps_rho,ebqe_phi_ext[ebNE_kb]);
+              d_rho = RBLES::smoothedDirac(eps_rho,ebqe_phi_ext[ebNE_kb]);
+              H_mu  = RBLES::smoothedHeaviside(eps_mu,ebqe_phi_ext[ebNE_kb]);
+              d_mu  = RBLES::smoothedDirac(eps_mu,ebqe_phi_ext[ebNE_kb]);
+  
+              rho = rho_0*(1.0-H_rho)+rho_1*H_rho;
+              mu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
+	  
 	      
 	      //compute shape and solution information
 	      //shape
@@ -864,10 +879,9 @@ namespace proteus
 		  p_test_dS[j] = p_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
 		  vel_test_dS[j] = vel_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
 		  
-		  vel_grad_test_dS[j_nSpace+0] = vel_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_test_element+j_nSpace+0]*dS;  // ido assumes bubnov galerkin
-		  vel_grad_test_dS[j_nSpace+1] = vel_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_test_element+j_nSpace+1]*dS;  // ido assumes bubnov galerkin
-		  vel_grad_test_dS[j_nSpace+2] = vel_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_test_element+j_nSpace+2]*dS;  // ido assumes bubnov galerkin
-
+		  vel_grad_test_dS[j_nSpace+0] = vel_grad_trial_trace[j_nSpace+0]*dS;  
+		  vel_grad_test_dS[j_nSpace+1] = vel_grad_trial_trace[j_nSpace+1]*dS; 
+		  vel_grad_test_dS[j_nSpace+2] = vel_grad_trial_trace[j_nSpace+2]*dS; 
 		}
 
 	      //
@@ -878,8 +892,7 @@ namespace proteus
 	      //isDOFBoundary_v[ebNE_kb] ebqe_bc_v_ext[ebNE_kb];
 	      //isDOFBoundary_w[ebNE_kb] ebqe_bc_w_ext[ebNE_kb];
 	      // For now: hard wired zero weak BC 
-	      
-	      
+	      	      
 	      // 
 	      //calculate the pde coefficients using the solution and the boundary values for the solution 
 	      // 
@@ -890,17 +903,13 @@ namespace proteus
 	      unormal = normal[0]*u_ext + normal[1]*v_ext + normal[2]*w_ext;
 	      gnormal = normal[0]*gi[0] + normal[1]*gi[1] + normal[2]*gi[2];
 	      uneg = 0.5*(unormal - fabs(unormal));
-	  
-	     	      
-	
+	  	     	      	
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
-
-	      //
 	      ck.calculateGScale(G,normal,h_penalty);
-              penalty =  10.0*eps_mu/h_penalty;
-   
+              penalty = C_b*mu/h_penalty;
+
 	      //
 	      //update residuals
 	      //
@@ -908,37 +917,28 @@ namespace proteus
 		{
 		  int i_nSpace = i*nSpace;
 		  elementResidual_p[i] += (unormal - gnormal)*p_test_dS[i];
-		  /*
- 	          elementResidual_u[i] += (-eps_mu*(grad_u_ext[i_nSpace+0]*normal[0] + grad_u_ext[i_nSpace+0]*normal[0]+ 
-		                                    grad_u_ext[i_nSpace+1]*normal[1] + grad_v_ext[i_nSpace+0]*normal[1]+
-						    grad_u_ext[i_nSpace+2]*normal[2] + grad_w_ext[i_nSpace+0]*normal[2]) 
-						  +penalty*(u_ext-gi[0]) + p_ext*normal[0] - uneg*eps_rho*(u_ext-gi[0]))*vel_test_dS[i]
-					+ eps_mu*(  ((v_ext - gi[1])*normal[0] - (u_ext - gi[0])*normal[1])*vel_grad_test_dS[i_nSpace+1] +
-					            ((w_ext - gi[2])*normal[0] - (u_ext - gi[0])*normal[2])*vel_grad_test_dS[i_nSpace+2]);	  
+		  
+ 	          elementResidual_u[i] += (-mu*(grad_u_ext[i_nSpace+0]*normal[0] + grad_u_ext[i_nSpace+0]*normal[0]+ 
+		                                grad_u_ext[i_nSpace+1]*normal[1] + grad_v_ext[i_nSpace+0]*normal[1]+
+						grad_u_ext[i_nSpace+2]*normal[2] + grad_w_ext[i_nSpace+0]*normal[2]) 
+						  +penalty*(u_ext-gi[0]) + p_ext*normal[0] - uneg*rho*(u_ext-gi[0]))*vel_test_dS[i]
+					+ mu*(  ((v_ext - gi[1])*normal[0] + (u_ext - gi[0])*normal[1])*vel_grad_test_dS[i_nSpace+1] +
+					        ((w_ext - gi[2])*normal[0] + (u_ext - gi[0])*normal[2])*vel_grad_test_dS[i_nSpace+2]);	  
 						    						  
-		  elementResidual_v[i] += (-eps_mu*(grad_v_ext[i_nSpace+0]*normal[0] + grad_u_ext[i_nSpace+1]*normal[0]+ 
-		                                    grad_v_ext[i_nSpace+1]*normal[1] + grad_v_ext[i_nSpace+1]*normal[1]+
-						    grad_v_ext[i_nSpace+2]*normal[2] + grad_w_ext[i_nSpace+1]*normal[2]) 
-						  +penalty*(v_ext-gi[1]) + p_ext*normal[1] - uneg*eps_rho*(v_ext-gi[1]))*vel_test_dS[i]
-					+ eps_mu*(  ((u_ext - gi[0])*normal[1] - (v_ext - gi[1])*normal[0])*vel_grad_test_dS[i_nSpace+0] +
-					            ((w_ext - gi[2])*normal[1] - (v_ext - gi[1])*normal[2])*vel_grad_test_dS[i_nSpace+2]);
+		  elementResidual_v[i] += (-mu*(grad_v_ext[i_nSpace+0]*normal[0] + grad_u_ext[i_nSpace+1]*normal[0]+ 
+		                                grad_v_ext[i_nSpace+1]*normal[1] + grad_v_ext[i_nSpace+1]*normal[1]+
+						grad_v_ext[i_nSpace+2]*normal[2] + grad_w_ext[i_nSpace+1]*normal[2]) 
+						  +penalty*(v_ext-gi[1]) + p_ext*normal[1] - uneg*rho*(v_ext-gi[1]))*vel_test_dS[i]
+					+ mu*(  ((u_ext - gi[0])*normal[1] + (v_ext - gi[1])*normal[0])*vel_grad_test_dS[i_nSpace+0] +
+					        ((w_ext - gi[2])*normal[1] + (v_ext - gi[1])*normal[2])*vel_grad_test_dS[i_nSpace+2]);
 	       
-		  elementResidual_w[i] +=(-eps_mu*(grad_w_ext[i_nSpace+0]*normal[0] + grad_u_ext[i_nSpace+2]*normal[0]+ 
-		                                   grad_w_ext[i_nSpace+1]*normal[1] + grad_v_ext[i_nSpace+2]*normal[1]+
-						   grad_w_ext[i_nSpace+2]*normal[2] + grad_w_ext[i_nSpace+2]*normal[2]) 
-						  +penalty*(w_ext-gi[2]) + p_ext*normal[2] - uneg*eps_rho*(w_ext-gi[2]))*vel_test_dS[i]
-					+ eps_mu*(  ((u_ext - gi[0])*normal[2] - (w_ext - gi[2])*normal[0])*vel_grad_test_dS[i_nSpace+0] +
-					            ((v_ext - gi[1])*normal[2] - (w_ext - gi[2])*normal[1])*vel_grad_test_dS[i_nSpace+1]);*/
+		  elementResidual_w[i] +=(-mu*(grad_w_ext[i_nSpace+0]*normal[0] + grad_u_ext[i_nSpace+2]*normal[0]+ 
+		                               grad_w_ext[i_nSpace+1]*normal[1] + grad_v_ext[i_nSpace+2]*normal[1]+
+					       grad_w_ext[i_nSpace+2]*normal[2] + grad_w_ext[i_nSpace+2]*normal[2]) 
+						  +penalty*(w_ext-gi[2]) + p_ext*normal[2] - uneg*rho*(w_ext-gi[2]))*vel_test_dS[i]
+					+ mu*(  ((u_ext - gi[0])*normal[2] + (w_ext - gi[2])*normal[0])*vel_grad_test_dS[i_nSpace+0] +
+					        ((v_ext - gi[1])*normal[2] + (w_ext - gi[2])*normal[1])*vel_grad_test_dS[i_nSpace+1]);
 		}//i
-		
-		//penalty = 1.0e-1;
-		
-		for (int i=0;i<nDOF_test_element;i++)
-		{		  
- 	          //elementResidual_u[i] += penalty*(u_ext-gi[0])*vel_test_dS[i];  						    						  
-		  //elementResidual_v[i] += penalty*(v_ext-gi[1])*vel_test_dS[i];  	       
-		  //elementResidual_w[i] += penalty*(w_ext-gi[2])*vel_test_dS[i];  
-		}
 		
 		
 	    }//kb
@@ -1004,6 +1004,7 @@ namespace proteus
 			   double Ct_sge,
 			   double Cd_sge,
 			   double C_dc,
+			   double C_b,
 			   int* p_l2g, 
 			   int* vel_l2g,
 			   double* p_dof, double* u_dof, double* v_dof, double* w_dof,
@@ -1174,8 +1175,8 @@ namespace proteus
 	    dsubgrid_v_v[nDOF_trial_element],
 	    dsubgrid_w_p[nDOF_trial_element],
 	    dsubgrid_w_w[nDOF_trial_element],
-	    tau_0=0.0,
-	    tau_1=0.0,
+	    tau_0=0.0,tau_h_0=0.0,tau_m_0=0.0,
+	    tau_1=0.0,tau_h_1=0.0,tau_m_1=0.0,
 	    jac[nSpace*nSpace],
 	    jacDet,
 	    jacInv[nSpace*nSpace],
@@ -1202,11 +1203,9 @@ namespace proteus
 	  ck.calculateG(jacInv,G,G_dd_G,tr_G);
 	  ck.calculateGScale(G,&normal_phi[eN_k_nSpace],h_phi);
 		 
-	  eps_rho = epsFact_rho*h_phi;
-	  eps_mu = epsFact_mu*h_phi;
+	  eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	  eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 
-          eps_rho = epsFact_rho*elementDiameter[eN];
-	  eps_mu  = epsFact_mu *elementDiameter[eN];
 	  
 	  //get the trial function gradients
 	  ck.gradTrialFromRef(&p_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,p_grad_trial);
@@ -1279,38 +1278,38 @@ namespace proteus
           //
           //calculate subgrid error contribution to the Jacobian (strong residual, adjoint, jacobian of strong residual)
           //
-//u = v = w = 1.0;
-/*
-		 mom_u_acc= 0.0;
-		 dmom_u_acc_u= 0.0;
-		 mom_u_acc_t= 0.0;
-		 dmom_u_acc_u_t= 0.0;
-		 mom_v_acc= 0.0;
-		 dmom_v_acc_v= 0.0;
-		 mom_v_acc_t= 0.0;
-		 dmom_v_acc_v_t= 0.0;
-        
-		 mom_w_acc= 0.0;
-		 dmom_w_acc_w= 0.0;
-		 mom_w_acc_t= 0.0;
-		 dmom_w_acc_w_t= 0.0;*/
-
-
 
           //calculate tau and tau*Res					      
-          double Dt=(dmom_u_acc_u_t/dmom_u_acc_u);
-          double v_d_Gv= 0.0;
+          double Dt=(dmom_u_acc_u/dmom_u_acc_u_t);
 	  double vel[nSpace] = {u,v,w};
-          for(int I=0;I<nSpace;I++)
+
+         /*
+	   double v_d_Gv= 0.0;
+	  for(int I=0;I<nSpace;I++)
             for (int J=0;J<nSpace;J++)
 	      v_d_Gv += vel[I]*G[I*nSpace+J]*vel[J];
-
-    
-          tau_0 = 1.0/sqrt(Ct_sge*rho*rho*Dt*Dt + rho*rho*v_d_Gv + Cd_sge*mu*mu*G_dd_G);
-          tau_0 = 1.0/sqrt(Ct_sge*rho*rho*Dt*Dt + Cd_sge*mu*mu*G_dd_G);
+  
+          tau_0 = 1.0/sqrt(Ct_sge*rho*rho/(Dt*Dt) + rho*rho*v_d_Gv + Cd_sge*mu*mu*G_dd_G);
           tau_1 = 1.0/(tr_G*tau_0);
-	  //tau_0 = 0.0;      
-          //tau_1 = 0.0; 		
+          q_cfl[eN_k] = 2.0*sqrt(v_d_Gv);*/	
+	  
+	  
+	  //calculate tau and tau*Res
+	  calculate_h_tau(          hFactor*elementDiameter[eN],				    
+	    			    Dt,rho,mu,vel,
+	    			    tau_h_0,
+	    			    tau_h_1,
+	    			    q_cfl[eN_k]);
+
+	  calculate_metric_tau(     Ct_sge,Cd_sge,
+	    			    G,G_dd_G,tr_G,
+	    			    Dt,rho,mu,vel,
+	    			    tau_m_0,
+	    			    tau_m_1,
+	    			    q_cfl[eN_k]);   
+
+	  tau_0 = useMetrics*tau_m_0+(1.0-useMetrics)*tau_h_0;
+	  tau_1 = useMetrics*tau_m_1+(1.0-useMetrics)*tau_h_1;		
 		
           //
           //calculate strong residual
@@ -1326,15 +1325,6 @@ namespace proteus
 	  pdeResidual_w = rho *(mom_w_acc_t + u*grad_w[0] + v*grad_w[1] + w*grad_w[2] - g[2])
 	                + grad_p[2]; // - mu poisson_u  ==> ommited as only first order right now !! 
 
-
-	  pdeResidual_u = rho *(mom_u_acc_t - g[0])
-	                + grad_p[0]; // - mu poisson_u  ==> ommited as only first order right now !! 
-
-	  pdeResidual_v = rho *(mom_v_acc_t - g[1])
-	                + grad_p[1]; // - mu poisson_u  ==> ommited as only first order right now !! 
-	                
-	  pdeResidual_w = rho *(mom_w_acc_t - g[2])
-	                + grad_p[2]; // - mu poisson_u  ==> ommited as only first order right now !! 
 
           //
           //calculate reconstructed subgrid scales
@@ -1355,23 +1345,23 @@ namespace proteus
 	      dpdeResidual_p_v[j] = vel_grad_trial[j_nSpace+1];
 	      dpdeResidual_p_w[j] = vel_grad_trial[j_nSpace+2];
 
-	      dpdeResidual_u_p[j]=p_grad_trial[j_nSpace+0];
-	      dpdeResidual_u_u[j]=rho*(dmom_u_acc_u_t*vel_trial_ref[j]
-	                            );// + u*vel_grad_trial[j_nSpace+0] 
-	                             //+ v*vel_grad_trial[j_nSpace+1] 
-	                             //+ w*vel_grad_trial[j_nSpace+2]);
+	      dpdeResidual_u_p[j]= p_grad_trial[j_nSpace+0];
+	      dpdeResidual_u_u[j]=rho*(dmom_u_acc_u_t*vel_trial_ref[k*nDOF_trial_element+j]
+	                             + u*vel_grad_trial[j_nSpace+0] 
+	                             + v*vel_grad_trial[j_nSpace+1] 
+	                             + w*vel_grad_trial[j_nSpace+2]);
 
-	      dpdeResidual_v_p[j]=p_grad_trial[j_nSpace+1];
-	      dpdeResidual_v_v[j]=rho*(dmom_v_acc_v_t*vel_trial_ref[j]
-	                          );//   + u*vel_grad_trial[j_nSpace+0] 
-	                          //   + v*vel_grad_trial[j_nSpace+1] 
-	                          //   + w*vel_grad_trial[j_nSpace+2]);
+	      dpdeResidual_v_p[j]= p_grad_trial[j_nSpace+1];
+	      dpdeResidual_v_v[j]=rho*(dmom_v_acc_v_t*vel_trial_ref[k*nDOF_trial_element+j]
+	                             + u*vel_grad_trial[j_nSpace+0] 
+	                             + v*vel_grad_trial[j_nSpace+1] 
+	                             + w*vel_grad_trial[j_nSpace+2]);
 	                             
-	      dpdeResidual_w_p[j]=p_grad_trial[j_nSpace+2];
-	      dpdeResidual_w_w[j]=rho*(dmom_w_acc_w_t*vel_trial_ref[j]
-	                           );//  + u*vel_grad_trial[j_nSpace+0] 
-	                           //  + v*vel_grad_trial[j_nSpace+1] 
-	                           //  + w*vel_grad_trial[j_nSpace+2]);
+	      dpdeResidual_w_p[j]= p_grad_trial[j_nSpace+2];
+	      dpdeResidual_w_w[j]= rho*(dmom_w_acc_w_t*vel_trial_ref[k*nDOF_trial_element+j]
+	                              + u*vel_grad_trial[j_nSpace+0] 
+	                              + v*vel_grad_trial[j_nSpace+1] 
+	                              + w*vel_grad_trial[j_nSpace+2]);
               /* p */
               dsubgrid_p_u[j] = -tau_1*dpdeResidual_p_u[j];
               dsubgrid_p_v[j] = -tau_1*dpdeResidual_p_v[j];
@@ -1387,14 +1377,13 @@ namespace proteus
               dsubgrid_w_p[j] = -tau_0*dpdeResidual_w_p[j];
               dsubgrid_w_w[j] = -tau_0*dpdeResidual_w_w[j];
 
-
            }
            //
           //calculate discontinuity capturing addition to viscosity
           //	   
 	  norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v + pdeResidual_w*pdeResidual_w);
-//	  mu += C_dc*norm_Rv/sqrt(G_dd_G);
-
+	  mu += C_dc*norm_Rv*(useMetrics/sqrt(G_dd_G)  + 
+	                     (1.0-useMetrics)*hFactor*hFactor*elementDiameter[eN]*elementDiameter[eN]);
 
 	  //cek todo add RBLES terms consistent to residual modifications or ignore them partials w.r.t the additional RBLES terms
   	  for(int i=0;i<nDOF_test_element;i++)
@@ -1403,23 +1392,13 @@ namespace proteus
 	      for(int j=0;j<nDOF_trial_element;j++) 
 		{ 
 		  int j_nSpace = j*nSpace;
-/*
-		  elementJacobian_u_u[i][j] += vel_trial_ref[j]*vel_test_dV[i];
-		  elementJacobian_v_v[i][j] += vel_trial_ref[j]*vel_test_dV[i];
-		  elementJacobian_w_w[i][j] += vel_trial_ref[j]*vel_test_dV[i];
 
-
-		  elementJacobian_p_p[i][j] += p_grad_trial[j_nSpace+0]*p_grad_test_dV[i_nSpace+0]
-	                                      +p_grad_trial[j_nSpace+1]*p_grad_test_dV[i_nSpace+1]
-	                                      +p_grad_trial[j_nSpace+2]*p_grad_test_dV[i_nSpace+2] + p_trial_ref[j]*p_test_dV[i];
-*/					       
-
+		       
           // p 
 		  elementJacobian_p_p[i][j] += dsubgrid_u_p[j]*p_grad_test_dV[i_nSpace+0]
 	                                      +dsubgrid_v_p[j]*p_grad_test_dV[i_nSpace+1]
 	                                      +dsubgrid_w_p[j]*p_grad_test_dV[i_nSpace+2];
-					       
-     
+					            
 		  elementJacobian_p_u[i][j] += - vel_grad_trial[j_nSpace+0]*p_test_dV[i]
 		                               + dsubgrid_u_u[j]*p_grad_test_dV[i_nSpace+0];
 		  elementJacobian_p_v[i][j] += - vel_grad_trial[j_nSpace+1]*p_test_dV[i]
@@ -1428,17 +1407,16 @@ namespace proteus
 		                               + dsubgrid_w_w[j]*p_grad_test_dV[i_nSpace+2];
 
 
-
          // u 
 		  elementJacobian_u_u[i][j] += dpdeResidual_u_u[j]*vel_test_dV[i]	 
-		          ;//              -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_u_u[j]*u)// + vel_trial_ref[j]*subgrid_u)
-		            //            -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_u_u[j]*v)// + vel_trial_ref[j]*subgrid_v)
-		             //           -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_u_u[j]*w);// + vel_trial_ref[j]*subgrid_w);
+		                        -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_u_u[j]*u + useRBLES*vel_trial_ref[j]*subgrid_u)
+		                        -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_u_u[j]*v + useRBLES*vel_trial_ref[j]*subgrid_v)
+		                        -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_u_u[j]*w + useRBLES*vel_trial_ref[j]*subgrid_w);
 
-		  elementJacobian_u_p[i][j] += -p_trial_ref[j]*vel_grad_test_dV[i_nSpace+0]	                                  
-		               ;//         -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_u_p[j]*u)// + v*dsubgrid_u_p[j])
-		                //        -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_u_p[j]*v)//+ v*dsubgrid_v_p[j])
-		                //        -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_u_p[j]*w);// + v*dsubgrid_w_p[j]);
+		  elementJacobian_u_p[i][j] += -p_trial_ref[k*nDOF_trial_element+j]*vel_grad_test_dV[i_nSpace+0]	                                  
+		                        -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_u_p[j]*u + useRBLES*v*dsubgrid_u_p[j])
+		                        -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_u_p[j]*v + useRBLES*v*dsubgrid_v_p[j])
+		                        -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_u_p[j]*w + useRBLES*v*dsubgrid_w_p[j]);
 
 		  elementJacobian_u_u[i][j] += -dsubgrid_p_u[j]*vel_grad_test_dV[i_nSpace+0]; 		  
 		  elementJacobian_u_v[i][j] += -dsubgrid_p_v[j]*vel_grad_test_dV[i_nSpace+0];
@@ -1452,19 +1430,16 @@ namespace proteus
 		  elementJacobian_u_w[i][j] += mu*vel_grad_trial[j_nSpace+0]*vel_grad_test_dV[i_nSpace+2];
 
 
-		  
-
-
           // v 
 		  elementJacobian_v_v[i][j] += dpdeResidual_v_v[j]*vel_test_dV[i]	 
-		                   ;//     -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_v_v[j]*u)// + vel_trial_ref[j]*subgrid_u)
-		                    //    -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_v_v[j]*v)// + vel_trial_ref[j]*subgrid_v)
-		                     //   -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_v_v[j]*w);// + vel_trial_ref[j]*subgrid_w);
+		                       -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_v_v[j]*u + useRBLES*vel_trial_ref[j]*subgrid_u)
+		                       -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_v_v[j]*v + useRBLES*vel_trial_ref[j]*subgrid_v)
+		                       -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_v_v[j]*w + useRBLES*vel_trial_ref[j]*subgrid_w);
 					
-		  elementJacobian_v_p[i][j] += -p_trial_ref[j]*vel_grad_test_dV[i_nSpace+1]	                                  
-		                   ;//     -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_v_p[j]*u)// + v*dsubgrid_u_p[j])
-		                   //     -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_v_p[j]*v)// + v*dsubgrid_v_p[j])
-		                   //     -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_v_p[j]*w);// + v*dsubgrid_w_p[j]);
+		  elementJacobian_v_p[i][j] += -p_trial_ref[k*nDOF_trial_element+j]*vel_grad_test_dV[i_nSpace+1]	                                  
+		                        -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_v_p[j]*u + useRBLES*v*dsubgrid_u_p[j])
+		                        -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_v_p[j]*v + useRBLES*v*dsubgrid_v_p[j])
+		                        -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_v_p[j]*w + useRBLES*v*dsubgrid_w_p[j]);
 
 		  elementJacobian_v_u[i][j] += -dsubgrid_p_u[j]*vel_grad_test_dV[i_nSpace+1]; 		  
 		  elementJacobian_v_v[i][j] += -dsubgrid_p_v[j]*vel_grad_test_dV[i_nSpace+1];
@@ -1481,14 +1456,14 @@ namespace proteus
 		 
           // w 
 		  elementJacobian_w_w[i][j] += dpdeResidual_w_w[j]*vel_test_dV[i]		 
-		                     ;//   -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_w_w[j]*u)// + vel_trial_ref[j]*subgrid_u)
-		                      //  -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_w_w[j]*v)// + vel_trial_ref[j]*subgrid_v)
-		                     //   -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_w_w[j]*w);// + vel_trial_ref[j]*subgrid_w);
+		                        -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_w_w[j]*u + useRBLES*vel_trial_ref[j]*subgrid_u)
+		                        -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_w_w[j]*v + useRBLES*vel_trial_ref[j]*subgrid_v)
+		                        -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_w_w[j]*w + useRBLES*vel_trial_ref[j]*subgrid_w);
 		  
-		  elementJacobian_w_p[i][j] += -p_trial_ref[j]*vel_grad_test_dV[i_nSpace+2]	                                  
-		                      ;//  -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_w_p[j]*u)// + v*dsubgrid_u_p[j])
-		                       // -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_w_p[j]*v)// + v*dsubgrid_v_p[j])
-		                       // -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_w_p[j]*w);// + v*dsubgrid_w_p[j]);
+		  elementJacobian_w_p[i][j] += -p_trial_ref[k*nDOF_trial_element+j]*vel_grad_test_dV[i_nSpace+2]	                                  
+		                        -rho*vel_grad_test_dV[i_nSpace+0] * (dsubgrid_w_p[j]*u + useRBLES*v*dsubgrid_u_p[j])
+		                        -rho*vel_grad_test_dV[i_nSpace+1] * (dsubgrid_w_p[j]*v + useRBLES*v*dsubgrid_v_p[j])
+		                        -rho*vel_grad_test_dV[i_nSpace+2] * (dsubgrid_w_p[j]*w + useRBLES*v*dsubgrid_w_p[j]);
 
 		  elementJacobian_w_u[i][j] += -dsubgrid_p_u[j]*vel_grad_test_dV[i_nSpace+2];
 		  elementJacobian_w_v[i][j] += -dsubgrid_p_v[j]*vel_grad_test_dV[i_nSpace+2];
@@ -1617,7 +1592,10 @@ namespace proteus
 		vel_test_dS[nDOF_test_element],vel_grad_test_dS[nDOF_test_element*nSpace],
 		normal[3],
 		x_ext,y_ext,z_ext,
-		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty,penalty,gi[nSpace], unormal,gnormal,uneg;
+		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty,penalty,gi[nSpace], unormal,gnormal,uneg,
+		H_rho,d_rho, H_mu,d_mu, rho, mu;
+		
+		
 	      ck.calculateMapping_elementBoundary(eN,
 						  ebN_local,
 						  kb,
@@ -1643,9 +1621,15 @@ namespace proteus
 	      eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	      eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 
-	      eps_rho = epsFact_rho*elementDiameter[eN];
-	      eps_mu  = epsFact_mu *elementDiameter[eN];
-	      
+
+              H_rho = RBLES::smoothedHeaviside(eps_rho,ebqe_phi_ext[ebNE_kb]);
+              d_rho = RBLES::smoothedDirac(eps_rho,ebqe_phi_ext[ebNE_kb]);
+              H_mu  = RBLES::smoothedHeaviside(eps_mu,ebqe_phi_ext[ebNE_kb]);
+              d_mu  = RBLES::smoothedDirac(eps_mu,ebqe_phi_ext[ebNE_kb]);
+   
+              rho = rho_0*(1.0-H_rho)+rho_1*H_rho;
+              mu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
+	  	      
 	      //compute shape and solution information
 	      //shape
 	      ck.gradTrialFromRef(&p_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,p_grad_trial_trace);
@@ -1666,9 +1650,9 @@ namespace proteus
 		  p_test_dS[j] = p_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
 		  vel_test_dS[j] = vel_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
 		  
-		  vel_grad_test_dS[j_nSpace+0] = vel_grad_test_trace_ref[ebN_local_kb_nSpace*nDOF_test_element+j_nSpace+0]*dS;  
-		  vel_grad_test_dS[j_nSpace+1] = vel_grad_test_trace_ref[ebN_local_kb_nSpace*nDOF_test_element+j_nSpace+1]*dS; 
-		  vel_grad_test_dS[j_nSpace+2] = vel_grad_test_trace_ref[ebN_local_kb_nSpace*nDOF_test_element+j_nSpace+2]*dS; 
+		  vel_grad_test_dS[j_nSpace+0] = vel_grad_trial_trace[j_nSpace+0]*dS;  
+		  vel_grad_test_dS[j_nSpace+1] = vel_grad_trial_trace[j_nSpace+1]*dS; 
+		  vel_grad_test_dS[j_nSpace+2] = vel_grad_trial_trace[j_nSpace+2]*dS; 
 
 		}
 
@@ -1699,40 +1683,12 @@ namespace proteus
 
 	      //
 	      ck.calculateGScale(G,normal,h_penalty);
-              penalty =  10.0*eps_mu/h_penalty;
+              penalty =  C_b*mu/h_penalty;
+
 
 	      // 
 	      //calculate the internal and external trace of the pde coefficients 
 	      // 
-
-	     /* for (int i=0;i<nDOF_test_element;i++)
-	      for (int i=0;i<nDOF_test_element;i++)
-		{
-		  int i_nSpace = i*nSpace;
-		  elementResidual_p[i] += (unormal - gnormal)*p_test_dS[i];
-		  
- 	          elementResidual_u[i] += (-eps_mu*(grad_u_ext[i_nSpace+0]*normal[0] + grad_u_ext[i_nSpace+0]*normal[0]+ 
-		                                    grad_u_ext[i_nSpace+1]*normal[1] + grad_v_ext[i_nSpace+0]*normal[1]+
-						    grad_u_ext[i_nSpace+2]*normal[2] + grad_w_ext[i_nSpace+0]*normal[2]) 
-						  +penalty*(u_ext-gi[0]) + p_ext*normal[0] - uneg*eps_rho*(u_ext-gi[0]))*vel_test_dS[i]
-					+ eps_mu*(  ((v_ext - gi[1])*normal[0] - (u_ext - gi[0])*normal[1])*vel_grad_test_dS[i_nSpace+1] +
-					            ((w_ext - gi[2])*normal[0] - (u_ext - gi[0])*normal[2])*vel_grad_test_dS[i_nSpace+2]);	  
-						    						  
-		  elementResidual_v[i] += (-eps_mu*(grad_v_ext[i_nSpace+0]*normal[0] + grad_u_ext[i_nSpace+1]*normal[0]+ 
-		                                    grad_v_ext[i_nSpace+1]*normal[1] + grad_v_ext[i_nSpace+1]*normal[1]+
-						    grad_v_ext[i_nSpace+2]*normal[2] + grad_w_ext[i_nSpace+1]*normal[2]) 
-						  +penalty*(v_ext-gi[1]) + p_ext*normal[1] - uneg*eps_rho*(v_ext-gi[1]))*vel_test_dS[i]
-					+ eps_mu*(  ((u_ext - gi[0])*normal[1] - (v_ext - gi[1])*normal[0])*vel_grad_test_dS[i_nSpace+0] +
-					            ((w_ext - gi[2])*normal[1] - (v_ext - gi[1])*normal[2])*vel_grad_test_dS[i_nSpace+2]);
-	       
-		  elementResidual_w[i] +=(-eps_mu*(grad_w_ext[i_nSpace+0]*normal[0] + grad_u_ext[i_nSpace+2]*normal[0]+ 
-		                                   grad_w_ext[i_nSpace+1]*normal[1] + grad_v_ext[i_nSpace+2]*normal[1]+
-						   grad_w_ext[i_nSpace+2]*normal[2] + grad_w_ext[i_nSpace+2]*normal[2]) 
-						  +penalty*(w_ext-gi[2]) + p_ext*normal[2] - uneg*eps_rho*(w_ext-gi[2]))*vel_test_dS[i]
-					+ eps_mu*(  ((u_ext - gi[0])*normal[2] - (w_ext - gi[2])*normal[0])*vel_grad_test_dS[i_nSpace+0] +
-					            ((v_ext - gi[1])*normal[2] - (w_ext - gi[2])*normal[1])*vel_grad_test_dS[i_nSpace+1]);
-		}//i
-		}//i*/
 
 	      //
 	      //calculate the flux jacobian
@@ -1741,57 +1697,45 @@ namespace proteus
 	      
   	    for(int i=0;i<nDOF_test_element;i++)
 	      {
-	      //int i_nSpace=i*nSpace;
+	      int i_nSpace=i*nSpace;
 	      for(int j=0;j<nDOF_trial_element;j++) 
 		{ 
 		  //int j_nSpace = j*nSpace;
 		  // //cek debug
-		   elementJacobian_p_p[i][j]=0.0;
+		   elementJacobian_p_p[i][j] = 0.0;
 		   elementJacobian_p_u[i][j]+= normal[0]*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*p_test_dS[i];
 		   elementJacobian_p_v[i][j]+= normal[1]*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*p_test_dS[i];
 		   elementJacobian_p_w[i][j]+= normal[2]*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*p_test_dS[i];
 
-		  /* elementJacobian_u_p[i][j]+= normal[0]*p_trial_trace_ref[j]*vel_test_dS[i];
-		   elementJacobian_u_u[i][j]+= (penalty - uneg*eps_rho)*vel_trial_trace_ref[j]*vel_test_dS[i];
-		   elementJacobian_u_v[i][j]=0.0;
-		   elementJacobian_u_w[i][j]=0.0;
+		   elementJacobian_u_p[i][j] += normal[0]*p_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
+		   elementJacobian_u_u[i][j] += (penalty - uneg*rho)*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i]	                                     
+					     + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[1]*vel_grad_test_dS[i_nSpace+1]
+		                             + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[2]*vel_grad_test_dS[i_nSpace+2];
+		   elementJacobian_u_v[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[0]*vel_grad_test_dS[i_nSpace+1];
+		   elementJacobian_u_w[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[0]*vel_grad_test_dS[i_nSpace+2];	 
+	
 
-		   elementJacobian_v_p[i][j]+= normal[1]*p_trial_trace_ref[j]*vel_test_dS[i];
-		   elementJacobian_v_u[i][j]=0.0;
-		   elementJacobian_v_v[i][j]+= (penalty - uneg*eps_rho)*vel_trial_trace_ref[j]*vel_test_dS[i];
-		   elementJacobian_v_w[i][j]=0.0;
+		   elementJacobian_v_p[i][j] += normal[1]*p_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
+		   elementJacobian_v_u[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[1]*vel_grad_test_dS[i_nSpace+0];
+		   elementJacobian_v_v[i][j] += (penalty - uneg*rho)*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i]
+	                                     + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[0]*vel_grad_test_dS[i_nSpace+0]
+		                             + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[2]*vel_grad_test_dS[i_nSpace+2];
+		   elementJacobian_v_w[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[1]*vel_grad_test_dS[i_nSpace+2];
 
-		   elementJacobian_w_p[i][j]+= normal[2]*p_trial_trace_ref[j]*vel_test_dS[i];
-		   elementJacobian_w_u[i][j]=0.0;
-		   elementJacobian_w_v[i][j]=0.0;
-		   elementJacobian_w_w[i][j]+= (penalty - uneg*eps_rho)*vel_trial_trace_ref[j]*vel_test_dS[i];*/
+		   elementJacobian_w_p[i][j] += normal[2]*p_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
+		   elementJacobian_w_u[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[2]*vel_grad_test_dS[i_nSpace+0];
+		   elementJacobian_w_v[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[2]*vel_grad_test_dS[i_nSpace+1];
+		   elementJacobian_w_w[i][j] += (penalty - uneg*rho)*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i]
+	                                     + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[0]*vel_grad_test_dS[i_nSpace+0]
+		                             + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[1]*vel_grad_test_dS[i_nSpace+1];
 		  // //cek debug
 		}//j
 	      }//i
-	      
-	      		penalty = 1.0e-1;
-		
-  	    for(int i=0;i<nDOF_test_element;i++)
-	      {
-	      //int i_nSpace=i*nSpace;
-	      for(int j=0;j<nDOF_trial_element;j++) 
-		{ 
-		  //int j_nSpace = j*nSpace;
-		  // //cek debug
 
-
-		
-		   //elementJacobian_u_u[i][j] += penalty*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
-                   //elementJacobian_v_v[i][j] += penalty*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
-                   //elementJacobian_w_w[i][j] += penalty*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
-		  // //cek debug
-		}//j
-	      }//i
-	      
 	      //
 	      //update the global Jacobian from the flux Jacobian
 	      //
-	      
+	     }//kb     
 	      
 	      
 	      for (int i=0;i<nDOF_test_element;i++)
@@ -1801,10 +1745,10 @@ namespace proteus
 		    {
 		      register int ebN_i_j = ebN*4*nDOF_test_X_trial_element + i*nDOF_trial_element + j;
 		  
-		      globalJacobian[csrRowIndeces_p_p[eN_i] + csrColumnOffsets_eb_p_p[ebN_i_j]] -=  elementJacobian_p_p[i][j];
-		      globalJacobian[csrRowIndeces_p_u[eN_i] + csrColumnOffsets_eb_p_u[ebN_i_j]] -=  elementJacobian_p_u[i][j];
-		      globalJacobian[csrRowIndeces_p_v[eN_i] + csrColumnOffsets_eb_p_v[ebN_i_j]] -=  elementJacobian_p_v[i][j];
-		      globalJacobian[csrRowIndeces_p_w[eN_i] + csrColumnOffsets_eb_p_w[ebN_i_j]] -=  elementJacobian_p_w[i][j];
+		      globalJacobian[csrRowIndeces_p_p[eN_i] + csrColumnOffsets_eb_p_p[ebN_i_j]] +=  elementJacobian_p_p[i][j];
+		      globalJacobian[csrRowIndeces_p_u[eN_i] + csrColumnOffsets_eb_p_u[ebN_i_j]] +=  elementJacobian_p_u[i][j];
+		      globalJacobian[csrRowIndeces_p_v[eN_i] + csrColumnOffsets_eb_p_v[ebN_i_j]] +=  elementJacobian_p_v[i][j];
+		      globalJacobian[csrRowIndeces_p_w[eN_i] + csrColumnOffsets_eb_p_w[ebN_i_j]] +=  elementJacobian_p_w[i][j];
 		   
 		      globalJacobian[csrRowIndeces_u_p[eN_i] + csrColumnOffsets_eb_u_p[ebN_i_j]] +=  elementJacobian_u_p[i][j];
 		      globalJacobian[csrRowIndeces_u_u[eN_i] + csrColumnOffsets_eb_u_u[ebN_i_j]] +=  elementJacobian_u_u[i][j];
@@ -1823,10 +1767,7 @@ namespace proteus
 		    }//j
 		}//i
 		
-		
-		
-	    }//kb
-	}//ebNE
+	}//ebNE*/
     }//computeJacobian
 
     void calculateVelocityAverage(int nExteriorElementBoundaries_global,
