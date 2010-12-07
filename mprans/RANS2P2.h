@@ -1686,7 +1686,7 @@ namespace proteus
 
 
 	      tau_v = useMetrics*tau_v1+(1.0-useMetrics)*tau_v0;
-	      tau_p = useMetrics*tau_v1+(1.0-useMetrics)*tau_p0;
+	      tau_p = useMetrics*tau_p1+(1.0-useMetrics)*tau_p0;
 
 	      //std::cout <<"tau_v  = "<<tau_v1<<"  "<<tau_v0<<std::endl;
 	      //std::cout <<"tau_p  = "<<tau_p1<<"  "<<tau_p0<<std::endl;
@@ -2813,7 +2813,7 @@ namespace proteus
 					
 					
 	      tau_v = useMetrics*tau_v1+(1.0-useMetrics)*tau_v0;
-	      tau_p = useMetrics*tau_v1+(1.0-useMetrics)*tau_p0;					
+	      tau_p = useMetrics*tau_p1+(1.0-useMetrics)*tau_p0;					
 					
 					
 	      //calculateSubgridError_tau(Ct_sge,
