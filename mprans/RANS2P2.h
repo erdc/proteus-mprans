@@ -676,6 +676,7 @@ namespace proteus
 				   const double& dm,
 				   const double df[nSpace],
 				   const double& a,
+				   const double&  pfac,
 				   double& tau_v,
 				   double& tau_p,
 				   double& cfl)
@@ -691,7 +692,7 @@ namespace proteus
       cfl = nrm_df/(h*density);
       oneByAbsdt =  fabs(dmt);
       tau_v = 1.0/(4.0*viscosity/(h*h) + 2.0*nrm_df/h + oneByAbsdt);
-      tau_p = 4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h;
+      tau_p = (4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h)/pfac;
     }
 
 
@@ -702,9 +703,9 @@ namespace proteus
 					const double&  G_dd_G,
 					const double&  tr_G,
 					const double&  A0,
-					const double&  tfac, 
 					const double   Ai[nSpace],
 					const double&  Kij,
+					const double&  pfac,
 					double& tau_v,
 					double& tau_p,
 					double& q_cfl)	
@@ -715,7 +716,7 @@ namespace proteus
            v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
     
       tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + Cd_sge*Kij*Kij*G_dd_G); 
-      tau_p = tfac/(tr_G*tau_v);     
+      tau_p = 1.0/(pfac*tr_G*tau_v);     
     }
 
 
@@ -1671,6 +1672,7 @@ namespace proteus
 					dmom_u_acc_u,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
+					dmom_u_ham_grad_p[0],
 					tau_v0,
 					tau_p0,
 					q_cfl[eN_k]);
@@ -1678,10 +1680,10 @@ namespace proteus
 
 	      calculateSubgridError_tau(Ct_sge,Cd_sge,
 			                G,G_dd_G,tr_G,
-					dmom_u_acc_u_t,
-					dmom_u_acc_u,
+					dmom_u_acc_u_t,		
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
+					dmom_u_ham_grad_p[0],
 					tau_v1,
 					tau_p1,
 					q_cfl[eN_k]);	
@@ -2800,16 +2802,17 @@ namespace proteus
 					dmom_u_acc_u,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
+					dmom_u_ham_grad_p[0],
 					tau_v0,
 					tau_p0,
 					q_cfl[eN_k]);
 					
 	      calculateSubgridError_tau(Ct_sge,Cd_sge,
 			                G,G_dd_G,tr_G,
-					dmom_u_acc_u_t,
-					dmom_u_acc_u,
+					dmom_u_acc_u_t,					
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
+                                        dmom_u_ham_grad_p[0],					
 					tau_v1,
 					tau_p1,
 					q_cfl[eN_k]);					
