@@ -53,7 +53,7 @@ shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag
 
 numericalFluxType = None
 
-multilevelNonlinearSolver  = NLNI
+multilevelNonlinearSolver  = NewtonNS
 
 levelNonlinearSolver = NewtonNS
 
@@ -64,7 +64,7 @@ nonlinearSmoother = NLGaussSeidel
 
 fullNewtonFlag = True
 
-tolFac = 0.0005
+tolFac = 0.001
 
 nl_atol_res = 0.0
 

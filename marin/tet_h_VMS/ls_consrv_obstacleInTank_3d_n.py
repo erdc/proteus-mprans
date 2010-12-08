@@ -26,7 +26,7 @@ numericalFluxType = DoNothing
 
 shockCapturing = None
 
-multilevelNonlinearSolver  = NLNI
+multilevelNonlinearSolver  = Newton
 
 levelNonlinearSolver = Newton
 
