@@ -702,6 +702,7 @@ namespace proteus
 					const double&  G_dd_G,
 					const double&  tr_G,
 					const double&  A0,
+					const double&  tfac, 
 					const double   Ai[nSpace],
 					const double&  Kij,
 					double& tau_v,
@@ -714,7 +715,7 @@ namespace proteus
            v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
     
       tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + Cd_sge*Kij*Kij*G_dd_G); 
-      tau_p = 1.0/(tr_G*tau_v);     
+      tau_p = tfac/(tr_G*tau_v);     
     }
 
 
@@ -1678,6 +1679,7 @@ namespace proteus
 	      calculateSubgridError_tau(Ct_sge,Cd_sge,
 			                G,G_dd_G,tr_G,
 					dmom_u_acc_u_t,
+					dmom_u_acc_u,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
 					tau_v1,
@@ -2805,6 +2807,7 @@ namespace proteus
 	      calculateSubgridError_tau(Ct_sge,Cd_sge,
 			                G,G_dd_G,tr_G,
 					dmom_u_acc_u_t,
+					dmom_u_acc_u,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
 					tau_v1,
