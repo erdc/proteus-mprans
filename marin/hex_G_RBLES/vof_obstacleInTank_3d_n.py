@@ -32,11 +32,12 @@ nonlinearSmoother = NLGaussSeidel
 
 fullNewtonFlag = True
 
-tolFac = 0.0001
+tolFac = 0.001
 
 nl_atol_res = 0.0
 
 maxNonlinearIts = 10
+maxLineSearches = 0
 
 matrix = SparseMatrix
 

@@ -114,21 +114,21 @@ lag_ns_shockCapturing=False
 lag_ls_shockCapturing=False
 lag_vof_shockCapturing=False
 #shock capturing diffusion
-ns_shockCapturingFactor=0.3
+ns_shockCapturingFactor=0.2
 ls_shockCapturingFactor=0.2
-vof_shockCapturingFactor=0.05
+vof_shockCapturingFactor=0.2
 rd_shockCapturingFactor=0.5
 #epsilons for Heaviside/Dirac/etc smoothing
-epsFact_density = 1.5
-epsFact_viscosity = 1.5
-epsFact_redistance = 0.33
-epsFact_curvature=1.5
-epsFact_consrv_heaviside=1.5
-epsFact_consrv_dirac=1.5
-epsFact_consrv_diffusion=10.0
-epsFact_vof=1.5
+epsFact_density = 3.0
+epsFact_viscosity = 3.0
+epsFact_redistance = 0.66
+epsFact_curvature=3.0
+epsFact_consrv_heaviside=3.0
+epsFact_consrv_dirac=3.0
+epsFact_consrv_diffusion=20.0
+epsFact_vof=3.0
 #
 usePETSc=True
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.element
-nLayersOfOverlapForParallel = 0
+nLayersOfOverlapForParallel = 1
