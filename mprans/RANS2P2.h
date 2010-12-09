@@ -570,51 +570,51 @@ namespace proteus
       mom_u_adv[1]=u*v;
       mom_u_adv[2]=u*w;
   
-      dmom_u_adv_u[0]=2.0*u;
+      dmom_u_adv_u[0]=u; //2.0*u;
       dmom_u_adv_u[1]=v;
       dmom_u_adv_u[2]=w;
   
       dmom_u_adv_v[0]=0.0;
-      dmom_u_adv_v[1]=u;
+      dmom_u_adv_v[1]=0.0; //u;
       dmom_u_adv_v[2]=0.0;
   
       dmom_u_adv_w[0]=0.0;
       dmom_u_adv_w[1]=0.0;
-      dmom_u_adv_w[2]=u;
+      dmom_u_adv_w[2]=0.0; //u;
   
       //v momentum advective_flux
       mom_v_adv[0]=v*u;
       mom_v_adv[1]=v*v;
       mom_v_adv[2]=v*w;
   
-      dmom_v_adv_u[0]=v;
+      dmom_v_adv_u[0]=0.0;//v;
       dmom_v_adv_u[1]=0.0;
       dmom_v_adv_u[2]=0.0;
-  
+
+      dmom_v_adv_v[0]=u;
+      dmom_v_adv_v[1]=v;//2.0*v;
+      dmom_v_adv_v[2]=w;
+        
       dmom_v_adv_w[0]=0.0;
       dmom_v_adv_w[1]=0.0;
-      dmom_v_adv_w[2]=v;
-  
-      dmom_v_adv_v[0]=u;
-      dmom_v_adv_v[1]=2.0*v;
-      dmom_v_adv_v[2]=w;
+      dmom_v_adv_w[2]=0.0;//v;
   
       //w momentum advective_flux
       mom_w_adv[0]=w*u;
       mom_w_adv[1]=w*v;
       mom_w_adv[2]=w*w;
   
-      dmom_w_adv_u[0]=w;
+      dmom_w_adv_u[0]=0.0; //w;
       dmom_w_adv_u[1]=0.0;
       dmom_w_adv_u[2]=0.0;
   
       dmom_w_adv_v[0]=0.0;
-      dmom_w_adv_v[1]=w;
+      dmom_w_adv_v[1]=0.0; //w;
       dmom_w_adv_v[2]=0.0;
   
       dmom_w_adv_w[0]=u;
       dmom_w_adv_w[1]=v;
-      dmom_w_adv_w[2]=2.0*w;
+      dmom_w_adv_w[2]=w; //2.0*w;
 
       //u momentum diffusion tensor
       mom_u_diff_ten[0] = 2.0*nu;
