@@ -43,6 +43,9 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
     def attachModels(self,modelList):
         #the level set model
         self.model = modelList[self.modelIndex]
+
+	#self.u_old_dof = numpy.zeros(self.model.u[0].dof.shape,'d')
+	self.u_old_dof = numpy.copy(self.model.u[0].dof)
         #the velocity
         if self.flowModelIndex >= 0:
             self.flowModel = modelList[self.flowModelIndex]
@@ -120,6 +123,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         copyInstructions = {}
         return copyInstructions
     def postStep(self,t,firstStep=False):
+       	self.u_old_dof = numpy.copy(self.model.u[0].dof)
         if self.checkMass:
             self.m_post = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
                                                                       self.model.mesh.elementDiametersArray,
@@ -582,6 +586,7 @@ class LevelModel(OneLevelTransport):
             self.u[0].femSpace.dofMap.l2g,
             self.mesh.elementDiametersArray,
             self.u[0].dof,
+	    self.coefficients.u_old_dof, 
             self.coefficients.q_v,
             self.timeIntegration.m_tmp[0],
             self.q[('u',0)],

@@ -39,6 +39,10 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
     def attachModels(self,modelList):
         #self
         self.model = modelList[self.modelIndex]
+	
+	#self.u_old_dof = numpy.zeros(self.model.u[0].dof.shape,'d')
+	self.u_old_dof = numpy.copy(self.model.u[0].dof)
+	
         #redistanced level set
         if self.RD_modelIndex >= 0:
             self.rdModel = modelList[self.RD_modelIndex]
@@ -118,7 +122,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             log("Phase  0 mass before VOF (m_last) step = %12.5e" % (self.m_last,),level=2)
         copyInstructions = {}
         return copyInstructions
-    def postStep(self,t,firstStep=False):
+    def postStep(self,t,firstStep=False):    
+	self.u_old_dof = numpy.copy(self.model.u[0].dof)	 
         if self.checkMass:
             self.m_post = Norms.scalarDomainIntegral(self.model.q['dV'],
                                                      self.model.q[('m',0)],
@@ -578,6 +583,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.dofMap.l2g,
             self.mesh.elementDiametersArray,
             self.u[0].dof,
+	    self.coefficients.u_old_dof,
             self.coefficients.q_v,
             self.timeIntegration.m_tmp[0],
             self.q[('u',0)],

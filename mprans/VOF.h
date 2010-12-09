@@ -38,7 +38,7 @@ namespace proteus
 				   double shockCapturingDiffusion,
 				   int* u_l2g, 
 				   double* elementDiameter,
-				   double* u_dof,
+				   double* u_dof,double* u_dof_old,	
 				   double* velocity,
 				   double* q_m,
 				   double* q_u,
@@ -306,7 +306,7 @@ namespace proteus
 			   double shockCapturingDiffusion,
 			   int* u_l2g, 
 			   double* elementDiameter,
-			   double* u_dof,
+			   double* u_dof,double* u_dof_old,			   
 			   double* velocity,
 			   double* q_m,
 			   double* q_u,
@@ -357,7 +357,7 @@ namespace proteus
 	      register int eN_k = eN*nQuadraturePoints_element+k,
 		eN_k_nSpace = eN_k*nSpace,
 		eN_nDOF_trial_element = eN*nDOF_trial_element;
-	      register double u=0.0,grad_u[nSpace],
+	      register double u=0.0,grad_u[nSpace],grad_u_old[nSpace],
 		m=0.0,dm=0.0,
 		f[nSpace],df[nSpace],
 		m_t=0.0,dm_t=0.0,
@@ -412,6 +412,7 @@ namespace proteus
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_ref[k*nDOF_trial_element],u);
 	      //get the solution gradients
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u);
+	      ck.gradFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u_old);
 	      //precalculate test function products with integration weights
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
@@ -471,8 +472,10 @@ namespace proteus
 	      //
 	      //calculate shock capturing diffusion
 	      //
-	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u,numDiff0);	      
-	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u,numDiff1);
+
+	      
+	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u_old,numDiff0);	      
+	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u_old,numDiff1);
 	      q_numDiff_u[eN_k] = useMetrics*numDiff1+(1.0-useMetrics)*numDiff0;
 	      
 	      // 
@@ -844,7 +847,7 @@ namespace proteus
 		  //int eN_k_i_nSpace=eN_k_i*nSpace;
 		  for(int j=0;j<nDOF_trial_element;j++) 
 		    { 
-		      int eN_k_j=eN_k*nDOF_trial_element+j;
+		      //int eN_k_j=eN_k*nDOF_trial_element+j;
 		      //int eN_k_j_nSpace = eN_k_j*nSpace;
 		      int j_nSpace = j*nSpace;
 		      int i_nSpace = i*nSpace;
