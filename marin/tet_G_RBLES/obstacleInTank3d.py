@@ -46,7 +46,7 @@ else:
      domain.writePoly("boxInTank3d")
      domain.writePLY("boxInTank3d")
      domain.writeAsymptote("boxInTank3d")
-     he= 3.22/20.0 
+     he= 3.22/64.0 
      triangleOptions="VApq1.25q12ena%f" % ((he**3)/6.0,)
      print triangleOptions
 
@@ -114,9 +114,9 @@ lag_ns_shockCapturing=False
 lag_ls_shockCapturing=False
 lag_vof_shockCapturing=False
 #shock capturing diffusion
-ns_shockCapturingFactor=0.6
+ns_shockCapturingFactor=0.2
 ls_shockCapturingFactor=0.2
-vof_shockCapturingFactor=0.05
+vof_shockCapturingFactor=0.2
 rd_shockCapturingFactor=0.5
 #epsilons for Heaviside/Dirac/etc smoothing
 epsFact_density = 1.5
