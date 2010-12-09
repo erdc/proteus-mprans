@@ -26,7 +26,7 @@ numericalFluxType = DoNothing
 
 shockCapturing = None
 
-multilevelNonlinearSolver  = NLNI
+multilevelNonlinearSolver  = Newton
 
 levelNonlinearSolver = Newton
 
@@ -34,7 +34,7 @@ nonlinearSmoother = NLGaussSeidel
 
 fullNewtonFlag = True
 
-tolFac = 0.001
+tolFac = 0.0001
 
 nl_atol_res = 0.0
 

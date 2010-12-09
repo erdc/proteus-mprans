@@ -47,7 +47,7 @@ else:
      domain.writePLY("boxInTank3d")
      domain.writeAsymptote("boxInTank3d")
      he= 3.22/20.0 
-     triangleOptions="VApq1.25q12ena%f" % ((he**3)/6.0,)
+     triangleOptions="VApq2q10ena%g" % ((he**3)/6.0,)
      print triangleOptions
 
 #boundaryTags = domain.boundaryTags
