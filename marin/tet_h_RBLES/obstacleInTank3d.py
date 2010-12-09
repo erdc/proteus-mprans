@@ -46,7 +46,7 @@ else:
      domain.writePoly("boxInTank3d")
      domain.writePLY("boxInTank3d")
      domain.writeAsymptote("boxInTank3d")
-     he= 3.22/20.0 
+     he= 3.22/64.0 
      triangleOptions="VApq1.25q12ena%f" % ((he**3)/6.0,)
      print triangleOptions
 

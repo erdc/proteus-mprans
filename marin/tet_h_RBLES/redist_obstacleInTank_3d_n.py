@@ -47,7 +47,7 @@ nonlinearSmoother = NLGaussSeidel
 fullNewtonFlag = True
 
 #this needs to be set appropriately for pseudo-transient
-tolFac = 10.95
+tolFac = 1e3
 
 if rdtimeIntegration != 'newton':
     nl_atol_res = 0.0
