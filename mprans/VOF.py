@@ -5,7 +5,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import VOFCoefficientsEvaluate
     from proteus.UnstructuredFMMandFSWsolvers import FMMEikonalSolver,FSWEikonalSolver
     from proteus.NonlinearSolvers import EikonalSolver
-    def __init__(self,LS_model=-1,V_model=0,RD_model=-1,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0,useMetrics=0.0):
+    def __init__(self,LS_model=-1,V_model=0,RD_model=-1,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0):
         self.useMetrics = useMetrics
         self.variableNames=['vof']
         nc=1
@@ -29,11 +29,21 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.modelIndex=ME_model
         self.RD_modelIndex=RD_model
         self.LS_modelIndex=LS_model
+	
+	self.sc_uref=sc_uref
+	self.sc_beta=sc_beta
+	
         #mwf added
         self.eikonalSolverFlag = EikonalSolverFlag
         if self.eikonalSolverFlag >= 1: #FMM
             assert self.RD_modelIndex < 0, "no redistance with eikonal solver too"
         self.checkMass = checkMass
+	
+	
+
+	
+	self.res_ass = 0
+	
     def initializeMesh(self,mesh):
         self.eps = self.epsFact*mesh.h
     def attachModels(self,modelList):
@@ -540,6 +550,14 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         """
         Calculate the element residuals and add in to the global residual
         """
+	
+	
+	self.coefficients.res_ass = self.coefficients.res_ass + 1
+	##print self.coefficients.res_ass
+	if self.coefficients.res_ass == 4:
+	   print "Copying solution"
+	   self.coefficients.u_old_dof = numpy.copy(self.u[0].dof)
+	
         r.fill(0.0)
         #Load the unknowns into the finite element dof
         self.timeIntegration.calculateCoefs()
@@ -580,6 +598,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.timeIntegration.alpha_bdf,
             self.shockCapturing.lag,
             self.shockCapturing.shockCapturingFactor,
+	    self.coefficients.sc_uref, 
+	    self.coefficients.sc_beta,
             self.u[0].femSpace.dofMap.l2g,
             self.mesh.elementDiametersArray,
             self.u[0].dof,

@@ -36,6 +36,7 @@ namespace proteus
 				   double alphaBDF,
 				   int lag_shockCapturing,
 				   double shockCapturingDiffusion,
+			           double sc_uref, double sc_alpha,
 				   int* u_l2g, 
 				   double* elementDiameter,
 				   double* u_dof,double* u_dof_old,	
@@ -304,6 +305,7 @@ namespace proteus
 			   double alphaBDF,
 			   int lag_shockCapturing, /*mwf not used yet*/
 			   double shockCapturingDiffusion,
+			   double sc_uref, double sc_alpha,
 			   int* u_l2g, 
 			   double* elementDiameter,
 			   double* u_dof,double* u_dof_old,			   
@@ -475,8 +477,12 @@ namespace proteus
 
 	      
 	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u,numDiff0);	      
-	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u_old,numDiff1);
-	      q_numDiff_u[eN_k] = useMetrics*numDiff1+(1.0-useMetrics)*numDiff0;
+	      //ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u_old,numDiff1);
+	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,sc_uref, sc_alpha,G,G_dd_G,pdeResidual_u,grad_u,numDiff1);
+
+	      q_numDiff_u[eN_k] =  useMetrics*numDiff1+(1.0-useMetrics)*numDiff0;
+	      
+	      //std::cout<<numDiff0<<"   "<<numDiff1<<std::endl;
 	      
 	      // 
 	      //update element residual 

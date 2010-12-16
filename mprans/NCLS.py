@@ -12,7 +12,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  ME_model=1,
                  EikonalSolverFlag=0,
                  checkMass=True,epsFact=1.5,
-                 useMetrics=0.0):
+                 useMetrics=0.0,sc_uref=1.0,sc_beta=1.0):
 	self.useMetrics=useMetrics
         self.epsFact=epsFact
         self.variableNames=['phi']
@@ -40,6 +40,10 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         if self.eikonalSolverFlag >= 1: #FMM
             assert self.RD_modelIndex==None, "no redistance with eikonal solver too"
         self.checkMass = checkMass
+	
+	self.sc_uref=sc_uref
+	self.sc_beta=sc_beta	
+	
     def attachModels(self,modelList):
         #the level set model
         self.model = modelList[self.modelIndex]
@@ -583,6 +587,8 @@ class LevelModel(OneLevelTransport):
             self.timeIntegration.alpha_bdf,#mwf was self.timeIntegration.dt,
             self.shockCapturing.lag,
             self.shockCapturing.shockCapturingFactor,
+	    self.coefficients.sc_uref, 
+	    self.coefficients.sc_beta,	    
             self.u[0].femSpace.dofMap.l2g,
             self.mesh.elementDiametersArray,
             self.u[0].dof,
