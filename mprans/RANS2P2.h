@@ -1068,21 +1068,22 @@ namespace proteus
 	  if (flowDirection >= 0.0)
 	    {
 	      dflux_umom_du += n[0]*df_umom_du[0];
-	      dflux_vmom_du += n[0]*df_vmom_du[0];
+	      //dflux_vmom_du += n[0]*df_vmom_du[0];
 	      dflux_vmom_dv += n[0]*df_vmom_dv[0];
-	      dflux_wmom_du += n[0]*df_wmom_du[0];
+	      //dflux_wmom_du += n[0]*df_wmom_du[0];
 	      dflux_wmom_dw += n[0]*df_wmom_dw[0];
 	    }
 	}
       else
 	{
+	  //dflux_mass_du += n[0]*df_mass_du[0];
 	  //cek still upwind the advection for Dirichlet?
 	  if (flowDirection >= 0.0)
 	    {
 	      dflux_umom_du += n[0]*df_umom_du[0];
-	      dflux_vmom_du += n[0]*df_vmom_du[0];
+	      //dflux_vmom_du += n[0]*df_vmom_du[0];
 	      dflux_vmom_dv += n[0]*df_vmom_dv[0];
-	      dflux_wmom_du += n[0]*df_wmom_du[0];
+	      //dflux_wmom_du += n[0]*df_wmom_du[0];
 	      dflux_wmom_dw += n[0]*df_wmom_dw[0];
 	    }
 	  else
@@ -1099,22 +1100,23 @@ namespace proteus
 	  if (flowDirection >= 0.0)
 	    {
 	      dflux_umom_du += n[1]*df_umom_du[1];
-	      dflux_umom_dv += n[1]*df_umom_dv[1];
+	      //dflux_umom_dv += n[1]*df_umom_dv[1];
 	      dflux_vmom_dv += n[1]*df_vmom_dv[1];
 	      dflux_wmom_dw += n[1]*df_wmom_dw[1];
-	      dflux_wmom_dv += n[1]*df_wmom_dv[1];
+	      //dflux_wmom_dv += n[1]*df_wmom_dv[1];
 	    }
 	}
       else
 	{
+	  //dflux_mass_dv += n[1]*df_mass_dv[1];
 	  //cek still upwind the advection for Dirichlet?
 	  if (flowDirection >= 0.0)
 	    {
 	      dflux_umom_du += n[1]*df_umom_du[1];
-	      dflux_umom_dv += n[1]*df_umom_dv[1];
+	      //dflux_umom_dv += n[1]*df_umom_dv[1];
 	      dflux_vmom_dv += n[1]*df_vmom_dv[1];
 	      dflux_wmom_dw += n[1]*df_wmom_dw[1];
-	      dflux_wmom_dv += n[1]*df_wmom_dv[1];
+	      //dflux_wmom_dv += n[1]*df_wmom_dv[1];
 	    }
 	  else
 	    {
@@ -1130,21 +1132,22 @@ namespace proteus
 	  if (flowDirection >= 0.0)
 	    {
 	      dflux_umom_du += n[2]*df_umom_du[2];
-	      dflux_umom_dw += n[2]*df_umom_dw[2];
+	      //dflux_umom_dw += n[2]*df_umom_dw[2];
 	      dflux_vmom_dv += n[2]*df_vmom_dv[2];
-	      dflux_vmom_dw += n[2]*df_vmom_dw[2];
+	      //dflux_vmom_dw += n[2]*df_vmom_dw[2];
 	      dflux_wmom_dw += n[2]*df_wmom_dw[2];
 	    }
 	}
       else
 	{
+	  //dflux_mass_dw+=n[2]*df_mass_dw[2];
 	  //cek still upwind the advection for Dirichlet?
 	  if (flowDirection >= 0.0)
 	    {
 	      dflux_umom_du += n[2]*df_umom_du[2];
-	      dflux_umom_dw += n[2]*df_umom_dw[2];
+	     // dflux_umom_dw += n[2]*df_umom_dw[2];
 	      dflux_vmom_dv += n[2]*df_vmom_dv[2];
-	      dflux_vmom_dw += n[2]*df_vmom_dw[2];
+	      //dflux_vmom_dw += n[2]*df_vmom_dw[2];
 	      dflux_wmom_dw += n[2]*df_wmom_dw[2];
 	    }
 	  else
