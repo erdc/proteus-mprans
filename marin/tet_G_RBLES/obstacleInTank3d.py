@@ -116,7 +116,14 @@ lag_vof_shockCapturing=False
 #shock capturing diffusion
 ns_shockCapturingFactor=0.2
 ls_shockCapturingFactor=0.2
+
+ls_sc_uref = 1.0
+ls_sc_beta = 1.5
+
 vof_shockCapturingFactor=0.2
+vof_sc_uref = 1.0
+vof_sc_beta = 1.5
+
 rd_shockCapturingFactor=0.5
 #epsilons for Heaviside/Dirac/etc smoothing
 epsFact_density = 1.5

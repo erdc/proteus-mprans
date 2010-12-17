@@ -5,7 +5,8 @@ from obstacleInTank3d import *
 from proteus.mprans import VOF
 
 LevelModelType = VOF.LevelModel
-coefficients = VOF.Coefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,checkMass=False,useMetrics=useMetrics)
+coefficients = VOF.Coefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,epsFact=epsFact_vof,checkMass=False,useMetrics=useMetrics,
+                                sc_uref=vof_sc_uref,sc_beta=vof_sc_beta)
 
 class Shock_H:
     def uOfXT(self,x,t):
