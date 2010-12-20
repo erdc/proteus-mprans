@@ -39,11 +39,6 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             assert self.RD_modelIndex < 0, "no redistance with eikonal solver too"
         self.checkMass = checkMass
 	
-	
-
-	
-	self.res_ass = 0
-	
     def initializeMesh(self,mesh):
         self.eps = self.epsFact*mesh.h
     def attachModels(self,modelList):
@@ -550,14 +545,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         """
         Calculate the element residuals and add in to the global residual
         """
-	
-	
-	self.coefficients.res_ass = self.coefficients.res_ass + 1
-	##print self.coefficients.res_ass
-	if self.coefficients.res_ass == 4:
-	   print "Copying solution"
-	   self.coefficients.u_old_dof = numpy.copy(self.u[0].dof)
-	
+
         r.fill(0.0)
         #Load the unknowns into the finite element dof
         self.timeIntegration.calculateCoefs()
