@@ -115,12 +115,12 @@ lag_ls_shockCapturing=False
 lag_vof_shockCapturing=False
 #shock capturing diffusion
 ns_shockCapturingFactor=0.8
-ls_shockCapturingFactor=0.4
+ls_shockCapturingFactor=1.0
 
 ls_sc_uref = 1.0
 ls_sc_beta = 1.5
 
-vof_shockCapturingFactor=0.4
+vof_shockCapturingFactor=1.0
 vof_sc_uref = 1.0
 vof_sc_beta = 1.5
 

@@ -38,7 +38,7 @@ useMetrics = 1.0
 if useHex:
      domain = Domain.MeshHexDomain("marinHex") 
 else:
-     genMesh=True
+     genMesh=False
      from boxInTank3dDomain import *
      domain = boxInTank3d(L=[length,width,height],
                      box_xy=box_xy,

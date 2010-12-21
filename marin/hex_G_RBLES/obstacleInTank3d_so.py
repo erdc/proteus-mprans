@@ -10,16 +10,11 @@ pnList = [("twp_navier_stokes_obstacleInTank_3d_p","twp_navier_stokes_obstacleIn
     
 name = "twp_navier_stokes_obstacleInTank_3d"
 
-if obstacleInTank3d.useBackwardEuler:
-    systemStepControllerType = Sequential_MinAdaptiveModelStep
-else:
-    systemStepControllerType = Sequential_MinFLCBDFModelStep
-if obstacleInTank3d.useFixedStep:
-    systemStepControllerType = Sequential_FixedStep_Simple 
-needEBQ_GLOBAL = False#True
-needEBQ = False#True
+systemStepControllerType = Sequential_MinAdaptiveModelStep
+
+needEBQ_GLOBAL = False
+needEBQ = False
 useOneArchive = False
 
-tnList = [0.0,obstacleInTank3d.dt_init]+[obstacleInTank3d.dt_init+i*(obstacleInTank3d.T-obstacleInTank3d.dt_init)/float(obstacleInTank3d.nDTout-1) for i in range(1,obstacleInTank3d.nDTout)]
-if obstacleInTank3d.useFixedStep:
-    tnList = [0.0,obstacleInTank3d.dt_init]+[(i+1)*obstacleInTank3d.dt_fixed for i in range(1,obstacleInTank3d.nDTout)]
+tnList = [0.0,obstacleInTank3d.dt_init]+[i*0.05 for i in range(1,120)]
+

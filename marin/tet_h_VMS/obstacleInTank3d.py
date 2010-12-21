@@ -38,7 +38,7 @@ useMetrics = 0.0
 if useHex:
      domain = Domain.MeshHexDomain("marinHex") 
 else:
-     genMesh=True
+     genMesh=False
      from boxInTank3dDomain import *
      domain = boxInTank3d(L=[length,width,height],
                      box_xy=box_xy,
@@ -47,7 +47,7 @@ else:
      domain.writePLY("boxInTank3d")
      domain.writeAsymptote("boxInTank3d")
      he= 3.22/64.0 
-     triangleOptions="VApq2q10ena%g" % ((he**3)/6.0,)
+     triangleOptions="VApq1.25q25ena%f" % ((he**3)/6.0,)
      print triangleOptions
 
 #boundaryTags = domain.boundaryTags
