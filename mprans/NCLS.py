@@ -85,18 +85,18 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                                                     frontTolerance=1.0e-8,#default 1.0e-4
                                                     frontInitType='frontIntersection')
 #,#'frontIntersection',#or 'magnitudeOnly'
-        if self.checkMass:
-            self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
-                                                                     self.model.mesh.elementDiametersArray,
-                                                                     self.model.q['dV'],
-                                                                     self.model.q[('u',0)],
-                                                                     self.model.mesh.nElements_owned)
-            log("Attach Models NCLS: Phase  0 mass before NCLS step = %12.5e" % (self.m_pre,),level=2)
-            self.totalFluxGlobal=0.0
-            self.lsGlobalMassArray = [self.m_pre]
-            self.lsGlobalMassErrorArray = [0.0]
-            self.fluxArray = [0.0]
-            self.timeArray = [self.model.timeIntegration.t]
+        # if self.checkMass:
+        #     self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+        #                                                              self.model.mesh.elementDiametersArray,
+        #                                                              self.model.q['dV'],
+        #                                                              self.model.q[('u',0)],
+        #                                                              self.model.mesh.nElements_owned)
+        #     log("Attach Models NCLS: Phase  0 mass before NCLS step = %12.5e" % (self.m_pre,),level=2)
+        #     self.totalFluxGlobal=0.0
+        #     self.lsGlobalMassArray = [self.m_pre]
+        #     self.lsGlobalMassErrorArray = [0.0]
+        #     self.fluxArray = [0.0]
+        #     self.timeArray = [self.model.timeIntegration.t]
     def initializeElementQuadrature(self,t,cq):
         if self.flowModelIndex == None:
             self.q_v = numpy.zeros(cq[('grad(u)',0)].shape,'d')
@@ -107,51 +107,51 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         if self.flowModelIndex == None:
             self.ebqe_v = numpy.zeros(cebqe[('grad(u)',0)].shape,'d')
     def preStep(self,t,firstStep=False):
-        if self.checkMass:
-            self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
-                                                                     self.model.mesh.elementDiametersArray,
-                                                                     self.model.q['dV'],
-                                                                     self.model.q[('m',0)],
-                                                                     self.model.mesh.nElements_owned)
-            log("Phase  0 mass before NCLS step = %12.5e" % (self.m_pre,),level=2)
-            self.m_last = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
-                                                                      self.model.mesh.elementDiametersArray,
-                                                                      self.model.q['dV'],
-                                                                      self.model.timeIntegration.m_last[0],
-                                                                      self.model.mesh.nElements_owned)
-            log("Phase  0 mass before NCLS step (m_last) = %12.5e" % (self.m_last,),level=2)
-        #cek todo why is this here
-        if self.flowModelIndex >= 0 and self.flowModel.ebq.has_key(('v',1)):
-            self.model.u[0].getValuesTrace(self.flowModel.ebq[('v',1)],self.model.ebq[('u',0)])
-            self.model.u[0].getGradientValuesTrace(self.flowModel.ebq[('grad(v)',1)],self.model.ebq[('grad(u)',0)])
+        # if self.checkMass:
+        #     self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+        #                                                              self.model.mesh.elementDiametersArray,
+        #                                                              self.model.q['dV'],
+        #                                                              self.model.q[('m',0)],
+        #                                                              self.model.mesh.nElements_owned)
+        #     log("Phase  0 mass before NCLS step = %12.5e" % (self.m_pre,),level=2)
+        #     self.m_last = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+        #                                                               self.model.mesh.elementDiametersArray,
+        #                                                               self.model.q['dV'],
+        #                                                               self.model.timeIntegration.m_last[0],
+        #                                                               self.model.mesh.nElements_owned)
+        #     log("Phase  0 mass before NCLS step (m_last) = %12.5e" % (self.m_last,),level=2)
+        # #cek todo why is this here
+        # if self.flowModelIndex >= 0 and self.flowModel.ebq.has_key(('v',1)):
+        #     self.model.u[0].getValuesTrace(self.flowModel.ebq[('v',1)],self.model.ebq[('u',0)])
+        #     self.model.u[0].getGradientValuesTrace(self.flowModel.ebq[('grad(v)',1)],self.model.ebq[('grad(u)',0)])
         copyInstructions = {}
         return copyInstructions
     def postStep(self,t,firstStep=False):
        	self.u_old_dof = numpy.copy(self.model.u[0].dof)
-        if self.checkMass:
-            self.m_post = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
-                                                                      self.model.mesh.elementDiametersArray,
-                                                                      self.model.q['dV'],
-                                                                      self.model.q[('u',0)],
-                                                                      self.model.mesh.nElements_owned)
-            log("Phase  0 mass after NCLS step = %12.5e" % (self.m_post,),level=2)
-            #need a flux here not a velocity
-            self.fluxIntegral = Norms.fluxDomainBoundaryIntegralFromVector(self.flowModel.ebqe['dS'],
-                                                                           self.flowModel.ebqe[('velocity',0)],
-                                                                           self.flowModel.ebqe['n'],
-                                                                           self.model.mesh)
-            log("Flux integral = %12.5e" % (self.fluxIntegral,),level=2)
-            log("Phase  0 mass conservation after NCLS step = %12.5e" % (self.m_post - self.m_last + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
-            self.lsGlobalMass = self.m_post
-            self.fluxGlobal = self.fluxIntegral*self.model.timeIntegration.dt
-            self.totalFluxGlobal += self.fluxGlobal
-            self.lsGlobalMassArray.append(self.lsGlobalMass)
-            self.lsGlobalMassErrorArray.append(self.lsGlobalMass - self.lsGlobalMassArray[0] + self.totalFluxGlobal)
-            self.fluxArray.append(self.fluxIntegral)
-            self.timeArray.append(self.model.timeIntegration.t)            
-        if self.flowModelIndex >= 0 and self.flowModel.ebq.has_key(('v',1)):
-            self.model.u[0].getValuesTrace(self.flowModel.ebq[('v',1)],self.model.ebq[('u',0)])
-            self.model.u[0].getGradientValuesTrace(self.flowModel.ebq[('grad(v)',1)],self.model.ebq[('grad(u)',0)])
+        # if self.checkMass:
+        #     self.m_post = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+        #                                                               self.model.mesh.elementDiametersArray,
+        #                                                               self.model.q['dV'],
+        #                                                               self.model.q[('u',0)],
+        #                                                               self.model.mesh.nElements_owned)
+        #     log("Phase  0 mass after NCLS step = %12.5e" % (self.m_post,),level=2)
+        #     #need a flux here not a velocity
+        #     self.fluxIntegral = Norms.fluxDomainBoundaryIntegralFromVector(self.flowModel.ebqe['dS'],
+        #                                                                    self.flowModel.ebqe[('velocity',0)],
+        #                                                                    self.flowModel.ebqe['n'],
+        #                                                                    self.model.mesh)
+        #     log("Flux integral = %12.5e" % (self.fluxIntegral,),level=2)
+        #     log("Phase  0 mass conservation after NCLS step = %12.5e" % (self.m_post - self.m_last + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
+        #     self.lsGlobalMass = self.m_post
+        #     self.fluxGlobal = self.fluxIntegral*self.model.timeIntegration.dt
+        #     self.totalFluxGlobal += self.fluxGlobal
+        #     self.lsGlobalMassArray.append(self.lsGlobalMass)
+        #     self.lsGlobalMassErrorArray.append(self.lsGlobalMass - self.lsGlobalMassArray[0] + self.totalFluxGlobal)
+        #     self.fluxArray.append(self.fluxIntegral)
+        #     self.timeArray.append(self.model.timeIntegration.t)            
+        # if self.flowModelIndex >= 0 and self.flowModel.ebq.has_key(('v',1)):
+        #     self.model.u[0].getValuesTrace(self.flowModel.ebq[('v',1)],self.model.ebq[('u',0)])
+        #     self.model.u[0].getGradientValuesTrace(self.flowModel.ebq[('grad(v)',1)],self.model.ebq[('grad(u)',0)])
         copyInstructions = {}
         return copyInstructions
     def updateToMovingDomain(self,t,c):
@@ -390,7 +390,7 @@ class LevelModel(OneLevelTransport):
         self.ebqe={}
         self.phi_ip={}
         #mesh
-        self.q['x'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,3),'d')
+        #self.q['x'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,3),'d')
         self.ebqe['x'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
         self.q[('u',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('grad(u)',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
@@ -685,8 +685,8 @@ class LevelModel(OneLevelTransport):
         
         This function should be called only when the mesh changes.
         """
-        self.u[0].femSpace.elementMaps.getValues(self.elementQuadraturePoints,
-                                                  self.q['x'])
+        #self.u[0].femSpace.elementMaps.getValues(self.elementQuadraturePoints,
+        #                                          self.q['x'])
         self.u[0].femSpace.elementMaps.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.elementMaps.getBasisGradientValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.getBasisValuesRef(self.elementQuadraturePoints)

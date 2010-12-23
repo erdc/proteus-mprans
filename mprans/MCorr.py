@@ -44,9 +44,10 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.useC = True
         self.applyCorrection=applyCorrection
         if self.applyCorrection:
-            self.applyCorrectionToDOF=applyCorrectionToDOF
+            self.applyCorrectionToDOF = applyCorrectionToDOF
         else:
-            self.applyCorrection = False
+            self.applyCorrectionToDOF = False
+        self.massConservationError=0.0
     def initializeMesh(self,mesh):
         self.h=mesh.h
         self.epsHeaviside = self.epsFactHeaviside*mesh.h
@@ -77,30 +78,33 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             self.ebq_H_vof = None
         #correction
         self.massCorrModel = modelList[self.me_model]
+        self.vofModel.q[('m_last',0)][:] = self.vofModel.q[('m',0)]
         if self.checkMass:
             self.m_tmp = copy.deepcopy(self.massCorrModel.q[('r',0)])
             if self.checkMass:
-                self.vofGlobalMass = Norms.scalarDomainIntegral(self.vofModel.q['dV'],
-                                                                self.vofModel.q[('u',0)],
-                                                                self.massCorrModel.mesh.nElements_owned)
-                self.lsGlobalMass = Norms.scalarHeavisideDomainIntegral(self.vofModel.q['dV'],
-                                                                        self.lsModel.q[('u',0)],
-                                                                        self.massCorrModel.mesh.nElements_owned)
-                log("Attach Models MCorr: mass correction %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
-                                                                                                self.massCorrModel.q[('r',0)],
-                                                                                                self.massCorrModel.mesh.nElements_owned),),level=2)
+                # self.vofGlobalMass = Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+                #                                                 self.vofModel.q[('u',0)],
+                #                                                 self.massCorrModel.mesh.nElements_owned)
+                # self.lsGlobalMass = Norms.scalarHeavisideDomainIntegral(self.vofModel.q['dV'],
+                #                                                         self.lsModel.q[('u',0)],
+                #                                                         self.massCorrModel.mesh.nElements_owned)
+                #self.vofGlobalMass = 0.0
+                #self.lsGlobalMass = self.massCorrModel.calculateMass(self.lsModel.q[('u',0)])
+                #log("Attach Models MCorr: mass correction %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+                #                                                                                self.massCorrModel.q[('r',0)],
+                #                                                                                self.massCorrModel.mesh.nElements_owned),),level=2)
                 self.fluxGlobal = 0.0
                 self.totalFluxGlobal = 0.0
-                self.vofGlobalMassArray = [self.vofGlobalMass]
-                self.lsGlobalMassArray = [self.lsGlobalMass]
-                self.vofGlobalMassErrorArray = [self.vofGlobalMass - self.vofGlobalMassArray[0] + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral]
-                self.lsGlobalMassErrorArray = [self.lsGlobalMass - self.lsGlobalMassArray[0] + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral]
-                self.fluxArray = [self.vofModel.coefficients.fluxIntegral]
-                self.timeArray = [self.vofModel.timeIntegration.t]
-                log("Attach Models MCorr: Phase 0 mass after mass correction (VOF) %12.5e" % (self.vofGlobalMass,),level=2)
-                log("Attach Models MCorr: Phase 0 mass after mass correction (LS) %12.5e" % (self.lsGlobalMass,),level=2)
-                log("Attach Models MCorr: Phase  0 mass conservation (VOF) after step = %12.5e" % (self.vofGlobalMass - self.vofModel.coefficients.m_pre + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral,),level=2)
-                log("Attach Models MCorr: Phase  0 mass conservation (LS) after step = %12.5e" % (self.lsGlobalMass - self.lsModel.coefficients.m_pre + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral,),level=2)
+                self.vofGlobalMassArray = []#self.vofGlobalMass]
+                self.lsGlobalMassArray = []#self.lsGlobalMass]
+                self.vofGlobalMassErrorArray = []#self.vofGlobalMass - self.vofGlobalMassArray[0]]# + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral]
+                self.lsGlobalMassErrorArray = []#self.lsGlobalMass - self.lsGlobalMassArray[0]]# + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral]
+                self.fluxArray = []#0.0]#self.vofModel.coefficients.fluxIntegral]
+                self.timeArray = []#self.vofModel.timeIntegration.t]
+                #log("Attach Models MCorr: Phase 0 mass after mass correction (VOF) %12.5e" % (self.vofGlobalMass,),level=2)
+                #log("Attach Models MCorr: Phase 0 mass after mass correction (LS) %12.5e" % (self.lsGlobalMass,),level=2)
+                #log("Attach Models MCorr: Phase  0 mass conservation (VOF) after step = %12.5e" % (self.vofGlobalMass - self.vofModel.coefficients.m_pre + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral,),level=2)
+                #log("Attach Models MCorr: Phase  0 mass conservation (LS) after step = %12.5e" % (self.lsGlobalMass - self.lsModel.coefficients.m_pre + self.vofModel.timeIntegration.dt*self.vofModel.coefficients.fluxIntegral,),level=2)
     def initializeElementQuadrature(self,t,cq):
         if self.sd and cq.has_key(('a',0,0)):
             cq[('a',0,0)].fill(self.epsDiffusion)
@@ -111,36 +115,28 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         if self.sd and cebqe.has_key(('a',0,0)):
             cebqe[('a',0,0)].fill(self.epsDiffusion)
     def preStep(self,t,firstStep=False):
-        if self.checkMass:
-            log("Phase 0 mass before mass correction (VOF) %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
-                                                                                                 self.vofModel.q[('m',0)],
-                                                                                                 self.massCorrModel.mesh.nElements_owned),),level=2)
-            log("Phase 0 mass before mass correction (LS) %12.5e" % (Norms.scalarHeavisideDomainIntegral(self.vofModel.q['dV'],
-                                                                                                         self.lsModel.q[('m',0)],
-                                                                                                         self.massCorrModel.mesh.nElements_owned),),level=2)
+        # if self.checkMass:
+        #     log("Phase 0 mass before mass correction (VOF) %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+        #                                                                                          self.vofModel.q[('m',0)],
+        #                                                                                          self.massCorrModel.mesh.nElements_owned),),level=2)
+        #     log("Phase 0 mass before mass correction (LS) %12.5e" % (Norms.scalarHeavisideDomainIntegral(self.vofModel.q['dV'],
+        #                                                                                                  self.lsModel.q[('m',0)],
+        #                                                                                                  self.massCorrModel.mesh.nElements_owned),),level=2)
         copyInstructions = {'clear_uList':True}
         return copyInstructions
     def postStep(self,t,firstStep=False):
-
-	#self.massCorrModel.q   [('u',0)]       += self.lsModel.q   [('u',0)]	      
-	#self.massCorrModel.ebqe[('u',0)]       += self.lsModel.ebqe[('u',0)]	      
-	
-	#self.massCorrModel.q   [('grad(u)',0)] += self.lsModel.q   [('grad(u)',0)]
-	#self.massCorrModel.ebqe[('grad(u)',0)] += self.lsModel.ebqe[('grad(u)',0)]
-	    
         if self.applyCorrection:
             
-
-	    
             self.vofModel.q[('m',0)] += self.massCorrModel.q[('r',0)]
-            self.lsModel .q[('m',0)] += self.massCorrModel.q[('u',0)]
-
-	    self.lsModel.q   [('u',0)] += self.massCorrModel.q   [('u',0)]
+            #self.massCorrModel.setMassQuadrature()
+            self.lsModel.q[('m',0)] += self.massCorrModel.q[('u',0)]
+            
+            #DON'T UNCOMMENT THIS, m may be a reference to u, READ the logic below
+	    #self.lsModel.q   [('u',0)] += self.massCorrModel.q[('u',0)]
 	    self.lsModel.ebqe[('u',0)] += self.massCorrModel.ebqe[('u',0)]
 	    
-	    self.lsModel.q   [('grad(u)',0)] += self.massCorrModel.q   [('grad(u)',0)]
+	    self.lsModel.q[('grad(u)',0)] += self.massCorrModel.q[('grad(u)',0)]
 	    self.lsModel.ebqe[('grad(u)',0)] += self.massCorrModel.ebqe[('grad(u)',0)]
-	    
 	    
             if self.vofModel.q[('u',0)] is not self.vofModel.q[('m',0)]:
                 self.vofModel.q[('u',0)][:]=self.vofModel.q[('m',0)]
@@ -155,27 +151,33 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                 self.lsModel.timeIntegration.calculateElementCoefficients(self.lsModel.q)
                 self.lsModel.timeIntegration.lastStepErrorOk()
             if self.checkMass:
-                self.vofGlobalMass = Norms.scalarDomainIntegral(self.vofModel.q['dV'],
-                                                                self.vofModel.q[('u',0)],
-                                                                self.massCorrModel.mesh.nElements_owned)
-                self.lsGlobalMass = Norms.scalarHeavisideDomainIntegral(self.vofModel.q['dV'],
-                                                                        self.lsModel.q[('u',0)],
-                                                                        self.massCorrModel.mesh.nElements_owned)
-                log("mass correction %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
-                                                                           self.massCorrModel.q[('r',0)],
-                                                                           self.massCorrModel.mesh.nElements_owned),),level=2)
-                self.fluxGlobal = self.vofModel.coefficients.fluxIntegral*self.vofModel.timeIntegration.dt
-                self.totalFluxGlobal += self.vofModel.coefficients.fluxIntegral*self.vofModel.timeIntegration.dt
+                # self.vofGlobalMass = Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+                #                                                 self.vofModel.q[('u',0)],
+                #                                                 self.massCorrModel.mesh.nElements_owned)
+                # self.lsGlobalMass = Norms.scalarHeavisideDomainIntegral(self.vofModel.q['dV'],
+                #                                                         self.lsModel.q[('u',0)],
+                #                                                         self.massCorrModel.mesh.nElements_owned)
+                self.vofGlobalMass = 0.0
+                self.lsGlobalMass = self.massCorrModel.calculateMass(self.lsModel.q[('u',0)])
+                # log("mass correction %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
+                #                                                            self.massCorrModel.q[('r',0)],
+                #                                                            self.massCorrModel.mesh.nElements_owned),),level=2)
+                #self.fluxGlobal = self.vofModel.coefficients.fluxIntegral*self.vofModel.timeIntegration.dt
+                #self.totalFluxGlobal += self.vofModel.coefficients.fluxIntegral*self.vofModel.timeIntegration.dt
                 self.vofGlobalMassArray.append(self.vofGlobalMass)
                 self.lsGlobalMassArray.append(self.lsGlobalMass)
-                self.vofGlobalMassErrorArray.append(self.vofGlobalMass - self.vofGlobalMassArray[0] + self.totalFluxGlobal)
-                self.lsGlobalMassErrorArray.append(self.lsGlobalMass - self.lsGlobalMassArray[0] + self.totalFluxGlobal)
-                self.fluxArray.append(self.vofModel.coefficients.fluxIntegral)
+                if len(self.lsGlobalMassArray) > 0:
+                    self.vofGlobalMassErrorArray.append(self.vofGlobalMass - self.vofGlobalMassArray[0])# + self.totalFluxGlobal)
+                    self.lsGlobalMassErrorArray.append(self.lsGlobalMass - self.lsGlobalMassArray[0])# + self.totalFluxGlobal)
+                else:
+                    self.vofGlobalMassErrorArray.append(0)
+                    self.lsGlobalMassErrorArray.append(0)
+                self.fluxArray.append(0.0)#self.vofModel.coefficients.fluxIntegral)
                 self.timeArray.append(self.vofModel.timeIntegration.t)
-                log("Phase 0 mass after mass correction (VOF) %12.5e" % (self.vofGlobalMass,),level=2)
-                log("Phase 0 mass after mass correction (LS) %12.5e" % (self.lsGlobalMass,),level=2)
-                log("Phase  0 mass conservation (VOF) after step = %12.5e" % (self.vofGlobalMass - self.vofModel.coefficients.m_last + self.fluxGlobal,),level=2)
-                log("Phase  0 mass conservation (LS) after step = %12.5e" % (self.lsGlobalMass - self.lsModel.coefficients.m_last + self.fluxGlobal,),level=2)
+                # log("Phase 0 mass after mass correction (VOF) %12.5e" % (self.vofGlobalMass,),level=2)
+                # log("Phase 0 mass after mass correction (LS) %12.5e" % (self.lsGlobalMass,),level=2)
+                # log("Phase  0 mass conservation (VOF) after step = %12.5e" % (self.vofGlobalMass - self.vofModel.coefficients.m_last + self.fluxGlobal,),level=2)
+                # log("Phase  0 mass conservation (LS) after step = %12.5e" % (self.lsGlobalMass - self.lsModel.coefficients.m_last + self.fluxGlobal,),level=2)
         copyInstructions = {}
         return copyInstructions
     def evaluate(self,t,c):
@@ -441,6 +443,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.ebqe={}
         self.phi_ip={}
         #mesh
+        #self.q['x'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,3),'d')
         self.q[('u',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('grad(u)',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
         self.q[('r',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
@@ -566,6 +569,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def getResidual(self,u,r):
         import pdb
         import copy
+        from proteus.flcbdfWrappers import globalSum
         """
         Calculate the element residuals and add in to the global residual
         """
@@ -620,8 +624,10 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.nExteriorElementBoundaries_global,
             self.mesh.exteriorElementBoundariesArray,
             self.mesh.elementBoundaryElementsArray,
-            self.mesh.elementBoundaryLocalElementBoundariesArray,)
+            self.mesh.elementBoundaryLocalElementBoundariesArray)
         log("Global residual",level=9,data=r)
+        self.coefficients.massConservationError = fabs(globalSum(sum(r.flat[:self.mesh.nElements_owned])))
+        log("   Mass Conservation Error",level=3,data=self.coefficients.massConservationError)
         self.nonlinear_function_evaluations += 1
         if self.globalResidualDummy == None:
             self.globalResidualDummy = numpy.zeros(r.shape,'d')
@@ -668,6 +674,208 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.nonlinear_function_jacobian_evaluations += 1
         return jacobian
     
+    def elementSolve(self,u,r):
+        import pdb
+        import copy
+        """
+        Calculate the element residuals and add in to the global residual
+        """
+        r.fill(0.0)
+        #Load the unknowns into the finite element dof
+        self.setUnknowns(u)
+	
+        #no flux boundary conditions
+        self.mcorr.elementSolve(#element
+            self.u[0].femSpace.elementMaps.psi,
+            self.u[0].femSpace.elementMaps.grad_psi,
+            self.mesh.nodeArray,
+            self.mesh.elementNodesArray,
+            self.elementQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            #element boundary
+            self.u[0].femSpace.elementMaps.psi_trace,
+            self.u[0].femSpace.elementMaps.grad_psi_trace,
+            self.elementBoundaryQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[0].femSpace.elementMaps.boundaryNormals,
+            self.u[0].femSpace.elementMaps.boundaryJacobians,
+            #physics
+            self.mesh.nElements_global,
+	    self.coefficients.useMetrics,
+            self.coefficients.epsFactHeaviside,
+            self.coefficients.epsFactDirac,
+            self.coefficients.epsFactDiffusion,
+            self.u[0].femSpace.dofMap.l2g,
+            self.mesh.elementDiametersArray,
+            self.u[0].dof,
+            self.coefficients.q_u_ls,
+            self.coefficients.q_n_ls,
+            self.coefficients.ebqe_u_ls,
+            self.coefficients.ebqe_n_ls,
+            self.coefficients.q_H_vof,
+            self.q[('u',0)],
+            self.q[('grad(u)',0)],
+            self.ebqe[('u',0)],
+            self.ebqe[('grad(u)',0)], 
+            self.q[('r',0)],                 
+            self.offset[0],self.stride[0],
+            r,
+            self.mesh.nExteriorElementBoundaries_global,
+            self.mesh.exteriorElementBoundariesArray,
+            self.mesh.elementBoundaryElementsArray,
+            self.mesh.elementBoundaryLocalElementBoundariesArray,
+            self.maxIts,
+            self.atol)
+
+    def elementConstantSolve(self,u,r):
+        import pdb
+        import copy
+        """
+        Calculate the element residuals and add in to the global residual
+        """
+        r.fill(0.0)
+        #Load the unknowns into the finite element dof
+        self.setUnknowns(u)
+	
+        #no flux boundary conditions
+        self.mcorr.elementConstantSolve(#element
+            self.u[0].femSpace.elementMaps.psi,
+            self.u[0].femSpace.elementMaps.grad_psi,
+            self.mesh.nodeArray,
+            self.mesh.elementNodesArray,
+            self.elementQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            #element boundary
+            self.u[0].femSpace.elementMaps.psi_trace,
+            self.u[0].femSpace.elementMaps.grad_psi_trace,
+            self.elementBoundaryQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[0].femSpace.elementMaps.boundaryNormals,
+            self.u[0].femSpace.elementMaps.boundaryJacobians,
+            #physics
+            self.mesh.nElements_global,
+	    self.coefficients.useMetrics,
+                                 self.coefficients.epsFactHeaviside,
+                                 self.coefficients.epsFactDirac,
+                                 self.coefficients.epsFactDiffusion,
+                                 self.u[0].femSpace.dofMap.l2g,
+                                 self.mesh.elementDiametersArray,
+                                 self.u[0].dof,
+                                 self.coefficients.q_u_ls,
+				 self.coefficients.q_n_ls,
+				 self.coefficients.ebqe_u_ls,
+                                 self.coefficients.ebqe_n_ls,
+                                 self.coefficients.q_H_vof,
+                                 self.q[('u',0)],
+				 self.q[('grad(u)',0)],
+				 self.ebqe[('u',0)],
+				 self.ebqe[('grad(u)',0)], 
+                                 self.q[('r',0)],                 
+		                 self.offset[0],self.stride[0],
+                                 r,
+            self.mesh.nExteriorElementBoundaries_global,
+            self.mesh.exteriorElementBoundariesArray,
+            self.mesh.elementBoundaryElementsArray,
+            self.mesh.elementBoundaryLocalElementBoundariesArray,
+            self.maxIts,
+            self.atol)
+
+    def globalConstantRJ(self,u,r,U):
+        from proteus.flcbdfWrappers import globalSum
+        import pdb
+        import copy
+        """
+        Calculate the element residuals and add in to the global residual
+        """
+        r.fill(0.0)
+        #Load the unknowns into the finite element dof
+        self.setUnknowns(u)
+	
+        #no flux boundary conditions
+        (R,J) = self.mcorr.globalConstantRJ(#element
+            self.u[0].femSpace.elementMaps.psi,
+            self.u[0].femSpace.elementMaps.grad_psi,
+            self.mesh.nodeArray,
+            self.mesh.elementNodesArray,
+            self.elementQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            #element boundary
+            self.u[0].femSpace.elementMaps.psi_trace,
+            self.u[0].femSpace.elementMaps.grad_psi_trace,
+            self.elementBoundaryQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[0].femSpace.elementMaps.boundaryNormals,
+            self.u[0].femSpace.elementMaps.boundaryJacobians,
+            #physics
+            self.mesh.nElements_owned,
+	    self.coefficients.useMetrics,
+            self.coefficients.epsFactHeaviside,
+            self.coefficients.epsFactDirac,
+            self.coefficients.epsFactDiffusion,
+            self.u[0].femSpace.dofMap.l2g,
+            self.mesh.elementDiametersArray,
+            self.u[0].dof,
+            self.coefficients.q_u_ls,
+            self.coefficients.q_n_ls,
+            self.coefficients.ebqe_u_ls,
+            self.coefficients.ebqe_n_ls,
+            self.coefficients.q_H_vof,
+            self.q[('u',0)],
+            self.q[('grad(u)',0)],
+            self.ebqe[('u',0)],
+            self.ebqe[('grad(u)',0)], 
+            self.q[('r',0)],                 
+            self.offset[0],self.stride[0],
+            r,
+            self.mesh.nExteriorElementBoundaries_global,
+            self.mesh.exteriorElementBoundariesArray,
+            self.mesh.elementBoundaryElementsArray,
+            self.mesh.elementBoundaryLocalElementBoundariesArray,
+            self.maxIts,
+            self.atol,
+            U)
+        R = globalSum(R)
+        J = globalSum(J)
+        self.coefficients.massConservationError = fabs(R)
+        return (R,J)
+
+    def globalConstantSolve(self,u,r):
+        U=0.0
+        R=0.0
+        J=0.0
+        (R,J) = self.globalConstantRJ(u,r,U)
+        its=0
+        log("   Mass Conservation Residual 0 ",level=3,data=R)
+        RNORM_OLD=fabs(R)
+        while ((fabs(R) > self.atol and its < self.maxIts) or its<1):
+            U -= R/(J+1.0e-8)
+            (R,J) = self.globalConstantRJ(u,r,U)
+            lsits=0
+            while(fabs(R) > 0.99*RNORM_OLD and lsits < self.maxLSits):
+                lsits +=1
+                U += (0.5)**lsits * (R/(J+1.0e-8))
+                (R,J) = self.globalConstantRJ(u,r,U)
+            its+=1
+            log("   Mass Conservation Residual "+`its`+" ",level=3,data=R)
+        self.u[0].dof.flat[:] = U
     def calculateElementQuadrature(self):
         """
         Calculate the physical location and weights of the quadrature rules
@@ -675,6 +883,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         
         This function should be called only when the mesh changes.
         """
+        #self.u[0].femSpace.elementMaps.getValues(self.elementQuadraturePoints,
+        #                                          self.q['x'])
         self.u[0].femSpace.elementMaps.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.elementMaps.getBasisGradientValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.getBasisValuesRef(self.elementQuadraturePoints)
@@ -694,7 +904,347 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.u[0].femSpace.getBasisGradientValuesTraceRef(self.elementBoundaryQuadraturePoints)
     def estimate_mt(self):
         pass
-    def calculateSolutionAtQuadrature(self):
-        pass
     def calculateAuxiliaryQuantitiesAfterStep(self):
         pass
+    def calculateMass(self,q_phi):
+        from proteus.flcbdfWrappers import globalSum
+        return globalSum(self.mcorr.calculateMass(#element
+            self.u[0].femSpace.elementMaps.psi,
+            self.u[0].femSpace.elementMaps.grad_psi,
+            self.mesh.nodeArray,
+            self.mesh.elementNodesArray,
+            self.elementQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            #element boundary
+            self.u[0].femSpace.elementMaps.psi_trace,
+            self.u[0].femSpace.elementMaps.grad_psi_trace,
+            self.elementBoundaryQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[0].femSpace.elementMaps.boundaryNormals,
+            self.u[0].femSpace.elementMaps.boundaryJacobians,
+            #physics
+            self.mesh.nElements_owned,
+	    self.coefficients.useMetrics,
+                                 self.coefficients.epsFactHeaviside,
+                                 self.coefficients.epsFactDirac,
+                                 self.coefficients.epsFactDiffusion,
+                                 self.u[0].femSpace.dofMap.l2g,
+                                 self.mesh.elementDiametersArray,
+                                 self.u[0].dof,
+                                 q_phi,#self.coefficients.q_u_ls,
+				 self.coefficients.q_n_ls,
+				 self.coefficients.ebqe_u_ls,
+                                 self.coefficients.ebqe_n_ls,
+                                 self.coefficients.q_H_vof,
+                                 self.q[('u',0)],
+				 self.q[('grad(u)',0)],
+				 self.ebqe[('u',0)],
+				 self.ebqe[('grad(u)',0)], 
+                                 self.q[('r',0)],                 
+		                 self.offset[0],self.stride[0],
+            self.u[0].dof,#dummy r,not used
+            self.mesh.nExteriorElementBoundaries_global,
+            self.mesh.exteriorElementBoundariesArray,
+            self.mesh.elementBoundaryElementsArray,
+            self.mesh.elementBoundaryLocalElementBoundariesArray))
+    def setMassQuadrature(self):
+        self.mcorr.setMassQuadrature(#element
+            self.u[0].femSpace.elementMaps.psi,
+            self.u[0].femSpace.elementMaps.grad_psi,
+            self.mesh.nodeArray,
+            self.mesh.elementNodesArray,
+            self.elementQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            #element boundary
+            self.u[0].femSpace.elementMaps.psi_trace,
+            self.u[0].femSpace.elementMaps.grad_psi_trace,
+            self.elementBoundaryQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[0].femSpace.elementMaps.boundaryNormals,
+            self.u[0].femSpace.elementMaps.boundaryJacobians,
+            #physics
+            self.mesh.nElements_global,
+	    self.coefficients.useMetrics,
+            self.coefficients.epsFactHeaviside,
+            self.coefficients.epsFactDirac,
+            self.coefficients.epsFactDiffusion,
+            self.u[0].femSpace.dofMap.l2g,
+            self.mesh.elementDiametersArray,
+            self.u[0].dof,
+            self.coefficients.q_u_ls,
+            self.coefficients.q_n_ls,
+            self.coefficients.ebqe_u_ls,
+            self.coefficients.ebqe_n_ls,
+            self.coefficients.q_H_vof,
+            self.q[('u',0)],
+            self.q[('grad(u)',0)],
+            self.ebqe[('u',0)],
+            self.ebqe[('grad(u)',0)], 
+            self.q[('r',0)],                 
+            self.offset[0],self.stride[0],
+            self.u[0].dof,#dummy r,not used
+            self.mesh.nExteriorElementBoundaries_global,
+            self.mesh.exteriorElementBoundariesArray,
+            self.mesh.elementBoundaryElementsArray,
+            self.mesh.elementBoundaryLocalElementBoundariesArray,
+            self.coefficients.vofModel.u[0].dof)
+        #self.coefficients.q_H_vof.flat[:]=777.0
+    def calculateSolutionAtQuadrature(self):
+        pass
+
+
+class DummyNewton(proteus.NonlinearSolvers.NonlinearSolver):
+    def __init__(self,
+                 linearSolver,
+                 F,J=None,du=None,par_du=None,
+                 rtol_r  = 1.0e-4,
+                 atol_r  = 1.0e-16,
+                 rtol_du = 1.0e-4,
+                 atol_du = 1.0e-16,
+                 maxIts  = 100,
+                 norm = l2Norm,
+                 convergenceTest = 'r',
+                 computeRates = True,
+                 printInfo = True,
+                 fullNewton=True,
+                 directSolver=False,
+                 EWtol=True,
+                 maxLSits = 100):
+        import copy
+        self.par_du = par_du
+        if par_du != None:
+            F.dim_proc = par_du.dim_proc
+        NonlinearSolver.__init__(self,F,J,du,
+                                 rtol_r,
+                                 atol_r,
+                                 rtol_du,
+                                 atol_du,
+                                 maxIts,
+                                 norm,
+                                 convergenceTest,
+                                 computeRates,
+                                 printInfo)
+        self.updateJacobian=True
+        self.fullNewton=fullNewton
+        self.linearSolver = linearSolver
+        self.directSolver = directSolver
+        self.lineSearch = True
+        #mwf turned back on self.lineSearch = False
+        self.EWtol=EWtol
+        #mwf added
+        self.maxLSits = maxLSits
+        if self.linearSolver.computeEigenvalues:
+            self.JLast = copy.deepcopy(self.J)
+            self.J_t_J = copy.deepcopy(self.J)
+            self.dJ_t_dJ = copy.deepcopy(self.J)
+            self.JLsolver=LU(self.J_t_J,computeEigenvalues=True)
+            self.dJLsolver=LU(self.dJ_t_dJ,computeEigenvalues=True)
+            self.u0 = numpy.zeros(self.F.dim,'d')
+    def info(self):
+        return "Not Implemented"
+    def solve(self,u,r=None,b=None,par_u=None,par_r=None):
+        self.F.q[('r',0)].flat[:]=0.0
+        self.F.q[('u',0)].flat[:]=0.0
+        self.failedFlag=False
+        return self.failedFlag
+class ElementNewton(proteus.NonlinearSolvers.NonlinearSolver):
+    def __init__(self,
+                 linearSolver,
+                 F,J=None,du=None,par_du=None,
+                 rtol_r  = 1.0e-4,
+                 atol_r  = 1.0e-16,
+                 rtol_du = 1.0e-4,
+                 atol_du = 1.0e-16,
+                 maxIts  = 100,
+                 norm = l2Norm,
+                 convergenceTest = 'r',
+                 computeRates = True,
+                 printInfo = True,
+                 fullNewton=True,
+                 directSolver=False,
+                 EWtol=True,
+                 maxLSits = 100):
+        import copy
+        self.par_du = par_du
+        if par_du != None:
+            F.dim_proc = par_du.dim_proc
+        NonlinearSolver.__init__(self,F,J,du,
+                                 rtol_r,
+                                 atol_r,
+                                 rtol_du,
+                                 atol_du,
+                                 maxIts,
+                                 norm,
+                                 convergenceTest,
+                                 computeRates,
+                                 printInfo)
+        self.updateJacobian=True
+        self.fullNewton=fullNewton
+        self.linearSolver = linearSolver
+        self.directSolver = directSolver
+        self.lineSearch = True
+        #mwf turned back on self.lineSearch = False
+        self.EWtol=EWtol
+        #mwf added
+        self.maxLSits = maxLSits
+        if self.linearSolver.computeEigenvalues:
+            self.JLast = copy.deepcopy(self.J)
+            self.J_t_J = copy.deepcopy(self.J)
+            self.dJ_t_dJ = copy.deepcopy(self.J)
+            self.JLsolver=LU(self.J_t_J,computeEigenvalues=True)
+            self.dJLsolver=LU(self.dJ_t_dJ,computeEigenvalues=True)
+            self.u0 = numpy.zeros(self.F.dim,'d')
+    def info(self):
+        return "Not Implemented"
+    def solve(self,u,r=None,b=None,par_u=None,par_r=None):
+        self.F.maxIts = self.maxIts
+        self.F.maxLSits = self.maxLSits
+        self.F.atol = self.atol_r
+        self.F.elementSolve(u,r)
+        self.failedFlag=False
+        return self.failedFlag
+class ElementConstantNewton(proteus.NonlinearSolvers.NonlinearSolver):
+    def __init__(self,
+                 linearSolver,
+                 F,J=None,du=None,par_du=None,
+                 rtol_r  = 1.0e-4,
+                 atol_r  = 1.0e-16,
+                 rtol_du = 1.0e-4,
+                 atol_du = 1.0e-16,
+                 maxIts  = 100,
+                 norm = l2Norm,
+                 convergenceTest = 'r',
+                 computeRates = True,
+                 printInfo = True,
+                 fullNewton=True,
+                 directSolver=False,
+                 EWtol=True,
+                 maxLSits = 100):
+        import copy
+        self.par_du = par_du
+        if par_du != None:
+            F.dim_proc = par_du.dim_proc
+        NonlinearSolver.__init__(self,F,J,du,
+                                 rtol_r,
+                                 atol_r,
+                                 rtol_du,
+                                 atol_du,
+                                 maxIts,
+                                 norm,
+                                 convergenceTest,
+                                 computeRates,
+                                 printInfo)
+        self.updateJacobian=True
+        self.fullNewton=fullNewton
+        self.linearSolver = linearSolver
+        self.directSolver = directSolver
+        self.lineSearch = True
+        #mwf turned back on self.lineSearch = False
+        self.EWtol=EWtol
+        #mwf added
+        self.maxLSits = maxLSits
+        if self.linearSolver.computeEigenvalues:
+            self.JLast = copy.deepcopy(self.J)
+            self.J_t_J = copy.deepcopy(self.J)
+            self.dJ_t_dJ = copy.deepcopy(self.J)
+            self.JLsolver=LU(self.J_t_J,computeEigenvalues=True)
+            self.dJLsolver=LU(self.dJ_t_dJ,computeEigenvalues=True)
+            self.u0 = numpy.zeros(self.F.dim,'d')
+    def info(self):
+        return "Not Implemented"
+    def solve(self,u,r=None,b=None,par_u=None,par_r=None):
+        self.F.maxIts = self.maxIts
+        self.F.maxLSits = self.maxLSits
+        self.F.atol = self.atol_r
+        self.F.elementConstantSolve(u,r)
+        self.failedFlag=False
+        return self.failedFlag
+class GlobalConstantNewton(proteus.NonlinearSolvers.NonlinearSolver):
+    def __init__(self,
+                 linearSolver,
+                 F,J=None,du=None,par_du=None,
+                 rtol_r  = 1.0e-4,
+                 atol_r  = 1.0e-16,
+                 rtol_du = 1.0e-4,
+                 atol_du = 1.0e-16,
+                 maxIts  = 100,
+                 norm = l2Norm,
+                 convergenceTest = 'r',
+                 computeRates = True,
+                 printInfo = True,
+                 fullNewton=True,
+                 directSolver=False,
+                 EWtol=True,
+                 maxLSits = 100):
+        import copy
+        self.par_du = par_du
+        if par_du != None:
+            F.dim_proc = par_du.dim_proc
+        NonlinearSolver.__init__(self,F,J,du,
+                                 rtol_r,
+                                 atol_r,
+                                 rtol_du,
+                                 atol_du,
+                                 maxIts,
+                                 norm,
+                                 convergenceTest,
+                                 computeRates,
+                                 printInfo)
+        self.updateJacobian=True
+        self.fullNewton=fullNewton
+        self.linearSolver = linearSolver
+        self.directSolver = directSolver
+        self.lineSearch = True
+        #mwf turned back on self.lineSearch = False
+        self.EWtol=EWtol
+        #mwf added
+        self.maxLSits = maxLSits
+        if self.linearSolver.computeEigenvalues:
+            self.JLast = copy.deepcopy(self.J)
+            self.J_t_J = copy.deepcopy(self.J)
+            self.dJ_t_dJ = copy.deepcopy(self.J)
+            self.JLsolver=LU(self.J_t_J,computeEigenvalues=True)
+            self.dJLsolver=LU(self.dJ_t_dJ,computeEigenvalues=True)
+            self.u0 = numpy.zeros(self.F.dim,'d')
+    def info(self):
+        return "Not Implemented"
+    def solve(self,u,r=None,b=None,par_u=None,par_r=None):
+        self.F.maxIts = self.maxIts
+        self.F.maxLSits = self.maxLSits
+        self.F.atol = self.atol_r
+        self.F.globalConstantSolve(u,r)
+        self.failedFlag=False
+        return self.failedFlag
+
+from proteus.flcbdfWrappers import globalSum
+
+def conservationNorm(x):
+    return fabs(globalSum(sum(x.flat)))
+
+class Newton_controller(proteus.StepControl.Newton_controller):
+    def __init__(self,model,nOptions):
+        proteus.StepControl.Newton_controller.__init__(self,model,nOptions)
+    def initializeTimeHistory(self):
+        proteus.StepControl.Newton_controller.initializeTimeHistory(self)
+        for m,u,r in zip(self.model.levelModelList,
+                         self.model.uList,
+                         self.model.rList):
+            #pass
+            #m.setMassQuadrature()
+            u.flat[:]=0.0
+            m.getResidual(u,r)
+            m.coefficients.postStep(self.t_model)
+            m.coefficients.vofModel.updateTimeHistory(self.t_model,resetFromDOF=False)
+            m.coefficients.vofModel.timeIntegration.updateTimeHistory(resetFromDOF=False)

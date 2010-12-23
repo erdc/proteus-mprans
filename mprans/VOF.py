@@ -91,20 +91,20 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                                                     frontTolerance=1.0e-4,#default 1.0e-4
                                                     frontInitType='frontIntersection',#'frontIntersection',#or 'magnitudeOnly'
                                                     useLocalPWLreconstruction = False)
-        if self.checkMass:
-            self.m_pre = Norms.scalarDomainIntegral(self.model.q['dV'],
-                                                     self.model.q[('m',0)],
-                                                     self.model.mesh.nElements_owned)
-            log("Attach Models VOF: Phase  0 mass after VOF step = %12.5e" % (self.m_pre,),level=2)
-            self.m_post = Norms.scalarDomainIntegral(self.model.q['dV'],
-                                                     self.model.q[('m',0)],
-                                                     self.model.mesh.nElements_owned)
-            log("Attach Models VOF: Phase  0 mass after VOF step = %12.5e" % (self.m_post,),level=2)
-            if self.model.ebqe.has_key(('advectiveFlux',0)):
-                self.fluxIntegral = Norms.fluxDomainBoundaryIntegral(self.model.ebqe['dS'],
-                                                                     self.model.ebqe[('advectiveFlux',0)],
-                                                                     self.model.mesh)
-                log("Attach Models VOF: Phase  0 mass conservation after VOF step = %12.5e" % (self.m_post - self.m_pre + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
+        # if self.checkMass:
+        #     self.m_pre = Norms.scalarDomainIntegral(self.model.q['dV'],
+        #                                              self.model.q[('m',0)],
+        #                                              self.model.mesh.nElements_owned)
+        #     log("Attach Models VOF: Phase  0 mass after VOF step = %12.5e" % (self.m_pre,),level=2)
+        #     self.m_post = Norms.scalarDomainIntegral(self.model.q['dV'],
+        #                                              self.model.q[('m',0)],
+        #                                              self.model.mesh.nElements_owned)
+        #     log("Attach Models VOF: Phase  0 mass after VOF step = %12.5e" % (self.m_post,),level=2)
+        #     if self.model.ebqe.has_key(('advectiveFlux',0)):
+        #         self.fluxIntegral = Norms.fluxDomainBoundaryIntegral(self.model.ebqe['dS'],
+        #                                                              self.model.ebqe[('advectiveFlux',0)],
+        #                                                              self.model.mesh)
+        #         log("Attach Models VOF: Phase  0 mass conservation after VOF step = %12.5e" % (self.m_post - self.m_pre + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
             
     def initializeElementQuadrature(self,t,cq):
         if self.flowModelIndex == None:
@@ -116,34 +116,34 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         if self.flowModelIndex == None:
             self.ebqe_v = numpy.ones(cebqe[('f',0)].shape,'d')
     def preStep(self,t,firstStep=False):
-        if self.checkMass:
-            self.m_pre = Norms.scalarDomainIntegral(self.model.q['dV'],
-                                                    self.model.q[('m',0)],
-                                                    self.model.mesh.nElements_owned)
-            log("Phase  0 mass before VOF step = %12.5e" % (self.m_pre,),level=2)
-            self.m_last = Norms.scalarDomainIntegral(self.model.q['dV'],
-                                                     self.model.timeIntegration.m_last[0],
-                                                     self.model.mesh.nElements_owned)
-            log("Phase  0 mass before VOF (m_last) step = %12.5e" % (self.m_last,),level=2)
+        # if self.checkMass:
+        #     self.m_pre = Norms.scalarDomainIntegral(self.model.q['dV'],
+        #                                             self.model.q[('m',0)],
+        #                                             self.model.mesh.nElements_owned)
+        #     log("Phase  0 mass before VOF step = %12.5e" % (self.m_pre,),level=2)
+        #     self.m_last = Norms.scalarDomainIntegral(self.model.q['dV'],
+        #                                              self.model.timeIntegration.m_last[0],
+        #                                              self.model.mesh.nElements_owned)
+        #     log("Phase  0 mass before VOF (m_last) step = %12.5e" % (self.m_last,),level=2)
         copyInstructions = {}
         return copyInstructions
     def postStep(self,t,firstStep=False):    
 	self.u_old_dof = numpy.copy(self.model.u[0].dof)	 
-        if self.checkMass:
-            self.m_post = Norms.scalarDomainIntegral(self.model.q['dV'],
-                                                     self.model.q[('m',0)],
-                                                     self.model.mesh.nElements_owned)
-            log("Phase  0 mass after VOF step = %12.5e" % (self.m_post,),level=2)
-            self.fluxIntegral = Norms.fluxDomainBoundaryIntegral(self.model.ebqe['dS'],
-                                                                 self.model.ebqe[('advectiveFlux',0)],
-                                                                 self.model.mesh)
-            log("Phase  0 mass flux boundary integral after VOF step = %12.5e" % (self.fluxIntegral,),level=2)
-            log("Phase  0 mass conservation after VOF step = %12.5e" % (self.m_post - self.m_last + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
-            divergence = Norms.fluxDomainBoundaryIntegralFromVector(self.model.ebqe['dS'],
-                                                                    self.ebqe_v,
-                                                                    self.model.ebqe['n'],
-                                                                    self.model.mesh)
-            log("Divergence = %12.5e" % (divergence,),level=2)
+        # if self.checkMass:
+        #     self.m_post = Norms.scalarDomainIntegral(self.model.q['dV'],
+        #                                              self.model.q[('m',0)],
+        #                                              self.model.mesh.nElements_owned)
+        #     log("Phase  0 mass after VOF step = %12.5e" % (self.m_post,),level=2)
+        #     self.fluxIntegral = Norms.fluxDomainBoundaryIntegral(self.model.ebqe['dS'],
+        #                                                          self.model.ebqe[('advectiveFlux',0)],
+        #                                                          self.model.mesh)
+        #     log("Phase  0 mass flux boundary integral after VOF step = %12.5e" % (self.fluxIntegral,),level=2)
+        #     log("Phase  0 mass conservation after VOF step = %12.5e" % (self.m_post - self.m_last + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
+        #     divergence = Norms.fluxDomainBoundaryIntegralFromVector(self.model.ebqe['dS'],
+        #                                                             self.ebqe_v,
+        #                                                             self.model.ebqe['n'],
+        #                                                             self.model.mesh)
+        #     log("Divergence = %12.5e" % (divergence,),level=2)
         copyInstructions = {}
         return copyInstructions
     def updateToMovingDomain(self,t,c):
@@ -173,10 +173,10 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                                          c[('dm',0,0)],
                                          c[('f',0)],
                                          c[('df',0,0)])
-        if self.checkMass:
-            log("Phase  0 mass in eavl = %12.5e" % (Norms.scalarDomainIntegral(self.model.q['dV'],
-                                                                               self.model.q[('m',0)],
-                                                                               self.model.mesh.nElements_owned),),level=2)
+        # if self.checkMass:
+        #     log("Phase  0 mass in eavl = %12.5e" % (Norms.scalarDomainIntegral(self.model.q['dV'],
+        #                                                                        self.model.q[('m',0)],
+        #                                                                        self.model.mesh.nElements_owned),),level=2)
 
 class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
@@ -397,6 +397,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.ebqe={}
         self.phi_ip={}
         #mesh
+        #self.q['x'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,3),'d')
         self.ebqe['x'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
         self.q[('u',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('grad(u)',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
@@ -680,6 +681,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         
         This function should be called only when the mesh changes.
         """
+        #self.u[0].femSpace.elementMaps.getValues(self.elementQuadraturePoints,
+        #                                         self.q['x'])
         self.u[0].femSpace.elementMaps.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.elementMaps.getBasisGradientValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.getBasisValuesRef(self.elementQuadraturePoints)
@@ -722,5 +725,3 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         pass
     def calculateAuxiliaryQuantitiesAfterStep(self):
         pass
-
-    
