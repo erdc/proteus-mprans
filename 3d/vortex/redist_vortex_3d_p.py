@@ -3,6 +3,7 @@ from proteus.default_p import *
 from math import *
 from vortex import *
 from proteus.mprans import RDLS
+import ls_vortex_3d_p
 
 LevelModelType = RDLS.LevelModel
 
@@ -28,7 +29,7 @@ else:
 #weakDirichletConditions = None
 
 
-initialConditions  = None
+initialConditions  = ls_vortex_3d_p.initialConditions
 
 fluxBoundaryConditions = {0:'noFlow'}
 

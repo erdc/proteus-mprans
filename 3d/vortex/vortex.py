@@ -1,8 +1,8 @@
 #if True uses PETSc solvers
-parallel = True#False
+parallel = False
 linearSmoother = None
 #compute mass balance statistics or not
-checkMass=False#True
+checkMass=True
 #number of space dimensions
 nd=3
 #time integration, not relevant if using BDF with cfl timestepping
@@ -14,7 +14,7 @@ atol_res = {0:1.0e-4}
 timeIntegration_vof = "BE"
 timeIntegration_ls = "BE"
 #if want bdf2 or bdf1
-timeOrder = 2
+timeOrder = 1
 runCFL = 0.3#0.3,0.185,0.125 for dgp1,dgp2,dgpk(3)
 #
 #spatial approximation orders
@@ -37,12 +37,7 @@ partitioningType = MeshTools.MeshParallelPartitioningTypes.node
 lRefinement=3
 #tag simulation name to level of refinement
 #soname="vortexcgp2_bdf2_mc"+`lRefinement`
-if useHex:
-    hex=True
-    soname="vortex_c0q"+`pDegree_ls`+"_bdf_"+`timeOrder`+"_level_"+`lRefinement`
-else:
-    soname="vortex_c0p"+`pDegree_ls`+"_bdf_"+`timeOrder`+"_level_"+`lRefinement`
-pseudo2D=False#True
+pseudo2D=True
 if pseudo2D:
     nn=nnx=nny=(2**lRefinement)*10+1
     nnz=2
@@ -52,7 +47,7 @@ else:
     nn=nnx=nny=nnz=(2**lRefinement)*10+1
     he = 1.0/(nnx-1.0)
     L = [1.0,1.0,1.0]
-unstructured=False#True for tetgen, false for tet or hex from rectangular grid
+unstructured=True#True for tetgen, false for tet or hex from rectangular grid
 if unstructured:
     from tank3dDomain import *
     domain = tank3d(L=L)
@@ -60,7 +55,7 @@ if unstructured:
     domain.writePoly("tank3d")
     domain.writePLY("tank3d")
     domain.writeAsymptote("tank3d")
-    triangleOptions="VApq1.25q12ena%21.16e" % ((he**3)/6.0,)
+    triangleOptions="VApq1.3q18ena%21.16e" % ((he**3)/6.0,)
 else:
     from proteus.Domain import RectangularDomain
     domain = RectangularDomain(L)
@@ -84,10 +79,21 @@ shockCapturingFactor_ls=0.33
 shockCapturingFactor_rd=0.99
 #use absolute tolerances on al models
 atolRedistance = 1.0e-4
-atolConservation = 1.0e-4
+atolConservation = 1.0e-6
 atolVolumeOfFluid= 1.0e-4
 atolLevelSet     = 1.0e-4
 #controls 
 linearSolverConvergenceTest = 'r-true' #rits is do a set number of iterations, r-true uses true residual, PETSc default is preconditioned residual
 #redist solver
 fmmFlag=0
+#
+#correctionType = 'dg'
+#correctionType = 'dgp0'
+#correctionType = 'global'
+correctionType = 'cg'
+#correctionType = 'none'
+if useHex:
+    hex=True
+    soname="vortex_c0q"+`pDegree_ls`+correctionType+"_bdf_"+`timeOrder`+"_level_"+`lRefinement`
+else:
+    soname="vortex_c0p"+`pDegree_ls`+correctionType+"_bdf_"+`timeOrder`+"_level_"+`lRefinement`

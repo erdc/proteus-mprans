@@ -85,8 +85,12 @@ class UnitSquareVortex(TransportCoefficients.TC_base):
                                              reaction,
                                              hamiltonian)
         self.checkMass=checkMass
+        self.useMetrics = 0.0
+	self.sc_uref=1.0
+	self.sc_beta=1.0
     def attachModels(self,modelList):
         self.model = modelList[0]
+	self.u_old_dof = numpy.copy(self.model.u[0].dof)
         self.q_v = numpy.zeros(self.model.q[('dH',0,0)].shape,'d')
         self.ebqe_v = numpy.zeros(self.model.ebqe[('dH',0,0)].shape,'d')
         self.unitSquareVortexLevelSetEvaluate(self.model.timeIntegration.tLast,
@@ -97,19 +101,19 @@ class UnitSquareVortex(TransportCoefficients.TC_base):
                                               self.model.q[('H',0)],self.q_v)
         self.model.q[('velocity',0)]=self.q_v
         self.model.ebqe[('velocity',0)]=self.ebqe_v
-        if self.checkMass:
-            self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
-                                                                     self.model.mesh.elementDiametersArray,
-                                                                     self.model.q['dV'],
-                                                                     self.model.q[('m',0)],
-                                                                     self.model.mesh.nElements_owned)
+        # if self.checkMass:
+        #     self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+        #                                                              self.model.mesh.elementDiametersArray,
+        #                                                              self.model.q['dV'],
+        #                                                              self.model.q[('m',0)],
+        #                                                              self.model.mesh.nElements_owned)
         
-            logEvent("Attach Models UnitSquareVortex: Phase  0 mass before NCLS step = %12.5e" % (self.m_pre,),level=2)
-            self.totalFluxGlobal=0.0
-            self.lsGlobalMassArray = [self.m_pre]
-            self.lsGlobalMassErrorArray = [0.0]
-            self.fluxArray = [0.0]
-            self.timeArray = [self.model.timeIntegration.t]
+        #     logEvent("Attach Models UnitSquareVortex: Phase  0 mass before NCLS step = %12.5e" % (self.m_pre,),level=2)
+        #     self.totalFluxGlobal=0.0
+        #     self.lsGlobalMassArray = [self.m_pre]
+        #     self.lsGlobalMassErrorArray = [0.0]
+        #     self.fluxArray = [0.0]
+        #     self.timeArray = [self.model.timeIntegration.t]
     def preStep(self,t,firstStep=False):
         self.unitSquareVortexLevelSetEvaluate(t,
                                               self.model.q['x'],
@@ -117,50 +121,51 @@ class UnitSquareVortex(TransportCoefficients.TC_base):
                                               self.model.q[('m',0)],self.model.q[('dm',0,0)],
                                               self.model.q[('dH',0,0)],self.model.q[('dH',0,0)],
                                               self.model.q[('H',0)],self.q_v)
-        if self.checkMass:
-            self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
-                                                             self.model.mesh.elementDiametersArray,
-                                                             self.model.q['dV'],
-                                                             self.model.q[('m',0)],
-                                                             self.model.mesh.nElements_owned)
-            logEvent("Phase  0 mass before NCLS step = %12.5e" % (self.m_pre,),level=2)
-            self.m_last = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
-                                                              self.model.mesh.elementDiametersArray,
-                                                              self.model.q['dV'],
-                                                              self.model.timeIntegration.m_last[0],
-                                                              self.model.mesh.nElements_owned)
-            logEvent("Phase  0 mass before NCLS step (m_last) = %12.5e" % (self.m_last,),level=2)
+        # if self.checkMass:
+        #     self.m_pre = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+        #                                                      self.model.mesh.elementDiametersArray,
+        #                                                      self.model.q['dV'],
+        #                                                      self.model.q[('m',0)],
+        #                                                      self.model.mesh.nElements_owned)
+        #     logEvent("Phase  0 mass before NCLS step = %12.5e" % (self.m_pre,),level=2)
+        #     self.m_last = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+        #                                                       self.model.mesh.elementDiametersArray,
+        #                                                       self.model.q['dV'],
+        #                                                       self.model.timeIntegration.m_last[0],
+        #                                                       self.model.mesh.nElements_owned)
+        #     logEvent("Phase  0 mass before NCLS step (m_last) = %12.5e" % (self.m_last,),level=2)
         #cek todo why is this here
-        if self.model.ebq.has_key(('v',1)):
-            self.model.u[0].getValuesTrace(self.model.ebq[('v',1)],self.model.ebq[('u',0)])
-            self.model.u[0].getGradientValuesTrace(self.model.ebq[('grad(v)',1)],self.model.ebq[('grad(u)',0)])
+        # if self.model.ebq.has_key(('v',1)):
+        #     self.model.u[0].getValuesTrace(self.model.ebq[('v',1)],self.model.ebq[('u',0)])
+        #     self.model.u[0].getGradientValuesTrace(self.model.ebq[('grad(v)',1)],self.model.ebq[('grad(u)',0)])
         copyInstructions = {}
         return copyInstructions
     def postStep(self,t,firstStep=False):
-        if self.checkMass:
-            self.m_post = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
-                                                              self.model.mesh.elementDiametersArray,
-                                                              self.model.q['dV'],
-                                                              self.model.q[('m',0)],
-                                                              self.model.mesh.nElements_owned)
-            logEvent("Phase  0 mass after NCLS step = %12.5e" % (self.m_post,),level=2)
-            #need a flux here not a velocity
-            self.fluxIntegral = Norms.fluxDomainBoundaryIntegralFromVector(self.model.ebqe['dS'],
-                                                                           self.model.ebqe[('velocity',0)],
-                                                                           self.model.ebqe['n'],
-                                                                           self.model.mesh)
-            logEvent("Flux integral = %12.5e" % (self.fluxIntegral,),level=2)
-            logEvent("Phase  0 mass conservation after NCLS step = %12.5e" % (self.m_post - self.m_last + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
-            self.lsGlobalMass = self.m_post
-            self.fluxGlobal = self.fluxIntegral*self.model.timeIntegration.dt
-            self.totalFluxGlobal += self.fluxGlobal
-            self.lsGlobalMassArray.append(self.lsGlobalMass)
-            self.lsGlobalMassErrorArray.append(self.lsGlobalMass - self.lsGlobalMassArray[0] + self.totalFluxGlobal)
-            self.fluxArray.append(self.fluxIntegral)
-            self.timeArray.append(self.model.timeIntegration.t)            
-        if self.model.ebq.has_key(('v',1)):
-            self.model.u[0].getValuesTrace(self.model.ebq[('v',1)],self.model.ebq[('u',0)])
-            self.model.u[0].getGradientValuesTrace(self.model.ebq[('grad(v)',1)],self.model.ebq[('grad(u)',0)])
+       	self.u_old_dof = numpy.copy(self.model.u[0].dof)
+        # if self.checkMass:
+        #     self.m_post = Norms.scalarSmoothedHeavisideDomainIntegral(self.epsFact,
+        #                                                       self.model.mesh.elementDiametersArray,
+        #                                                       self.model.q['dV'],
+        #                                                       self.model.q[('m',0)],
+        #                                                       self.model.mesh.nElements_owned)
+        #     logEvent("Phase  0 mass after NCLS step = %12.5e" % (self.m_post,),level=2)
+        #     #need a flux here not a velocity
+        #     self.fluxIntegral = Norms.fluxDomainBoundaryIntegralFromVector(self.model.ebqe['dS'],
+        #                                                                    self.model.ebqe[('velocity',0)],
+        #                                                                    self.model.ebqe['n'],
+        #                                                                    self.model.mesh)
+        #     logEvent("Flux integral = %12.5e" % (self.fluxIntegral,),level=2)
+        #     logEvent("Phase  0 mass conservation after NCLS step = %12.5e" % (self.m_post - self.m_last + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
+        #     self.lsGlobalMass = self.m_post
+        #     self.fluxGlobal = self.fluxIntegral*self.model.timeIntegration.dt
+        #     self.totalFluxGlobal += self.fluxGlobal
+        #     self.lsGlobalMassArray.append(self.lsGlobalMass)
+        #     self.lsGlobalMassErrorArray.append(self.lsGlobalMass - self.lsGlobalMassArray[0] + self.totalFluxGlobal)
+        #     self.fluxArray.append(self.fluxIntegral)
+        #     self.timeArray.append(self.model.timeIntegration.t)            
+        # if self.model.ebq.has_key(('v',1)):
+        #     self.model.u[0].getValuesTrace(self.model.ebq[('v',1)],self.model.ebq[('u',0)])
+        #     self.model.u[0].getGradientValuesTrace(self.model.ebq[('grad(v)',1)],self.model.ebq[('grad(u)',0)])
         copyInstructions = {}
         return copyInstructions
     def evaluate(self,t,c):

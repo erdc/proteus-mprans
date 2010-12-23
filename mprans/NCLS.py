@@ -390,7 +390,7 @@ class LevelModel(OneLevelTransport):
         self.ebqe={}
         self.phi_ip={}
         #mesh
-        #self.q['x'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,3),'d')
+        self.q['x'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,3),'d')
         self.ebqe['x'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
         self.q[('u',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('grad(u)',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
@@ -685,8 +685,8 @@ class LevelModel(OneLevelTransport):
         
         This function should be called only when the mesh changes.
         """
-        #self.u[0].femSpace.elementMaps.getValues(self.elementQuadraturePoints,
-        #                                          self.q['x'])
+        self.u[0].femSpace.elementMaps.getValues(self.elementQuadraturePoints,
+                                                  self.q['x'])
         self.u[0].femSpace.elementMaps.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.elementMaps.getBasisGradientValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.getBasisValuesRef(self.elementQuadraturePoints)

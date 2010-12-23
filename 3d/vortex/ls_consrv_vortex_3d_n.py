@@ -6,7 +6,7 @@ from vortex import *
 
 timeIntegrator = ForwardIntegrator
 timeIntegration = NoIntegration
-stepController = Newton_controller
+stepController = MCorr.Newton_controller#need a tricked up controller that can fix the VOF model's initial conditions
 
 if cDegree_ls==0:
     if useHex:
@@ -23,7 +23,7 @@ if cDegree_ls==0:
             femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}        
         elementQuadrature = SimplexGaussQuadrature(nd,vortex_quad_order)
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,vortex_quad_order)
-    if parallel or LevelModelType ==  MCorr.LevelModel:
+    if parallel or LevelModelType in [MCorr.LevelModel,MCorrElement.LevelModel]:
         numericalFluxType = DoNothing#Diffusion_IIPG_exterior
 elif cDegree_ls==-1:
     if pDegree_ls==0:
@@ -47,8 +47,17 @@ shockCapturing = None
 
 multilevelNonlinearSolver  = NLNI
 
-levelNonlinearSolver = Newton
-
+if correctionType == 'dg':
+    levelNonlinearSolver = MCorr.ElementNewton
+elif correctionType == 'dgp0':
+    levelNonlinearSolver = MCorr.ElementConstantNewton
+elif correctionType == 'global':
+    levelNonlinearSolver = MCorr.GlobalConstantNewton
+elif correctionType == 'none':
+    levelNonlinearSolver = MCorr.DummyNewton
+else:
+    levelNonlinearSolver = Newton
+    nonlinearSolverNorm = MCorr.conservationNorm
 nonlinearSmoother = NLGaussSeidel
 
 fullNewtonFlag = True
@@ -62,8 +71,8 @@ maxNonlinearIts = 100
 matrix = SparseMatrix
 
 if parallel:
-    multilevelLinearSolver = KSP_petsc4py
-    levelLinearSolver = KSP_petsc4py
+    multilevelLinearSolver = PETSc#KSP_petsc4py
+    levelLinearSolver = PETSc#KSP_petsc4py
     linear_solver_options_prefix = 'mcorr_'
     linearSolverConvergenceTest = 'r-true'
 else:
