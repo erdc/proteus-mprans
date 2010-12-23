@@ -21,13 +21,15 @@ if "FLCBDF" in [timeIntegration_vof,timeIntegration_ls]:
 else:
     systemStepControllerType = Sequential_MinAdaptiveModelStep
 
+systemStepExact = True
+
 name=soname
 
 needEBQ_GLOBAL  = False
 needEBQ = False
 
 archiveFlag = ArchiveFlags.EVERY_USER_STEP
-archiveFlag = ArchiveFlags.EVERY_MODEL_STEP
+#archiveFlag = ArchiveFlags.EVERY_MODEL_STEP
 DT = T/float(nDTout)
 tnList = [i*DT for i  in range(nDTout+1)]
 #cek hard coded steps for article snapshots

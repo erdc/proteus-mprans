@@ -1,5 +1,5 @@
 #if True uses PETSc solvers
-parallel = False
+parallel = True#False
 linearSmoother = None
 #compute mass balance statistics or not
 checkMass=True
@@ -34,7 +34,7 @@ else:
 from proteus import MeshTools
 partitioningType = MeshTools.MeshParallelPartitioningTypes.node
 #spatial mesh
-lRefinement=3
+lRefinement=0
 #tag simulation name to level of refinement
 #soname="vortexcgp2_bdf2_mc"+`lRefinement`
 pseudo2D=True

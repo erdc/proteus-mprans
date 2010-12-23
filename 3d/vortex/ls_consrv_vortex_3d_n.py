@@ -71,8 +71,8 @@ maxNonlinearIts = 100
 matrix = SparseMatrix
 
 if parallel:
-    multilevelLinearSolver = PETSc#KSP_petsc4py
-    levelLinearSolver = PETSc#KSP_petsc4py
+    multilevelLinearSolver = PETSc
+    levelLinearSolver = PETSc
     linear_solver_options_prefix = 'mcorr_'
     linearSolverConvergenceTest = 'r-true'
 else:
