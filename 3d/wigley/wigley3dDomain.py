@@ -121,6 +121,7 @@ def wigley3d(fileprefix,
                                                  facetFlags=facetFlags,
                                                  holes=holes)
     domain.boundaryTags = boundaryTags
+
     return domain
 
 if __name__=='__main__':

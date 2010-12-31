@@ -10,7 +10,9 @@ coefficients = VOF.Coefficients(LS_model=1,
                                RD_model=3,
                                ME_model=2,
                                epsFact=epsFact_vof,
-                               checkMass=checkMass)
+                               checkMass=checkMass,
+			       useMetrics=useMetrics,
+                               sc_uref=vof_sc_uref,sc_beta=vof_sc_beta)
 
 class Flat_H:
     def __init__(self,waterLevel):

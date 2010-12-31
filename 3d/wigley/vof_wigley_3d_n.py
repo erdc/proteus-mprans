@@ -9,44 +9,38 @@ elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,quad_order)
 
 
 timeIntegration = BackwardEuler_cfl
-stepController=Min_dt_controller
-stepController = HeuristicNL_dt_controller
-nonlinearIterationsFloor = 3
-nonlinearIterationsCeil=5
-dtNLgrowFactor  = 1.5
-dtNLreduceFactor= 0.5#75
-#stepController = HeuristicNL_dt_controller
+stepController  = FixedStep
+
 femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
 shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)#linear
 subgridError = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)
 massLumping = False
 numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
 
-multilevelNonlinearSolver  = NLNI
-
+multilevelNonlinearSolver  = Newton
 levelNonlinearSolver = Newton
 
-nonlinearSmoother = NLGaussSeidel
+nonlinearSmoother = None
+linearSmoother = None
 
 fullNewtonFlag = True
 
-tolFac = 0.0
+tolFac = 1e-4
 
-nl_atol_res = 0.001*he#1.0e-8
+nl_atol_res = 0.0
 
-maxNonlinearIts = 50
+maxNonlinearIts = 10
+maxLineSearches = 0
 
 matrix = SparseMatrix
 
-if usePETSc:
-    multilevelLinearSolver = KSP_petsc4py
-    levelLinearSolver = KSP_petsc4py
-    linearSmoother = StarILU
-else:
-    multilevelLinearSolver = LU
-    levelLinearSolver = LU
+multilevelLinearSolver = PETSc
+levelLinearSolver = PETSc
+linear_solver_options_prefix = 'vof_'
 
-linearSmoother = GaussSeidel
+nonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'rits'
+
 
 linTolFac = 0.001
 

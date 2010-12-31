@@ -8,7 +8,8 @@ LevelModelType = RDLS.LevelModel
 coefficients = RDLS.Coefficients(applyRedistancing=applyRedistancing,
                                   epsFact=epsFact_redistance,
                                   nModelId=1,
-                                  rdModelId=3)
+                                  rdModelId=3,
+		                  useMetrics=useMetrics)
 
 def getDBC_rd(x,flag):
     pass

@@ -2,66 +2,44 @@ from proteus import *
 from proteus.default_n import *
 from ls_wigley_3d_p import *
 
-if useBackwardEuler_ls:
-    timeIntegration = BackwardEuler_cfl
-    #timeIntegration = BackwardEuler
-    stepController = Min_dt_controller
-    #stepController = HeuristicNL_dt_controller
-    stepController = HeuristicNL_dt_controller
-    nonlinearIterationsFloor = 3
-    nonlinearIterationsCeil=5
-    dtNLgrowFactor  = 1.5
-    dtNLreduceFactor= 0.5#75
-else:
-    timeIntegration = FLCBDF
-    stepController = FLCBDF_controller_sys
-    rtol_u[0] = 1.0e-2
-    atol_u[0] = 1.0e-2
+timeIntegration = BackwardEuler_cfl
+stepController = FixedStep
 
-if spaceOrder == 1:
-    femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-elif spaceOrder == 2:
-    femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
-
+femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
 elementQuadrature = SimplexGaussQuadrature(nd,quad_order)
-
 elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,quad_order)
 
-
-subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)#it's  linear anyway
+subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)
 
 massLumping = False
 
 numericalFluxType = DoNothing
 
-shockCapturing = None
-
 shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=lag_ls_shockCapturing)
 
-multilevelNonlinearSolver  = Newton#NLNI
-
+multilevelNonlinearSolver  = Newton
 levelNonlinearSolver = Newton
 
-nonlinearSmoother = NLGaussSeidel
+nonlinearSmoother = None
+linearSmoother = None
 
 fullNewtonFlag = True
 
-tolFac = 0.0
+tolFac = 1e-3
+nl_atol_res = 0.0
 
-nl_atol_res = 0.001*he#1.0e-8#should be linear with lagging
-
-maxNonlinearIts = 50
+maxNonlinearIts = 10
+maxLineSearches = 0
 
 matrix = SparseMatrix
 
-if usePETSc:
-    multilevelLinearSolver = KSP_petsc4py
-    levelLinearSolver = KSP_petsc4py
-    linearSmoother = StarILU
-else:
-    multilevelLinearSolver = LU
-    levelLinearSolver = LU
-    
+multilevelLinearSolver = PETSc
+levelLinearSolver = PETSc
+
+
+nonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'rits'
+linear_solver_options_prefix = 'ncls_'
 
 linTolFac = 0.001
 

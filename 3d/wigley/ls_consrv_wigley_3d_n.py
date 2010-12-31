@@ -19,31 +19,27 @@ numericalFluxType = DoNothing
 
 shockCapturing = None
 
-multilevelNonlinearSolver  = NLNI
+multilevelNonlinearSolver  = Newton
 
 levelNonlinearSolver = Newton
 
-nonlinearSmoother = NLGaussSeidel
+nonlinearSmoother = None
 
 fullNewtonFlag = True
 
-tolFac = 0.0
+tolFac = 1e-4
 
-nl_atol_res = 0.001*he#1.0e-10
+nl_atol_res = 0.0
 
 maxNonlinearIts = 10
 
 matrix = SparseMatrix
 
-if usePETSc:
-    multilevelLinearSolver = KSP_petsc4py
-    levelLinearSolver = KSP_petsc4py
-    linearSmoother = StarILU
-else:
-    multilevelLinearSolver = LU
-    levelLinearSolver = LU
-
-linearSmoother = GaussSeidel
+multilevelLinearSolver = PETSc
+levelLinearSolver = PETSc
+linearSmoother = None
+linear_solver_options_prefix = 'mcorr_'
+linearSmoother = None
 
 linTolFac = 1.0e-6
 

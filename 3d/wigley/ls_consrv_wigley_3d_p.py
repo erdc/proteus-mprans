@@ -13,7 +13,8 @@ coefficients = MCorr.Coefficients(applyCorrection=applyCorrection,
                                     me_model=4,
                                     VOFModel_index=2,
                                     nd=nd,
-                                    checkMass=checkMass)
+                                    checkMass=checkMass,
+		                    useMetrics=useMetrics)
 
 class zero_phi:
     def __init__(self):

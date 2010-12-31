@@ -5,7 +5,9 @@ from proteus.mprans import NCLS
 
 LevelModelType = NCLS.LevelModel
 
-coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=1,checkMass=checkMass)
+coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=1,checkMass=checkMass,useMetrics=useMetrics,
+				  sc_uref=ls_sc_uref,
+				  sc_beta=ls_sc_beta)
 #coefficients = NCLevelSetCoefficients(V_model=0,ME_model=1)
 
 def getDBC_ls(x,flag):
