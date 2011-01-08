@@ -10,7 +10,7 @@ if useBackwardEuler:
     nonlinearIterationsFloor = 2
     nonlinearIterationsCeil=4
     nonlinearIterationsFloor = 3
-    nonlinearIterationsCeil=5
+    nonlinearIterationsCeil=4
     dtNLgrowFactor  = 2.0
     dtNLreduceFactor= 0.5#75
 else:

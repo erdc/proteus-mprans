@@ -115,7 +115,7 @@ T = 6.0
 dt_fixed = 0.01
 nDTout=int(T/dt_fixed)
 dt_init=min(he*0.01,0.5*dt_fixed)
-useFixedStep = True
+useFixedStep = False#True
 #
 #numerics
 #
@@ -150,7 +150,7 @@ epsFact_consrv_dirac=1.5
 epsFact_consrv_diffusion=10.0
 epsFact_vof=1.5
 #
-usePETSc=False
+usePETSc=True#False
 spaceOrder=1
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
