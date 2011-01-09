@@ -34,7 +34,7 @@ else:
 from proteus import MeshTools
 partitioningType = MeshTools.MeshParallelPartitioningTypes.node
 #spatial mesh
-lRefinement=2
+lRefinement=3
 #tag simulation name to level of refinement
 #soname="vortexcgp2_bdf2_mc"+`lRefinement`
 pseudo2D=True
@@ -60,7 +60,7 @@ else:
     from proteus.Domain import RectangularDomain
     domain = RectangularDomain(L)
 #end time of simulation, full problem is T=8.0
-T = 10.0
+T = 2.0
 #number of output time steps
 nDTout = 80
 #mass correction
@@ -89,8 +89,8 @@ fmmFlag=0
 #
 #correctionType = 'dg'
 #correctionType = 'dgp0'
-#correctionType = 'global'
-correctionType = 'cg'
+correctionType = 'global'
+#correctionType = 'cg'
 #correctionType = 'none'
 if useHex:
     hex=True
