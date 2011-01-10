@@ -45,7 +45,10 @@ n_points_length=max(2,int(ceil(hull_length/he))) + 1
 
 from wigley3dDomain import *
 genMesh=False
-domain = wigley3d("mesh",
+
+#meshname="mesh"
+meshname="wigley"
+domain = wigley3d(meshname,
                   height,
                   length,
                   width,
@@ -55,9 +58,9 @@ domain = wigley3d("mesh",
                   (0.65*hull_length,0.5*width,0.5*height),
                   n_points_draft,
                   n_points_length)
-domain.writePoly("wigley")
-domain.writePLY("wigley")
-domain.writeAsymptote("wigley")
+domain.writePoly(meshname)
+domain.writePLY(meshname)
+domain.writeAsymptote(meshname)
 boundaryTags = domain.boundaryTags
 print boundaryTags
 waterLevel = 0.5
@@ -84,12 +87,12 @@ Frh = Um/math.sqrt(math.fabs(g[2])*waterLevel)
 print "========================================REYNOLDS NUMBER = "+`RE`
 print "========================================FROUDE(HULL LENGTH) NUMBER = "+`Fr`
 print "========================================FROUDE(DEPTH) NUMBER = "+`Frh`
-print "========================================SPEED[M/S] = %"+`Um`
+print "========================================SPEED[M/S] = "+`Um`
 residence_time = length/Um
 #
 #time interval etc.
 #
-dt_init=1.0e-2#0.001*residence_time
+dt_init=1e-2#0.001*residence_time
 T = 5.0*residence_time
 print "========================================residence time = "+`residence_time`
 print "========================================T = "+`T`

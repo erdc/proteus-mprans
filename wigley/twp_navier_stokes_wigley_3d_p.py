@@ -8,10 +8,10 @@ from math import *
 from wigley import *
 from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
-from proteus.mprans import RANS2P
+from proteus.mprans import RANS2P2
 
-LevelModelType = RANS2P.LevelModel
-coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
+LevelModelType = RANS2P2.LevelModel
+coefficients = RANS2P2.Coefficients(epsFact=epsFact_viscosity,
                                    sigma=sigma_01,
                                    rho_0=rho_0,
                                    nu_0=nu_0,
