@@ -1,0 +1,58 @@
+Meshes
+
+To run a simulation with a hex mesh a mesh  needs to be generated beforehand using a seperate specialized meshgenerator. 
+This generator needs to be build first.
+
+1) Go to $PROTEUS/proteusModule/scripts
+2) Compile $F77  marinHexMesh.f -o marinHexMesh  
+
+Hex meshes are build by running the resulting binary in the appropriate directory.
+In this directory a file called size.mesh, which specifies the mesh size, needs to be present.
+File format is:
+
+hx1 hx2  hx3
+hy1 hy2  hy3
+hz1 hz2  
+
+where
+
+hx1 = meshsize in x-direction , left of obstacle
+hx2 = meshsize in x-direction , at obstacle
+hx3 = meshsize in x-direction , right of obstacle
+
+hy1 = meshsize in y-direction , before obstacle
+hy2 = meshsize in y-direction , at obstacle
+hy3 = meshsize in y-direction , after obstacle
+
+hz1 = meshsize in z-direction, at obstacle
+hz2 = meshsize in z-direction, above obstacle
+
+For instance, size.mesh with
+
+0.052   0.051   0.052
+0.033   0.034   0.033
+0.032   0.0325
+
+will, after running $PROTEUS/proteusModule/scripts/marinHexMesh, result in a 64x32x32 element mesh.
+
+
+To run a simulation with tet mesh there are two options. First, proteus can generate its own tet mesh using tetgen.
+This can be done by setting genMesh=True in obstacleInTank3d.py. In this case the variable he is used to request a global meshsize. 
+Drawback is that tetgen does not produce very "nice" meshes therefor it is adviced not top use metric-based definitions.
+This can be circumvented by providing offline generated meshes. Meshes generated using gmesh, using mesh optimization provided by netgen, 
+does not suffer from this issue.
+
+
+Execute simulation
+
+Once you have the mesh, to run simply execute:
+
+mpirun -n NP parun  tet_h_VMS/obstacleInTank3d_so.py -v -l NL -O petsc.options -G
+
+NP = number of processors
+NL = output level (suggestion 3 for normal runs, for debugging purposes it can be chosen higher)    
+
+
+
+
+
