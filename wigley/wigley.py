@@ -46,8 +46,8 @@ n_points_length=max(2,int(ceil(hull_length/he))) + 1
 from wigley3dDomain import *
 genMesh=False
 
-#meshname="mesh"
-meshname="wigley"
+meshname="mesh"
+#meshname="wigley"
 domain = wigley3d(meshname,
                   height,
                   length,
@@ -137,7 +137,7 @@ vof_shockCapturingFactor=0.2
 vof_sc_uref = 1.0
 vof_sc_beta = 1.5
 
-rd_shockCapturingFactor=0.33
+rd_shockCapturingFactor=0.2
 #epsilons for Heaviside/Dirac/etc smoothing
 epsFact_density = 1.5
 epsFact_viscosity = 1.5
@@ -145,7 +145,7 @@ epsFact_redistance = 0.33
 epsFact_curvature=1.5
 epsFact_consrv_heaviside=1.5
 epsFact_consrv_dirac=1.5
-epsFact_consrv_diffusion=10.0
+epsFact_consrv_diffusion=50.0
 epsFact_vof=1.5
 #
 

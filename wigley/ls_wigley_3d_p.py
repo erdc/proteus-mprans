@@ -11,7 +11,17 @@ coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=1,checkMass=check
 #coefficients = NCLevelSetCoefficients(V_model=0,ME_model=1)
 
 def getDBC_ls(x,flag):
-    pass
+    def ls(x,t):
+        return x[2]-waterLevel
+    if flag == domain.boundaryTags['left']:
+        return ls
+    if flag == domain.boundaryTags['right']:
+        return ls
+    if openSides:
+        if flag == domain.boundaryTags['front']:
+            return ls
+        if flag == domain.boundaryTags['back']:
+            return ls
 
 dirichletConditions = {0:getDBC_ls}
 
@@ -24,7 +34,7 @@ class Flat_phi:
 
 initialConditions  = {0:Flat_phi(waterLevel)}
     
-fluxBoundaryConditions = {0:'outFlow'}
+fluxBoundaryConditions = {0:'mixedFlow'}
     
 advectiveFluxBoundaryConditions =  {}
 
