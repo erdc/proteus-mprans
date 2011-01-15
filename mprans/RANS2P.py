@@ -203,17 +203,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         if self.KN_model == None:
             self.ebqe_kappa = -numpy.zeros(cebqe[('u',1)].shape,'d')
     def updateToMovingDomain(self,t,c):
-        from proteus import cfemIntegrals
-        assert(self.movingDomain)
-        if self.movingDomain:
-            cfemIntegrals.update_f_movingDomain_constantMass(c['xt'],c[('f',0)])
-            cfemIntegrals.update_f_movingDomain(c['xt'],c[('m',1)],c[('f',1)])
-            cfemIntegrals.update_df_movingDomain(c['xt'],c[('dm',1,1)],c[('df',1,1)])
-            cfemIntegrals.update_f_movingDomain(c['xt'],c[('m',2)],c[('f',2)])
-            cfemIntegrals.update_df_movingDomain(c['xt'],c[('dm',2,2)],c[('df',2,2)])
-            if self.nd == 3:
-                cfemIntegrals.update_f_movingDomain(c['xt'],c[('m',3)],c[('f',3)])
-                cfemIntegrals.update_df_movingDomain(c['xt'],c[('dm',3,3)],c[('df',3,3)])
+        pass
     def evaluate(self,t,c):
         import math
         #self.rho_0 = 1000.0*self.rho_1
@@ -895,7 +885,15 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                     self.ebqe[('diffusiveFlux_bc',ck,ci)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
                     self.ebqe[('diffusiveFlux_bc_flag',ck,ci)][t[0],t[1]] = 1
         self.numericalFlux.setDirichletValues(self.ebqe)
-
+        if self.movingDomain:
+            self.MOVING_DOMAIN=1.0
+        else:
+            self.MOVING_DOMAIN=0.0
+        #cek hack
+        self.movingDomain=False
+        self.MOVING_DOMAIN=0.0
+        if self.mesh.nodeVelocityArray==None:
+            self.mesh.nodeVelocityArray = numpy.zeros(self.mesh.nodeArray.shape,'d')
         #cek/ido todo replace python loops in modules with optimized code if possible/necessary
         self.forceStrongConditions=False
         self.dirichletConditionsForceDOF = {}
@@ -947,6 +945,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
+            self.mesh.nodeVelocityArray,
+            self.MOVING_DOMAIN,
             self.mesh.elementNodesArray,
             self.elementQuadratureWeights[('u',0)],
             self.u[0].femSpace.psi,
@@ -1077,6 +1077,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
+            self.mesh.nodeVelocityArray,
+            self.MOVING_DOMAIN,
             self.mesh.elementNodesArray,
             self.elementQuadratureWeights[('u',0)],
             self.u[0].femSpace.psi,

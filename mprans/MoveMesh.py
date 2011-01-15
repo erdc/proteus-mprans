@@ -73,10 +73,13 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
     def initializeMesh(self,mesh):
         self.mesh = mesh
     def postStep(self,t,firstStep=False):
-        print "Updating history"
         self.mesh.nodeArray[:,0]+=self.model.u[0].dof
         self.mesh.nodeArray[:,1]+=self.model.u[1].dof
         self.mesh.nodeArray[:,2]+=self.model.u[2].dof
+        self.mesh.nodeVelocityArray[:,0]=self.model.u[0].dof
+        self.mesh.nodeVelocityArray[:,1]=self.model.u[1].dof
+        self.mesh.nodeVelocityArray[:,2]=self.model.u[2].dof
+        self.mesh.nodeVelocityArray/=self.model.timeIntegration.dt
     def preStep(self,t,firstStep=False):
         pass
     def evaluate(self,t,c):

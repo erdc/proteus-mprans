@@ -99,6 +99,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                 self.nModel.u[0].dof.flat[:]  = self.rdModel.u[0].dof.flat[:]
                 self.nModel.calculateCoefficients()
                 self.nModel.calculateElementResidual()
+                #save the boundary level set in the numerical flux to use for
+                self.nModel.numericalFlux.ebqe[('u',0)][:] = self.rdModel.ebqe[('u',0)]
             copyInstructions = {}
             return copyInstructions
         else:

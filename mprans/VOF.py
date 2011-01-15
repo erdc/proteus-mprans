@@ -533,7 +533,15 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                              self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
                              self.nElementBoundaryQuadraturePoints_elementBoundary,
                              compKernelFlag)
-        
+        if self.movingDomain:
+            self.MOVING_DOMAIN=1.0
+        else:
+            self.MOVING_DOMAIN=0.0
+        #cek hack
+        self.movingDomain=False
+        self.MOVING_DOMAIN=0.0
+        if self.mesh.nodeVelocityArray==None:
+            self.mesh.nodeVelocityArray = numpy.zeros(self.mesh.nodeArray.shape,'d')        
     #mwf these are getting called by redistancing classes,
     def calculateCoefficients(self):
         pass
@@ -565,6 +573,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
+            self.mesh.nodeVelocityArray,
+            self.MOVING_DOMAIN,
             self.mesh.elementNodesArray,
             self.elementQuadratureWeights[('u',0)],
             self.u[0].femSpace.psi,
@@ -630,6 +640,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
+            self.mesh.nodeVelocityArray,
+            self.MOVING_DOMAIN,
             self.mesh.elementNodesArray,
             self.elementQuadratureWeights[('u',0)],
             self.u[0].femSpace.psi,

@@ -16,6 +16,8 @@ namespace proteus
 				   double* mesh_trial_ref,
 				   double* mesh_grad_trial_ref,
 				   double* mesh_dof,
+				   double* meshVelocity_dof,
+				   double MOVING_DOMAIN,
 				   int* mesh_l2g,
 				   double* dV_ref,
 				   double* u_trial_ref,
@@ -65,6 +67,8 @@ namespace proteus
 				   double* mesh_trial_ref,
 				   double* mesh_grad_trial_ref,
 				   double* mesh_dof,
+				   double* mesh_velocity_dof,
+				   double MOVING_DOMAIN,
 				   int* mesh_l2g,
 				   double* dV_ref,
 				   double* u_trial_ref,
@@ -116,8 +120,11 @@ namespace proteus
   class NCLS : public NCLS_base
   {
   public:
+    const int nDOF_test_X_trial_element;
     CompKernelType ck;
-    NCLS():ck()
+  NCLS():      
+    nDOF_test_X_trial_element(nDOF_test_element*nDOF_trial_element),
+    ck()
     {}
     
     inline void evaluateCoefficients(const double v[nSpace],
@@ -128,22 +135,22 @@ namespace proteus
 				     double& H,
 				     double dH[nSpace])
     {
-      int I;
       m = u;
       dm=1.0;
       H = 0.0;
-      for (I=0; I < nSpace; I++)
+      for (int I=0; I < nSpace; I++)
 	{
 	  H += v[I]*grad_u[I];
 	  dH[I] = v[I];
 	}
     }
-    
-    inline void calculateSubgridError_tau(const double& elementDiameter,
-					  const double& dmt,
-					  const double dH[nSpace],
-					  double& cfl,
-					  double& tau)
+
+    inline
+    void calculateSubgridError_tau(const double& elementDiameter,
+				   const double& dmt,
+				   const double dH[nSpace],
+				   double& cfl,
+				   double& tau)
     {
       double h,nrm_v,oneByAbsdt;
       h = elementDiameter;
@@ -154,7 +161,8 @@ namespace proteus
       cfl = nrm_v/h;
       oneByAbsdt =  fabs(dmt);
       tau = 1.0/(2.0*nrm_v/h + oneByAbsdt + 1.0e-8);
-    }  
+    }
+
  
     inline
     void calculateSubgridError_tau(     const double&  Ct_sge,
@@ -169,15 +177,96 @@ namespace proteus
          for (int J=0;J<nSpace;J++) 
            v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
     
-      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv);  
-        
+      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv);    
     } 
  
-    
+    void exteriorNumericalAdvectiveFlux(const int& isDOFBoundary_u,
+					const int& isFluxBoundary_u,
+					const double n[nSpace],
+					const double& bc_u,
+					const double& bc_flux_u,
+					const double& u,
+					const double velocity[nSpace],
+					double& flux)
+    {
+
+      double flow=0.0;
+      for (int I=0; I < nSpace; I++)
+	flow += n[I]*velocity[I];
+      //std::cout<<" isDOFBoundary_u= "<<isDOFBoundary_u<<" flow= "<<flow<<std::endl;
+      if (isDOFBoundary_u == 1)
+	{
+	  //std::cout<<"Dirichlet boundary u and bc_u "<<u<<'\t'<<bc_u<<std::endl;
+	  if (flow >= 0.0)
+	    {
+	      flux = u*flow;
+	      //flux = flow;
+	    }
+	  else
+	    {
+	      flux = bc_u*flow;
+	      //flux = flow;
+	    }
+	}
+      else if (isFluxBoundary_u == 1)
+	{
+	  flux = bc_flux_u;
+	  //std::cout<<"Flux boundary flux and flow"<<flux<<'\t'<<flow<<std::endl;
+	}
+      else
+	{
+	  //std::cout<<"No BC boundary flux and flow"<<flux<<'\t'<<flow<<std::endl;
+	  if (flow >= 0.0)
+	    {
+	      flux = u*flow;
+	    }
+	  else
+	    {
+	      std::cout<<"warning: open boundary with no external trace, setting to zero for inflow"<<std::endl;
+	      flux = 0.0;
+	    }
+
+	}
+      //flux = flow;
+      //std::cout<<"flux error "<<flux-flow<<std::endl;
+      //std::cout<<"flux in computationa"<<flux<<std::endl;
+    }
+
+    inline
+    void exteriorNumericalAdvectiveFluxDerivative(const int& isDOFBoundary_u,
+						  const int& isFluxBoundary_u,
+						  const double n[nSpace],
+						  const double velocity[nSpace],
+						  double& dflux)
+    {
+      double flow=0.0;
+      for (int I=0; I < nSpace; I++)
+	flow += n[I]*velocity[I];
+      //double flow=n[0]*velocity[0]+n[1]*velocity[1]+n[2]*velocity[2];
+      dflux=0.0;//default to no flux
+      if (isDOFBoundary_u == 1)
+	{
+	  if (flow >= 0.0)
+	    {
+	      dflux = flow;
+	    }
+	  else
+	    {
+	      dflux = 0.0;
+	    }
+	}
+      if (isFluxBoundary_u == 1)
+	{
+	  dflux = 0.0;
+	}
+    }
+
     void calculateResidual(//element
 			   double* mesh_trial_ref,
 			   double* mesh_grad_trial_ref,
 			   double* mesh_dof,
+			   double* mesh_velocity_dof,
+			   double MOVING_DOMAIN,
 			   int* mesh_l2g,
 			   double* dV_ref,
 			   double* u_trial_ref,
@@ -203,7 +292,7 @@ namespace proteus
 			   double sc_uref, double sc_alpha,
 			   int* u_l2g, 
 			   double* elementDiameter,
-			   double* u_dof,double* u_dof_old,	
+			   double* u_dof,double* u_dof_old,			   
 			   double* velocity,
 			   double* q_m,
 			   double* q_u,				   
@@ -224,6 +313,9 @@ namespace proteus
 			   double* ebqe_bc_u_ext,
 			   double* ebqe_u)
     {
+      //cek should this be read in?
+      double Ct_sge = 4.0;
+
       //loop over elements to compute volume integrals and load them into element and global residual
       //
       //eN is the element index
@@ -233,10 +325,6 @@ namespace proteus
       //eN_j is the element trial function index
       //eN_k_j is the quadrature point index for a trial function
       //eN_k_i is the quadrature point index for a trial function
-      
-      double Ct_sge = 4.0;
-      
-      
       for(int eN=0;eN<nElements_global;eN++)
 	{
 	  //declare local storage for element residual and initialize
@@ -255,6 +343,7 @@ namespace proteus
 	      register double u=0.0,grad_u[nSpace],grad_u_old[nSpace],
 		m=0.0,dm=0.0,
 		H=0.0,dH[nSpace],
+		f[nSpace],df[nSpace],//for MOVING_DOMAIN
 		m_t=0.0,dm_t=0.0,
 		pdeResidual_u=0.0,
 		Lstar_u[nDOF_test_element],
@@ -267,7 +356,7 @@ namespace proteus
 		u_grad_trial[nDOF_trial_element*nSpace],
 		u_test_dV[nDOF_trial_element],
 		u_grad_test_dV[nDOF_test_element*nSpace],
-		dV,x,y,z,
+		dV,x,y,z,xt,yt,zt,
 		G[nSpace*nSpace],G_dd_G,tr_G;//,norm_Rv;
 	      //
 	      //compute solution and gradients at quadrature points
@@ -282,6 +371,12 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateMappingVelocity_element(eN,
+						  k,
+						  mesh_velocity_dof,
+						  mesh_l2g,
+						  mesh_trial_ref,
+						  xt,yt,zt);
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
@@ -290,7 +385,7 @@ namespace proteus
 	      //get the solution
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_ref[k*nDOF_trial_element],u);
 	      //get the solution gradients
-	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u);	      
+	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u);
 	      ck.gradFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u_old);
 	      //precalculate test function products with integration weights
 	      for (int j=0;j<nDOF_trial_element;j++)
@@ -319,7 +414,12 @@ namespace proteus
 	      //
 	      //moving mesh
 	      //
-	      //omit for now
+	      f[0] = -MOVING_DOMAIN*m*xt;
+	      f[1] = -MOVING_DOMAIN*m*yt;
+	      f[2] = -MOVING_DOMAIN*m*zt;
+	      df[0] = -MOVING_DOMAIN*dm*xt;
+	      df[1] = -MOVING_DOMAIN*dm*yt;
+	      df[2] = -MOVING_DOMAIN*dm*zt;
 	      //
 	      //calculate time derivative at quadrature points
 	      //
@@ -334,7 +434,8 @@ namespace proteus
 	      //
 	      //calculate strong residual
 	      pdeResidual_u = ck.Mass_strong(m_t) +
-		ck.Hamiltonian_strong(dH,grad_u);
+		ck.Hamiltonian_strong(dH,grad_u)+
+		MOVING_DOMAIN*ck.Advection_strong(df,grad_u);//cek I don't think all mesh motion will be divergence free so we may need to go add the divergence
 	      
 	      //calculate adjoint
 	      for (int i=0;i<nDOF_test_element;i++)
@@ -342,33 +443,36 @@ namespace proteus
 		  //register int eN_k_i_nSpace = (eN_k*nDOF_trial_element+i)*nSpace;
 		  //Lstar_u[i]  = ck.Hamiltonian_adjoint(dH,&u_grad_test_dV[eN_k_i_nSpace]);
 		  register int i_nSpace = i*nSpace;
-		  Lstar_u[i]  = ck.Hamiltonian_adjoint(dH,&u_grad_test_dV[i_nSpace]);
+		  Lstar_u[i]  = ck.Hamiltonian_adjoint(dH,&u_grad_test_dV[i_nSpace]) + MOVING_DOMAIN*ck.Advection_adjoint(df,&u_grad_test_dV[i_nSpace]);
 		}
 	      //calculate tau and tau*Res
+	      double subgridErrorVelocity[nSpace];
+	      subgridErrorVelocity[0] = dH[0] - MOVING_DOMAIN*df[0];
+	      subgridErrorVelocity[1] = dH[1] - MOVING_DOMAIN*df[1];
+	      subgridErrorVelocity[2] = dH[2] - MOVING_DOMAIN*df[2];
 	      calculateSubgridError_tau(elementDiameter[eN],
 					dm_t,
-					dH,
+					subgridErrorVelocity,//dH,
 					cfl[eN_k],
 					tau0);
 
               calculateSubgridError_tau(Ct_sge,
                                         G,
 					dm_t,
-					dH,
+					subgridErrorVelocity,//dH,
 					tau1,
-				        cfl[eN_k]);	
-
+				        cfl[eN_k]);
+					
               tau = useMetrics*tau1+(1.0-useMetrics)*tau0;
-
 
 	      subgridError_u = -tau*pdeResidual_u;
 	      //
-	      //calcualte shock capturing diffusion
+	      //calculate shock capturing diffusion
 	      //
+
 	      
-	    	      
 	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u,numDiff0);	      
-	      //ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u_old,numDiff1);	     
+	      //ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u_old,numDiff1);
 	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,sc_uref, sc_alpha,G,G_dd_G,pdeResidual_u,grad_u,numDiff1);
 	      q_numDiff_u[eN_k] = useMetrics*numDiff1+(1.0-useMetrics)*numDiff0;
               //std::cout<<tau<<"   "<<q_numDiff_u[eN_k]<<std::endl;
@@ -377,17 +481,16 @@ namespace proteus
 	      // 
 	      for(int i=0;i<nDOF_test_element;i++) 
 		{ 
-		  register int i_nSpace=i*nSpace;
-		  //register int eN_k_i=eN_k*nDOF_test_element+i,
-		  //eN_k_i_nSpace = eN_k_i*nSpace;
-		  
+		  register int eN_k_i=eN_k*nDOF_test_element+i,
+		    eN_k_i_nSpace = eN_k_i*nSpace,
+		    i_nSpace=i*nSpace;
+
 		  elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
 		    ck.Hamiltonian_weak(H,u_test_dV[i]) + 
+		    MOVING_DOMAIN*ck.Advection_weak(f,&u_grad_test_dV[i_nSpace])+
 		    ck.SubgridError(subgridError_u,Lstar_u[i]) + 
-		    ck.NumericalDiffusion(q_numDiff_u_last[eN_k],
-					  grad_u,
-					  &u_grad_test_dV[i_nSpace]); 
-		  
+		    ck.NumericalDiffusion(q_numDiff_u_last[eN_k],grad_u,&u_grad_test_dV[i_nSpace]); 
+	      
 		}//i
 	      //
 	      //cek/ido todo, get rid of m, since u=m
@@ -408,8 +511,8 @@ namespace proteus
 	  for(int i=0;i<nDOF_test_element;i++) 
 	    { 
 	      register int eN_i=eN*nDOF_test_element+i;
-	      
-	      globalResidual[offset_u+stride_u*u_l2g[eN_i]]+=elementResidual_u[i];
+          
+	      globalResidual[offset_u+stride_u*u_l2g[eN_i]] += elementResidual_u[i];
 	    }//i
 	}//elements
       //
@@ -441,6 +544,8 @@ namespace proteus
 		dm_ext=0.0,
 		H_ext=0.0,
 		dH_ext[nSpace],
+		f_ext[nSpace],//MOVING_DOMAIN
+		df_ext[nSpace],//MOVING_DOMAIN
 		//flux_ext=0.0,
 		bc_u_ext=0.0,
 		bc_grad_u_ext[nSpace],
@@ -457,11 +562,12 @@ namespace proteus
 		dS,
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
-		normal[3],x_ext,y_ext,z_ext,
-		G[nSpace*nSpace],G_dd_G,tr_G;
+		normal[3],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
+		G[nSpace*nSpace],G_dd_G,tr_G,flux_ext;
 	      // 
 	      //calculate the solution and gradients at quadrature points 
 	      // 
+	      //compute information about mapping from reference element to physical element
 	      ck.calculateMapping_elementBoundary(eN,
 						  ebN_local,
 						  kb,
@@ -480,7 +586,19 @@ namespace proteus
 						  normal_ref,
 						  normal,
 						  x_ext,y_ext,z_ext);
-	      dS = metricTensorDetSqrt*dS_ref[kb];
+	      ck.calculateMappingVelocity_elementBoundary(eN,
+							  ebN_local,
+							  kb,
+							  ebN_local_kb,
+							  mesh_velocity_dof,
+							  mesh_l2g,
+							  mesh_trial_trace_ref,
+							  xt_ext,yt_ext,zt_ext,
+							  normal,
+							  boundaryJac,
+							  metricTensor,
+							  integralScaling);
+	      dS = ((1.0-MOVING_DOMAIN)*metricTensorDetSqrt + MOVING_DOMAIN*integralScaling)*dS_ref[kb];
 	      //get the metric tensor
 	      //cek todo use symmetry
 	      ck.calculateG(jacInv_ext,G,G_dd_G,tr_G);
@@ -516,10 +634,44 @@ namespace proteus
 				   bc_dm_ext,
 				   bc_H_ext,
 				   bc_dH_ext);
-	      //save for other models?
+	      //
+	      //moving mesh
+	      //
+	      double velocity_ext[nSpace];
+	      velocity_ext[0] = - MOVING_DOMAIN*xt_ext;
+	      velocity_ext[1] = - MOVING_DOMAIN*yt_ext;
+	      velocity_ext[2] = - MOVING_DOMAIN*zt_ext;
+	      // 
+	      //calculate the numerical fluxes 
+	      // 
+	      exteriorNumericalAdvectiveFlux(1,//isDOFBoundary_u[ebNE_kb],
+					     0,//isFluxBoundary_u[ebNE_kb],
+					     normal,
+					     ebqe_bc_u_ext[ebNE_kb],//bc_u_ext,
+					     0.0,//ebqe_bc_flux_u_ext[ebNE_kb],
+					     u_ext,
+					     velocity_ext,
+					     flux_ext);
 	      ebqe_u[ebNE_kb] = u_ext;
-	      //skip element assembly for boundaries
+	      //
+	      //update residuals
+	      //
+	      for (int i=0;i<nDOF_test_element;i++)
+		{
+		  int ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
+
+		  elementResidual_u[i] += ck.ExteriorElementBoundaryFlux(flux_ext,u_test_dS[i]);
+		}//i
 	    }//kb
+	  //
+	  //update the element and global residual storage
+	  //
+	  for (int i=0;i<nDOF_test_element;i++)
+	    {
+	      int eN_i = eN*nDOF_test_element+i;
+
+	      globalResidual[offset_u+stride_u*u_l2g[eN_i]] += MOVING_DOMAIN*elementResidual_u[i];
+	    }//i
 	}//ebNE
     }
     
@@ -527,6 +679,8 @@ namespace proteus
 			   double* mesh_trial_ref,
 			   double* mesh_grad_trial_ref,
 			   double* mesh_dof,
+			   double* mesh_velocity_dof,
+			   double MOVING_DOMAIN,
 			   int* mesh_l2g,
 			   double* dV_ref,
 			   double* u_trial_ref,
@@ -567,9 +721,8 @@ namespace proteus
 			   double* ebqe_bc_u_ext,
 			   int* csrColumnOffsets_eb_u_u)
     {
-      double Ct_sge=4.0;
-
-
+      double Ct_sge = 4.0;
+    
       //
       //loop over elements to compute volume integrals and load them into the element Jacobians and global Jacobian
       //
@@ -592,6 +745,7 @@ namespace proteus
 		grad_u[nSpace],
 		m=0.0,dm=0.0,
 		H=0.0,dH[nSpace],
+		f[nSpace],df[nSpace],//MOVING_MESH
 		m_t=0.0,dm_t=0.0,
 		dpdeResidual_u_u[nDOF_trial_element],
 		Lstar_u[nDOF_test_element],
@@ -604,7 +758,7 @@ namespace proteus
 		dV,
 		u_test_dV[nDOF_test_element],
 		u_grad_test_dV[nDOF_test_element*nSpace],
-		x,y,z,
+		x,y,z,xt,yt,zt,
 		G[nSpace*nSpace],G_dd_G,tr_G;
 	      //
 	      //calculate solution and gradients at quadrature points
@@ -620,6 +774,12 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateMappingVelocity_element(eN,
+						  k,
+						  mesh_velocity_dof,
+						  mesh_l2g,
+						  mesh_trial_ref,
+						  xt,yt,zt);
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
@@ -651,7 +811,12 @@ namespace proteus
 	      //
 	      //moving mesh
 	      //
-	      //omit for now
+	      f[0] = -MOVING_DOMAIN*m*xt;
+	      f[1] = -MOVING_DOMAIN*m*yt;
+	      f[2] = -MOVING_DOMAIN*m*zt;
+	      df[0] = -MOVING_DOMAIN*dm*xt;
+	      df[1] = -MOVING_DOMAIN*dm*yt;
+	      df[2] = -MOVING_DOMAIN*dm*zt;
 	      //
 	      //calculate time derivatives
 	      //
@@ -670,7 +835,7 @@ namespace proteus
 		  //int eN_k_i_nSpace = (eN_k*nDOF_trial_element+i)*nSpace;
 		  //Lstar_u[i]=ck.Hamiltonian_adjoint(dH,&u_grad_test_dV[eN_k_i_nSpace]);
 		  register int i_nSpace = i*nSpace;
-		  Lstar_u[i]=ck.Hamiltonian_adjoint(dH,&u_grad_test_dV[i_nSpace]);
+		  Lstar_u[i]=ck.Hamiltonian_adjoint(dH,&u_grad_test_dV[i_nSpace]) + MOVING_DOMAIN*ck.Advection_adjoint(df,&u_grad_test_dV[i_nSpace]);
 	      
 		}
 	      //calculate the Jacobian of strong residual
@@ -680,28 +845,31 @@ namespace proteus
 		  //int eN_k_j_nSpace = eN_k_j*nSpace;
 		  int j_nSpace = j*nSpace;
 		  dpdeResidual_u_u[j]=ck.MassJacobian_strong(dm_t,u_trial_ref[k*nDOF_trial_element+j]) +
-		    ck.HamiltonianJacobian_strong(dH,&u_grad_trial[j_nSpace]);
+		    ck.HamiltonianJacobian_strong(dH,&u_grad_trial[j_nSpace]) +
+		    MOVING_DOMAIN*ck.AdvectionJacobian_strong(df,&u_grad_trial[j_nSpace]);
 
 		}
 	      //tau and tau*Res
+	      double subgridErrorVelocity[nSpace];
+	      subgridErrorVelocity[0] = dH[0] - MOVING_DOMAIN*df[0];
+	      subgridErrorVelocity[1] = dH[1] - MOVING_DOMAIN*df[1];
+	      subgridErrorVelocity[2] = dH[2] - MOVING_DOMAIN*df[2];
 	      calculateSubgridError_tau(elementDiameter[eN],
 					dm_t,
-					dH,
+					subgridErrorVelocity,//dH,
 	   	         		cfl[eN_k],
 					tau0);
-          
-	      calculateSubgridError_tau(Ct_sge,
+  
+              calculateSubgridError_tau(Ct_sge,
                                         G,
 					dm_t,
-					dH,
+					subgridErrorVelocity,//dH,
 					tau1,
-				        cfl[eN_k]);	
-
+				        cfl[eN_k]);
               tau = useMetrics*tau1+(1.0-useMetrics)*tau0;
 
-	      for(int j=0;j<nDOF_trial_element;j++) 
+	      for(int j=0;j<nDOF_trial_element;j++)
 		dsubgridError_u_u[j] = -tau*dpdeResidual_u_u[j];
-
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
 		  //int eN_k_i=eN_k*nDOF_test_element+i;
@@ -714,6 +882,7 @@ namespace proteus
 		      int i_nSpace = i*nSpace;
 		      elementJacobian_u_u[i][j] += ck.MassJacobian_weak(dm_t,u_trial_ref[k*nDOF_trial_element+j],u_test_dV[i]) + 
 			ck.HamiltonianJacobian_weak(dH,&u_grad_trial[j_nSpace],u_test_dV[i]) +
+			MOVING_DOMAIN*ck.AdvectionJacobian_weak(df,u_trial_ref[k*nDOF_trial_element+j],&u_grad_test_dV[i_nSpace]) +
 			ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u[i]) + 
 			ck.NumericalDiffusionJacobian(q_numDiff_u_last[eN_k],&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]); 
 		    }//j
@@ -732,7 +901,179 @@ namespace proteus
 		}//j
 	    }//i
 	}//elements
-      //skip exterior boundaries since there are no boundary conditions
+      //
+      //loop over exterior element boundaries to compute the surface integrals and load them into the global Jacobian
+      //
+      for (int ebNE = 0; ebNE < nExteriorElementBoundaries_global; ebNE++) 
+	{ 
+	  register int ebN = exteriorElementBoundariesArray[ebNE]; 
+	  register int eN  = elementBoundaryElementsArray[ebN*2+0],
+            ebN_local = elementBoundaryLocalElementBoundariesArray[ebN*2+0],
+            eN_nDOF_trial_element = eN*nDOF_trial_element;
+	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++) 
+	    { 
+	      register int ebNE_kb = ebNE*nQuadraturePoints_elementBoundary+kb,
+		ebNE_kb_nSpace = ebNE_kb*nSpace,
+		ebN_local_kb = ebN_local*nQuadraturePoints_elementBoundary+kb,
+		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
+
+	      register double u_ext=0.0,
+		grad_u_ext[nSpace],
+		m_ext=0.0,
+		dm_ext=0.0,
+		H_ext=0.0,
+		dH_ext[nSpace],
+		bc_grad_u_ext[nSpace],
+		bc_H_ext=0.0,
+		bc_dH_ext[nSpace],
+		f_ext[nSpace],
+		df_ext[nSpace],
+		dflux_u_u_ext=0.0,
+		bc_u_ext=0.0,
+		//bc_grad_u_ext[nSpace],
+		bc_m_ext=0.0,
+		bc_dm_ext=0.0,
+		bc_f_ext[nSpace],
+		bc_df_ext[nSpace],
+		fluxJacobian_u_u[nDOF_trial_element],
+		jac_ext[nSpace*nSpace],
+		jacDet_ext,
+		jacInv_ext[nSpace*nSpace],
+		boundaryJac[nSpace*(nSpace-1)],
+		metricTensor[(nSpace-1)*(nSpace-1)],
+		metricTensorDetSqrt,
+		dS,
+		u_test_dS[nDOF_test_element],
+		u_grad_trial_trace[nDOF_trial_element*nSpace],
+		normal[3],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
+		G[nSpace*nSpace],G_dd_G,tr_G;
+	      // 
+	      //calculate the solution and gradients at quadrature points 
+	      // 
+	      // u_ext=0.0;
+	      // for (int I=0;I<nSpace;I++)
+	      //   {
+	      //     grad_u_ext[I] = 0.0;
+	      //     bc_grad_u_ext[I] = 0.0;
+	      //   }
+	      // for (int j=0;j<nDOF_trial_element;j++) 
+	      //   { 
+	      //     register int eN_j = eN*nDOF_trial_element+j,
+	      //       ebNE_kb_j = ebNE_kb*nDOF_trial_element+j,
+	      //       ebNE_kb_j_nSpace= ebNE_kb_j*nSpace;
+	      //     u_ext += valFromDOF_c(u_dof[u_l2g[eN_j]],u_trial_ext[ebNE_kb_j]); 
+	                     
+	      //     for (int I=0;I<nSpace;I++)
+	      //       {
+	      //         grad_u_ext[I] += gradFromDOF_c(u_dof[u_l2g[eN_j]],u_grad_trial_ext[ebNE_kb_j_nSpace+I]); 
+	      //       } 
+	      //   }
+	      ck.calculateMapping_elementBoundary(eN,
+						  ebN_local,
+						  kb,
+						  ebN_local_kb,
+						  mesh_dof,
+						  mesh_l2g,
+						  mesh_trial_trace_ref,
+						  mesh_grad_trial_trace_ref,
+						  boundaryJac_ref,
+						  jac_ext,
+						  jacDet_ext,
+						  jacInv_ext,
+						  boundaryJac,
+						  metricTensor,
+						  metricTensorDetSqrt,
+						  normal_ref,
+						  normal,
+						  x_ext,y_ext,z_ext);
+	      ck.calculateMappingVelocity_elementBoundary(eN,
+							  ebN_local,
+							  kb,
+							  ebN_local_kb,
+							  mesh_velocity_dof,
+							  mesh_l2g,
+							  mesh_trial_trace_ref,
+							  xt_ext,yt_ext,zt_ext,
+							  normal,
+							  boundaryJac,
+							  metricTensor,
+							  integralScaling);
+	      dS = ((1.0-MOVING_DOMAIN)*metricTensorDetSqrt + MOVING_DOMAIN*integralScaling)*dS_ref[kb];
+	      //dS = metricTensorDetSqrt*dS_ref[kb];
+	      ck.calculateG(jacInv_ext,G,G_dd_G,tr_G);
+	      //compute shape and solution information
+	      //shape
+	      ck.gradTrialFromRef(&u_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,u_grad_trial_trace);
+	      //solution and gradients	
+	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
+	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_ext);
+	      //precalculate test function products with integration weights
+	      for (int j=0;j<nDOF_trial_element;j++)
+		{
+		  u_test_dS[j] = u_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
+		}
+	      //
+	      //load the boundary values
+	      //
+	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
+	      // 
+	      //calculate the internal and external trace of the pde coefficients 
+	      // 
+	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
+				   u_ext,
+				   grad_u_ext,
+				   m_ext,
+				   dm_ext,
+				   H_ext,
+				   dH_ext);
+	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
+				   bc_u_ext,
+				   bc_grad_u_ext,
+				   bc_m_ext,
+				   bc_dm_ext,
+				   bc_H_ext,
+				   bc_dH_ext);
+	      //
+	      //moving domain
+	      //
+	      double velocity_ext[nSpace];
+	      velocity_ext[0] = - MOVING_DOMAIN*xt_ext;
+	      velocity_ext[1] = - MOVING_DOMAIN*yt_ext;
+	      velocity_ext[2] = - MOVING_DOMAIN*zt_ext;
+	      // 
+	      //calculate the numerical fluxes 
+	      // 
+	      exteriorNumericalAdvectiveFluxDerivative(1,//isDOFBoundary_u[ebNE_kb],
+						       0,//isFluxBoundary_u[ebNE_kb],
+						       normal,
+						       velocity_ext,
+						       dflux_u_u_ext);
+	      //
+	      //calculate the flux jacobian
+	      //
+	      for (int j=0;j<nDOF_trial_element;j++)
+		{
+		  //register int ebNE_kb_j = ebNE_kb*nDOF_trial_element+j;
+		  register int ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
+	      
+		  fluxJacobian_u_u[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_u_u_ext,u_trial_trace_ref[ebN_local_kb_j]);
+		}//j
+	      //
+	      //update the global Jacobian from the flux Jacobian
+	      //
+	      for (int i=0;i<nDOF_test_element;i++)
+		{
+		  register int eN_i = eN*nDOF_test_element+i;
+		  //register int ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
+		  for (int j=0;j<nDOF_trial_element;j++)
+		    {
+		      register int ebN_i_j = ebN*4*nDOF_test_X_trial_element + i*nDOF_trial_element + j;
+
+		      globalJacobian[csrRowIndeces_u_u[eN_i] + csrColumnOffsets_eb_u_u[ebN_i_j]] += MOVING_DOMAIN*fluxJacobian_u_u[j]*u_test_dS[i];
+		    }//j
+		}//i
+	    }//kb
+	}//ebNE
     }//computeJacobian
   };//NCLS
 

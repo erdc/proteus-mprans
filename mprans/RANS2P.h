@@ -15,6 +15,8 @@ namespace proteus
 				   double* mesh_trial_ref,
 				   double* mesh_grad_trial_ref,
 				   double* mesh_dof,
+				   double* mesh_velocity_dof,
+				   double MOVING_DOMAIN,//0 or 1
 				   int* mesh_l2g,
 				   double* dV_ref,
 				   double* p_trial_ref,
@@ -125,6 +127,8 @@ namespace proteus
 				   double* mesh_trial_ref,
 				   double* mesh_grad_trial_ref,
 				   double* mesh_dof,
+				   double* mesh_velocity_dof,
+				   double MOVING_DOMAIN,
 				   int* mesh_l2g,
 				   double* dV_ref,
 				   double* p_trial_ref,
@@ -676,6 +680,7 @@ namespace proteus
 				   const double& dm,
 				   const double df[nSpace],
 				   const double& a,
+				   const double&  pfac,
 				   double& tau_v,
 				   double& tau_p,
 				   double& cfl)
@@ -688,10 +693,10 @@ namespace proteus
       for(int I=0;I<nSpace;I++)
 	nrm_df+=df[I]*df[I];
       nrm_df = sqrt(nrm_df);
-      cfl = nrm_df/(h*density);
+      cfl = nrm_df/(h*density);//this is really cfl/dt, but that's what we want to know, the step controller expect this
       oneByAbsdt =  fabs(dmt);
       tau_v = 1.0/(4.0*viscosity/(h*h) + 2.0*nrm_df/h + oneByAbsdt);
-      tau_p = 4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h;
+      tau_p = (4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h)/pfac;
     }
 
 
@@ -704,6 +709,7 @@ namespace proteus
 					const double&  A0,
 					const double   Ai[nSpace],
 					const double&  Kij,
+					const double&  pfac,
 					double& tau_v,
 					double& tau_p,
 					double& q_cfl)	
@@ -714,7 +720,7 @@ namespace proteus
            v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
     
       tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + Cd_sge*Kij*Kij*G_dd_G); 
-      tau_p = 1.0/(tr_G*tau_v);     
+      tau_p = 1.0/(pfac*tr_G*tau_v);     
     }
 
 
@@ -1205,10 +1211,11 @@ namespace proteus
 					const double& penalty,
 					double& flux)
     {
-      double diffusiveVelocityComponent_I,penaltyFlux,max_a=a[0];
+      double diffusiveVelocityComponent_I,penaltyFlux,max_a;
       if(isDOFBoundary == 1)
 	{
 	  flux = 0.0;
+	  max_a=0.0;
 	  for(int I=0;I<nSpace;I++)
 	    {
 	      diffusiveVelocityComponent_I=0.0;
@@ -1222,9 +1229,7 @@ namespace proteus
 	  penaltyFlux = penalty*(u-bc_u);
 	  flux += penaltyFlux;
 	  //contact line slip
-	  //flux*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
-	  //std::cout<<"Dirichlet boundary condition"<<bc_u<<'\t'<<u<<std::endl;
-	  //std::cout<<"Dirichlet boundary flux"<<flux<<std::endl;
+	  flux*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
 	}
       else if(isFluxBoundary == 1)
 	{
@@ -1250,7 +1255,7 @@ namespace proteus
 						  const double grad_v[nSpace],
 						  const double& penalty)
     {
-      double dvel_I,tmp=0.0,max_a=a[0];
+      double dvel_I,tmp=0.0;
       if(isDOFBoundary >= 1)
 	{
 	  for(int I=0;I<nSpace;I++)
@@ -1259,13 +1264,12 @@ namespace proteus
 	      for(int m=rowptr[I];m<rowptr[I+1];m++)
 		{
 		  dvel_I -= a[m]*grad_v[colind[m]];
-		  max_a = fmax(max_a,a[m]);
 		}
 	      tmp += dvel_I*n[I];
 	    }
-	  tmp += penalty*v;
+	  tmp +=penalty*v;
 	  //contact line slip
-	  //tmp*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
+	  tmp*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
 	}
       return tmp;
     }
@@ -1274,6 +1278,8 @@ namespace proteus
 			   double* mesh_trial_ref,
 			   double* mesh_grad_trial_ref,
 			   double* mesh_dof,
+			   double* mesh_velocity_dof,
+			   double MOVING_DOMAIN,
 			   int* mesh_l2g,
 			   double* dV_ref,
 			   double* p_trial_ref,
@@ -1484,7 +1490,7 @@ namespace proteus
 		p_grad_trial[nDOF_trial_element*nSpace],vel_grad_trial[nDOF_trial_element*nSpace],
 		p_test_dV[nDOF_trial_element],vel_test_dV[nDOF_trial_element],
 		p_grad_test_dV[nDOF_test_element*nSpace],vel_grad_test_dV[nDOF_test_element*nSpace],
-		dV,x,y,z,
+		dV,x,y,z,xt,yt,zt,
 		G[nSpace*nSpace],G_dd_G,tr_G,norm_Rv,h_phi, dmom_adv_star[nSpace],dmom_adv_sge[nSpace];
 	      //get jacobian, etc for mapping reference element
 	      ck.calculateMapping_element(eN,
@@ -1497,12 +1503,19 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateMappingVelocity_element(eN,
+						  k,
+						  mesh_velocity_dof,
+						  mesh_l2g,
+						  mesh_trial_ref,
+						  xt,yt,zt);
+	      //xt=0.0;yt=0.0;zt=0.0;
+	      //std::cout<<"xt "<<xt<<'\t'<<yt<<'\t'<<zt<<std::endl;
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
 	      ck.calculateGScale(G,&normal_phi[eN_k_nSpace],h_phi);
-
-
+	      
 	      eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	      eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	     
@@ -1609,7 +1622,31 @@ namespace proteus
 	      //
 	      //moving mesh
 	      //
-	      //omit for now
+	      //transform the continuity equation as if the accumulation term was  d(1)/dt
+	      mass_adv[0] -= MOVING_DOMAIN*xt;
+	      mass_adv[1] -= MOVING_DOMAIN*yt;
+	      mass_adv[2] -= MOVING_DOMAIN*zt;
+
+	      mom_u_adv[0] -= MOVING_DOMAIN*mom_u_acc*xt;
+	      mom_u_adv[1] -= MOVING_DOMAIN*mom_u_acc*yt;
+	      mom_u_adv[2] -= MOVING_DOMAIN*mom_u_acc*zt;
+	      dmom_u_adv_u[0] -= MOVING_DOMAIN*dmom_u_acc_u*xt;
+	      dmom_u_adv_u[1] -= MOVING_DOMAIN*dmom_u_acc_u*yt;
+	      dmom_u_adv_u[2] -= MOVING_DOMAIN*dmom_u_acc_u*zt;
+
+	      mom_v_adv[0] -= MOVING_DOMAIN*mom_v_acc*xt;
+	      mom_v_adv[1] -= MOVING_DOMAIN*mom_v_acc*yt;
+	      mom_v_adv[2] -= MOVING_DOMAIN*mom_v_acc*zt;
+	      dmom_v_adv_v[0] -= MOVING_DOMAIN*dmom_v_acc_v*xt;
+	      dmom_v_adv_v[1] -= MOVING_DOMAIN*dmom_v_acc_v*yt;
+	      dmom_v_adv_v[2] -= MOVING_DOMAIN*dmom_v_acc_v*zt;
+
+	      mom_w_adv[0] -= MOVING_DOMAIN*mom_w_acc*xt;
+	      mom_w_adv[1] -= MOVING_DOMAIN*mom_w_acc*yt;
+	      mom_w_adv[2] -= MOVING_DOMAIN*mom_w_acc*zt;
+	      dmom_w_adv_w[0] -= MOVING_DOMAIN*dmom_w_acc_w*xt;
+	      dmom_w_adv_w[1] -= MOVING_DOMAIN*dmom_w_acc_w*yt;
+	      dmom_w_adv_w[2] -= MOVING_DOMAIN*dmom_w_acc_w*zt;
 	      //
 	      //calculate time derivative at quadrature points
 	      //
@@ -1639,9 +1676,9 @@ namespace proteus
 		ck.Advection_strong(dmass_adv_v,grad_v) +
 		ck.Advection_strong(dmass_adv_w,grad_w);
 	  
-              dmom_adv_sge[0] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+0];
-              dmom_adv_sge[1] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+1];
-              dmom_adv_sge[2] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+2];
+              dmom_adv_sge[0] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+0] - MOVING_DOMAIN*xt);
+              dmom_adv_sge[1] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+1] - MOVING_DOMAIN*yt);
+              dmom_adv_sge[2] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+2] - MOVING_DOMAIN*zt);
 
 	      pdeResidual_u = ck.Mass_strong(mom_u_acc_t) +
 		ck.Advection_strong(dmom_adv_sge,grad_u) +
@@ -1665,6 +1702,7 @@ namespace proteus
 					dmom_u_acc_u,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
+					dmom_u_ham_grad_p[0],
 					tau_v0,
 					tau_p0,
 					q_cfl[eN_k]);
@@ -1675,6 +1713,7 @@ namespace proteus
 					dmom_u_acc_u_t,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
+					dmom_u_ham_grad_p[0],
 					tau_v1,
 					tau_p1,
 					q_cfl[eN_k]);	
@@ -1707,9 +1746,9 @@ namespace proteus
 					   subgridError_v,
 					   subgridError_w);
 	      // velocity used in adjoint (VMS or RBLES, with or without lagging the grid scale velocity)
-	      dmom_adv_star[0] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+0] + useRBLES*subgridError_u);
-	      dmom_adv_star[1] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+1] + useRBLES*subgridError_v);
-              dmom_adv_star[2] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+2] + useRBLES*subgridError_w);
+	      dmom_adv_star[0] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+0] - MOVING_DOMAIN*xt + useRBLES*subgridError_u);
+	      dmom_adv_star[1] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+1] - MOVING_DOMAIN*yt + useRBLES*subgridError_v);
+              dmom_adv_star[2] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+2] - MOVING_DOMAIN*zt + useRBLES*subgridError_w);
         
 	      // adjoint times the test functions 
 	      for (int i=0;i<nDOF_test_element;i++)
@@ -1951,7 +1990,7 @@ namespace proteus
 		metricTensorDetSqrt,
 		dS,p_test_dS[nDOF_test_element],vel_test_dS[nDOF_test_element],
 		p_grad_trial_trace[nDOF_trial_element*nSpace],vel_grad_trial_trace[nDOF_trial_element*nSpace],
-		normal[3],x_ext,y_ext,z_ext,
+		normal[3],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
 		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty;
 	      //compute information about mapping from reference element to physical element
 	      ck.calculateMapping_elementBoundary(eN,
@@ -1972,7 +2011,22 @@ namespace proteus
 						  normal_ref,
 						  normal,
 						  x_ext,y_ext,z_ext);
-	      dS = metricTensorDetSqrt*dS_ref[kb];
+	      ck.calculateMappingVelocity_elementBoundary(eN,
+							  ebN_local,
+							  kb,
+							  ebN_local_kb,
+							  mesh_velocity_dof,
+							  mesh_l2g,
+							  mesh_trial_trace_ref,
+							  xt_ext,yt_ext,zt_ext,
+							  normal,
+							  boundaryJac,
+							  metricTensor,
+							  integralScaling);
+	      //xt_ext=0.0;yt_ext=0.0;zt_ext=0.0;
+	      //std::cout<<"xt_ext "<<xt_ext<<'\t'<<yt_ext<<'\t'<<zt_ext<<std::endl;
+	      //std::cout<<"integralScaling - metricTensorDetSrt ==============================="<<integralScaling-metricTensorDetSqrt<<std::endl;
+	      dS = ((1.0-MOVING_DOMAIN)*metricTensorDetSqrt + MOVING_DOMAIN*integralScaling)*dS_ref[kb];
 	      //get the metric tensor
 	      //cek todo use symmetry
 	      ck.calculateG(jacInv_ext,G,G_dd_G,tr_G);
@@ -2152,6 +2206,46 @@ namespace proteus
 				   bc_dmom_v_ham_grad_p_ext,
 				   bc_mom_w_ham_ext,
 				   bc_dmom_w_ham_grad_p_ext);          
+	      //
+	      //moving domain
+	      //
+	      mass_adv_ext[0] -= MOVING_DOMAIN*xt_ext;
+	      mass_adv_ext[1] -= MOVING_DOMAIN*yt_ext;
+	      mass_adv_ext[2] -= MOVING_DOMAIN*zt_ext;
+
+	      mom_u_adv_ext[0] -= MOVING_DOMAIN*mom_u_acc_ext*xt_ext;
+	      mom_u_adv_ext[1] -= MOVING_DOMAIN*mom_u_acc_ext*yt_ext;
+	      mom_u_adv_ext[2] -= MOVING_DOMAIN*mom_u_acc_ext*zt_ext;
+	      dmom_u_adv_u_ext[0] -= MOVING_DOMAIN*dmom_u_acc_u_ext*xt_ext;
+	      dmom_u_adv_u_ext[1] -= MOVING_DOMAIN*dmom_u_acc_u_ext*yt_ext;
+	      dmom_u_adv_u_ext[2] -= MOVING_DOMAIN*dmom_u_acc_u_ext*zt_ext;
+
+	      mom_v_adv_ext[0] -= MOVING_DOMAIN*mom_v_acc_ext*xt_ext;
+	      mom_v_adv_ext[1] -= MOVING_DOMAIN*mom_v_acc_ext*yt_ext;
+	      mom_v_adv_ext[2] -= MOVING_DOMAIN*mom_v_acc_ext*zt_ext;
+	      dmom_v_adv_v_ext[0] -= MOVING_DOMAIN*dmom_v_acc_v_ext*xt_ext;
+	      dmom_v_adv_v_ext[1] -= MOVING_DOMAIN*dmom_v_acc_v_ext*yt_ext;
+	      dmom_v_adv_v_ext[2] -= MOVING_DOMAIN*dmom_v_acc_v_ext*zt_ext;
+
+	      mom_w_adv_ext[0] -= MOVING_DOMAIN*mom_w_acc_ext*xt_ext;
+	      mom_w_adv_ext[1] -= MOVING_DOMAIN*mom_w_acc_ext*yt_ext;
+	      mom_w_adv_ext[2] -= MOVING_DOMAIN*mom_w_acc_ext*zt_ext;
+	      dmom_w_adv_w_ext[0] -= MOVING_DOMAIN*dmom_w_acc_w_ext*xt_ext;
+	      dmom_w_adv_w_ext[1] -= MOVING_DOMAIN*dmom_w_acc_w_ext*yt_ext;
+	      dmom_w_adv_w_ext[2] -= MOVING_DOMAIN*dmom_w_acc_w_ext*zt_ext;
+
+	      //bc's
+	      bc_mom_u_adv_ext[0] -= MOVING_DOMAIN*bc_mom_u_acc_ext*xt_ext;
+	      bc_mom_u_adv_ext[1] -= MOVING_DOMAIN*bc_mom_u_acc_ext*yt_ext;
+	      bc_mom_u_adv_ext[2] -= MOVING_DOMAIN*bc_mom_u_acc_ext*zt_ext;
+
+	      bc_mom_v_adv_ext[0] -= MOVING_DOMAIN*bc_mom_v_acc_ext*xt_ext;
+	      bc_mom_v_adv_ext[1] -= MOVING_DOMAIN*bc_mom_v_acc_ext*yt_ext;
+	      bc_mom_v_adv_ext[2] -= MOVING_DOMAIN*bc_mom_v_acc_ext*zt_ext;
+
+	      bc_mom_w_adv_ext[0] -= MOVING_DOMAIN*bc_mom_w_acc_ext*xt_ext;
+	      bc_mom_w_adv_ext[1] -= MOVING_DOMAIN*bc_mom_w_acc_ext*yt_ext;
+	      bc_mom_w_adv_ext[2] -= MOVING_DOMAIN*bc_mom_w_acc_ext*zt_ext;
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
@@ -2161,7 +2255,7 @@ namespace proteus
 	      ck.calculateGScale(G,normal,h_penalty);
 	      h_penalty = 10.0/h_penalty;
 	      //cek debug, do it the old way
-	      h_penalty = 10000.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
+	      h_penalty = 10.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
 	      exteriorNumericalAdvectiveFlux(isDOFBoundary_p[ebNE_kb],
 					     isDOFBoundary_u[ebNE_kb],
 					     isDOFBoundary_v[ebNE_kb],
@@ -2304,6 +2398,8 @@ namespace proteus
 			   double* mesh_trial_ref,
 			   double* mesh_grad_trial_ref,
 			   double* mesh_dof,
+			   double* mesh_velocity_dof,
+			   double MOVING_DOMAIN,
 			   int* mesh_l2g,
 			   double* dV_ref,
 			   double* p_trial_ref,
@@ -2566,7 +2662,7 @@ namespace proteus
 		dV,
 		p_test_dV[nDOF_test_element],vel_test_dV[nDOF_test_element],
 		p_grad_test_dV[nDOF_test_element*nSpace],vel_grad_test_dV[nDOF_test_element*nSpace],
-		x,y,z,
+		x,y,z,xt,yt,zt,
 		G[nSpace*nSpace],G_dd_G,tr_G,h_phi, dmom_adv_star[nSpace], dmom_adv_sge[nSpace];
 	      //get jacobian, etc for mapping reference element
 	      ck.calculateMapping_element(eN,
@@ -2579,6 +2675,14 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateMappingVelocity_element(eN,
+						  k,
+						  mesh_velocity_dof,
+						  mesh_l2g,
+						  mesh_trial_ref,
+						  xt,yt,zt);
+	      //xt=0.0;yt=0.0;zt=0.0;
+	      //std::cout<<"xt "<<xt<<'\t'<<yt<<'\t'<<zt<<std::endl;
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
@@ -2707,7 +2811,30 @@ namespace proteus
 	      //
 	      //moving mesh
 	      //
-	      //omit for now
+	      mass_adv[0] -= MOVING_DOMAIN*xt;
+	      mass_adv[1] -= MOVING_DOMAIN*yt;
+	      mass_adv[2] -= MOVING_DOMAIN*zt;
+
+	      mom_u_adv[0] -= MOVING_DOMAIN*mom_u_acc*xt;
+	      mom_u_adv[1] -= MOVING_DOMAIN*mom_u_acc*yt;
+	      mom_u_adv[2] -= MOVING_DOMAIN*mom_u_acc*zt;
+	      dmom_u_adv_u[0] -= MOVING_DOMAIN*dmom_u_acc_u*xt;
+	      dmom_u_adv_u[1] -= MOVING_DOMAIN*dmom_u_acc_u*yt;
+	      dmom_u_adv_u[2] -= MOVING_DOMAIN*dmom_u_acc_u*zt;
+
+	      mom_v_adv[0] -= MOVING_DOMAIN*mom_v_acc*xt;
+	      mom_v_adv[1] -= MOVING_DOMAIN*mom_v_acc*yt;
+	      mom_v_adv[2] -= MOVING_DOMAIN*mom_v_acc*zt;
+	      dmom_v_adv_v[0] -= MOVING_DOMAIN*dmom_v_acc_v*xt;
+	      dmom_v_adv_v[1] -= MOVING_DOMAIN*dmom_v_acc_v*yt;
+	      dmom_v_adv_v[2] -= MOVING_DOMAIN*dmom_v_acc_v*zt;
+
+	      mom_w_adv[0] -= MOVING_DOMAIN*mom_w_acc*xt;
+	      mom_w_adv[1] -= MOVING_DOMAIN*mom_w_acc*yt;
+	      mom_w_adv[2] -= MOVING_DOMAIN*mom_w_acc*zt;
+	      dmom_w_adv_w[0] -= MOVING_DOMAIN*dmom_w_acc_w*xt;
+	      dmom_w_adv_w[1] -= MOVING_DOMAIN*dmom_w_acc_w*yt;
+	      dmom_w_adv_w[2] -= MOVING_DOMAIN*dmom_w_acc_w*zt;
 	      //
 	      //calculate time derivatives
 	      //
@@ -2732,9 +2859,9 @@ namespace proteus
 	      //
 	      //calculate subgrid error contribution to the Jacobian (strong residual, adjoint, jacobian of strong residual)
 	      //
-              dmom_adv_sge[0] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+0];
-              dmom_adv_sge[1] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+1];
-              dmom_adv_sge[2] = dmom_u_acc_u*q_velocity_sge[eN_k_nSpace+2];
+              dmom_adv_sge[0] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+0] - MOVING_DOMAIN*xt);
+              dmom_adv_sge[1] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+1] - MOVING_DOMAIN*yt);
+              dmom_adv_sge[2] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+2] - MOVING_DOMAIN*zt);
 
 
 	      //
@@ -2786,6 +2913,7 @@ namespace proteus
 					dmom_u_acc_u,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
+					dmom_u_ham_grad_p[0],
 					tau_v0,
 					tau_p0,
 					q_cfl[eN_k]);
@@ -2795,6 +2923,7 @@ namespace proteus
 					dmom_u_acc_u_t,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
+                                        dmom_u_ham_grad_p[0],					
 					tau_v1,
 					tau_p1,
 					q_cfl[eN_k]);					
@@ -2853,9 +2982,9 @@ namespace proteus
 						      dsubgridError_w_p,
 						      dsubgridError_w_w);
 	      // velocity used in adjoint (VMS or RBLES, with or without lagging the grid scale velocity)
-	      dmom_adv_star[0] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+0] + useRBLES*subgridError_u);
-	      dmom_adv_star[1] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+1] + useRBLES*subgridError_v);
-	      dmom_adv_star[2] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+2] + useRBLES*subgridError_w);
+	      dmom_adv_star[0] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+0] - MOVING_DOMAIN*xt + useRBLES*subgridError_u);
+	      dmom_adv_star[1] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+1] - MOVING_DOMAIN*yt + useRBLES*subgridError_v);
+	      dmom_adv_star[2] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+2] - MOVING_DOMAIN*zt + useRBLES*subgridError_w);
           
 	      //calculate the adjoint times the test functions
 	      for (int i=0;i<nDOF_test_element;i++)
@@ -3124,7 +3253,7 @@ namespace proteus
 		p_test_dS[nDOF_test_element],
 		vel_test_dS[nDOF_test_element],
 		normal[3],
-		x_ext,y_ext,z_ext,
+		x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
 		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty;
 	      ck.calculateMapping_elementBoundary(eN,
 						  ebN_local,
@@ -3144,7 +3273,21 @@ namespace proteus
 						  normal_ref,
 						  normal,
 						  x_ext,y_ext,z_ext);
-	      dS = metricTensorDetSqrt*dS_ref[kb];
+	      ck.calculateMappingVelocity_elementBoundary(eN,
+							  ebN_local,
+							  kb,
+							  ebN_local_kb,
+							  mesh_velocity_dof,
+							  mesh_l2g,
+							  mesh_trial_trace_ref,
+							  xt_ext,yt_ext,zt_ext,
+							  normal,
+							  boundaryJac,
+							  metricTensor,
+							  integralScaling);
+	      //xt_ext=0.0;yt_ext=0.0;zt_ext=0.0;
+	      //std::cout<<"xt_ext "<<xt_ext<<'\t'<<yt_ext<<'\t'<<zt_ext<<std::endl;
+	      dS = ((1.0-MOVING_DOMAIN)*metricTensorDetSqrt + MOVING_DOMAIN*integralScaling)*dS_ref[kb];
 	      ck.calculateG(jacInv_ext,G,G_dd_G,tr_G);
 	      ck.calculateGScale(G,&ebqe_normal_phi_ext[ebNE_kb_nSpace],h_phi);
 
@@ -3322,6 +3465,46 @@ namespace proteus
 				   bc_dmom_v_ham_grad_p_ext,
 				   bc_mom_w_ham_ext,
 				   bc_dmom_w_ham_grad_p_ext);          
+	      //
+	      //moving domain
+	      //
+	      mass_adv_ext[0] -= MOVING_DOMAIN*xt_ext;
+	      mass_adv_ext[1] -= MOVING_DOMAIN*yt_ext;
+	      mass_adv_ext[2] -= MOVING_DOMAIN*zt_ext;
+
+	      mom_u_adv_ext[0] -= MOVING_DOMAIN*mom_u_acc_ext*xt_ext;
+	      mom_u_adv_ext[1] -= MOVING_DOMAIN*mom_u_acc_ext*yt_ext;
+	      mom_u_adv_ext[2] -= MOVING_DOMAIN*mom_u_acc_ext*zt_ext;
+	      dmom_u_adv_u_ext[0] -= MOVING_DOMAIN*dmom_u_acc_u_ext*xt_ext;
+	      dmom_u_adv_u_ext[1] -= MOVING_DOMAIN*dmom_u_acc_u_ext*yt_ext;
+	      dmom_u_adv_u_ext[2] -= MOVING_DOMAIN*dmom_u_acc_u_ext*zt_ext;
+	      
+	      mom_v_adv_ext[0] -= MOVING_DOMAIN*mom_v_acc_ext*xt_ext;
+	      mom_v_adv_ext[1] -= MOVING_DOMAIN*mom_v_acc_ext*yt_ext;
+	      mom_v_adv_ext[2] -= MOVING_DOMAIN*mom_v_acc_ext*zt_ext;
+	      dmom_v_adv_v_ext[0] -= MOVING_DOMAIN*dmom_v_acc_v_ext*xt_ext;
+	      dmom_v_adv_v_ext[1] -= MOVING_DOMAIN*dmom_v_acc_v_ext*yt_ext;
+	      dmom_v_adv_v_ext[2] -= MOVING_DOMAIN*dmom_v_acc_v_ext*zt_ext;
+	      
+	      mom_w_adv_ext[0] -= MOVING_DOMAIN*mom_w_acc_ext*xt_ext;
+	      mom_w_adv_ext[1] -= MOVING_DOMAIN*mom_w_acc_ext*yt_ext;
+	      mom_w_adv_ext[2] -= MOVING_DOMAIN*mom_w_acc_ext*zt_ext;
+	      dmom_w_adv_w_ext[0] -= MOVING_DOMAIN*dmom_w_acc_w_ext*xt_ext;
+	      dmom_w_adv_w_ext[1] -= MOVING_DOMAIN*dmom_w_acc_w_ext*yt_ext;
+	      dmom_w_adv_w_ext[2] -= MOVING_DOMAIN*dmom_w_acc_w_ext*zt_ext;
+	      
+	      //moving domain bc's
+	      bc_mom_u_adv_ext[0] -= MOVING_DOMAIN*bc_mom_u_acc_ext*xt_ext;
+	      bc_mom_u_adv_ext[1] -= MOVING_DOMAIN*bc_mom_u_acc_ext*yt_ext;
+	      bc_mom_u_adv_ext[2] -= MOVING_DOMAIN*bc_mom_u_acc_ext*zt_ext;
+	      
+	      bc_mom_v_adv_ext[0] -= MOVING_DOMAIN*bc_mom_v_acc_ext*xt_ext;
+	      bc_mom_v_adv_ext[1] -= MOVING_DOMAIN*bc_mom_v_acc_ext*yt_ext;
+	      bc_mom_v_adv_ext[2] -= MOVING_DOMAIN*bc_mom_v_acc_ext*zt_ext;
+
+	      bc_mom_w_adv_ext[0] -= MOVING_DOMAIN*bc_mom_w_acc_ext*xt_ext;
+	      bc_mom_w_adv_ext[1] -= MOVING_DOMAIN*bc_mom_w_acc_ext*yt_ext;
+	      bc_mom_w_adv_ext[2] -= MOVING_DOMAIN*bc_mom_w_acc_ext*zt_ext;
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
@@ -3384,7 +3567,7 @@ namespace proteus
 	      ck.calculateGScale(G,normal,h_penalty);
 	      h_penalty = 10.0/h_penalty;
 	      //cek debug, do it the old way
-	      h_penalty = 10000.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
+	      h_penalty = 10.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
 		  register int j_nSpace = j*nSpace,ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;

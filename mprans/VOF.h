@@ -9,12 +9,15 @@ namespace proteus
 {
   class VOF_base
   {
+    //The base class defining the interface
   public:
     virtual ~VOF_base(){}
     virtual void calculateResidual(//element
 				   double* mesh_trial_ref,
 				   double* mesh_grad_trial_ref,
 				   double* mesh_dof,
+				   double* meshVelocity_dof,
+				   double MOVING_DOMAIN,
 				   int* mesh_l2g,
 				   double* dV_ref,
 				   double* u_trial_ref,
@@ -31,6 +34,7 @@ namespace proteus
 				   double* u_grad_test_trace_ref,
 				   double* normal_ref,
 				   double* boundaryJac_ref,
+				   //physics
 				   int nElements_global,
 			           double useMetrics, 
 				   double alphaBDF,
@@ -65,6 +69,8 @@ namespace proteus
 				   double* mesh_trial_ref,
 				   double* mesh_grad_trial_ref,
 				   double* mesh_dof,
+				   double* mesh_velocity_dof,
+				   double MOVING_DOMAIN,
 				   int* mesh_l2g,
 				   double* dV_ref,
 				   double* u_trial_ref,
@@ -166,7 +172,7 @@ namespace proteus
 					const double&  A0,
 					const double   Ai[nSpace],
 					double& tau_v,
-					double& q_cfl)	
+					double& cfl)	
     {
       double v_d_Gv=0.0; 
       for(int I=0;I<nSpace;I++) 
@@ -284,6 +290,8 @@ namespace proteus
 			   double* mesh_trial_ref,
 			   double* mesh_grad_trial_ref,
 			   double* mesh_dof,
+			   double* mesh_velocity_dof,
+			   double MOVING_DOMAIN,
 			   int* mesh_l2g,
 			   double* dV_ref,
 			   double* u_trial_ref,
@@ -300,6 +308,7 @@ namespace proteus
 			   double* u_grad_test_trace_ref,
 			   double* normal_ref,
 			   double* boundaryJac_ref,
+			   //physics
 			   int nElements_global,
 			   double useMetrics, 
 			   double alphaBDF,
@@ -331,8 +340,7 @@ namespace proteus
 			   double* ebqe_u,
 			   double* ebqe_flux)
     {
-      CompKernel<nSpace,nDOF_mesh_trial_element,nDOF_trial_element,nDOF_test_element> ck;
-
+      //cek should this be read in?
       double Ct_sge = 4.0;
 
       //loop over elements to compute volume integrals and load them into element and global residual
@@ -374,7 +382,7 @@ namespace proteus
 		u_grad_trial[nDOF_trial_element*nSpace],
 		u_test_dV[nDOF_trial_element],
 		u_grad_test_dV[nDOF_test_element*nSpace],
-		dV,x,y,z,
+		dV,x,y,z,xt,yt,zt,
 		G[nSpace*nSpace],G_dd_G,tr_G,norm_Rv;
 	      // //
 	      // //compute solution and gradients at quadrature points
@@ -405,6 +413,12 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateMappingVelocity_element(eN,
+						  k,
+						  mesh_velocity_dof,
+						  mesh_l2g,
+						  mesh_trial_ref,
+						  xt,yt,zt);
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
@@ -436,7 +450,12 @@ namespace proteus
 	      //
 	      //moving mesh
 	      //
-	      //omit for now
+	      f[0] -= MOVING_DOMAIN*m*xt;
+	      f[1] -= MOVING_DOMAIN*m*yt;
+	      f[2] -= MOVING_DOMAIN*m*zt;
+	      df[0] -= MOVING_DOMAIN*dm*xt;
+	      df[1] -= MOVING_DOMAIN*dm*yt;
+	      df[2] -= MOVING_DOMAIN*dm*zt;
 	      //
 	      //calculate time derivative at quadrature points
 	      //
@@ -479,11 +498,8 @@ namespace proteus
 	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u,numDiff0);	      
 	      //ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u_old,numDiff1);
 	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,sc_uref, sc_alpha,G,G_dd_G,pdeResidual_u,grad_u,numDiff1);
-
-	      q_numDiff_u[eN_k] =  useMetrics*numDiff1+(1.0-useMetrics)*numDiff0;
-	      
-	      //std::cout<<numDiff0<<"   "<<numDiff1<<std::endl;
-	      
+	      q_numDiff_u[eN_k] = useMetrics*numDiff1+(1.0-useMetrics)*numDiff0;
+              //std::cout<<tau<<"   "<<q_numDiff_u[eN_k]<<std::endl;
 	      // 
 	      //update element residual 
 	      // 
@@ -500,6 +516,8 @@ namespace proteus
 	      
 		}//i
 	      //
+	      //cek/ido todo, get rid of m, since u=m
+	      //save momentum for time history and velocity for subgrid error
 	      //save solution for other models 
 	      //
 	      q_u[eN_k] = u;
@@ -528,7 +546,6 @@ namespace proteus
 	    ebN_local = elementBoundaryLocalElementBoundariesArray[ebN*2+0],
 	    eN_nDOF_trial_element = eN*nDOF_trial_element;
 	  register double elementResidual_u[nDOF_test_element];
-	  //const double eps=epsFact*elementDiameter[eN];
 	  for (int i=0;i<nDOF_test_element;i++)
 	    {
 	      elementResidual_u[i]=0.0;
@@ -561,7 +578,7 @@ namespace proteus
 		dS,
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
-		normal[3],x_ext,y_ext,z_ext,
+		normal[3],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
 		G[nSpace*nSpace],G_dd_G,tr_G;
 	      // 
 	      //calculate the solution and gradients at quadrature points 
@@ -585,7 +602,19 @@ namespace proteus
 						  normal_ref,
 						  normal,
 						  x_ext,y_ext,z_ext);
-	      dS = metricTensorDetSqrt*dS_ref[kb];
+	      ck.calculateMappingVelocity_elementBoundary(eN,
+							  ebN_local,
+							  kb,
+							  ebN_local_kb,
+							  mesh_velocity_dof,
+							  mesh_l2g,
+							  mesh_trial_trace_ref,
+							  xt_ext,yt_ext,zt_ext,
+							  normal,
+							  boundaryJac,
+							  metricTensor,
+							  integralScaling);
+	      dS = ((1.0-MOVING_DOMAIN)*metricTensorDetSqrt + MOVING_DOMAIN*integralScaling)*dS_ref[kb];
 	      //get the metric tensor
 	      //cek todo use symmetry
 	      ck.calculateG(jacInv_ext,G,G_dd_G,tr_G);
@@ -619,8 +648,13 @@ namespace proteus
 				   bc_dm_ext,
 				   bc_f_ext,
 				   bc_df_ext);    
-	      //save for other models?
-	      ebqe_u[ebNE_kb] = u_ext;
+	      //
+	      //moving mesh
+	      //
+	      double velocity_ext[nSpace];
+	      velocity_ext[0] = ebqe_velocity_ext[ebNE_kb_nSpace+0] - MOVING_DOMAIN*xt_ext;
+	      velocity_ext[1] = ebqe_velocity_ext[ebNE_kb_nSpace+1] - MOVING_DOMAIN*yt_ext;
+	      velocity_ext[2] = ebqe_velocity_ext[ebNE_kb_nSpace+2] - MOVING_DOMAIN*zt_ext;
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
@@ -630,9 +664,14 @@ namespace proteus
 					     bc_u_ext,
 					     ebqe_bc_flux_u_ext[ebNE_kb],
 					     u_ext,//smoothedHeaviside(eps,ebqe_phi[ebNE_kb]),
-					     &ebqe_velocity_ext[ebNE_kb_nSpace],
+					     velocity_ext,
 					     flux_ext);
 	      ebqe_flux[ebNE_kb] = flux_ext;
+	      //save for other models? cek need to be consistent with numerical flux
+	      if(flux_ext >=0.0)
+		ebqe_u[ebNE_kb] = u_ext;
+	      else
+		ebqe_u[ebNE_kb] = bc_u_ext;
 	      //
 	      //update residuals
 	      //
@@ -659,6 +698,8 @@ namespace proteus
 			   double* mesh_trial_ref,
 			   double* mesh_grad_trial_ref,
 			   double* mesh_dof,
+			   double* mesh_velocity_dof,
+			   double MOVING_DOMAIN,
 			   int* mesh_l2g,
 			   double* dV_ref,
 			   double* u_trial_ref,
@@ -737,7 +778,7 @@ namespace proteus
 		dV,
 		u_test_dV[nDOF_test_element],
 		u_grad_test_dV[nDOF_test_element*nSpace],
-		x,y,z,
+		x,y,z,xt,yt,zt,
 		G[nSpace*nSpace],G_dd_G,tr_G;
 	      //
 	      //calculate solution and gradients at quadrature points
@@ -770,6 +811,12 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateMappingVelocity_element(eN,
+						  k,
+						  mesh_velocity_dof,
+						  mesh_l2g,
+						  mesh_trial_ref,
+						  xt,yt,zt);
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
@@ -800,7 +847,12 @@ namespace proteus
 	      //
 	      //moving mesh
 	      //
-	      //omit for now
+	      f[0] -= MOVING_DOMAIN*m*xt;
+	      f[1] -= MOVING_DOMAIN*m*yt;
+	      f[2] -= MOVING_DOMAIN*m*zt;
+	      df[0] -= MOVING_DOMAIN*dm*xt;
+	      df[1] -= MOVING_DOMAIN*dm*yt;
+	      df[2] -= MOVING_DOMAIN*dm*zt;
 	      //
 	      //calculate time derivatives
 	      //
@@ -916,7 +968,7 @@ namespace proteus
 		dS,
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
-		normal[3],x_ext,y_ext,z_ext,
+		normal[3],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
 		G[nSpace*nSpace],G_dd_G,tr_G;
 	      // 
 	      //calculate the solution and gradients at quadrature points 
@@ -957,7 +1009,20 @@ namespace proteus
 						  normal_ref,
 						  normal,
 						  x_ext,y_ext,z_ext);
-	      dS = metricTensorDetSqrt*dS_ref[kb];
+	      ck.calculateMappingVelocity_elementBoundary(eN,
+							  ebN_local,
+							  kb,
+							  ebN_local_kb,
+							  mesh_velocity_dof,
+							  mesh_l2g,
+							  mesh_trial_trace_ref,
+							  xt_ext,yt_ext,zt_ext,
+							  normal,
+							  boundaryJac,
+							  metricTensor,
+							  integralScaling);
+	      dS = ((1.0-MOVING_DOMAIN)*metricTensorDetSqrt + MOVING_DOMAIN*integralScaling)*dS_ref[kb];
+	      //dS = metricTensorDetSqrt*dS_ref[kb];
 	      ck.calculateG(jacInv_ext,G,G_dd_G,tr_G);
 	      //compute shape and solution information
 	      //shape
@@ -989,15 +1054,21 @@ namespace proteus
 				   bc_dm_ext,
 				   bc_f_ext,
 				   bc_df_ext);
+	      //
+	      //moving domain
+	      //
+	      double velocity_ext[nSpace];
+	      velocity_ext[0] = ebqe_velocity_ext[ebNE_kb_nSpace+0] - MOVING_DOMAIN*xt_ext;
+	      velocity_ext[1] = ebqe_velocity_ext[ebNE_kb_nSpace+1] - MOVING_DOMAIN*yt_ext;
+	      velocity_ext[2] = ebqe_velocity_ext[ebNE_kb_nSpace+2] - MOVING_DOMAIN*zt_ext;
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
 	      exteriorNumericalAdvectiveFluxDerivative(isDOFBoundary_u[ebNE_kb],
 						       isFluxBoundary_u[ebNE_kb],
 						       normal,
-						       &ebqe_velocity_ext[ebNE_kb_nSpace],
+						       velocity_ext,//ebqe_velocity_ext[ebNE_kb_nSpace],
 						       dflux_u_u_ext);
-	      //DoNothing for now
 	      //
 	      //calculate the flux jacobian
 	      //
