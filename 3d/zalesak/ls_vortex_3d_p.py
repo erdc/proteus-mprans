@@ -54,8 +54,8 @@ class OscillatingVortex3Dcylinder:
                  center=[0.5,
                          0.5],
                  radius=0.45,
-                 slotwidth=0.45/3.0,
-                 slotlength=0.45):
+                 slotwidth=0.45/3.0,#3/20
+                 slotlength=0.45):#45/100 = 9/20
         self.radius = radius
         self.slotwidth = slotwidth
         self.slotlength = slotlength
@@ -149,8 +149,8 @@ class UnitSquareVortex(TransportCoefficients.TC_base):
                 self.q_v[eN,k,1] = -2.0*math.pi*(ox - self.model.q['x'][eN,k,0])
         for ebNE in range(self.ebqe_v.shape[0]):
             for kb in range(self.ebqe_v.shape[1]):
-                self.ebqe_v[ebNE,kb,0] = (oy - self.model.ebqe['x'][ebNE,kb,1])/L[1] 
-                self.ebqe_v[ebNE,kb,1] = -(ox - self.model.ebqe['x'][ebNE,kb,0])/L[0] 
+                self.ebqe_v[ebNE,kb,0] = 2.0*math.pi*(oy - self.model.ebqe['x'][ebNE,kb,1])
+                self.ebqe_v[ebNE,kb,1] = -2.0*math.pi*(ox - self.model.ebqe['x'][ebNE,kb,0])
         self.model.q[('velocity',0)]=self.q_v
         self.model.ebqe[('velocity',0)]=self.ebqe_v
     def preStep(self,t,firstStep=False):

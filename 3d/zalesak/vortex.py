@@ -62,7 +62,7 @@ else:
 #end time of simulation, full problem is T=8.0
 T = 2.0
 #number of output time steps
-nDTout = 80
+nDTout = 2
 #mass correction
 applyCorrection=True
 applyRedistancing=True
@@ -89,8 +89,8 @@ fmmFlag=0
 #
 #correctionType = 'dg'
 #correctionType = 'dgp0'
-correctionType = 'global'
-#correctionType = 'cg'
+#correctionType = 'global'
+correctionType = 'cg'
 #correctionType = 'none'
 if useHex:
     hex=True

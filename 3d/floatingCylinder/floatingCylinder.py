@@ -24,8 +24,8 @@ useStokes=False
 #
 nd = 3
 inflow_height=0.41
-he = (4.0*0.025)*inflow_height
-#he = (2.0*0.025)*inflow_height
+#he = (4.0*0.025)*inflow_height
+he = (2.0*0.025)*inflow_height
 #he = 0.025*inflow_height
 inflow_width=he
 bottom_length=0.82#2.2
@@ -66,7 +66,7 @@ runCFL = 0.33
 #numerics
 #
 nLevels = 1
-triangleOptions="VApq1.25q12ena%21.16e" % ((he**3)/6.0,)
+triangleOptions="VApq1.15q15ena%21.16e" % ((he**3)/6.0,)
 #triangleOptions="pAq30Dena%f" % (0.5*he**2,)
 print triangleOptions
 applyCorrection=True
@@ -88,14 +88,14 @@ rd_shockCapturingFactor=0.33
 #epsilons for Heaviside/Dirac/etc smoothing
 hFactor=1.0
 noPressureStabilization=False
-epsFact_density = 1.5
-epsFact_viscosity = 1.5
-epsFact_redistance = 0.75
-epsFact_curvature=1.5
-epsFact_consrv_heaviside=1.5
-epsFact_consrv_dirac=1.5
+epsFact_density = 3.0
+epsFact_viscosity = 3.0
+epsFact_redistance = 0.33
+epsFact_curvature=3.0
+epsFact_consrv_heaviside=3.0
+epsFact_consrv_dirac=3.0
 epsFact_consrv_diffusion=10.0
-epsFact_vof=1.5
+epsFact_vof=3.0
 #
 usePETSc=False#True
 spaceOrder=1

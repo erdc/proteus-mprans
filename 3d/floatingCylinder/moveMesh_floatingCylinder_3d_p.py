@@ -26,7 +26,7 @@ fixedBoundary =  [boundaryTags['bottom'],boundaryTags['top'],boundaryTags['front
 class TranslatingObstacle(AuxiliaryVariables.AV_base):
     def __init__(self):
         self.current_center=cylinder_center
-        self.r = 1.0*cylinder_radius
+        self.r = 0.0*cylinder_radius
         self.omega=1.0#1.0/1.0
         self.cx = cylinder_center[0]
         self.cy = cylinder_center[1]
@@ -35,6 +35,8 @@ class TranslatingObstacle(AuxiliaryVariables.AV_base):
     def attachModel(self,model,ar):
         self.model=model
         return self
+    def attachAuxiliaryVariables(self,avDict):
+        self.object = avDict['twp_navier_stokes_floatingCylinder_3d_p'][0]
     def center(self,t):
         return (self.cx+self.r*cos(self.omega*2.0*math.pi*t+math.pi),
                 self.cy,
@@ -53,6 +55,9 @@ class TranslatingObstacle(AuxiliaryVariables.AV_base):
         self.h[1] = self.hy(self.model.stepController.t_model)
         self.h[2] = self.hz(self.model.stepController.t_model)
         print "displacement------------------------------------",self.h[0],self.h[1],self.h[2]
+        self.object.last_velocity = (self.h[0]/self.model.stepController.dt_model,
+                                     self.h[1]/self.model.stepController.dt_model,
+                                     self.h[2]/self.model.stepController.dt_model)
         self.current_center=self.center(self.model.stepController.t_model_last)
 
 class TranslatingFreeObstacle(AuxiliaryVariables.AV_base):
