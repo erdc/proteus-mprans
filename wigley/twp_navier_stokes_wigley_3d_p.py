@@ -34,9 +34,7 @@ def velRamp(t):
 
 def getDBC_p(x,flag):
     def p(x,t):
-        return -coefficients.g[2]*(rho_0*(height - x[2])
-                                   -(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,height-waterLevel)
-                                   +(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,x[2]-waterLevel))
+        return coefficients.g[2]*(rho_0*min(x[2]-waterLevel,0)+rho_1*max(x[2]-waterLevel,0))
     if flag == boundaryTags['right']:
         return p
     if flag == boundaryTags['front']:
@@ -234,10 +232,7 @@ diffusiveFluxBoundaryConditions = {0:{},
 
 class Steady_p:
     def uOfXT(self,x,t):
-        return -coefficients.g[2]*(rho_0*(height - x[2])
-                                   -(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,height-waterLevel)
-                                   +(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,x[2]-waterLevel))
-
+        return coefficients.g[2]*(rho_0*min(x[2]-waterLevel,0)+rho_1*max(x[2]-waterLevel,0))
 class Steady_u:
     def uOfXT(self,x,t):
         return velRamp(t)*Um
