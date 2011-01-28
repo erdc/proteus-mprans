@@ -46,7 +46,7 @@ n_points_length=max(2,int(ceil(hull_length/he))) + 1
 from wigley3dDomain import *
 genMesh=False
 
-meshname="mesh"
+meshname="DTMB"
 #meshname="wigley"
 domain = wigley3d(meshname,
                   height,
@@ -63,7 +63,7 @@ domain.writePLY(meshname)
 domain.writeAsymptote(meshname)
 boundaryTags = domain.boundaryTags
 print boundaryTags
-waterLevel = 0.5
+waterLevel = 0.258016 
 openTop = True
 openSides = False#True
 smoothBottom = False

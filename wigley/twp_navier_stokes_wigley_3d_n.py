@@ -3,25 +3,25 @@ from proteus.default_n import *
 from wigley import *
 from twp_navier_stokes_wigley_3d_p import *
 
-#timeIntegration = BackwardEuler_cfl
-#stepController = FixedStep
+timeIntegration = BackwardEuler_cfl
+stepController = FixedStep
 
-timeIntegration = BackwardEuler_cfl
-stepController = Min_dt_controller
-stepController = HeuristicNL_dt_controller
-nonlinearIterationsFloor = 3
-nonlinearIterationsCeil=15
-dtNLgrowFactor  = 1.0
-dtNLreduceFactor= 1.0#75   
-timeIntegration = BackwardEuler_cfl
-stepController = Min_dt_controller
-stepController = HeuristicNL_dt_controller
-nonlinearIterationsFloor = 2
-nonlinearIterationsCeil=4
-nonlinearIterationsFloor = 3
-nonlinearIterationsCeil=5
-dtNLgrowFactor  = 2.0
-dtNLreduceFactor= 0.5#75 
+#timeIntegration = BackwardEuler_cfl
+#stepController = Min_dt_controller
+#stepController = HeuristicNL_dt_controller
+#nonlinearIterationsFloor = 3
+#nonlinearIterationsCeil=15
+#dtNLgrowFactor  = 1.0
+#dtNLreduceFactor= 1.0#75   
+#timeIntegration = BackwardEuler_cfl
+#stepController = Min_dt_controller
+#stepController = HeuristicNL_dt_controller
+#nonlinearIterationsFloor = 2
+#nonlinearIterationsCeil=4
+#nonlinearIterationsFloor = 3
+#nonlinearIterationsCeil=5
+#dtNLgrowFactor  = 2.0
+#dtNLreduceFactor= 0.5#75 
                      
 femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis,
              1:C0_AffineLinearOnSimplexWithNodalBasis,
