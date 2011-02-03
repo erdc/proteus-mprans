@@ -24,6 +24,7 @@ useStokes=False
 #
 nd = 3
 inflow_height=0.41
+#he = (0.25)*inflow_height
 #he = (4.0*0.025)*inflow_height
 he = (2.0*0.025)*inflow_height
 #he = 0.025*inflow_height
@@ -39,18 +40,20 @@ domain = cylinder3d(fileprefix="cylinder",
                     length=bottom_length,
                     radius=cylinder_radius,
                     center = cylinder_center,
-                    n_points_on_obstacle=2*11-2)
+                    n_points_on_obstacle=2*21-2)
 domain.writePoly("cylinder")
 domain.writePLY("cylinder")
 boundaryTags = domain.boundaryTags
-waterLevel = 0.5*inflow_height
+print boundaryTags
+waterLevel = 0.65*inflow_height
 useShock=False#True
 movingDomain=False#True
 #
 #residence time based on mean velocity
 #
-#RE = 100.0
-Um = 0.5#nu_0*RE/(2.0*cylinder_radius)
+#RE = 20.0
+#Um = nu_0*RE/(2.0*cylinder_radius)
+Um = 0.5#
 RE = 2.0*cylinder_radius*Um/nu_0
 Profiling.logEvent("REYNOLDS NUMBER = "+`RE`)
 residence_time = bottom_length/Um
@@ -58,9 +61,9 @@ residence_time = bottom_length/Um
 #
 #time interval etc.
 #
-dt_init=0.01#0.001*residence_time
-T = 1.0#10.0*residence_time
-nDTout=100
+dt_init=0.00001*residence_time
+T = residence_time
+nDTout=1000
 runCFL = 0.33
 #
 #numerics

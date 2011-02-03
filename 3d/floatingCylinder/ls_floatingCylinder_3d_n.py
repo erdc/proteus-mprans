@@ -5,9 +5,9 @@ from ls_floatingCylinder_3d_p import *
 if useBackwardEuler_ls:
     timeIntegration = BackwardEuler_cfl
     stepController = Min_dt_controller
-    stepController = HeuristicNL_dt_controller
-    nonlinearIterationsFloor = 3
-    nonlinearIterationsCeil=5
+    #stepController = HeuristicNL_dt_controller
+    nonlinearIterationsFloor = 2
+    nonlinearIterationsCeil=2
     dtNLgrowFactor  = 2.0
     dtNLreduceFactor= 0.5#75
 else:

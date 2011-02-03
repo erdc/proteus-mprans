@@ -10,9 +10,9 @@ elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,quad_order)
 
 timeIntegration = BackwardEuler_cfl
 stepController=Min_dt_controller
-stepController = HeuristicNL_dt_controller
-nonlinearIterationsFloor = 3
-nonlinearIterationsCeil=5
+#stepController = HeuristicNL_dt_controller
+nonlinearIterationsFloor = 2
+nonlinearIterationsCeil=2
 dtNLgrowFactor  = 2.0
 dtNLreduceFactor= 0.5#75
 

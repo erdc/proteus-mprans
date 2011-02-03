@@ -163,6 +163,9 @@ def getDBC_p(x,flag):
         return lambda x,t: -coefficients.g[2]*(rho_0*(inflow_height - x[2])
                                                -(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,inflow_height-waterLevel)
                                                +(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,x[2]-waterLevel))
+    if flag == boundaryTags['top']:
+        return lambda x,t: 0.0
+
 def getDBC_u(x,flag):
     if flag == boundaryTags['upstream']:
         return lambda x,t: Um
@@ -171,6 +174,10 @@ def getDBC_u(x,flag):
             return lambda x,t: 0.0#rc.get_u()
         else:
             return lambda x,t: 0.0
+    if flag == boundaryTags['top']:
+        return lambda x,t: Um
+#    if flag == boundaryTags['downstream']:
+#        return lambda x,t: Um
 
 def getDBC_v(x,flag):
     if flag == boundaryTags['upstream']:
@@ -180,15 +187,21 @@ def getDBC_v(x,flag):
             return lambda x,t: 0.0#rc.get_v()
         else:
             return lambda x,t: 0.0
+    if flag == boundaryTags['top']:
+        return lambda x,t: 0.0
+    if flag == boundaryTags['downstream']:
+        return lambda x,t: 0.0
 
 def getDBC_w(x,flag):
     if flag == boundaryTags['upstream']:
         return lambda x,t: 0.0
     if flag == boundaryTags['obstacle']:
         if movingDomain:
-            return lambda x,t: rc.get_w()
+            return lambda x,t: 0.0#rc.get_w()
         else:
             return lambda x,t: 0.0
+    if flag == boundaryTags['downstream']:
+        return lambda x,t: 0.0
 
 dirichletConditions = {0:getDBC_p,
                        1:getDBC_u,
@@ -202,8 +215,8 @@ def getAFBC_p(x,flag):
         return lambda x,t: 0.0
     if flag == boundaryTags['bottom']:
         return lambda x,t: 0.0
-    if flag == boundaryTags['top']:
-        return lambda x,t: 0.0
+#    if flag == boundaryTags['top']:
+#        return lambda x,t: 0.0
     if flag == boundaryTags['front']:
         return lambda x,t: 0.0
     if flag == boundaryTags['back']:
@@ -212,8 +225,8 @@ def getAFBC_p(x,flag):
 def getAFBC_u(x,flag):
     if flag == boundaryTags['bottom']:
         return lambda x,t: 0.0
-    if flag == boundaryTags['top']:
-        return lambda x,t: 0.0
+#    if flag == boundaryTags['top']:
+#        return lambda x,t: 0.0
     if flag == boundaryTags['front']:
         return lambda x,t: 0.0
     if flag == boundaryTags['back']:
@@ -222,8 +235,8 @@ def getAFBC_u(x,flag):
 def getAFBC_v(x,flag):
     if flag == boundaryTags['bottom']:
         return lambda x,t: 0.0
-    if flag == boundaryTags['top']:
-        return lambda x,t: 0.0
+#    if flag == boundaryTags['top']:
+#        return lambda x,t: 0.0
     if flag == boundaryTags['front']:
         return lambda x,t: 0.0
     if flag == boundaryTags['back']:
@@ -232,16 +245,16 @@ def getAFBC_v(x,flag):
 def getAFBC_w(x,flag):
     if flag == boundaryTags['bottom']:
         return lambda x,t: 0.0
-    if flag == boundaryTags['top']:
-        return lambda x,t: 0.0
+#    if flag == boundaryTags['top']:
+#        return lambda x,t: 0.0
     if flag == boundaryTags['front']:
         return lambda x,t: 0.0
     if flag == boundaryTags['back']:
         return lambda x,t: 0.0
     
 def getDFBC_u(x,flag):
-    if flag == boundaryTags['top']:
-        return lambda x,t: 0.0
+    #if flag == boundaryTags['top']:
+    #     return lambda x,t: 0.0
     if flag == boundaryTags['bottom']:
         return lambda x,t: 0.0
     if flag == boundaryTags['downstream']:
@@ -252,12 +265,12 @@ def getDFBC_u(x,flag):
         return lambda x,t: 0.0
 
 def getDFBC_v(x,flag):
-    if flag == boundaryTags['top']:
-        return lambda x,t: 0.0
+    # if flag == boundaryTags['top']:
+    #     return lambda x,t: 0.0
     if flag == boundaryTags['bottom']:
         return lambda x,t: 0.0
-    if flag == boundaryTags['downstream']:
-        return lambda x,t: 0.0
+    # if flag == boundaryTags['downstream']:
+    #     return lambda x,t: 0.0
     if flag == boundaryTags['front']:
         return lambda x,t: 0.0
     if flag == boundaryTags['back']:
@@ -268,8 +281,8 @@ def getDFBC_w(x,flag):
         return lambda x,t: 0.0
     if flag == boundaryTags['bottom']:
         return lambda x,t: 0.0
-    if flag == boundaryTags['downstream']:
-        return lambda x,t: 0.0
+    # if flag == boundaryTags['downstream']:
+    #     return lambda x,t: 0.0
     if flag == boundaryTags['front']:
         return lambda x,t: 0.0
     if flag == boundaryTags['back']:
@@ -295,8 +308,8 @@ class Steady_p:
         pass
     def uOfXT(self,x,t):
         return -coefficients.g[2]*(rho_0*(inflow_height - x[2])
-                                               -(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,inflow_height-waterLevel)
-                                               +(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,x[2]-waterLevel))
+                                   -(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,inflow_height-waterLevel)
+                                   +(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,x[2]-waterLevel))
 
 class Steady_u:
     def __init__(self):

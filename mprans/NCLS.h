@@ -180,84 +180,50 @@ namespace proteus
       tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv);    
     } 
  
-    void exteriorNumericalAdvectiveFlux(const int& isDOFBoundary_u,
-					const int& isFluxBoundary_u,
-					const double n[nSpace],
-					const double& bc_u,
-					const double& bc_flux_u,
-					const double& u,
-					const double velocity[nSpace],
-					double& flux)
+    void exteriorNumericalFlux(const double n[nSpace],
+			       const double& bc_u,
+			       const double& u,
+			       const double velocity[nSpace],
+			       const double velocity_movingDomain[nSpace],
+			       double& flux)
     {
-
-      double flow=0.0;
+      double flow_total=0.0,flow_fluid=0.0,flow_movingDomain=0.0;
       for (int I=0; I < nSpace; I++)
-	flow += n[I]*velocity[I];
-      //std::cout<<" isDOFBoundary_u= "<<isDOFBoundary_u<<" flow= "<<flow<<std::endl;
-      if (isDOFBoundary_u == 1)
 	{
-	  //std::cout<<"Dirichlet boundary u and bc_u "<<u<<'\t'<<bc_u<<std::endl;
-	  if (flow >= 0.0)
-	    {
-	      flux = u*flow;
-	      //flux = flow;
-	    }
-	  else
-	    {
-	      flux = bc_u*flow;
-	      //flux = flow;
-	    }
+	  flow_fluid += n[I]*velocity[I];
+	  flow_movingDomain -= n[I]*velocity_movingDomain[I];
 	}
-      else if (isFluxBoundary_u == 1)
+      flow_total = flow_fluid+flow_movingDomain;
+      if (flow_total >= 0.0)
 	{
-	  flux = bc_flux_u;
-	  //std::cout<<"Flux boundary flux and flow"<<flux<<'\t'<<flow<<std::endl;
+	  flux = u*flow_movingDomain;
 	}
       else
 	{
-	  //std::cout<<"No BC boundary flux and flow"<<flux<<'\t'<<flow<<std::endl;
-	  if (flow >= 0.0)
-	    {
-	      flux = u*flow;
-	    }
-	  else
-	    {
-	      std::cout<<"warning: open boundary with no external trace, setting to zero for inflow"<<std::endl;
-	      flux = 0.0;
-	    }
-
+	  flux = bc_u*flow_movingDomain - flow_fluid*(u-bc_u);
 	}
-      //flux = flow;
-      //std::cout<<"flux error "<<flux-flow<<std::endl;
-      //std::cout<<"flux in computationa"<<flux<<std::endl;
     }
-
+    
     inline
-    void exteriorNumericalAdvectiveFluxDerivative(const int& isDOFBoundary_u,
-						  const int& isFluxBoundary_u,
-						  const double n[nSpace],
-						  const double velocity[nSpace],
-						  double& dflux)
+    void exteriorNumericalFluxDerivative(const double n[nSpace],
+					 const double velocity[nSpace],
+					 const double velocity_movingDomain[nSpace],
+					 double& dflux)
     {
-      double flow=0.0;
+      double flow_total=0.0,flow_fluid=0.0,flow_movingDomain=0.0;
       for (int I=0; I < nSpace; I++)
-	flow += n[I]*velocity[I];
-      //double flow=n[0]*velocity[0]+n[1]*velocity[1]+n[2]*velocity[2];
-      dflux=0.0;//default to no flux
-      if (isDOFBoundary_u == 1)
 	{
-	  if (flow >= 0.0)
-	    {
-	      dflux = flow;
-	    }
-	  else
-	    {
-	      dflux = 0.0;
-	    }
+	  flow_fluid += n[I]*velocity[I];
+	  flow_movingDomain -= n[I]*velocity_movingDomain[I];
 	}
-      if (isFluxBoundary_u == 1)
+      flow_total=flow_fluid+flow_movingDomain;
+      if (flow_total >= 0.0)
 	{
-	  dflux = 0.0;
+	  dflux = flow_movingDomain;
+	}
+      else
+	{
+	  dflux = -flow_fluid;
 	}
     }
 
@@ -644,14 +610,12 @@ namespace proteus
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
-	      exteriorNumericalAdvectiveFlux(1,//isDOFBoundary_u[ebNE_kb],
-					     0,//isFluxBoundary_u[ebNE_kb],
-					     normal,
-					     ebqe_bc_u_ext[ebNE_kb],//bc_u_ext,
-					     0.0,//ebqe_bc_flux_u_ext[ebNE_kb],
-					     u_ext,
-					     velocity_ext,
-					     flux_ext);
+	      exteriorNumericalFlux(normal,
+				    ebqe_bc_u_ext[ebNE_kb],//bc_u_ext,
+				    u_ext,
+				    dH_ext,
+				    velocity_ext,
+				    flux_ext);
 	      ebqe_u[ebNE_kb] = u_ext;
 	      //
 	      //update residuals
@@ -1043,11 +1007,10 @@ namespace proteus
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
-	      exteriorNumericalAdvectiveFluxDerivative(1,//isDOFBoundary_u[ebNE_kb],
-						       0,//isFluxBoundary_u[ebNE_kb],
-						       normal,
-						       velocity_ext,
-						       dflux_u_u_ext);
+	      exteriorNumericalFluxDerivative(normal,
+					      dH_ext,
+					      velocity_ext,
+					      dflux_u_u_ext);
 	      //
 	      //calculate the flux jacobian
 	      //

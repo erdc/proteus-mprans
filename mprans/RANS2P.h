@@ -834,6 +834,7 @@ namespace proteus
 					const int& isFluxBoundary_u,
 					const int& isFluxBoundary_v,
 					const int& isFluxBoundary_w,
+					const double& oneByRho,
 					const double n[nSpace],
 					const double& bc_p,
 					const double bc_f_mass[nSpace],
@@ -965,9 +966,9 @@ namespace proteus
 	}
       if (isDOFBoundary_p == 1)
 	{
-	  flux_umom+= n[0]*(bc_p-p);
-	  flux_vmom+= n[1]*(bc_p-p);
-	  flux_wmom+= n[2]*(bc_p-p);
+	  flux_umom+= n[0]*(bc_p-p)*oneByRho;
+	  flux_vmom+= n[1]*(bc_p-p)*oneByRho;
+	  flux_wmom+= n[2]*(bc_p-p)*oneByRho;
 	}
       if (isFluxBoundary_p == 1)
 	{
@@ -999,6 +1000,7 @@ namespace proteus
 						   const int& isFluxBoundary_u,
 						   const int& isFluxBoundary_v,
 						   const int& isFluxBoundary_w,
+						   const double& oneByRho,
 						   const double n[nSpace],
 						   const double& bc_p,
 						   const double bc_f_mass[nSpace],
@@ -1161,9 +1163,9 @@ namespace proteus
 	}
       if (isDOFBoundary_p == 1)
 	{
-	  dflux_umom_dp= -n[0];
-	  dflux_vmom_dp= -n[1];
-	  dflux_wmom_dp= -n[2];
+	  dflux_umom_dp= -n[0]*oneByRho;
+	  dflux_vmom_dp= -n[1]*oneByRho;
+	  dflux_wmom_dp= -n[2]*oneByRho;
 	}
       if (isFluxBoundary_p == 1)
 	{
@@ -1226,10 +1228,10 @@ namespace proteus
 		}
 	      flux+= diffusiveVelocityComponent_I*n[I];
 	    }
-	  penaltyFlux = penalty*(u-bc_u);
+	  penaltyFlux = max_a*penalty*(u-bc_u);
 	  flux += penaltyFlux;
 	  //contact line slip
-	  flux*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
+	  //flux*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
 	}
       else if(isFluxBoundary == 1)
 	{
@@ -1255,7 +1257,7 @@ namespace proteus
 						  const double grad_v[nSpace],
 						  const double& penalty)
     {
-      double dvel_I,tmp=0.0;
+      double dvel_I,tmp=0.0,max_a=0.0;
       if(isDOFBoundary >= 1)
 	{
 	  for(int I=0;I<nSpace;I++)
@@ -1264,12 +1266,13 @@ namespace proteus
 	      for(int m=rowptr[I];m<rowptr[I+1];m++)
 		{
 		  dvel_I -= a[m]*grad_v[colind[m]];
+		  max_a = fmax(max_a,a[m]);
 		}
 	      tmp += dvel_I*n[I];
 	    }
-	  tmp +=penalty*v;
+	  tmp +=max_a*penalty*v;
 	  //contact line slip
-	  tmp*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
+	  //tmp*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
 	}
       return tmp;
     }
@@ -2255,7 +2258,7 @@ namespace proteus
 	      ck.calculateGScale(G,normal,h_penalty);
 	      h_penalty = 10.0/h_penalty;
 	      //cek debug, do it the old way
-	      h_penalty = 10.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
+	      h_penalty = 100.0/elementDiameter[eN];
 	      exteriorNumericalAdvectiveFlux(isDOFBoundary_p[ebNE_kb],
 					     isDOFBoundary_u[ebNE_kb],
 					     isDOFBoundary_v[ebNE_kb],
@@ -2264,6 +2267,7 @@ namespace proteus
 					     isAdvectiveFluxBoundary_u[ebNE_kb],
 					     isAdvectiveFluxBoundary_v[ebNE_kb],
 					     isAdvectiveFluxBoundary_w[ebNE_kb],
+					     dmom_u_ham_grad_p_ext[0],//=1/rho,
 					     normal,
 					     bc_p_ext,
 					     bc_mass_adv_ext,
@@ -3516,6 +3520,7 @@ namespace proteus
 							isAdvectiveFluxBoundary_u[ebNE_kb],
 							isAdvectiveFluxBoundary_v[ebNE_kb],
 							isAdvectiveFluxBoundary_w[ebNE_kb],
+							dmom_u_ham_grad_p_ext[0],//=1/rho
 							normal,
 							bc_p_ext,
 							bc_mass_adv_ext,
@@ -3567,7 +3572,7 @@ namespace proteus
 	      ck.calculateGScale(G,normal,h_penalty);
 	      h_penalty = 10.0/h_penalty;
 	      //cek debug, do it the old way
-	      h_penalty = 10.0*mom_u_diff_ten_ext[1]/elementDiameter[eN];
+	      h_penalty = 100.0/elementDiameter[eN];
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
 		  register int j_nSpace = j*nSpace,ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
