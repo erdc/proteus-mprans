@@ -45,16 +45,17 @@ domain.writePoly("cylinder")
 domain.writePLY("cylinder")
 boundaryTags = domain.boundaryTags
 print boundaryTags
-waterLevel = 0.65*inflow_height
+waterLevel = 0.5*inflow_height
 useShock=False#True
 movingDomain=False#True
 #
 #residence time based on mean velocity
 #
-#RE = 20.0
-#Um = nu_0*RE/(2.0*cylinder_radius)
-Um = 0.5#
+RE = 20.0
+Um = nu_0*RE/(2.0*cylinder_radius)
+#Um = 0.5#
 RE = 2.0*cylinder_radius*Um/nu_0
+print "RE",RE
 Profiling.logEvent("REYNOLDS NUMBER = "+`RE`)
 residence_time = bottom_length/Um
 #Um=0.0
@@ -62,8 +63,8 @@ residence_time = bottom_length/Um
 #time interval etc.
 #
 dt_init=0.00001*residence_time
-T = residence_time
-nDTout=1000
+T = 2.0*residence_time
+nDTout=2#1000
 runCFL = 0.33
 #
 #numerics

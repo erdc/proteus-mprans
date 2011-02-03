@@ -5,7 +5,7 @@ from twp_navier_stokes_floatingCylinder_3d_p import *
 if useBackwardEuler:
     timeIntegration = BackwardEuler_cfl
     stepController = Min_dt_controller
-    #stepController = HeuristicNL_dt_controller
+    stepController = HeuristicNL_dt_controller
     nonlinearIterationsFloor = 2
     nonlinearIterationsCeil=4
     nonlinearIterationsFloor = 3

@@ -315,7 +315,7 @@ class Steady_u:
     def __init__(self):
         pass
     def uOfXT(self,x,t):
-        return 0.0
+        return Um#0.0
 
 class Steady_v:
     def __init__(self):

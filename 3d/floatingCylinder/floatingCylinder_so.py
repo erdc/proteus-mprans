@@ -24,7 +24,8 @@ systemStepControllerType = Sequential_MinAdaptiveModelStep
 needEBQ_GLOBAL = False
 needEBQ = False
 useOneArchive = False
-archiveFlag = ArchiveFlags.EVERY_USER_STEP
+#archiveFlag = ArchiveFlags.EVERY_USER_STEP
+archiveFlag = ArchiveFlags.EVERY_SEQUENCE_STEP
 
 if floatingCylinder.nDTout != None:
     tnList = [0.0,floatingCylinder.dt_init] + \
