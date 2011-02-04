@@ -558,6 +558,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         r.fill(0.0)
         #Load the unknowns into the finite element dof
         self.timeIntegration.calculateCoefs()
+        print "***************max/min(m_last)*********************",max(self.timeIntegration.m_last[0].flat[:]),min(self.timeIntegration.m_last[0].flat[:])
+        print "***************max/min(m_last)*********************",max(-self.timeIntegration.dt*self.timeIntegration.beta_bdf[0].flat[:]),min(-self.timeIntegration.dt*self.timeIntegration.beta_bdf[0].flat[:]),
         self.timeIntegration.calculateU(u)
         self.setUnknowns(self.timeIntegration.u)
         #cek can put in logic to skip of BC's don't depend on t or u

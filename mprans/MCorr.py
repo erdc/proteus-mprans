@@ -126,58 +126,16 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         return copyInstructions
     def postStep(self,t,firstStep=False):
         if self.applyCorrection:
-            
-            self.vofModel.q[('m',0)] += self.massCorrModel.q[('r',0)]
-            #self.massCorrModel.setMassQuadrature()
-            self.lsModel.q[('m',0)] += self.massCorrModel.q[('u',0)]
-            
-            #DON'T UNCOMMENT THIS, m may be a reference to u, READ the logic below
-	    #self.lsModel.q   [('u',0)] += self.massCorrModel.q[('u',0)]
-	    self.lsModel.ebqe[('u',0)] += self.massCorrModel.ebqe[('u',0)]
-	    
+            #ls
+            self.lsModel.u[0].dof += self.massCorrModel.u[0].dof
+            self.lsModel.q[('u',0)] += self.massCorrModel.q[('u',0)]
+            self.lsModel.ebqe[('u',0)] += self.massCorrModel.ebqe[('u',0)]
 	    self.lsModel.q[('grad(u)',0)] += self.massCorrModel.q[('grad(u)',0)]
 	    self.lsModel.ebqe[('grad(u)',0)] += self.massCorrModel.ebqe[('grad(u)',0)]
-	    
-            if self.vofModel.q[('u',0)] is not self.vofModel.q[('m',0)]:
-                self.vofModel.q[('u',0)][:]=self.vofModel.q[('m',0)]
-            if self.lsModel.q[('u',0)] is not self.lsModel.q[('m',0)]:
-                self.lsModel.q[('u',0)][:]=self.lsModel.q[('m',0)]
-            if self.vofModel.q.has_key(('mt',0)):
-                self.vofModel.timeIntegration.calculateElementCoefficients(self.vofModel.q)
-                self.vofModel.timeIntegration.lastStepErrorOk()
-            if self.applyCorrectionToDOF:
-                self.lsModel.u[0].dof += self.massCorrModel.u[0].dof
-            if self.lsModel.q.has_key(('mt',0)):
-                self.lsModel.timeIntegration.calculateElementCoefficients(self.lsModel.q)
-                self.lsModel.timeIntegration.lastStepErrorOk()
-            if self.checkMass:
-                # self.vofGlobalMass = Norms.scalarDomainIntegral(self.vofModel.q['dV'],
-                #                                                 self.vofModel.q[('u',0)],
-                #                                                 self.massCorrModel.mesh.nElements_owned)
-                # self.lsGlobalMass = Norms.scalarHeavisideDomainIntegral(self.vofModel.q['dV'],
-                #                                                         self.lsModel.q[('u',0)],
-                #                                                         self.massCorrModel.mesh.nElements_owned)
-                self.vofGlobalMass = 0.0
-                self.lsGlobalMass = self.massCorrModel.calculateMass(self.lsModel.q[('u',0)])
-                # log("mass correction %12.5e" % (Norms.scalarDomainIntegral(self.vofModel.q['dV'],
-                #                                                            self.massCorrModel.q[('r',0)],
-                #                                                            self.massCorrModel.mesh.nElements_owned),),level=2)
-                #self.fluxGlobal = self.vofModel.coefficients.fluxIntegral*self.vofModel.timeIntegration.dt
-                #self.totalFluxGlobal += self.vofModel.coefficients.fluxIntegral*self.vofModel.timeIntegration.dt
-                self.vofGlobalMassArray.append(self.vofGlobalMass)
-                self.lsGlobalMassArray.append(self.lsGlobalMass)
-                if len(self.lsGlobalMassArray) > 0:
-                    self.vofGlobalMassErrorArray.append(self.vofGlobalMass - self.vofGlobalMassArray[0])# + self.totalFluxGlobal)
-                    self.lsGlobalMassErrorArray.append(self.lsGlobalMass - self.lsGlobalMassArray[0])# + self.totalFluxGlobal)
-                else:
-                    self.vofGlobalMassErrorArray.append(0)
-                    self.lsGlobalMassErrorArray.append(0)
-                self.fluxArray.append(0.0)#self.vofModel.coefficients.fluxIntegral)
-                self.timeArray.append(self.vofModel.timeIntegration.t)
-                # log("Phase 0 mass after mass correction (VOF) %12.5e" % (self.vofGlobalMass,),level=2)
-                # log("Phase 0 mass after mass correction (LS) %12.5e" % (self.lsGlobalMass,),level=2)
-                # log("Phase  0 mass conservation (VOF) after step = %12.5e" % (self.vofGlobalMass - self.vofModel.coefficients.m_last + self.fluxGlobal,),level=2)
-                # log("Phase  0 mass conservation (LS) after step = %12.5e" % (self.lsGlobalMass - self.lsModel.coefficients.m_last + self.fluxGlobal,),level=2)
+            #vof
+            self.massCorrModel.setMassQuadrature()
+            #self.vofModel.q[('u',0)] += self.massCorrModel.q[('r',0)]
+            print "********************max VOF************************",max(self.vofModel.q[('u',0)].flat[:])
         copyInstructions = {}
         return copyInstructions
     def evaluate(self,t,c):
@@ -980,9 +938,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.epsFactHeaviside,
             self.coefficients.epsFactDirac,
             self.coefficients.epsFactDiffusion,
-            self.u[0].femSpace.dofMap.l2g,
+            self.coefficients.lsModel.u[0].femSpace.dofMap.l2g,
             self.mesh.elementDiametersArray,
-            self.u[0].dof,
+            self.coefficients.lsModel.u[0].dof,
             self.coefficients.q_u_ls,
             self.coefficients.q_n_ls,
             self.coefficients.ebqe_u_ls,

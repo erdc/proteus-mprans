@@ -307,9 +307,9 @@ namespace proteus
 				   double epsFactHeaviside,
 				   double epsFactDirac,
 				   double epsFactDiffusion,
-				   int* u_l2g, 
+				   int* phi_l2g, 
 				   double* elementDiameter,
-				   double* u_dof,
+				   double* phi_dof,
 				   double* q_phi,
 				   double* q_normal_phi,
 				   double* ebqe_phi,
@@ -1748,9 +1748,9 @@ namespace proteus
 			   double epsFactHeaviside,
 			   double epsFactDirac,
 			   double epsFactDiffusion,
-			   int* u_l2g, 
+			   int* phi_l2g, 
 			   double* elementDiameter,
-			   double* u_dof,
+			   double* phi_dof,
 			   double* q_phi,
 			   double* q_normal_phi,
 			   double* ebqe_phi,
@@ -1815,7 +1815,7 @@ namespace proteus
 	      //here the value will be different depending on which element touches
 	      //the dof last
 	      int eN_i = eN*nDOF_trial_element + i;
-	      H_dof[u_l2g[eN_i]] = smoothedHeaviside(epsHeaviside,u_dof[u_l2g[eN_i]]);
+	      H_dof[phi_l2g[eN_i]] = smoothedHeaviside(epsHeaviside,phi_dof[phi_l2g[eN_i]]);//cek hack, only works if H and phi in same FEM space
 	    }
 	}//elements
     }
