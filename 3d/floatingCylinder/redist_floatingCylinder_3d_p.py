@@ -8,7 +8,8 @@ LevelModelType = RDLS.LevelModel
 coefficients = RDLS.Coefficients(applyRedistancing=applyRedistancing,
                                  epsFact=epsFact_redistance,
                                  nModelId=1,
-                                 rdModelId=3)
+                                 rdModelId=3,
+                                 useConstantH=useConstantH)
 #now define the Dirichlet boundary conditions
 
 def getDBC_rd(x,flag):
@@ -17,8 +18,10 @@ def getDBC_rd(x,flag):
 dirichletConditions = {0:getDBC_rd}
 
 if freezeLevelSet:
-    weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs}
-#weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs2}
+    if LevelModelType == RDLS.LevelModel:
+        weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCs}
+    else:
+        weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs}
 
 class PerturbedSurface_phi:
     def __init__(self,waterLevel,slopeAngle):

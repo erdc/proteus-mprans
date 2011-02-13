@@ -5,7 +5,7 @@ from ls_floatingCylinder_3d_p import *
 if useBackwardEuler_ls:
     timeIntegration = BackwardEuler_cfl
     stepController = Min_dt_controller
-    #stepController = HeuristicNL_dt_controller
+    stepController = HeuristicNL_dt_controller
     nonlinearIterationsFloor = 2
     nonlinearIterationsCeil=2
     dtNLgrowFactor  = 2.0
@@ -46,7 +46,7 @@ fullNewtonFlag = True
 
 tolFac = 0.0
 
-nl_atol_res = 0.001*he#1.0e-8#should be linear with lagging
+nl_atol_res = 1.0e-8#should be linear with lagging
 
 maxNonlinearIts = 50
 

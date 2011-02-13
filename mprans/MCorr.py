@@ -4,7 +4,8 @@ from proteus.mprans.cMCorr import *
 class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import levelSetConservationCoefficientsEvaluate
     from proteus.ctransportCoefficients import levelSetConservationCoefficientsEvaluate_sd
-    def __init__(self,applyCorrection=True,epsFactHeaviside=0.0,epsFactDirac=1.0,epsFactDiffusion=2.0,LSModel_index=3,V_model=2,me_model=5,VOFModel_index=4,checkMass=True,sd=True,nd=None,applyCorrectionToDOF=True,useMetrics=0.0):
+    def __init__(self,applyCorrection=True,epsFactHeaviside=0.0,epsFactDirac=1.0,epsFactDiffusion=2.0,LSModel_index=3,V_model=2,me_model=5,VOFModel_index=4,checkMass=True,sd=True,nd=None,applyCorrectionToDOF=True,useMetrics=0.0,useConstantH=False):
+        self.useConstantH=useConstantH
         self.useMetrics=useMetrics
         self.sd=sd
         self.checkMass=checkMass
@@ -211,6 +212,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  reuse_trial_and_test_quadrature=True,
                  sd = True,
                  movingDomain=False):#,
+        self.useConstantH=coefficients.useConstantH
         from proteus import Comm
         #
         #set the objects describing the method and boundary conditions
@@ -511,6 +513,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.exteriorElementBoundaryQuadratureDictionaryWriter = Archiver.XdmfWriter()
         self.globalResidualDummy = None
         compKernelFlag = 0
+        if self.coefficients.useConstantH:
+            self.elementDiameter = self.mesh.elementDiametersArray.copy()
+            self.elementDiameter[:] = max(self.mesh.elementDiametersArray)
+        else:
+            self.elementDiameter = self.mesh.elementDiametersArray        
         self.mcorr = cMCorr_base(self.nSpace_global,
                                  self.nQuadraturePoints_element,
                                  self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
@@ -565,7 +572,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                  self.coefficients.epsFactDirac,
                                  self.coefficients.epsFactDiffusion,
                                  self.u[0].femSpace.dofMap.l2g,
-                                 self.mesh.elementDiametersArray,
+                                 self.elementDiameter,#self.mesh.elementDiametersArray,
                                  self.u[0].dof,
                                  self.coefficients.q_u_ls,
 				 self.coefficients.q_n_ls,
@@ -620,7 +627,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                  self.coefficients.epsFactDirac,
                                  self.coefficients.epsFactDiffusion,
                                  self.u[0].femSpace.dofMap.l2g,
-                                 self.mesh.elementDiametersArray,
+                                 self.elementDiameter,#self.mesh.elementDiametersArray,
                                  self.u[0].dof,
                                  self.coefficients.q_u_ls,
 				 self.coefficients.q_n_ls,
@@ -670,7 +677,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.epsFactDirac,
             self.coefficients.epsFactDiffusion,
             self.u[0].femSpace.dofMap.l2g,
-            self.mesh.elementDiametersArray,
+            self.elementDiameter,#self.mesh.elementDiametersArray,
             self.u[0].dof,
             self.coefficients.q_u_ls,
             self.coefficients.q_n_ls,
@@ -729,7 +736,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                  self.coefficients.epsFactDirac,
                                  self.coefficients.epsFactDiffusion,
                                  self.u[0].femSpace.dofMap.l2g,
-                                 self.mesh.elementDiametersArray,
+                                 self.elementDiameter,#self.mesh.elementDiametersArray,
                                  self.u[0].dof,
                                  self.coefficients.q_u_ls,
 				 self.coefficients.q_n_ls,
@@ -789,7 +796,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.epsFactDirac,
             self.coefficients.epsFactDiffusion,
             self.u[0].femSpace.dofMap.l2g,
-            self.mesh.elementDiametersArray,
+            self.elementDiameter,self.mesh.elementDiametersArray,
             self.u[0].dof,
             self.coefficients.q_u_ls,
             self.coefficients.q_n_ls,
@@ -893,7 +900,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                  self.coefficients.epsFactDirac,
                                  self.coefficients.epsFactDiffusion,
                                  self.u[0].femSpace.dofMap.l2g,
-                                 self.mesh.elementDiametersArray,
+                                 self.elementDiameter,#self.mesh.elementDiametersArray,
                                  self.u[0].dof,
                                  q_phi,#self.coefficients.q_u_ls,
 				 self.coefficients.q_n_ls,
@@ -939,7 +946,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.epsFactDirac,
             self.coefficients.epsFactDiffusion,
             self.coefficients.lsModel.u[0].femSpace.dofMap.l2g,
-            self.mesh.elementDiametersArray,
+            self.elementDiameter,#self.mesh.elementDiametersArray,
             self.coefficients.lsModel.u[0].dof,
             self.coefficients.q_u_ls,
             self.coefficients.q_n_ls,

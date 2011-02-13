@@ -5,13 +5,13 @@ from twp_navier_stokes_floatingCylinder_3d_p import *
 if useBackwardEuler:
     timeIntegration = BackwardEuler_cfl
     stepController = Min_dt_controller
-    stepController = HeuristicNL_dt_controller
-    nonlinearIterationsFloor = 2
-    nonlinearIterationsCeil=4
+    #stepController = HeuristicNL_dt_controller
+    #nonlinearIterationsFloor = 2
+    #nonlinearIterationsCeil=4
     nonlinearIterationsFloor = 3
-    nonlinearIterationsCeil=5
-    dtNLgrowFactor  = 2.0
-    dtNLreduceFactor= 0.5#75
+    nonlinearIterationsCeil=4
+    dtNLgrowFactor  = 1.5
+    dtNLreduceFactor= 0.75
 else:
     timeIntegration = FLCBDF
     stepController = FLCBDF_controller_sys

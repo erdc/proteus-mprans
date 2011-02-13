@@ -690,7 +690,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         log("Jacobian ",level=10,data=jacobian)
         #mwf decide if this is reasonable for solver statistics
         self.nonlinear_function_jacobian_evaluations += 1
-        jacobian.fwrite("jacobian_p"+`self.nonlinear_function_jacobian_evaluations`)
+        #jacobian.fwrite("jacobian_p"+`self.nonlinear_function_jacobian_evaluations`)
         return jacobian
     def calculateElementQuadrature(self):
         """

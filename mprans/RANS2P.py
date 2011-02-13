@@ -23,7 +23,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  sd=True,
                  movingDomain=False,
                  useRBLES=0.0,
-		 useMetrics=0.0):
+		 useMetrics=0.0,useConstantH=False):
+        self.useConstantH = useConstantH
         self.useRBLES=useRBLES
         self.useMetrics=useMetrics
         self.sd=sd
@@ -476,6 +477,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  reuse_trial_and_test_quadrature=True,
                  sd = True,
                  movingDomain=False):
+        useConstantH=coefficients.useConstantH#this is a hack to test the effect of using a constant smoothing width
         self.postProcessing = False#this is a hack to test the effect of post-processing
         if self.postProcessing:
             from proteus import RANS2P as oldRANS2P
@@ -901,6 +903,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             for cj in range(self.nc):
                 self.dirichletConditionsForceDOF[cj] = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False)
         compKernelFlag = 0
+        if self.coefficients.useConstantH:
+            self.elementDiameter = self.mesh.elementDiametersArray.copy()
+            self.elementDiameter[:] = max(self.mesh.elementDiametersArray)
+        else:
+            self.elementDiameter = self.mesh.elementDiametersArray
         self.rans2p = cRANS2P_base(self.nSpace_global,
                                    self.nQuadraturePoints_element,
                                    self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
@@ -972,7 +979,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
-            self.mesh.elementDiametersArray,
+            self.elementDiameter,#mesh.elementDiametersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
@@ -1103,7 +1110,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[1].femSpace.grad_psi_trace,
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
-            self.mesh.elementDiametersArray,
+            self.elementDiameter,#mesh.elementDiametersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,

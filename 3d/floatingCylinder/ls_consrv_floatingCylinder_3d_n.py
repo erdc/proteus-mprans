@@ -19,14 +19,13 @@ massLumping = False
 
 numericalFluxType = DoNothing
 
-if usePETSc:
-    numericalFluxType = Diffusion_IIPG_exterior
-
 shockCapturing = None
 
 multilevelNonlinearSolver  = NLNI
 
 levelNonlinearSolver = Newton
+#levelNonlinearSolver = MCorr.GlobalConstantNewton
+nonlinearSolverNorm = MCorr.conservationNorm
 
 nonlinearSmoother = NLGaussSeidel
 
@@ -34,9 +33,10 @@ fullNewtonFlag = True
 
 tolFac = 0.0
 
-nl_atol_res = 0.001*he#1.0e-10
+nl_atol_res = 1.0e-10#0.001*(he**3)/6.0#1.0e-10
 
 maxNonlinearIts = 10
+maxLineSearches =0
 
 matrix = SparseMatrix
 
@@ -50,6 +50,7 @@ if usePETSc:
 else:
     multilevelLinearSolver = LU
     levelLinearSolver = LU
+
 
 linTolFac = 1.0e-6
 

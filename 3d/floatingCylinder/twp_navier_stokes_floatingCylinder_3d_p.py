@@ -24,7 +24,8 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    stokes=useStokes,
                                    useRBLES=0.0,
                                    useMetrics=0.0,
-                                   movingDomain=movingDomain)
+                                   movingDomain=movingDomain,
+                                   useConstantH=useConstantH)
 
 coefficients.waterLevel=waterLevel
 import ode
@@ -159,49 +160,46 @@ def velRamp(t):
 #closed on sides 
 #no slip on obstacle
 def getDBC_p(x,flag):
-    if flag == boundaryTags['downstream']:
-        return lambda x,t: -coefficients.g[2]*(rho_0*(inflow_height - x[2])
-                                               -(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,inflow_height-waterLevel)
-                                               +(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,x[2]-waterLevel))
-    if flag == boundaryTags['top']:
-        return lambda x,t: 0.0
+    if altBC:
+        if flag in [boundaryTags['downstream'],boundaryTags['top']]:
+            return lambda x,t: -coefficients.g[2]*(rho_0*(inflow_height - x[2])
+                                                   -(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,inflow_height-waterLevel)
+                                                   +(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,x[2]-waterLevel))
+    else:
+        if flag == boundaryTags['downstream']:
+            return lambda x,t: -coefficients.g[2]*(rho_0*(inflow_height - x[2])
+                                                   -(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,inflow_height-waterLevel)
+                                                   +(rho_0-rho_1)*smoothedHeaviside_integral(epsFact_density*he,x[2]-waterLevel))
 
 def getDBC_u(x,flag):
-    if flag == boundaryTags['upstream']:
-        return lambda x,t: Um
-    if flag == boundaryTags['obstacle']:
-        if movingDomain:
-            return lambda x,t: 0.0#rc.get_u()
-        else:
+    if altBC:
+        if flag in [boundaryTags['upstream'],boundaryTags['bottom'],boundaryTags['top']]:
+            return lambda x,t: Um
+        elif flag in [boundaryTags['obstacle']]:
             return lambda x,t: 0.0
-    if flag == boundaryTags['top']:
-        return lambda x,t: Um
-#    if flag == boundaryTags['downstream']:
-#        return lambda x,t: Um
+    else:
+        if flag == boundaryTags['upstream']:
+            return lambda x,t: Um
 
 def getDBC_v(x,flag):
-    if flag == boundaryTags['upstream']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['obstacle']:
-        if movingDomain:
-            return lambda x,t: 0.0#rc.get_v()
-        else:
+    if altBC:
+        if flag in [boundaryTags['upstream'],boundaryTags['downstream'],boundaryTags['bottom'],boundaryTags['top']]:
             return lambda x,t: 0.0
-    if flag == boundaryTags['top']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['downstream']:
-        return lambda x,t: 0.0
+        elif flag in [boundaryTags['obstacle']]:
+            return lambda x,t: 0.0
+    else:
+        if flag == boundaryTags['upstream']:
+            return lambda x,t: 0.0
 
 def getDBC_w(x,flag):
-    if flag == boundaryTags['upstream']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['obstacle']:
-        if movingDomain:
-            return lambda x,t: 0.0#rc.get_w()
-        else:
+    if altBC:
+        if flag in [boundaryTags['upstream'],boundaryTags['downstream'],boundaryTags['bottom']]:
             return lambda x,t: 0.0
-    if flag == boundaryTags['downstream']:
-        return lambda x,t: 0.0
+        elif flag in [boundaryTags['obstacle']]:
+            return lambda x,t: 0.0
+    else:
+        if flag == boundaryTags['upstream']:
+            return lambda x,t: 0.0
 
 dirichletConditions = {0:getDBC_p,
                        1:getDBC_u,
@@ -209,83 +207,86 @@ dirichletConditions = {0:getDBC_p,
                        3:getDBC_w}
 
 def getAFBC_p(x,flag):
-    if flag == boundaryTags['upstream']:
-        return lambda x,t: -Um
-    if flag == boundaryTags['obstacle']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['bottom']:
-        return lambda x,t: 0.0
-#    if flag == boundaryTags['top']:
-#        return lambda x,t: 0.0
-    if flag == boundaryTags['front']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['back']:
+    if altBC:
+        if flag in [boundaryTags['obstacle'],boundaryTags['bottom'],boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+        if flag == boundaryTags['upstream']:
+            return lambda x,t: -Um
+    else:
+        if flag in [boundaryTags['obstacle'],boundaryTags['top'],
+                    boundaryTags['bottom'],boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+        if flag == boundaryTags['upstream']:
+            return lambda x,t: -Um
+    if flag == 0:
         return lambda x,t: 0.0
 
 def getAFBC_u(x,flag):
-    if flag == boundaryTags['bottom']:
-        return lambda x,t: 0.0
-#    if flag == boundaryTags['top']:
-#        return lambda x,t: 0.0
-    if flag == boundaryTags['front']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['back']:
+    if altBC:
+        if flag in [boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+    else:
+        if flag in [boundaryTags['obstacle'],boundaryTags['top'],
+                    boundaryTags['bottom'],boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+    if flag == 0:
         return lambda x,t: 0.0
 
 def getAFBC_v(x,flag):
-    if flag == boundaryTags['bottom']:
+    if altBC:
+        if flag in [boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+    else:
+        if flag in [boundaryTags['obstacle'],boundaryTags['top'],
+                    boundaryTags['bottom'],boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+    if flag == 0:
         return lambda x,t: 0.0
-#    if flag == boundaryTags['top']:
-#        return lambda x,t: 0.0
-    if flag == boundaryTags['front']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['back']:
-        return lambda x,t: 0.0
-    
+
 def getAFBC_w(x,flag):
-    if flag == boundaryTags['bottom']:
+    if altBC:
+        if flag in [boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+    else:
+        if flag in [boundaryTags['obstacle'],boundaryTags['top'],
+                    boundaryTags['bottom'],boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+    if flag == 0:
         return lambda x,t: 0.0
-#    if flag == boundaryTags['top']:
-#        return lambda x,t: 0.0
-    if flag == boundaryTags['front']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['back']:
-        return lambda x,t: 0.0
-    
+
 def getDFBC_u(x,flag):
-    #if flag == boundaryTags['top']:
-    #     return lambda x,t: 0.0
-    if flag == boundaryTags['bottom']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['downstream']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['front']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['back']:
+    if altBC:
+        #downstream is outflow
+        if flag in [boundaryTags['front'],boundaryTags['back'],boundaryTags['downstream']]:
+            return lambda x,t: 0.0
+    else:
+        if flag in [boundaryTags['obstacle'],boundaryTags['top'],boundaryTags['downstream'],
+                    boundaryTags['bottom'],boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+    if flag == 0:
         return lambda x,t: 0.0
 
 def getDFBC_v(x,flag):
-    # if flag == boundaryTags['top']:
-    #     return lambda x,t: 0.0
-    if flag == boundaryTags['bottom']:
-        return lambda x,t: 0.0
-    # if flag == boundaryTags['downstream']:
-    #     return lambda x,t: 0.0
-    if flag == boundaryTags['front']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['back']:
+    if altBC:
+        if flag in [boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+    else:
+        if flag in [boundaryTags['obstacle'],boundaryTags['top'],boundaryTags['downstream'],
+                    boundaryTags['bottom'],boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+    if flag == 0:
         return lambda x,t: 0.0
 
 def getDFBC_w(x,flag):
-    if flag == boundaryTags['top']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['bottom']:
-        return lambda x,t: 0.0
-    # if flag == boundaryTags['downstream']:
-    #     return lambda x,t: 0.0
-    if flag == boundaryTags['front']:
-        return lambda x,t: 0.0
-    if flag == boundaryTags['back']:
+    if altBC:
+        #top is outflow
+        if flag in [boundaryTags['top'],boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+    else:
+        if flag in [boundaryTags['obstacle'],boundaryTags['top'],boundaryTags['downstream'],
+                    boundaryTags['bottom'],boundaryTags['front'],boundaryTags['back']]:
+            return lambda x,t: 0.0
+    if flag == 0:
         return lambda x,t: 0.0
 
 fluxBoundaryConditions = {0:'mixedFlow',
@@ -315,7 +316,7 @@ class Steady_u:
     def __init__(self):
         pass
     def uOfXT(self,x,t):
-        return Um#0.0
+        return Um
 
 class Steady_v:
     def __init__(self):

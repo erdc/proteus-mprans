@@ -9,7 +9,7 @@ coefficients = MCorr.Coefficients(applyCorrection=applyCorrection,
                                   epsFactHeaviside=epsFact_consrv_heaviside,
                                   epsFactDirac=epsFact_consrv_dirac,
                                   epsFactDiffusion=epsFact_consrv_diffusion,
-                                  LSModel_index=1,V_model=0,me_model=4,VOFModel_index=2,nd=nd,checkMass=False)
+                                  LSModel_index=1,V_model=0,me_model=4,VOFModel_index=2,nd=nd,checkMass=False,useConstantH=useConstantH)
 
 class zero_phi:
     def __init__(self):

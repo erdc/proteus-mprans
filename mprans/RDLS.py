@@ -3,7 +3,8 @@ from proteus.mprans.cRDLS import *
 
 class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import redistanceLevelSetCoefficientsEvaluate
-    def __init__(self,applyRedistancing=True,epsFact=2.0,nModelId=None,u0=None,rdModelId=0,penaltyParameter=0.0,useMetrics=0.0):
+    def __init__(self,applyRedistancing=True,epsFact=2.0,nModelId=None,u0=None,rdModelId=0,penaltyParameter=0.0,useMetrics=0.0,useConstantH=False):
+        self.useConstantH=useConstantH
         self.useMetrics=useMetrics
 	variableNames=['phid']
         nc=1
@@ -614,6 +615,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.timeIntegration.m_tmp = {0:numpy.zeros(self.q[('m_tmp',0)].shape,'d')}
             self.timeIntegration.m_last = {0:numpy.zeros(self.q[('m_tmp',0)].shape,'d')}
         compKernelFlag=0
+        if self.coefficients.useConstantH:
+            self.elementDiameter = self.mesh.elementDiametersArray.copy()
+            self.elementDiameter[:] = max(self.mesh.elementDiametersArray)
+        else:
+            self.elementDiameter = self.mesh.elementDiametersArray
         self.rdls = cRDLS_base(self.nSpace_global,
                                self.nQuadraturePoints_element,
                                self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
@@ -690,7 +696,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                          #2 dH lagged in tau and pdeResidual, Lstar*w calculations
                   self.shockCapturing.shockCapturingFactor,
                   self.u[0].femSpace.dofMap.l2g,
-                  self.mesh.elementDiametersArray,
+                  self.elementDiameter,#self.mesh.elementDiametersArray,
                   self.u[0].dof,
                   self.coefficients.q_u0,
                   self.timeIntegration.m_tmp[0],
@@ -775,7 +781,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                   self.stabilization.lag,
                   self.shockCapturing.shockCapturingFactor,
                   self.u[0].femSpace.dofMap.l2g,
-                  self.mesh.elementDiametersArray,
+                  self.elementDiameter,#self.mesh.elementDiametersArray,
                   self.u[0].dof,
                   self.coefficients.q_u0,
                   beta_bdf[0],
@@ -887,7 +893,7 @@ def setZeroLSweakDirichletBCs(RDLSvt):
         ctransportCoefficients.setWeakDirichletConditionsForLevelSet(RDLSvt.mesh.nElements_global,
                                                                      RDLSvt.nDOF_trial_element[0],
                                                                      RDLSvt.coefficients.epsFact,
-                                                                     RDLSvt.mesh.elementDiametersArray,
+                                                                     RDLSvt.elementDiameter,#RDLSvt.mesh.elementDiametersArray,
                                                                      RDLSvt.u[0].femSpace.dofMap.l2g,
                                                                      RDLSvt.u[0].dof,
                                                                      RDLSvt.dofFlag_element,#temporary storage
@@ -921,7 +927,7 @@ def setZeroLSweakDirichletBCsSimple(RDLSvt):
         ctransportCoefficients.setSimpleWeakDirichletConditionsForLevelSet(RDLSvt.mesh.nElements_global,
                                                                            RDLSvt.nDOF_trial_element[0],
                                                                            RDLSvt.coefficients.epsFact,
-                                                                           RDLSvt.mesh.elementDiametersArray,
+                                                                           RDLSvt.elementDiameter,#RDLSvt.mesh.elementDiametersArray,
                                                                            RDLSvt.u[0].femSpace.dofMap.l2g,
                                                                            RDLSvt.u[0].dof,
                                                                            RDLSvt.dofFlag_element,#temporary storage

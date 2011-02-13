@@ -56,8 +56,10 @@ if rdtimeIntegration != 'newton':
     levelNonlinearSolverConvergenceTest = 'its'
 else:
     nl_atol_res = 0.01*he#1.0e-7#0.01*L[0]/nnx
-    maxNonlinearIts = 50
-    maxLineSearches =100
+    maxNonlinearIts = 10
+    maxLineSearches =10
+    nonlinearSolverConvergenceTest = 'rits'
+    levelNonlinearSolverConvergenceTest = 'rits'
 
 maxNonlinearIts = 50 #1 for PTC
 
