@@ -1,10 +1,10 @@
 #!/bin/tcsh
 #PBS -A ERDCV00898ENQ
-#PBS -l walltime=21:00:00
-#PBS -l select=1:ncpus=8:mpiprocs=8
+#PBS -l walltime=3:00:00
+#PBS -l select=2:ncpus=8:mpiprocs=8
 #PBS -l place=scatter:excl
 #PBS -q standard
-#PBS -N obstacle3d
+#PBS -N mem_h_vms
 #PBS -j oe
 
 cd $PBS_O_WORKDIR
@@ -17,4 +17,4 @@ module load mpi/intelmpi-4.0.0
 
 mkdir $WORKDIR/obstacle3d.$PBS_JOBID
 
-${HOME}/BOB/mpirun -n 8 parun obstacleInTank3d_so.py -l 2 -v -p -O petsc.options2 -D $WORKDIR/obstacle3d.$PBS_JOBID
+${HOME}/BOB/mpirun -n 16 parun obstacleInTank3d_so.py --memory -l 12 -v -G -O petsc.options -D $WORKDIR/obstacle3d.$PBS_JOBID
