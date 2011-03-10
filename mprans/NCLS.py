@@ -510,12 +510,12 @@ class LevelModel(OneLevelTransport):
         self.elementBoundaryQuadratureDictionaryWriter = Archiver.XdmfWriter()
         self.exteriorElementBoundaryQuadratureDictionaryWriter = Archiver.XdmfWriter()
         #TODO get rid of this
-        for ci,fbcObject  in self.fluxBoundaryConditionsObjectsDict.iteritems():
-            self.ebqe[('advectiveFlux_bc_flag',ci)] = numpy.zeros(self.ebqe[('advectiveFlux_bc',ci)].shape,'i')
-            for t,g in fbcObject.advectiveFluxBoundaryConditionsDict.iteritems():
-                if self.coefficients.advection.has_key(ci):
-                    self.ebqe[('advectiveFlux_bc',ci)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
-                    self.ebqe[('advectiveFlux_bc_flag',ci)][t[0],t[1]] = 1
+#        for ci,fbcObject  in self.fluxBoundaryConditionsObjectsDict.iteritems():
+#            self.ebqe[('advectiveFlux_bc_flag',ci)] = numpy.zeros(self.ebqe[('advectiveFlux_bc',ci)].shape,'i')
+#            for t,g in fbcObject.advectiveFluxBoundaryConditionsDict.iteritems():
+#                if self.coefficients.advection.has_key(ci):
+#                    self.ebqe[('advectiveFlux_bc',ci)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
+#                    self.ebqe[('advectiveFlux_bc_flag',ci)][t[0],t[1]] = 1
         
         if hasattr(self.numericalFlux,'setDirichletValues'):
             self.numericalFlux.setDirichletValues(self.ebqe)
@@ -533,6 +533,13 @@ class LevelModel(OneLevelTransport):
                                 self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
                                 self.nElementBoundaryQuadraturePoints_elementBoundary,
                                 compKernelFlag)
+
+        self.forceStrongConditions=True 
+        #self.dirichletConditionsForceDOF = {}
+        if self.forceStrongConditions:
+            self.dirichletConditionsForceDOF = DOFBoundaryConditions(self.u[0].femSpace,dofBoundaryConditionsSetterDict[0],weakDirichletConditions=False)
+
+	
         if self.movingDomain:
             self.MOVING_DOMAIN=1.0
         else:
@@ -569,7 +576,11 @@ class LevelModel(OneLevelTransport):
         #flux boundary conditions, SHOULDN'T HAVE
         #cNCLS.calculateResidual(self.mesh.nElements_global,
         #try to use 1d,2d,3d specific modules
-	
+
+        if self.forceStrongConditions:
+              for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():
+                  self.u[0].dof[dofN] = g(self.dirichletConditionsForceDOF.DOFBoundaryPointDict[dofN],self.timeIntegration.t)
+
         self.ncls.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -623,6 +634,11 @@ class LevelModel(OneLevelTransport):
             self.numericalFlux.isDOFBoundary[0],
             self.coefficients.rdModel.ebqe[('u',0)],#,self.numericalFlux.ebqe[('u',0)],
             self.ebqe[('u',0)])
+
+	if self.forceStrongConditions:#
+	    for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():
+                     r[dofN] = 0
+
         #print "velocity in ncls",self.coefficients.q_v,
         #print "cfl",self.q[('cfl',0)]
         if self.stabilization:
@@ -687,6 +703,21 @@ class LevelModel(OneLevelTransport):
             self.numericalFlux.isDOFBoundary[0],
             self.coefficients.rdModel.ebqe[('u',0)],#self.numericalFlux.ebqe[('u',0)],
             self.csrColumnOffsets_eb[(0,0)])
+
+        #Load the Dirichlet conditions directly into residual
+        if self.forceStrongConditions:
+            scaling = 1.0#probably want to add some scaling to match non-dirichlet diagonals in linear system 
+            for dofN in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.keys():
+                    global_dofN = dofN
+                    for i in range(self.rowptr[global_dofN],self.rowptr[global_dofN+1]):
+                        if (self.colind[i] == global_dofN):
+                            #print "RBLES forcing residual cj = %s dofN= %s global_dofN= %s was self.nzval[i]= %s now =%s " % (cj,dofN,global_dofN,self.nzval[i],scaling)
+                            self.nzval[i] = scaling
+                        else:
+                            self.nzval[i] = 0.0
+                            #print "RBLES zeroing residual cj = %s dofN= %s global_dofN= %s " % (cj,dofN,global_dofN)
+			    
+
         log("Jacobian ",level=10,data=jacobian)
         #mwf decide if this is reasonable for solver statistics
         self.nonlinear_function_jacobian_evaluations += 1

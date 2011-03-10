@@ -136,7 +136,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             #vof
             self.massCorrModel.setMassQuadrature()
             #self.vofModel.q[('u',0)] += self.massCorrModel.q[('r',0)]
-            print "********************max VOF************************",max(self.vofModel.q[('u',0)].flat[:])
+            #####print "********************max VOF************************",max(self.vofModel.q[('u',0)].flat[:])
         copyInstructions = {}
         return copyInstructions
     def evaluate(self,t,c):

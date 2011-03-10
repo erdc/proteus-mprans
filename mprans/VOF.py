@@ -533,6 +533,12 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                              self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
                              self.nElementBoundaryQuadraturePoints_elementBoundary,
                              compKernelFlag)
+
+        self.forceStrongConditions=True
+        if self.forceStrongConditions:
+            self.dirichletConditionsForceDOF = DOFBoundaryConditions(self.u[0].femSpace,dofBoundaryConditionsSetterDict[0],weakDirichletConditions=False)
+
+
         if self.movingDomain:
             self.MOVING_DOMAIN=1.0
         else:
@@ -558,8 +564,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         r.fill(0.0)
         #Load the unknowns into the finite element dof
         self.timeIntegration.calculateCoefs()
-        print "***************max/min(m_last)*********************",max(self.timeIntegration.m_last[0].flat[:]),min(self.timeIntegration.m_last[0].flat[:])
-        print "***************max/min(m_last)*********************",max(-self.timeIntegration.dt*self.timeIntegration.beta_bdf[0].flat[:]),min(-self.timeIntegration.dt*self.timeIntegration.beta_bdf[0].flat[:]),
+        ##print "***************max/min(m_last)*********************",max(self.timeIntegration.m_last[0].flat[:]),min(self.timeIntegration.m_last[0].flat[:])
+        ##print "***************max/min(m_last)*********************",max(-self.timeIntegration.dt*self.timeIntegration.beta_bdf[0].flat[:]),min(-self.timeIntegration.dt*self.timeIntegration.beta_bdf[0].flat[:]),
         self.timeIntegration.calculateU(u)
         self.setUnknowns(self.timeIntegration.u)
         #cek can put in logic to skip of BC's don't depend on t or u
@@ -571,6 +577,12 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('advectiveFlux_bc',0)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
             self.ebqe[('advectiveFlux_bc_flag',0)][t[0],t[1]] = 1
         self.shockCapturing.lag=True
+
+
+        if self.forceStrongConditions:
+              for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():
+                  self.u[0].dof[dofN] = g(self.dirichletConditionsForceDOF.DOFBoundaryPointDict[dofN],self.timeIntegration.t)
+
         self.vof.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -626,6 +638,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.ebqe_phi,self.coefficients.epsFact,
             self.ebqe[('u',0)],
             self.ebqe[('advectiveFlux',0)])
+
+	if self.forceStrongConditions:#
+	    for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():
+                     r[dofN] = 0
+
         if self.stabilization:
             self.stabilization.accumulateSubgridMassHistory(self.q)
         log("Global residual",level=9,data=r)
@@ -684,6 +701,24 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                   self.ebqe[('advectiveFlux_bc_flag',0)],
                   self.ebqe[('advectiveFlux_bc',0)],
                   self.csrColumnOffsets_eb[(0,0)])
+
+
+
+        #Load the Dirichlet conditions directly into residual
+        if self.forceStrongConditions:
+            scaling = 1.0#probably want to add some scaling to match non-dirichlet diagonals in linear system 
+            for dofN in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.keys():
+                    global_dofN = dofN
+                    for i in range(self.rowptr[global_dofN],self.rowptr[global_dofN+1]):
+                        if (self.colind[i] == global_dofN):
+                            #print "RBLES forcing residual cj = %s dofN= %s global_dofN= %s was self.nzval[i]= %s now =%s " % (cj,dofN,global_dofN,self.nzval[i],scaling)
+                            self.nzval[i] = scaling
+                        else:
+                            self.nzval[i] = 0.0
+                            #print "RBLES zeroing residual cj = %s dofN= %s global_dofN= %s " % (cj,dofN,global_dofN)
+			    
+			    
+
         log("Jacobian ",level=10,data=jacobian)
         #mwf decide if this is reasonable for solver statistics
         self.nonlinear_function_jacobian_evaluations += 1
