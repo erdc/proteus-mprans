@@ -64,6 +64,7 @@ namespace proteus
 				   double* v_dof, 
 				   double* w_dof,
 				   double* g,
+				   double* rho_init,
 				   double* phi,
 				   double* normal_phi,
 				   double* kappa_phi,
@@ -172,6 +173,7 @@ namespace proteus
 				   int* vel_l2g,
 				   double* p_dof, double* u_dof, double* v_dof, double* w_dof,
 				   double* g,
+				   double* rho_init,
 				   double* phi,
 				   double* normal_phi,
 				   double* kappa_phi,
@@ -434,6 +436,7 @@ namespace proteus
 			   double* v_dof, 
 			   double* w_dof,
 			   double* g,
+			   double* rho_init,
 			   double* phi,
 			   double* normal_phi,
 			   double* kappa_phi,
@@ -519,7 +522,7 @@ namespace proteus
 	    eN_k_nSpace = eN_k*nSpace,
 	    eN_nDOF_trial_element = eN*nDOF_trial_element;
 	  register double p=0.0,u=0.0,v=0.0,w=0.0,
-	    grad_p[nSpace],grad_u[nSpace],grad_v[nSpace],grad_w[nSpace],
+	    grad_p[nSpace],grad_u[nSpace],grad_v[nSpace],grad_w[nSpace],f[nSpace],
 	    mom_u_acc=0.0,
 	    dmom_u_acc_u=0.0,
 	    mom_v_acc=0.0,
@@ -683,19 +686,37 @@ namespace proteus
 	  //if (eN<3){
 	  //  std::cout<<tau_0<<"  "<<tau_1<<std::endl;
 	  //}
-	  	  					
+	  	  
+	  //  
+	  // Gravity forcing
+	  //
+	  if (rho_init[eN_k] < -2.5) 
+	  { 
+	     rho_init[eN_k] = rho;
+	     //std::cout<<rho<<std::endl;
+	  
+	  }
+	  if (rho_init[eN_k] < 0.000001)  rho_init[eN_k] -=1.0;
+	  
+	  
+	  
+	  
+	  f[0] = (rho-rho_init[eN_k])*g[0];
+	  f[1] = (rho-rho_init[eN_k])*g[1];  
+	  f[2] = (rho-rho_init[eN_k])*g[2];		  
+		  					
           //
           //calculate strong residual
           //
 	  pdeResidual_p = grad_u[0] + grad_v[1] + grad_w[2];
 
-	  pdeResidual_u = rho *(mom_u_acc_t + u*grad_u[0] + v*grad_u[1] + w*grad_u[2] - g[0])
+	  pdeResidual_u = rho *(mom_u_acc_t + u*grad_u[0] + v*grad_u[1] + w*grad_u[2]) - f[0]
 	                + grad_p[0]; // - mu poisson_u  ==> ommited as only first order right now !! 
 
-	  pdeResidual_v = rho *(mom_v_acc_t + u*grad_v[0] + v*grad_v[1] + w*grad_v[2] - g[1])
+	  pdeResidual_v = rho *(mom_v_acc_t + u*grad_v[0] + v*grad_v[1] + w*grad_v[2]) - f[1]
 	                + grad_p[1]; // - mu poisson_u  ==> ommited as only first order right now !! 
 	                
-	  pdeResidual_w = rho *(mom_w_acc_t + u*grad_w[0] + v*grad_w[1] + w*grad_w[2] - g[2])
+	  pdeResidual_w = rho *(mom_w_acc_t + u*grad_w[0] + v*grad_w[1] + w*grad_w[2]) - f[2]
 	                + grad_p[2]; // - mu poisson_u  ==> ommited as only first order right now !! 
 
           //
@@ -727,7 +748,7 @@ namespace proteus
 	                            + subgrid_v*p_grad_test_dV[i_nSpace+1]
 	                            + subgrid_w*p_grad_test_dV[i_nSpace+2];
 
-	      elementResidual_u[i] += rho *(mom_u_acc_t +  u*grad_u[0] + v*grad_u[1] + w*grad_u[2] - g[0])*vel_test_dV[i]				        
+	      elementResidual_u[i] += (rho *(mom_u_acc_t +  u*grad_u[0] + v*grad_u[1] + w*grad_u[2]) - f[0])*vel_test_dV[i]				        
 			               + mu*(grad_u[0] + grad_u[0])*vel_grad_test_dV[i_nSpace+0]
 			               + mu*(grad_u[1] + grad_v[0])*vel_grad_test_dV[i_nSpace+1]				   
 			               + mu*(grad_u[2] + grad_w[0])*vel_grad_test_dV[i_nSpace+2]	
@@ -736,7 +757,7 @@ namespace proteus
 		                        -rho*vel_grad_test_dV[i_nSpace+1] * (subgrid_u*v + useRBLES*(u*subgrid_v + subgrid_u*subgrid_v))
 		                        -rho*vel_grad_test_dV[i_nSpace+2] * (subgrid_u*w + useRBLES*(u*subgrid_w + subgrid_u*subgrid_w));
 		            
-	      elementResidual_v[i] +=  rho *(mom_v_acc_t +  u*grad_v[0] + v*grad_v[1] + w*grad_v[2] - g[1])*vel_test_dV[i]
+	      elementResidual_v[i] +=  (rho *(mom_v_acc_t +  u*grad_v[0] + v*grad_v[1] + w*grad_v[2]) - f[1])*vel_test_dV[i]
 			               + mu*(grad_v[0] + grad_u[1])*vel_grad_test_dV[i_nSpace+0]
 			               + mu*(grad_v[1] + grad_v[1])*vel_grad_test_dV[i_nSpace+1]				   
 			               + mu*(grad_v[2] + grad_w[1])*vel_grad_test_dV[i_nSpace+2]	
@@ -746,7 +767,7 @@ namespace proteus
 		                       -rho*vel_grad_test_dV[i_nSpace+2] * (subgrid_v*w + useRBLES*(v*subgrid_w + subgrid_v*subgrid_w));
 
 
-	      elementResidual_w[i] +=  rho *(mom_w_acc_t  + u*grad_w[0] + v*grad_w[1] + w*grad_w[2] - g[2])*vel_test_dV[i]
+	      elementResidual_w[i] +=  (rho *(mom_w_acc_t  + u*grad_w[0] + v*grad_w[1] + w*grad_w[2]) - f[2])*vel_test_dV[i]
 			               + mu*(grad_w[0] + grad_u[2])*vel_grad_test_dV[i_nSpace+0]
 			               + mu*(grad_w[1] + grad_v[2])*vel_grad_test_dV[i_nSpace+1]				   
 			               + mu*(grad_w[2] + grad_w[2])*vel_grad_test_dV[i_nSpace+2]		 
@@ -885,36 +906,33 @@ namespace proteus
 		}
 
 	      //
-	      //load the boundary values
-	      //
-	      //isDOFBoundary_p[ebNE_kb] ebqe_bc_p_ext[ebNE_kb];
-	      //isDOFBoundary_u[ebNE_kb] ebqe_bc_u_ext[ebNE_kb];
-	      //isDOFBoundary_v[ebNE_kb] ebqe_bc_v_ext[ebNE_kb];
-	      //isDOFBoundary_w[ebNE_kb] ebqe_bc_w_ext[ebNE_kb];
-	      // For now: hard wired zero weak BC 
-	      	      
-	      // 
-	      //calculate the pde coefficients using the solution and the boundary values for the solution 
-	      // 
-              gi[0] = 0.0;
-	      gi[1] = 0.0;
-	      gi[2] = 0.0;	
+	      // Assume either nono or all velocity have dir BC
+	      //	     	      	      
+	      if (isDOFBoundary_w[ebNE_kb] == 1) 
+	      {
+	      	      	      
+	        // 
+	        //calculate the pde coefficients using the solution and the boundary values for the solution 
+	        // 
+                gi[0] = ebqe_bc_u_ext[ebNE_kb];
+	        gi[1] = ebqe_bc_v_ext[ebNE_kb];
+	        gi[2] = ebqe_bc_w_ext[ebNE_kb];	
 	
-	      unormal = normal[0]*u_ext + normal[1]*v_ext + normal[2]*w_ext;
-	      gnormal = normal[0]*gi[0] + normal[1]*gi[1] + normal[2]*gi[2];
-	      uneg = 0.5*(unormal - fabs(unormal));
+	        unormal = normal[0]*u_ext + normal[1]*v_ext + normal[2]*w_ext;
+	        gnormal = normal[0]*gi[0] + normal[1]*gi[1] + normal[2]*gi[2];
+	        uneg = 0.5*(unormal - fabs(unormal));
 	  	     	      	
-	      // 
-	      //calculate the numerical fluxes 
-	      // 
-	      ck.calculateGScale(G,normal,h_penalty);
-              penalty = C_b*mu/h_penalty;
+	        // 
+	        //calculate the numerical fluxes 
+	        // 
+	        ck.calculateGScale(G,normal,h_penalty);
+                penalty = C_b*mu/h_penalty;
 
-	      //
-	      //update residuals
-	      //
-	      for (int i=0;i<nDOF_test_element;i++)
-		{
+	        //
+	        //update residuals
+	        //
+	        for (int i=0;i<nDOF_test_element;i++)
+	  	{
 		  int i_nSpace = i*nSpace;
 		  elementResidual_p[i] += (unormal - gnormal)*p_test_dS[i];
 		  
@@ -940,8 +958,31 @@ namespace proteus
 					        ((v_ext - gi[1])*normal[2] + (w_ext - gi[2])*normal[1])*vel_grad_test_dS[i_nSpace+1]);
 		}//i
 		
-		
+	      }		      
+	      else  // Do nothing... but needs stabilizing terms for convection if there is inflow
+	      {
+	         // Miss using flux - values 	
+		 gi[0] = ebqe_bc_flux_mom_u_adv_ext[ebNE_kb];
+		 gi[1] = ebqe_bc_flux_mom_v_adv_ext[ebNE_kb];
+		 gi[2] = ebqe_bc_flux_mom_w_adv_ext[ebNE_kb];
+		 
+	         unormal = normal[0]*u_ext + normal[1]*v_ext + normal[2]*w_ext;
+	          
+		 if (unormal < 0.0)
+		 {
+		   for (int i=0;i<nDOF_test_element;i++)
+	  	   {
+		     if (isAdvectiveFluxBoundary_u[ebNE_kb] == 1) elementResidual_u[i] -= rho*(u_ext-gi[0])*unormal*vel_test_dS[i];
+		     if (isAdvectiveFluxBoundary_v[ebNE_kb] == 1) elementResidual_v[i] -= rho*(v_ext-gi[1])*unormal*vel_test_dS[i];
+		     if (isAdvectiveFluxBoundary_w[ebNE_kb] == 1) elementResidual_w[i] -= rho*(w_ext-gi[2])*unormal*vel_test_dS[i];
+		   }  
+		 } 
+	       }
+	      
 	    }//kb
+	       
+	    
+	    
 	  //
 	  //update the element and global residual storage
 	  //
@@ -1009,6 +1050,7 @@ namespace proteus
 			   int* vel_l2g,
 			   double* p_dof, double* u_dof, double* v_dof, double* w_dof,
 			   double* g,
+			   double* rho_init,
 			   double* phi,
 			   double* normal_phi,
 			   double* kappa_phi,
@@ -1141,7 +1183,7 @@ namespace proteus
 
 	  //declare local storage
 	  register double p=0.0,u=0.0,v=0.0,w=0.0,
-	    grad_p[nSpace],grad_u[nSpace],grad_v[nSpace],grad_w[nSpace],
+	    grad_p[nSpace],grad_u[nSpace],grad_v[nSpace],grad_w[nSpace],f[nSpace],
 	    mom_u_acc=0.0,
 	    dmom_u_acc_u=0.0,
 	    mom_v_acc=0.0,
@@ -1310,19 +1352,25 @@ namespace proteus
 
 	  tau_0 = useMetrics*tau_m_0+(1.0-useMetrics)*tau_h_0;
 	  tau_1 = useMetrics*tau_m_1+(1.0-useMetrics)*tau_h_1;		
-		
+
+          //
+          // Gravity forcing
+          //
+	  f[0] = (rho-rho_init[eN_k])*g[0];
+	  f[1] = (rho-rho_init[eN_k])*g[1];  
+	  f[2] = (rho-rho_init[eN_k])*g[2];		
           //
           //calculate strong residual
           //
 	  pdeResidual_p = grad_u[0] + grad_v[1] + grad_w[2];
 
-	  pdeResidual_u = rho *(mom_u_acc_t + u*grad_u[0] + v*grad_u[1] + w*grad_u[2] - g[0])
+	  pdeResidual_u = rho *(mom_u_acc_t + u*grad_u[0] + v*grad_u[1] + w*grad_u[2]) - f[0]
 	                + grad_p[0]; // - mu poisson_u  ==> ommited as only first order right now !! 
 
-	  pdeResidual_v = rho *(mom_v_acc_t + u*grad_v[0] + v*grad_v[1] + w*grad_v[2] - g[1])
+	  pdeResidual_v = rho *(mom_v_acc_t + u*grad_v[0] + v*grad_v[1] + w*grad_v[2]) - f[1]
 	                + grad_p[1]; // - mu poisson_u  ==> ommited as only first order right now !! 
 	                
-	  pdeResidual_w = rho *(mom_w_acc_t + u*grad_w[0] + v*grad_w[1] + w*grad_w[2] - g[2])
+	  pdeResidual_w = rho *(mom_w_acc_t + u*grad_w[0] + v*grad_w[1] + w*grad_w[2]) - f[2]
 	                + grad_p[2]; // - mu poisson_u  ==> ommited as only first order right now !! 
 
 
@@ -1657,80 +1705,72 @@ namespace proteus
 		}
 
 	      //
-	      //load the boundary values
-	      //
-	      //isDOFBoundary_p[ebNE_kb] ebqe_bc_p_ext[ebNE_kb];
-	      //isDOFBoundary_u[ebNE_kb] ebqe_bc_u_ext[ebNE_kb];
-	      //isDOFBoundary_v[ebNE_kb] ebqe_bc_v_ext[ebNE_kb];
-	      //isDOFBoundary_w[ebNE_kb] ebqe_bc_w_ext[ebNE_kb];
-	      // For now: hard wired zero weak BC 
-              gi[0] = 0.0;
-	      gi[1] = 0.0;
-	      gi[2] = 0.0;	      
+	      // Assume either nono or all velocity have dir BC
+	      //	      
+	      if (isDOFBoundary_w[ebNE_kb] == 1) 
+	      {	      	
+	        unormal = normal[0]*u_ext + normal[1]*v_ext + normal[2]*w_ext;
+	        gnormal = normal[0]*gi[0] + normal[1]*gi[1] + normal[2]*gi[2];
+	        uneg = 0.5*(unormal - fabs(unormal));
 	      
-	      // 
-	      //calculate the pde coefficients using the solution and the boundary values for the solution 
-	      // 	
-	
-	      unormal = normal[0]*u_ext + normal[1]*v_ext + normal[2]*w_ext;
-	      gnormal = normal[0]*gi[0] + normal[1]*gi[1] + normal[2]*gi[2];
-	      uneg = 0.5*(unormal - fabs(unormal));
-	     	      
-	
-	      // 
-	      //calculate the numerical fluxes 
-	      // 
+	        ck.calculateGScale(G,normal,h_penalty);
+                penalty =  C_b*mu/h_penalty;
 
-	      //
-	      ck.calculateGScale(G,normal,h_penalty);
-              penalty =  C_b*mu/h_penalty;
-
-
-	      // 
-	      //calculate the internal and external trace of the pde coefficients 
-	      // 
-
-	      //
-	      //calculate the flux jacobian
-	      //
-	      // vel_trial_trace_ref[ebN_local_kb*nDOF_test_element]
-	      
-  	    for(int i=0;i<nDOF_test_element;i++)
-	      {
-	      int i_nSpace=i*nSpace;
-	      for(int j=0;j<nDOF_trial_element;j++) 
-		{ 
-		  //int j_nSpace = j*nSpace;
+  	        for(int i=0;i<nDOF_test_element;i++)
+	        {
+	           int i_nSpace=i*nSpace;
+	           for(int j=0;j<nDOF_trial_element;j++) 
+		   { 
+		    //int j_nSpace = j*nSpace;
 		  // //cek debug
-		   elementJacobian_p_p[i][j] = 0.0;
-		   elementJacobian_p_u[i][j]+= normal[0]*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*p_test_dS[i];
-		   elementJacobian_p_v[i][j]+= normal[1]*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*p_test_dS[i];
-		   elementJacobian_p_w[i][j]+= normal[2]*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*p_test_dS[i];
+		     elementJacobian_p_p[i][j] = 0.0;
+		     elementJacobian_p_u[i][j]+= normal[0]*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*p_test_dS[i];
+		     elementJacobian_p_v[i][j]+= normal[1]*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*p_test_dS[i];
+		     elementJacobian_p_w[i][j]+= normal[2]*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*p_test_dS[i];
 
-		   elementJacobian_u_p[i][j] += normal[0]*p_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
-		   elementJacobian_u_u[i][j] += (penalty - uneg*rho)*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i]	                                     
-					     + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[1]*vel_grad_test_dS[i_nSpace+1]
-		                             + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[2]*vel_grad_test_dS[i_nSpace+2];
-		   elementJacobian_u_v[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[0]*vel_grad_test_dS[i_nSpace+1];
-		   elementJacobian_u_w[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[0]*vel_grad_test_dS[i_nSpace+2];	 
+		     elementJacobian_u_p[i][j] += normal[0]*p_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
+		     elementJacobian_u_u[i][j] += (penalty - uneg*rho)*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i]	                                     
+					       + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[1]*vel_grad_test_dS[i_nSpace+1]
+		                               + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[2]*vel_grad_test_dS[i_nSpace+2];
+		     elementJacobian_u_v[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[0]*vel_grad_test_dS[i_nSpace+1];
+		     elementJacobian_u_w[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[0]*vel_grad_test_dS[i_nSpace+2];	 
 	
 
-		   elementJacobian_v_p[i][j] += normal[1]*p_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
-		   elementJacobian_v_u[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[1]*vel_grad_test_dS[i_nSpace+0];
-		   elementJacobian_v_v[i][j] += (penalty - uneg*rho)*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i]
+		     elementJacobian_v_p[i][j] += normal[1]*p_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
+		     elementJacobian_v_u[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[1]*vel_grad_test_dS[i_nSpace+0];
+		     elementJacobian_v_v[i][j] += (penalty - uneg*rho)*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i]
 	                                     + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[0]*vel_grad_test_dS[i_nSpace+0]
 		                             + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[2]*vel_grad_test_dS[i_nSpace+2];
-		   elementJacobian_v_w[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[1]*vel_grad_test_dS[i_nSpace+2];
+		     elementJacobian_v_w[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[1]*vel_grad_test_dS[i_nSpace+2];
 
-		   elementJacobian_w_p[i][j] += normal[2]*p_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
-		   elementJacobian_w_u[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[2]*vel_grad_test_dS[i_nSpace+0];
-		   elementJacobian_w_v[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[2]*vel_grad_test_dS[i_nSpace+1];
-		   elementJacobian_w_w[i][j] += (penalty - uneg*rho)*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i]
+		     elementJacobian_w_p[i][j] += normal[2]*p_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i];
+		     elementJacobian_w_u[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[2]*vel_grad_test_dS[i_nSpace+0];
+		     elementJacobian_w_v[i][j] += mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[2]*vel_grad_test_dS[i_nSpace+1];
+		     elementJacobian_w_w[i][j] += (penalty - uneg*rho)*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*vel_test_dS[i]
 	                                     + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[0]*vel_grad_test_dS[i_nSpace+0]
 		                             + mu*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*normal[1]*vel_grad_test_dS[i_nSpace+1];
-		  // //cek debug
-		}//j
-	      }//i
+		    // //cek debug
+		  }//j
+	        }//i
+	      }
+	      else //if (isAdvectiveFluxBoundary_w[ebNE_kb] == 1)  // Do nothing... but needs stabilizing terms for convection if there is inflow
+	      {
+	         unormal = normal[0]*u_ext + normal[1]*v_ext + normal[2]*w_ext;
+	          
+		 if (unormal < 0.0)
+		 {
+		   for (int i=0;i<nDOF_test_element;i++)
+	  	   {
+		     for(int j=0;j<nDOF_trial_element;j++) 
+		     { 
+		       if (isAdvectiveFluxBoundary_u[ebNE_kb] == 1)elementJacobian_u_u[i][j] -= rho*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*unormal*vel_test_dS[i];
+		       if (isAdvectiveFluxBoundary_v[ebNE_kb] == 1)elementJacobian_v_v[i][j] -= rho*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*unormal*vel_test_dS[i];
+		       if (isAdvectiveFluxBoundary_w[ebNE_kb] == 1)elementJacobian_w_w[i][j] -= rho*vel_trial_trace_ref[ebN_local_kb*nDOF_test_element+j]*unormal*vel_test_dS[i];
+		     }  
+		   }  
+		 } 
+	       }
+		
 
 	      //
 	      //update the global Jacobian from the flux Jacobian

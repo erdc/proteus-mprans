@@ -712,6 +712,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.q[('u',1)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('u',2)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('u',3)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        self.q[('rho_0')] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')	
         self.q[('m',1)] = self.q[('u',1)]
         self.q[('m',2)] = self.q[('u',2)]
         self.q[('m',3)] = self.q[('u',3)]
@@ -897,7 +898,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.numericalFlux.setDirichletValues(self.ebqe)
 
         #cek/ido todo replace python loops in modules with optimized code if possible/necessary
-        self.forceStrongConditions=True
+        self.forceStrongConditions=False#True
         self.dirichletConditionsForceDOF = {}
         if self.forceStrongConditions:
             for cj in range(self.nc):
@@ -998,6 +999,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[2].dof,
             self.u[3].dof,
             self.coefficients.g,
+	    self.q[('rho_0')],
             self.coefficients.q_phi,
             self.coefficients.q_n,
             self.coefficients.q_kappa,
@@ -1067,7 +1069,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 	    for cj in range(len(self.dirichletConditionsForceDOF)):#
 		for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
                     r[self.offset[cj]+self.stride[cj]*dofN] = 0
-		    print dofN,g
+		    #print dofN,g
 
         if self.stabilization:
             self.stabilization.accumulateSubgridMassHistory(self.q)
@@ -1131,6 +1133,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[2].dof,
             self.u[3].dof,
             self.coefficients.g,
+	    self.q[('rho_0')],
             self.coefficients.q_phi,
             self.coefficients.q_n,
             self.coefficients.q_kappa,
