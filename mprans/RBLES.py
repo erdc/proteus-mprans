@@ -1071,6 +1071,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                     r[self.offset[cj]+self.stride[cj]*dofN] = 0
 		    #print dofN,g
 
+        cflMax=globalMax(self.q[('cfl',0)].max())##*self.timeIntegration.dt
+        log("Maximum CFL = " + str(cflMax),level=2)
+
         if self.stabilization:
             self.stabilization.accumulateSubgridMassHistory(self.q)
         log("Global residual",level=9,data=r)
