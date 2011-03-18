@@ -25,7 +25,7 @@ hull_length = 1.000
 waterLevel  = 0.500 
 
 nLevels = 1
-domain = Domain.MeshTetgenDomain(fileprefix="wigley")
+domain = Domain.MeshTetgenDomain(fileprefix="mesh")
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':11}
 
 restrictFineSolutionToAllMeshes=False
@@ -58,7 +58,7 @@ Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um*rho_0/nu_0
 
 residence_time = hull_length/Um
-dt_init=0.02
+dt_init=0.0025
 T = 5.0*residence_time
 
 nDTout=int(ceil(T/dt_init))
