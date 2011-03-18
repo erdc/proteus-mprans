@@ -41,6 +41,10 @@ linearSmoother = None
 linear_solver_options_prefix = 'mcorr_'
 linearSmoother = None
 
+nonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'rits'
+
+
 linTolFac = 1.0e-6
 
 conservativeFlux = None

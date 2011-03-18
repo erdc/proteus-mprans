@@ -3,7 +3,6 @@ A helper module for doing air/water flow around a moving rigid cylinder in 2D
 """
 from math import *
 from proteus import *
-from mpi4py import MPI
 
 #----------------------------------------------------
 # Physical properties
@@ -22,8 +21,6 @@ g=[0.0,0.0,-9.81]
 # Domain - mesh - quadrature
 #----------------------------------------------------
 nd = 3
-hull_beam   = 0.238
-hull_draft  = 0.095
 hull_length = 1.000
 waterLevel  = 0.500 
 
@@ -58,7 +55,7 @@ freezeLevelSet=True
 #----------------------------------------------------
 Fr = 0.28
 Um = Fr*sqrt(fabs(g[2])*hull_length)
-Re = hull_beam*Um*rho_0/nu_0
+Re = hull_length*Um*rho_0/nu_0
 
 residence_time = hull_length/Um
 dt_init=0.02
@@ -66,13 +63,12 @@ T = 5.0*residence_time
 
 nDTout=int(ceil(T/dt_init))
 
-if MPI.COMM_WORLD.Get_rank() == 0:
-	print "   ================   REYNOLDS NUMBER = "+`Re`
-	print "   ================   FROUDE(HULL LENGTH) NUMBER = "+`Fr`
-	print "   ================   SPEED[M/S] = "+`Um`
-	print "   ================   Hull Flow time = "+`residence_time`
-	print "   ================   T = "+`T`
-	print "   ================   nDTout = "+`nDTout`
+print "   ================   REYNOLDS NUMBER = "+`Re`
+print "   ================   FROUDE(HULL LENGTH) NUMBER = "+`Fr`
+print "   ================   SPEED[M/S] = "+`Um`
+print "   ================   Hull Flow time = "+`residence_time`
+print "   ================   T = "+`T`
+print "   ================   nDTout = "+`nDTout`
 
 #----------------------------------------------------
 # Numerical parameters
@@ -93,7 +89,7 @@ vof_sc_beta = 1.5
 
 rd_shockCapturingFactor=0.2
 
-epsFact_consrv_diffusion=50.0
+epsFact_consrv_diffusion=1000.0
 
 #----------------------------------------------------
 # Interface width

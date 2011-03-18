@@ -27,10 +27,11 @@ coefficients = RBLES.Coefficients(epsFact=epsFact_viscosity,
 coefficients.waterLevel=waterLevel
 
 def velRamp(t):
-    if rampInitialConditions and (t < 0.5*residence_time):
-        return (t/(0.5*residence_time))
-    else:
-        return 1.0
+    return 1.0
+    #if rampInitialConditions and (t < 0.5*residence_time):
+    #    return (t/(0.5*residence_time))
+    #else:
+    #    return 1.0
    
 #----------------------------------------------------------
 #  Weak dirichlet
