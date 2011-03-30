@@ -905,9 +905,14 @@ namespace proteus
 		  vel_grad_test_dS[j_nSpace+2] = vel_grad_trial_trace[j_nSpace+2]*dS; 
 		}
 
+
+	      ebqe_velocity[ebNE_kb_nSpace + 0 ] = u_ext;
+              ebqe_velocity[ebNE_kb_nSpace + 1 ] = v_ext;
+              ebqe_velocity[ebNE_kb_nSpace + 2 ] = w_ext;
+	      
 	      //
 	      // Assume either nono or all velocity have dir BC
-	      //	     	      	      
+	      //	   	        	      	      
 	      if (isDOFBoundary_w[ebNE_kb] == 1) 
 	      {
 	      	      	      
