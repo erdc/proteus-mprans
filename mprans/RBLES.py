@@ -903,6 +903,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.forceStrongConditions:
             for cj in range(self.nc):
                 self.dirichletConditionsForceDOF[cj] = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False)
+
+        for cj in range(self.nc):
+               self.dirichletConditions[cj] = DOFBoundaryConditions_alt(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False,allowNodalMaterialBoundaryTypes=False)
+               
+
         compKernelFlag = 0
         self.RBLES = cRBLES_base(self.nSpace_global,
                                    self.nQuadraturePoints_element,
