@@ -61,8 +61,8 @@ namespace proteus
 				   int* elementBoundaryLocalElementBoundariesArray,
 				   double* ebqe_velocity_ext,
 				   int* isDOFBoundary_u,
-				   double* ebqe_bc_u_ext,
-				   double* ebqe_u)=0;
+				   double* ebqe_bc_u_ext,				   
+				   double* ebqe_u)=0;				   
     virtual void calculateJacobian(//element
 				   double* mesh_trial_ref,
 				   double* mesh_grad_trial_ref,
@@ -108,6 +108,59 @@ namespace proteus
 				   int* isDOFBoundary_u,
 				   double* ebqe_bc_u_ext,
 				   int* csrColumnOffsets_eb_u_u)=0;
+    virtual void calculateWaterline(//element
+                                   int* wlc,
+	                           double* waterline,
+				   double* mesh_trial_ref,
+				   double* mesh_grad_trial_ref,
+				   double* mesh_dof,
+				   double* meshVelocity_dof,
+				   double MOVING_DOMAIN,
+				   int* mesh_l2g,
+				   double* dV_ref,
+				   double* u_trial_ref,
+				   double* u_grad_trial_ref,
+				   double* u_test_ref,
+				   double* u_grad_test_ref,
+				   //element boundary
+				   double* mesh_trial_trace_ref,
+				   double* mesh_grad_trial_trace_ref,
+				   double* dS_ref,
+				   double* u_trial_trace_ref,
+				   double* u_grad_trial_trace_ref,
+				   double* u_test_trace_ref,
+				   double* u_grad_test_trace_ref,
+				   double* normal_ref,
+				   double* boundaryJac_ref,
+				   //physics
+				   int nElements_global,
+			           double useMetrics, 
+				   double alphaBDF,
+				   int lag_shockCapturing, /*mwf not used yet*/
+				   double shockCapturingDiffusion,
+		                   double sc_uref, double sc_alpha,
+				   int* u_l2g, 
+				   double* elementDiameter,
+				   double* u_dof,double* u_dof_old,	
+				   double* velocity,
+				   double* q_m,
+				   double* q_u,				   
+				   double* q_n,
+				   double* q_dH,
+				   double* q_m_betaBDF,
+				   double* cfl,
+				   double* q_numDiff_u, 
+				   double* q_numDiff_u_last, 
+				   int offset_u, int stride_u, 
+				   int nExteriorElementBoundaries_global,
+				   int* exteriorElementBoundariesArray,
+				   int* elementBoundaryElementsArray,
+				   int* elementBoundaryLocalElementBoundariesArray,
+				   int* elementBoundaryMaterialTypes,
+				   double* ebqe_velocity_ext,
+				   int* isDOFBoundary_u,
+				   double* ebqe_bc_u_ext,				   
+				   double* ebqe_u)=0;	
   };
   
   template<class CompKernelType,
@@ -447,9 +500,9 @@ namespace proteus
 	      // 
 	      for(int i=0;i<nDOF_test_element;i++) 
 		{ 
-		  register int eN_k_i=eN_k*nDOF_test_element+i,
-		    eN_k_i_nSpace = eN_k_i*nSpace,
-		    i_nSpace=i*nSpace;
+		  //register int eN_k_i=eN_k*nDOF_test_element+i,
+		   // eN_k_i_nSpace = eN_k_i*nSpace;
+		  register int  i_nSpace=i*nSpace;
 
 		  elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
 		    ck.Hamiltonian_weak(H,u_test_dV[i]) + 
@@ -487,6 +540,7 @@ namespace proteus
       //ebNE is the Exterior element boundary INdex
       //ebN is the element boundary INdex
       //eN is the element index
+      //std::cout <<nExteriorElementBoundaries_global<<std::endl;
       for (int ebNE = 0; ebNE < nExteriorElementBoundaries_global; ebNE++) 
 	{ 
 	  register int ebN = exteriorElementBoundariesArray[ebNE], 
@@ -510,8 +564,8 @@ namespace proteus
 		dm_ext=0.0,
 		H_ext=0.0,
 		dH_ext[nSpace],
-		f_ext[nSpace],//MOVING_DOMAIN
-		df_ext[nSpace],//MOVING_DOMAIN
+		//f_ext[nSpace],//MOVING_DOMAIN
+		//df_ext[nSpace],//MOVING_DOMAIN
 		//flux_ext=0.0,
 		bc_u_ext=0.0,
 		bc_grad_u_ext[nSpace],
@@ -611,20 +665,24 @@ namespace proteus
 	      //calculate the numerical fluxes 
 	      // 
 	      exteriorNumericalFlux(normal,
-				    ebqe_bc_u_ext[ebNE_kb],//bc_u_ext,
+				    ebqe_bc_u_ext[ebNE_kb],//
+				    //bc_u_ext,
 				    u_ext,
 				    dH_ext,
 				    velocity_ext,
 				    flux_ext);
 	      ebqe_u[ebNE_kb] = u_ext;
+	      
+	      //std::cout<<u_ext<<ebqe_bc_u_ext
+	      
 	      //
 	      //update residuals
 	      //
 	      for (int i=0;i<nDOF_test_element;i++)
 		{
-		  int ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
+		  //int ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
 
-		  elementResidual_u[i] += ck.ExteriorElementBoundaryFlux(flux_ext,u_test_dS[i]);
+		  elementResidual_u[i] += ck.ExteriorElementBoundaryFlux(flux_ext,u_test_dS[i]);  		  
 		}//i
 	    }//kb
 	  //
@@ -634,9 +692,15 @@ namespace proteus
 	    {
 	      int eN_i = eN*nDOF_test_element+i;
 
-	      globalResidual[offset_u+stride_u*u_l2g[eN_i]] += MOVING_DOMAIN*elementResidual_u[i];
+	      //globalResidual[offset_u+stride_u*u_l2g[eN_i]] += MOVING_DOMAIN*elementResidual_u[i];
+              globalResidual[offset_u+stride_u*u_l2g[eN_i]] += elementResidual_u[i];	  
+	      
 	    }//i
 	}//ebNE
+
+
+
+
     }
     
     void calculateJacobian(//element
@@ -890,15 +954,15 @@ namespace proteus
 		bc_grad_u_ext[nSpace],
 		bc_H_ext=0.0,
 		bc_dH_ext[nSpace],
-		f_ext[nSpace],
-		df_ext[nSpace],
+		//f_ext[nSpace],
+		//df_ext[nSpace],
 		dflux_u_u_ext=0.0,
 		bc_u_ext=0.0,
 		//bc_grad_u_ext[nSpace],
 		bc_m_ext=0.0,
 		bc_dm_ext=0.0,
-		bc_f_ext[nSpace],
-		bc_df_ext[nSpace],
+		//bc_f_ext[nSpace],
+		//bc_df_ext[nSpace],
 		fluxJacobian_u_u[nDOF_trial_element],
 		jac_ext[nSpace*nSpace],
 		jacDet_ext,
@@ -1031,13 +1095,141 @@ namespace proteus
 		  for (int j=0;j<nDOF_trial_element;j++)
 		    {
 		      register int ebN_i_j = ebN*4*nDOF_test_X_trial_element + i*nDOF_trial_element + j;
-
-		      globalJacobian[csrRowIndeces_u_u[eN_i] + csrColumnOffsets_eb_u_u[ebN_i_j]] += MOVING_DOMAIN*fluxJacobian_u_u[j]*u_test_dS[i];
+                      globalJacobian[csrRowIndeces_u_u[eN_i] + csrColumnOffsets_eb_u_u[ebN_i_j]] += fluxJacobian_u_u[j]*u_test_dS[i];
+		      //globalJacobian[csrRowIndeces_u_u[eN_i] + csrColumnOffsets_eb_u_u[ebN_i_j]] += MOVING_DOMAIN*fluxJacobian_u_u[j]*u_test_dS[i];
 		    }//j
 		}//i
 	    }//kb
 	}//ebNE
     }//computeJacobian
+
+    void calculateWaterline(//element
+                           int* wlc,
+	                   double* waterline,
+			   double* mesh_trial_ref,
+			   double* mesh_grad_trial_ref,
+			   double* mesh_dof,
+			   double* mesh_velocity_dof,
+			   double MOVING_DOMAIN,
+			   int* mesh_l2g,
+			   double* dV_ref,
+			   double* u_trial_ref,
+			   double* u_grad_trial_ref,
+			   double* u_test_ref,
+			   double* u_grad_test_ref,
+			   //element boundary
+			   double* mesh_trial_trace_ref,
+			   double* mesh_grad_trial_trace_ref,
+			   double* dS_ref,
+			   double* u_trial_trace_ref,
+			   double* u_grad_trial_trace_ref,
+			   double* u_test_trace_ref,
+			   double* u_grad_test_trace_ref,
+			   double* normal_ref,
+			   double* boundaryJac_ref,
+			   //physics
+			   int nElements_global,
+			   double useMetrics, 
+			   double alphaBDF,
+			   int lag_shockCapturing, /*mwf not used yet*/
+			   double shockCapturingDiffusion,
+			   double sc_uref, double sc_alpha,
+			   int* u_l2g, 
+			   double* elementDiameter,
+			   double* u_dof,double* u_dof_old,			   
+			   double* velocity,
+			   double* q_m,
+			   double* q_u,				   
+			   double* q_n,
+			   double* q_dH,
+			   double* q_m_betaBDF,
+			   double* cfl,
+			   double* q_numDiff_u, 
+			   double* q_numDiff_u_last, 
+			   int offset_u, int stride_u, 
+			   int nExteriorElementBoundaries_global,
+			   int* exteriorElementBoundariesArray,
+			   int* elementBoundaryElementsArray,
+			   int* elementBoundaryLocalElementBoundariesArray,
+                           int* elementBoundaryMaterialTypes,
+			   double* ebqe_velocity_ext,
+			   int* isDOFBoundary_u,
+			   double* ebqe_bc_u_ext,
+			   double* ebqe_u)
+    {
+
+      //  Tetrehedral elements specific extraction routine for waterline extraction
+      //  Loops over boundaries and checks if boundary is infact a hull (hardwired check if mattype > 6)
+      //  Extracts the nodal values of boundary triangle (4th point is dropped = hardwired assumption we are dealing with linear tet)
+      //  Then computes an average value and position for both negative and positive values
+      //  If both positive and negative values re found, and we are actually in a triangle containing the interface
+      //  a linear interpolation of negative and positive average is reported as interface location (exact in case of linear tets) 
+
+      for (int ebNE = 0; ebNE < nExteriorElementBoundaries_global; ebNE++) 
+	{ 
+          register int ebN = exteriorElementBoundariesArray[ebNE]; 
+	  register int eN  = elementBoundaryElementsArray[ebN*2+0];
+	  register int bN  = elementBoundaryLocalElementBoundariesArray[ebN*2+0];
+	    
+	  if (elementBoundaryMaterialTypes[ebN] >6)
+	    {
+	    	    
+	    double val,x,y,z;	    
+	    int pos=0, neg=0, idx=-1;
+	    double xn=0.0, yn=0.0, zn=0.0, vn=0.0; 
+	    double xp=0.0, yp=0.0, zp=0.0, vp=0.0;  
+	    
+            for (int j=0;j<nDOF_trial_element;j++) 
+	    {
+	      if (j != bN) {  
+	       int eN_nDOF_trial_element_j      = eN*nDOF_trial_element + j;
+	       int eN_nDOF_mesh_trial_element_j = eN*nDOF_mesh_trial_element + j;
+               val = u_dof[u_l2g[eN_nDOF_trial_element_j]];
+	       x = mesh_dof[mesh_l2g[eN_nDOF_mesh_trial_element_j]*3+0];
+	       y = mesh_dof[mesh_l2g[eN_nDOF_mesh_trial_element_j]*3+1];
+	       z = mesh_dof[mesh_l2g[eN_nDOF_mesh_trial_element_j]*3+2];
+	       
+               if (val < 0.0)
+	       {
+	         neg++;
+		 vn+=val;
+		 xn+=x;
+		 yn+=y;
+		 zn+=z;
+	       }
+	       else
+	       {
+	       	 pos++;
+		 vp+=val;
+		 xp+=x;
+		 yp+=y;
+		 zp+=z;
+	       }
+	      }	            
+            } // trail for
+	    
+
+            if ((pos > 0) && (neg > 0) )
+	    {
+	      vp /= pos;
+	      vn /= neg;
+	  
+	      double alpha = vp/(vp -vn);
+
+	      waterline[wlc[0]*3 + 0] =  alpha*(xn/neg) + (1.0-alpha)*(xp/pos);
+	      waterline[wlc[0]*3 + 1] =  alpha*(yn/neg) + (1.0-alpha)*(yp/pos);
+	      waterline[wlc[0]*3 + 2] =  alpha*(zn/neg) + (1.0-alpha)*(zp/pos);
+	      wlc[0]++;
+	      	      
+	    } // end value if	 
+	  
+	  } // end bnd mat check
+	     
+	}//ebNE
+
+        //std::cout<<"CPP WLC "<<wlc[0]<<std::endl;
+    } // calcWaterline
+
   };//NCLS
 
   inline NCLS_base* newNCLS(int nSpaceIn,

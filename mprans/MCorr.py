@@ -48,7 +48,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             self.applyCorrectionToDOF = applyCorrectionToDOF
         else:
             self.applyCorrectionToDOF = False
-        self.massConservationError=0.0
+        self.massConservationError=0.0	
     def initializeMesh(self,mesh):
         self.h=mesh.h
         self.epsHeaviside = self.epsFactHeaviside*mesh.h
@@ -138,6 +138,11 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             #self.vofModel.q[('u',0)] += self.massCorrModel.q[('r',0)]
             #####print "********************max VOF************************",max(self.vofModel.q[('u',0)].flat[:])
         copyInstructions = {}
+	
+	self.lsModel.computeWaterline(t)
+	
+	
+	
         return copyInstructions
     def evaluate(self,t,c):
         import math

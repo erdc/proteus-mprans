@@ -534,7 +534,7 @@ class LevelModel(OneLevelTransport):
                                 self.nElementBoundaryQuadraturePoints_elementBoundary,
                                 compKernelFlag)
 
-        self.forceStrongConditions=True 
+        self.forceStrongConditions=False#False
         #self.dirichletConditionsForceDOF = {}
         if self.forceStrongConditions:
             self.dirichletConditionsForceDOF = DOFBoundaryConditions(self.u[0].femSpace,dofBoundaryConditionsSetterDict[0],weakDirichletConditions=False)
@@ -549,6 +549,14 @@ class LevelModel(OneLevelTransport):
         self.MOVING_DOMAIN=0.0
         if self.mesh.nodeVelocityArray==None:
             self.mesh.nodeVelocityArray = numpy.zeros(self.mesh.nodeArray.shape,'d')
+
+        #ido water line stuff
+
+	self.waterline_interval = 10
+	self.waterline_calls  = 0
+	self.waterline_prints = 0
+
+
     #mwf these are getting called by redistancing classes,
     def calculateCoefficients(self):
         pass
@@ -571,8 +579,8 @@ class LevelModel(OneLevelTransport):
         self.setUnknowns(self.timeIntegration.u)
         #cek can put in logic to skip of BC's don't depend on t or u
         #Dirichlet boundary conditions
-        if hasattr(self.numericalFlux,'setDirichletValues'):
-            self.numericalFlux.setDirichletValues(self.ebqe)
+        ##if hasattr(self.numericalFlux,'setDirichletValues'):
+        self.numericalFlux.setDirichletValues(self.ebqe)
         #flux boundary conditions, SHOULDN'T HAVE
         #cNCLS.calculateResidual(self.mesh.nElements_global,
         #try to use 1d,2d,3d specific modules
@@ -632,7 +640,7 @@ class LevelModel(OneLevelTransport):
             self.mesh.elementBoundaryLocalElementBoundariesArray,
             self.coefficients.ebqe_v,
             self.numericalFlux.isDOFBoundary[0],
-            self.coefficients.rdModel.ebqe[('u',0)],#,self.numericalFlux.ebqe[('u',0)],
+            self.numericalFlux.ebqe[('u',0)],
             self.ebqe[('u',0)])
 
 	if self.forceStrongConditions:#
@@ -773,3 +781,94 @@ class LevelModel(OneLevelTransport):
         pass
     def calculateAuxiliaryQuantitiesAfterStep(self):
         pass
+
+    def computeWaterline(self, t):
+
+        self.waterline_calls += 1 
+    
+        if self.waterline_calls%self.waterline_interval == 0:
+		self.waterline_npoints = numpy.zeros((1),'i')
+        	self.waterline_data    = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nSpace_global),'d')	
+	
+		self.ncls.calculateWaterline(#element
+	 	   self.waterline_npoints,
+		   self.waterline_data,
+       	   	   self.u[0].femSpace.elementMaps.psi,
+       	    	   self.u[0].femSpace.elementMaps.grad_psi,
+       	    	   self.mesh.nodeArray,
+            	   self.mesh.nodeVelocityArray,
+           	   self.MOVING_DOMAIN,
+            	   self.mesh.elementNodesArray,
+              	   self.elementQuadratureWeights[('u',0)],
+       	           self.u[0].femSpace.psi,
+                   self.u[0].femSpace.grad_psi,
+                   self.u[0].femSpace.psi,
+                   self.u[0].femSpace.grad_psi,
+            #element boundary
+                   self.u[0].femSpace.elementMaps.psi_trace,
+                   self.u[0].femSpace.elementMaps.grad_psi_trace,
+                   self.elementBoundaryQuadratureWeights[('u',0)],
+                   self.u[0].femSpace.psi_trace,
+                   self.u[0].femSpace.grad_psi_trace,
+                   self.u[0].femSpace.psi_trace,
+                   self.u[0].femSpace.grad_psi_trace,
+                   self.u[0].femSpace.elementMaps.boundaryNormals,
+                   self.u[0].femSpace.elementMaps.boundaryJacobians,
+            #physics
+                   self.mesh.nElements_global,
+	           self.coefficients.useMetrics,
+                   self.timeIntegration.alpha_bdf,#mwf was self.timeIntegration.dt,
+                   self.shockCapturing.lag,
+                   self.shockCapturing.shockCapturingFactor,
+	           self.coefficients.sc_uref, 
+	           self.coefficients.sc_beta,	    
+                   self.u[0].femSpace.dofMap.l2g,
+                   self.mesh.elementDiametersArray,
+                   self.u[0].dof,
+	           self.coefficients.u_old_dof, 
+                   self.coefficients.q_v,
+                   self.timeIntegration.m_tmp[0],
+                   self.q[('u',0)],
+	           self.q[('grad(u)',0)],
+                   self.q[('dH_sge',0,0)],
+                   self.timeIntegration.beta_bdf[0],#mwf was self.timeIntegration.m_last[0],
+                   self.q[('cfl',0)],
+                   self.shockCapturing.numDiff[0],
+                   self.shockCapturing.numDiff_last[0],
+                   self.offset[0],self.stride[0],
+                   self.mesh.nExteriorElementBoundaries_global,
+                   self.mesh.exteriorElementBoundariesArray,
+                   self.mesh.elementBoundaryElementsArray,
+                   self.mesh.elementBoundaryLocalElementBoundariesArray,
+       	           self.mesh.elementBoundaryMaterialTypes,
+                   self.coefficients.ebqe_v,
+                   self.numericalFlux.isDOFBoundary[0],
+                   self.numericalFlux.ebqe[('u',0)],
+                   self.ebqe[('u',0)])
+
+		from proteus import Comm
+		comm = Comm.get()	
+
+		numpy.save("waterline." + str(comm.rank()) + "." + str(self.waterline_prints), self.waterline_data[0:self.waterline_npoints[0]])
+                self.waterline_prints += 1
+		
+			
+		#self.waterline_sdata = self.waterline_data[0:self.waterline_npoints[0]]
+		#numpy.save("waterline." + str(comm.rank()) + "." + str(self.waterline_prints) +".dat", self.waterline_sdata)
+		
+		
+		
+		##self.waterline_sdata.sort(axis=0) 
+
+
+
+
+                #self.waterline_prints += 1
+        	#self.waterline_file  = open("waterline." + str(comm.rank()) + "." + str(self.waterline_prints) +".dat",'w')
+	
+        	#self.waterline_file.write('# %12.5E %10i\n'% (t,self.waterline_npoints[0]))
+		#numpy.save("waterline." + str(comm.rank()) + "." + str(self.waterline_prints) +".dat", self.waterline_sdata)
+		
+		#for wl in self.waterline_sdata:		
+		#	self.waterline_file.write('%12.5E %12.5E %12.5E\n'% (wl[0],wl[1],wl[2]))
+                #self.waterline_file.close()
