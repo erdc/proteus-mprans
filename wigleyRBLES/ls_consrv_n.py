@@ -32,6 +32,7 @@ tolFac = 1e-4
 nl_atol_res = 0.0
 
 maxNonlinearIts = 10
+maxLineSearches = 0
 
 matrix = SparseMatrix
 
