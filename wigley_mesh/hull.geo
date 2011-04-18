@@ -55,7 +55,7 @@ Function addRef
   Field[11].ZMin =  0.40;
   Field[11].ZMax =  0.60;
 
-  Field[11].VIn  =  0.7*hcl;
+  Field[11].VIn  =  0.8*hcl;
   Field[11].VOut = 99.9;
 
   Field[12] = Box;
@@ -85,7 +85,7 @@ Function addRef
   Field[31].ZMin =  0.40;
   Field[31].ZMax =  0.60;
 
-  Field[31].VIn  =  0.6*hcl;
+  Field[31].VIn  =  0.8*hcl;
   Field[31].VOut = 99.9;
 
   Field[32] = Box;
@@ -99,7 +99,7 @@ Function addRef
   Field[32].ZMin =   0.30;
   Field[32].ZMax =   0.70;
 
-  Field[32].VIn  =  0.7*hcl;
+  Field[32].VIn  =  0.9*hcl;
   Field[32].VOut = 99.9;
     
   // Combine
