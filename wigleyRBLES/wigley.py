@@ -59,7 +59,7 @@ Re = hull_length*Um*rho_0/nu_0
 
 residence_time = hull_length/Um
 dt_init=0.0025
-T = 5.0*residence_time
+T = 15.0*residence_time
 
 nDTout=int(ceil(T/dt_init))
 
