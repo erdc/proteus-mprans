@@ -35,7 +35,9 @@ box_xy = [2.3955,.2985]
 #
 he = 0.75*box_width#
 he = 0.33*box_width#1.87G
-#he /=2.0 # <16G?
+he /=2.0 # <16G?
+he /=2.0 # 219K nodes
+he /=2.0 # <16G? 219K nodes
 #he = 0.25*box_width
 #he = 0.4*box_width
 #he = 0.4*box_width/2.0#/(2.0**(1.0/3.0))#16G
@@ -45,7 +47,7 @@ he = 0.33*box_width#1.87G
 #he = 0.25*0.4*box_width#64*2G
 #he = 0.5*0.25*0.4*box_width#64*2G
 
-genMesh=True
+genMesh=False
 from boxInTank3dDomain import *
 domain = boxInTank3d(L=[length,width,height],
                      box_xy=box_xy,
@@ -120,7 +122,7 @@ useFixedStep = False#True
 #numerics
 #
 nLevels = 1
-triangleOptions="VApq1.25q12ena%f" % ((he**3)/6.0,)
+triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
 print triangleOptions
 applyCorrection=True
 applyRedistancing=True
@@ -153,5 +155,5 @@ epsFact_vof=1.5
 usePETSc=True#False
 spaceOrder=1
 restrictFineSolutionToAllMeshes=False
-parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
-nLayersOfOverlapForParallel = 1
+parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.element
+nLayersOfOverlapForParallel = 0
