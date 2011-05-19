@@ -37,7 +37,8 @@ he = 0.75*box_width#
 he = 0.33*box_width#1.87G
 he /=2.0 # <16G?
 he /=2.0 # 219K nodes
-he /=2.0 # <16G? 219K nodes
+he /=2.0 # 219K nodes
+#he /=2.0 # <16G? 219K nodes
 #he = 0.25*box_width
 #he = 0.4*box_width
 #he = 0.4*box_width/2.0#/(2.0**(1.0/3.0))#16G
@@ -47,7 +48,7 @@ he /=2.0 # <16G? 219K nodes
 #he = 0.25*0.4*box_width#64*2G
 #he = 0.5*0.25*0.4*box_width#64*2G
 
-genMesh=False
+genMesh=False#True
 from boxInTank3dDomain import *
 domain = boxInTank3d(L=[length,width,height],
                      box_xy=box_xy,
@@ -127,7 +128,7 @@ print triangleOptions
 applyCorrection=True
 applyRedistancing=True
 rdtimeIntegration='osher'
-rdtimeIntegration='newton'
+#rdtimeIntegration='newton'
 freezeLevelSet=True
 obstacleInTank_quad_order = 3
 useBackwardEuler=True
@@ -143,17 +144,17 @@ ls_shockCapturingFactor=0.33
 vof_shockCapturingFactor=0.33
 rd_shockCapturingFactor=0.33
 #epsilons for Heaviside/Dirac/etc smoothing
-epsFact_density = 1.5
-epsFact_viscosity = 1.5
+epsFact_density = 3.0#1.5
+epsFact_viscosity = 3.0#1.5
 epsFact_redistance = 0.33
-epsFact_curvature=1.5
-epsFact_consrv_heaviside=1.5
-epsFact_consrv_dirac=1.5
+epsFact_curvature=3.0#1.5
+epsFact_consrv_heaviside=3.0#1.5
+epsFact_consrv_dirac=3.0#1.5
 epsFact_consrv_diffusion=10.0
-epsFact_vof=1.5
+epsFact_vof=3.0#1.5
 #
 usePETSc=True#False
 spaceOrder=1
 restrictFineSolutionToAllMeshes=False
-parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.element
-nLayersOfOverlapForParallel = 0
+parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
+nLayersOfOverlapForParallel = 1

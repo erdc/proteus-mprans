@@ -44,9 +44,9 @@ nonlinearSmoother = NLGaussSeidel
 
 fullNewtonFlag = True
 
-tolFac = 0.0
+tolFac = 1.0e-6#
 
-nl_atol_res = 0.001*he#1.0e-8#should be linear with lagging
+nl_atol_res = 1.0e-6#0.001*he#1.0e-8#should be linear with lagging
 
 maxNonlinearIts = 50
 
@@ -55,8 +55,10 @@ matrix = SparseMatrix
 if usePETSc:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver = KSP_petsc4py
+    multilevelLinearSolver = PETSc
+    levelLinearSolver = PETSc
     linear_solver_options_prefix = 'ncls_'
-#    linearSmoother = StarILU
+    #    linearSmoother = StarILU
     linearSmoother = None
     linearSolverConvergenceTest = 'r-true'
 else:

@@ -72,6 +72,8 @@ numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_IIPG_exterio
 if usePETSc:    
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver = KSP_petsc4py
+    multilevelLinearSolver = PETSc
+    levelLinearSolver = PETSc
     linear_solver_options_prefix = 'rans2p_'
 #    linearSmoother = StarILU
     linearSmoother = None

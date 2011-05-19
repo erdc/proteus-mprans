@@ -43,6 +43,8 @@ matrix = SparseMatrix
 if usePETSc:
      multilevelLinearSolver = KSP_petsc4py
      levelLinearSolver = KSP_petsc4py
+     multilevelLinearSolver = PETSc
+     levelLinearSolver = PETSc
      linear_solver_options_prefix = 'vof_'
 #     linearSmoother = StarILU
      linearSmoother = None
