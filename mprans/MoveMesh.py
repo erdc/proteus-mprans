@@ -614,7 +614,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 	for i in range(len(forceExtractionFaces)):
 	   self.forceExtractionFaces[i] = forceExtractionFaces[i]       
 	       
-
+        from proteus import PostProcessingTools
+        self.velocityPostProcessor = PostProcessingTools.VelocityPostProcessingChooser(self)  
+        log(memory("velocity postprocessor","OneLevelTransport"),level=4)
 	
 	
     def getResidual(self,u,r):
