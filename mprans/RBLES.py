@@ -1247,7 +1247,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         return jacobian
 
 
-    def getForce(self,cg,forceExtractionFace,force,moment):
+    def getForce(self,cg,forceExtractionFaces,force,moment):
         """
         Calculate the element residuals and add in to the global residual
         """

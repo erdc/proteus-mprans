@@ -1041,7 +1041,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 	self.force  = numpy.zeros(3,'d') 
 	self.moment = numpy.zeros(3,'d')		
         self.coefficients.flowModel.getForce(self.coefficients.hullcg,
-	                                     self.coefficients.forceExtractionFaces,
+	                                     self.forceExtractionFaces,
 				             self.force,self.moment)
 
         self.moveMesh.moveRigidBody(self.coefficients.hullmass,	      
