@@ -4,7 +4,6 @@
 #include <iostream>
 #include "CompKernel.h"
 #include "ModelFactory.h"
-#include "mpi.h"
 
 //#define COMPRESSIBLE_FORM
 namespace proteus
