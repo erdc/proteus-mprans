@@ -1408,15 +1408,21 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebq_global[('totalFlux',0)],
             self.elementResidual[0])
 
-        from mpi4py import MPI	
-	comm = MPI.COMM_WORLD
+        #from mpi4py import MPI	
+	#comm = MPI.COMM_WORLD
 
-	tmp1 = numpy.zeros(3,'d')
-	tmp2 = numpy.zeros(3,'d')	         
-	comm.Allreduce(force,  tmp1, op=MPI.SUM)     
-	comm.Allreduce(moment, tmp2, op=MPI.SUM) 
-        force  [:] = tmp1
-	moment [:] = tmp2
+	#tmp1 = numpy.zeros(3,'d')
+	#tmp2 = numpy.zeros(3,'d')	         
+	#comm.Allreduce(force,  tmp1, op=MPI.SUM)     
+	#comm.Allreduce(moment, tmp2, op=MPI.SUM) 
+        #force  [:] = tmp1
+	#moment [:] = tmp2
+
+	from proteus.flcbdfWrappers import globalSum
+        for i in range(3):
+		force[i] = globalSum(force[i]) 
+		moment[i] = globalSum(moment[i]) 
+
         
 	#comm.Barrier()	
         #if self.comm.rank() == 0:
