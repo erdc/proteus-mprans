@@ -107,7 +107,16 @@ namespace proteus
 		     else if (nDOF_mesh_trial_elementIn == 4)//sub-parametric tets
 		       {
 			 if (nDOF_trial_elementIn == 10)
-			   return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,4,10,10>,3,15,4,10,10,7>());
+			   if (nQuadraturePoints_elementIn == 14)
+			   {
+			     return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,4,10,10>,3,14,4,10,10,6>());
+			   }
+			   else if (nQuadraturePoints_elementIn == 15)
+			   {
+			     return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,4,10,10>,3,15,4,10,10,7>());
+			   }
+			   else
+			     abort();
 			 else
 			   abort();
 		       }
@@ -127,7 +136,16 @@ namespace proteus
 			       else if ( nQuadraturePoints_elementBoundaryIn == 9)			     			     
 			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,27,8,27,27,9>());
 			       else
-			         abort();	 
+			         abort();	
+		             else if (nQuadraturePoints_elementIn == 64)
+			       if ( nQuadraturePoints_elementBoundaryIn == 4)
+			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,64,8,27,27,4>());
+			       else if ( nQuadraturePoints_elementBoundaryIn == 9)			     			     
+			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,64,8,27,27,9>());
+		               else if ( nQuadraturePoints_elementBoundaryIn == 16)			     			     
+			         return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,64,8,27,27,16>());
+			       else
+			         abort();				  
 			     else if (nQuadraturePoints_elementIn == 125)
 			        return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<3,8,27,27>,3,125,8,27,27,25>());
 			     else
