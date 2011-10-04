@@ -383,7 +383,7 @@ namespace proteus
 		u_test_dV[nDOF_trial_element],
 		u_grad_test_dV[nDOF_test_element*nSpace],
 		dV,x,y,z,xt,yt,zt,
-		G[nSpace*nSpace],G_dd_G,tr_G,norm_Rv;
+		G[nSpace*nSpace],G_dd_G,tr_G;//norm_Rv;
 	      // //
 	      // //compute solution and gradients at quadrature points
 	      // //
@@ -505,9 +505,9 @@ namespace proteus
 	      // 
 	      for(int i=0;i<nDOF_test_element;i++) 
 		{ 
-		  register int eN_k_i=eN_k*nDOF_test_element+i,
-		    eN_k_i_nSpace = eN_k_i*nSpace,
-		    i_nSpace=i*nSpace;
+		  //register int eN_k_i=eN_k*nDOF_test_element+i,
+		    //eN_k_i_nSpace = eN_k_i*nSpace,
+		   register int i_nSpace=i*nSpace;
 
 		  elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
 		    ck.Advection_weak(f,&u_grad_test_dV[i_nSpace]) + 
@@ -564,7 +564,7 @@ namespace proteus
 		df_ext[nSpace],
 		flux_ext=0.0,
 		bc_u_ext=0.0,
-		bc_grad_u_ext[nSpace],
+		//bc_grad_u_ext[nSpace],
 		bc_m_ext=0.0,
 		bc_dm_ext=0.0,
 		bc_f_ext[nSpace],
@@ -677,7 +677,7 @@ namespace proteus
 	      //
 	      for (int i=0;i<nDOF_test_element;i++)
 		{
-		  int ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
+		  //int ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
 
 		  elementResidual_u[i] += ck.ExteriorElementBoundaryFlux(flux_ext,u_test_dS[i]);
 		}//i

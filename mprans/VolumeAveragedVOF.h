@@ -370,7 +370,7 @@ namespace proteus
 		//VRANS
 		porosity,
 		//
-		G[nSpace*nSpace],G_dd_G,tr_G,norm_Rv;
+		G[nSpace*nSpace],G_dd_G,tr_G;//,norm_Rv;
 	      // //
 	      // //compute solution and gradients at quadrature points
 	      // //
@@ -471,9 +471,9 @@ namespace proteus
 	      // 
 	      for(int i=0;i<nDOF_test_element;i++) 
 		{ 
-		  register int eN_k_i=eN_k*nDOF_test_element+i,
-		    eN_k_i_nSpace = eN_k_i*nSpace,
-		    i_nSpace=i*nSpace;
+		  //register int eN_k_i=eN_k*nDOF_test_element+i,
+		    //eN_k_i_nSpace = eN_k_i*nSpace,
+		  register int    i_nSpace=i*nSpace;
 
 		  elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
 		    ck.Advection_weak(f,&u_grad_test_dV[i_nSpace]) + 
@@ -511,7 +511,7 @@ namespace proteus
 	    ebN_local = elementBoundaryLocalElementBoundariesArray[ebN*2+0],
 	    eN_nDOF_trial_element = eN*nDOF_trial_element;
 	  register double elementResidual_u[nDOF_test_element];
-	  const double eps=epsFact*elementDiameter[eN];
+	  //const double eps=epsFact*elementDiameter[eN];
 	  for (int i=0;i<nDOF_test_element;i++)
 	    {
 	      elementResidual_u[i]=0.0;
@@ -530,7 +530,7 @@ namespace proteus
 		df_ext[nSpace],
 		flux_ext=0.0,
 		bc_u_ext=0.0,
-		bc_grad_u_ext[nSpace],
+		//bc_grad_u_ext[nSpace],
 		bc_m_ext=0.0,
 		bc_dm_ext=0.0,
 		bc_f_ext[nSpace],
@@ -651,7 +651,7 @@ namespace proteus
 	      //
 	      for (int i=0;i<nDOF_test_element;i++)
 		{
-		  int ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
+		  //int ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
 
 		  elementResidual_u[i] += ck.ExteriorElementBoundaryFlux(flux_ext,u_test_dS[i]);
 		}//i
@@ -851,8 +851,8 @@ namespace proteus
 	      //calculate the Jacobian of strong residual
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
-		  int eN_k_j=eN_k*nDOF_trial_element+j;
-		  int eN_k_j_nSpace = eN_k_j*nSpace;
+		  //int eN_k_j=eN_k*nDOF_trial_element+j;
+		  //int eN_k_j_nSpace = eN_k_j*nSpace;
 		  int j_nSpace = j*nSpace;
 		  dpdeResidual_u_u[j]= ck.MassJacobian_strong(dm_t,u_trial_ref[k*nDOF_trial_element+j]) +
 		    ck.AdvectionJacobian_strong(df,&u_grad_trial[j_nSpace]);
@@ -867,12 +867,12 @@ namespace proteus
 		dsubgridError_u_u[j] = -tau*dpdeResidual_u_u[j];
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
-		  int eN_k_i=eN_k*nDOF_test_element+i;
-		  int eN_k_i_nSpace=eN_k_i*nSpace;
+		  //int eN_k_i=eN_k*nDOF_test_element+i;
+		  //int eN_k_i_nSpace=eN_k_i*nSpace;
 		  for(int j=0;j<nDOF_trial_element;j++) 
 		    { 
-		      int eN_k_j=eN_k*nDOF_trial_element+j;
-		      int eN_k_j_nSpace = eN_k_j*nSpace;
+		      //int eN_k_j=eN_k*nDOF_trial_element+j;
+		      //int eN_k_j_nSpace = eN_k_j*nSpace;
 		      int j_nSpace = j*nSpace;
 		      int i_nSpace = i*nSpace;
 		      elementJacobian_u_u[i][j] += ck.MassJacobian_weak(dm_t,u_trial_ref[k*nDOF_trial_element+j],u_test_dV[i]) + 
@@ -919,7 +919,7 @@ namespace proteus
 		df_ext[nSpace],
 		dflux_u_u_ext=0.0,
 		bc_u_ext=0.0,
-		bc_grad_u_ext[nSpace],
+		//bc_grad_u_ext[nSpace],
 		bc_m_ext=0.0,
 		bc_dm_ext=0.0,
 		bc_f_ext[nSpace],
@@ -1033,7 +1033,8 @@ namespace proteus
 	      //
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
-		  register int ebNE_kb_j = ebNE_kb*nDOF_trial_element+j,ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
+		  //register int ebNE_kb_j = ebNE_kb*nDOF_trial_element+j
+		  register int ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
 	      
 		  fluxJacobian_u_u[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_u_u_ext,u_trial_trace_ref[ebN_local_kb_j]);
 		}//j
@@ -1042,8 +1043,8 @@ namespace proteus
 	      //
 	      for (int i=0;i<nDOF_test_element;i++)
 		{
-		  register int eN_i = eN*nDOF_test_element+i,
-		    ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
+		  register int eN_i = eN*nDOF_test_element+i;
+		    //ebNE_kb_i = ebNE_kb*nDOF_test_element+i;
 		  for (int j=0;j<nDOF_trial_element;j++)
 		    {
 		      register int ebN_i_j = ebN*4*nDOF_test_X_trial_element + i*nDOF_trial_element + j;

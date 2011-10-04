@@ -456,8 +456,8 @@ namespace proteus
 	{
 	  //compute indeces and declare local storage
 	  register int eN_k = eN*nQuadraturePoints_element+k,
-	    eN_k_nSpace = eN_k*nSpace,
-	    eN_nDOF_trial_element = eN*nDOF_trial_element;
+	    eN_k_nSpace = eN_k*nSpace;
+	    //eN_nDOF_trial_element = eN*nDOF_trial_element;
 	  register double u=0.0,grad_u[nSpace],
 	    r=0.0,dr=0.0,
 	    jac[nSpace*nSpace],
@@ -540,7 +540,7 @@ namespace proteus
 	  q_u[eN_k] = u;
 	  
 	  
-	  norm = 1.0;sqrt(grad_u[0]*grad_u[0]+grad_u[1]*grad_u[1]+grad_u[2]*grad_u[2]);	      
+	  norm = 1.0;//sqrt(grad_u[0]*grad_u[0]+grad_u[1]*grad_u[1]+grad_u[2]*grad_u[2]);	      
 	  
 	  
 	  q_n[eN_k_nSpace+0] = grad_u[0]/norm;
@@ -678,9 +678,10 @@ namespace proteus
 	{ 
 	  register int ebN = exteriorElementBoundariesArray[ebNE], 
 	    eN  = elementBoundaryElementsArray[ebN*2+0],
-	    ebN_local = elementBoundaryLocalElementBoundariesArray[ebN*2+0],
-	    eN_nDOF_trial_element = eN*nDOF_trial_element;
-	  register double elementResidual_u[nDOF_test_element],element_u[nDOF_trial_element];
+	    ebN_local = elementBoundaryLocalElementBoundariesArray[ebN*2+0];
+	    //eN_nDOF_trial_element = eN*nDOF_trial_element;
+	  //register double elementResidual_u[nDOF_test_element];
+	  double element_u[nDOF_trial_element];
 	  for (int i=0;i<nDOF_test_element;i++)
 	    {
 	      register int eN_i=eN*nDOF_test_element+i;
@@ -694,17 +695,17 @@ namespace proteus
 		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
 	      register double u_ext=0.0,
 		grad_u_ext[nSpace],
-		m_ext=0.0,
-		dm_ext=0.0,
-		H_ext=0.0,
-		dH_ext[nSpace],
+		//m_ext=0.0,
+		//dm_ext=0.0,
+		//H_ext=0.0,
+		//dH_ext[nSpace],
 		//flux_ext=0.0,
-		bc_u_ext=0.0,
-		bc_grad_u_ext[nSpace],
-		bc_m_ext=0.0,
-		bc_dm_ext=0.0,
-		bc_H_ext=0.0,
-		bc_dH_ext[nSpace],
+		//bc_u_ext=0.0,
+		//bc_grad_u_ext[nSpace],
+		//bc_m_ext=0.0,
+		//bc_dm_ext=0.0,
+		//bc_H_ext=0.0,
+		//bc_dH_ext[nSpace],
 		jac_ext[nSpace*nSpace],
 		jacDet_ext,
 		jacInv_ext[nSpace*nSpace],
@@ -712,7 +713,7 @@ namespace proteus
 		metricTensor[(nSpace-1)*(nSpace-1)],
 		metricTensorDetSqrt,
 		dS,
-		u_test_dS[nDOF_test_element],
+		//u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
 		normal[3],x_ext,y_ext,z_ext,
 		G[nSpace*nSpace],G_dd_G,tr_G,norm;
@@ -749,7 +750,7 @@ namespace proteus
 	      ck.gradFromElementDOF(element_u,u_grad_trial_trace,grad_u_ext);
 
 
-	      norm = 1.0;sqrt(grad_u_ext[0]*grad_u_ext[0]+grad_u_ext[1]*grad_u_ext[1]+grad_u_ext[2]*grad_u_ext[2]);	      
+	      norm = 1.0;//sqrt(grad_u_ext[0]*grad_u_ext[0]+grad_u_ext[1]*grad_u_ext[1]+grad_u_ext[2]*grad_u_ext[2]);	      
 
 
 	      ebqe_u[ebNE_kb] = u_ext;
@@ -815,8 +816,8 @@ namespace proteus
       for  (int k=0;k<nQuadraturePoints_element;k++)
 	{
 	  int eN_k = eN*nQuadraturePoints_element+k, //index to a scalar at a quadrature point
-	    eN_k_nSpace = eN_k*nSpace,
-	    eN_nDOF_trial_element = eN*nDOF_trial_element; //index to a vector at a quadrature point
+	    eN_k_nSpace = eN_k*nSpace;
+	    //eN_nDOF_trial_element = eN*nDOF_trial_element; //index to a vector at a quadrature point
 	  
 	  //declare local storage
 	  register double u=0.0,
@@ -1061,7 +1062,7 @@ namespace proteus
 	    elementJacobian_u_u[nDOF_test_element*nDOF_trial_element],scale=1.0;
 	  register PROTEUS_LAPACK_INTEGER elementPivots[nDOF_test_element],
 	    elementColPivots[nDOF_test_element];
-	  double epsHeaviside,epsDirac,epsDiffusion;
+	  //double epsHeaviside,epsDirac,epsDiffusion;
 	  for (int i=0;i<nDOF_test_element;i++)
 	    {
 	      element_u[i]=0.0;
@@ -1688,16 +1689,15 @@ namespace proteus
 	    {
 	      //compute indeces and declare local storage
 	      register int eN_k = eN*nQuadraturePoints_element+k,
-		eN_k_nSpace = eN_k*nSpace,
-		eN_nDOF_trial_element = eN*nDOF_trial_element;
-	      register double u=0.0,grad_u[nSpace],
-		r=0.0,dr=0.0,
-		jac[nSpace*nSpace],
+		eN_k_nSpace = eN_k*nSpace;
+		//eN_nDOF_trial_element = eN*nDOF_trial_element;
+	      //double u=0.0,grad_u[nSpace],r=0.0,dr=0.0;
+	      double jac[nSpace*nSpace],
 		jacDet,
 		jacInv[nSpace*nSpace],
-		u_grad_trial[nDOF_trial_element*nSpace],
-		u_test_dV[nDOF_trial_element],
-		u_grad_test_dV[nDOF_test_element*nSpace],
+		//u_grad_trial[nDOF_trial_element*nSpace],
+		//u_test_dV[nDOF_trial_element],
+		//u_grad_test_dV[nDOF_test_element*nSpace],
 		dV,x,y,z,
 		G[nSpace*nSpace],G_dd_G,tr_G,h_phi;
 	      //
@@ -1777,16 +1777,15 @@ namespace proteus
 	    {
 	      //compute indeces and declare local storage
 	      register int eN_k = eN*nQuadraturePoints_element+k,
-		eN_k_nSpace = eN_k*nSpace,
-		eN_nDOF_trial_element = eN*nDOF_trial_element;
-	      register double u=0.0,grad_u[nSpace],
-		r=0.0,dr=0.0,
-		jac[nSpace*nSpace],
+		eN_k_nSpace = eN_k*nSpace;
+		//eN_nDOF_trial_element = eN*nDOF_trial_element;
+	      //register double u=0.0,grad_u[nSpace],r=0.0,dr=0.0;
+	      register double jac[nSpace*nSpace],
 		jacDet,
 		jacInv[nSpace*nSpace],
-		u_grad_trial[nDOF_trial_element*nSpace],
-		u_test_dV[nDOF_trial_element],
-		u_grad_test_dV[nDOF_test_element*nSpace],
+		//u_grad_trial[nDOF_trial_element*nSpace],
+		//u_test_dV[nDOF_trial_element],
+		//u_grad_test_dV[nDOF_test_element*nSpace],
 		dV,x,y,z,
 		G[nSpace*nSpace],G_dd_G,tr_G,h_phi;
 	      //

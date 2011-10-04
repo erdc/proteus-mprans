@@ -1175,7 +1175,7 @@ namespace proteus
 	    {
 	    	    
 	    double val,x,y,z;	    
-	    int pos=0, neg=0, idx=-1;
+	    int pos=0, neg=0;
 	    double xn=0.0, yn=0.0, zn=0.0, vn=0.0; 
 	    double xp=0.0, yp=0.0, zp=0.0, vp=0.0;  
 	    
