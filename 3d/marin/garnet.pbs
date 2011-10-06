@@ -1,9 +1,0 @@
-#PBS -A ERDCV00898ENQ
-#PBS -l walltime=72:00:00
-#PBS -l ncpus=512
-#PBS -q standard
-#PBS -N obstacle3d
-#PBS -j oe
-cd $PBS_O_WORKDIR
-mkdir $WORKDIR/obstacle3d.$PBS_JOBID
-aprun -n 128 -N 4 -S 1 parun obstacleInTank3d_so.py -l 5 -v -O petsc.options -D $WORKDIR/obstacle3d.$PBS_JOBID

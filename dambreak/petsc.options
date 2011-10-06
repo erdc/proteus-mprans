@@ -1,7 +1,0 @@
--rans2p_ksp_type gmres -rans2p_pc_type  jacobi -rans2p_ksp_rtol 1.0e-3 -rans2p_ksp_max_it 175 -rans2p_ksp_gmres_modifiedgramschmidt
--ncls_ksp_type   gmres -ncls_pc_type   bjacobi -ncls_ksp_rtol   1.0e-3 -ncls_ksp_max_it   175 -ncls_ksp_gmres_modifiedgramschmidt
--vof_ksp_type    gmres -vof_pc_type    bjacobi -vof_ksp_rtol    1.0e-3 -vof_ksp_max_it    175 -vof_ksp_gmres_modifiedgramschmidt
--rdls_ksp_type   gmres -rdls_pc_type   bjacobi -rdls_ksp_rtol   1.0e-3 -rdls_ksp_max_it   175 -rdls_ksp_gmres_modifiedgramschmidt
--mcorr_ksp_type  gmres -mcorr_pc_type  bjacobi -mcorr_ksp_rtol  1.0e-4 -mcorr_ksp_max_it  175 -mcorr_ksp_gmres_modifiedgramschmidt
-
-
