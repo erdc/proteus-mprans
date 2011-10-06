@@ -1,0 +1,19 @@
+#!/bin/tcsh
+#PBS -A ERDCV00898ENQ
+#PBS -l walltime=160:00:00
+#PBS -l select=32:ncpus=4:mpiprocs=4
+#PBS -q standard
+#PBS -N obstacle3d
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+
+#setenv MPI_DSM_DISTRIBUTE "yes"
+#source /usr/share/modules/init/tcsh
+module swap PrgEnv-pgi PrgEnv-gnu
+module load acml
+setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/opt/acml/4.4.0/gnu64/lib
+
+mkdir $WORKDIR/obstacle3d.$PBS_JOBID
+
+aprun -n 128 parun obstacleInTank3d_so.py -l 7 -v -p -m -O petsc.options.superlu_dist -D $WORKDIR/obstacle3d.$PBS_JOBID 

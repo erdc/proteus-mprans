@@ -1,0 +1,35 @@
+from proteus import *
+from dambreak import *
+from vof_p import *
+
+timeIntegration = BackwardEuler
+stepController  = Min_dt_controller
+
+femSpaces = {0:basis}
+
+massLumping       = False
+numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
+conservativeFlux  = None
+shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=False)
+subgridError      = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)
+
+fullNewtonFlag = True
+multilevelNonlinearSolver = Newton
+levelNonlinearSolver      = Newton
+
+nonlinearSmoother = None
+linearSmoother    = None
+
+matrix = SparseMatrix
+
+multilevelLinearSolver = PETSc
+levelLinearSolver      = PETSc
+linear_solver_options_prefix = 'vof_'
+levelNonlinearSolverConvergenceTest = 'rits'
+linearSolverConvergenceTest         = 'rits'
+
+tolFac      = 1e-4
+nl_atol_res = 0.0
+
+maxNonlinearIts = 10
+maxLineSearches = 0
