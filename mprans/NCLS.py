@@ -849,26 +849,8 @@ class LevelModel(OneLevelTransport):
 		from proteus import Comm
 		comm = Comm.get()	
 
-		numpy.save("waterline." + str(comm.rank()) + "." + str(self.waterline_prints), self.waterline_data[0:self.waterline_npoints[0]])
-                self.waterline_prints += 1
-		
-			
-		#self.waterline_sdata = self.waterline_data[0:self.waterline_npoints[0]]
-		#numpy.save("waterline." + str(comm.rank()) + "." + str(self.waterline_prints) +".dat", self.waterline_sdata)
-		
-		
-		
-		##self.waterline_sdata.sort(axis=0) 
-
-
-
-
-                #self.waterline_prints += 1
-        	#self.waterline_file  = open("waterline." + str(comm.rank()) + "." + str(self.waterline_prints) +".dat",'w')
 	
-        	#self.waterline_file.write('# %12.5E %10i\n'% (t,self.waterline_npoints[0]))
-		#numpy.save("waterline." + str(comm.rank()) + "." + str(self.waterline_prints) +".dat", self.waterline_sdata)
-		
-		#for wl in self.waterline_sdata:		
-		#	self.waterline_file.write('%12.5E %12.5E %12.5E\n'% (wl[0],wl[1],wl[2]))
-                #self.waterline_file.close()
+		filename = os.path.join(self.coefficients.opts.dataDir,  "waterline." + str(comm.rank()) + "." + str(self.waterline_prints))
+
+		numpy.save(filename, self.waterline_data[0:self.waterline_npoints[0]])
+                self.waterline_prints += 1
