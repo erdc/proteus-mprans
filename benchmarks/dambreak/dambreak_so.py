@@ -9,7 +9,7 @@ pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
           ("ls_consrv_p",         "ls_consrv_n")]
 
     
-name = soname
+name = "dambreak_p" 
 
 systemStepControllerType = Sequential_FixedStep
     
