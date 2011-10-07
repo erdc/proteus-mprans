@@ -1,3 +1,7 @@
+default: install_proteus install 
+
+install_proteus:
+	cd ${PROTEUS} && make
 
 install:
 	${PROTEUS_PYTHON} setup.py install
