@@ -4,50 +4,24 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options    
-Refinement=4
+Refinement=2
 spaceOrder=1
 useHex=False
-useRBLES   = 1.0
-useMetrics = 1.0
+useRBLES   = 0.0
+useMetrics = 0.0
 
-# Input checks and output name generation 
-
-soname="marin"   
-
-if spaceOrder == 1:
-    soname=soname+"_lin"
-elif spaceOrder == 2:
-    soname=soname+"_quad"
-else:
-    print "INVALID: spaceOrder"
+# Input checks
+if spaceOrder not in [1,2]:
+    print "INVALID: spaceOrder" + spaceOrder
     sys.exit()    
-
-if useHex:
-    soname=soname+"_hex"
-else:
-    soname=soname+"_tet"   
-
-soname=soname+"_Ref"+`Refinement`  
     
-if useRBLES == 0.0:
-    soname=soname+"_SUPG"
-elif useRBLES == 1.0:
-    soname=soname+"_RBLES"
-else:
-    print "INVALID: useRBLES"
+if useRBLES not in [0.0, 1.0]:
+    print "INVALID: useRBLES" + useRBLES 
     sys.exit()
 
-if useMetrics == 0.0:
-    soname=soname+"_h"
-elif useMetrics == 1.0:
-    soname=soname+"_G"
-else:
+if useMetrics not in [0.0, 1.0]:
     print "INVALID: useMetrics"
     sys.exit()
-    
-soname=soname+"_p"
-
-print soname
 
 #  Discretization   
 nd = 3
@@ -169,7 +143,7 @@ else:
 
 
 # Time stepping
-T=6.00
+T=2.00
 dt_fixed = 0.1/Refinement
 nDTout = int(round(T/dt_fixed))
 
