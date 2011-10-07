@@ -12,6 +12,13 @@ parser.add_option("-f","--filebase",
                     type="string",
                     dest="filename",
                     default="simulation")
+
+parser.add_option("-e","--eps",
+                    help="tolerance",
+                    action="store",
+                    type="float",
+                    dest="eps",
+                    default=0.005)
 		    
 (opts,args) = parser.parse_args()	
 
@@ -23,10 +30,11 @@ reader.UpdatePipeline()
 timesteps = reader.TimestepValues
 
 points=[]
-points.append(PointSource(Center=[2.3950,0.4745,0.020],NumberOfPoints=1))
-points.append(PointSource(Center=[2.3950,0.4745,0.100],NumberOfPoints=1))
-points.append(PointSource(Center=[2.4195,0.5255,0.161],NumberOfPoints=1))
-points.append(PointSource(Center=[2.4995,0.5255,0.161],NumberOfPoints=1))
+
+points.append(PointSource(Center=[2.3995-opts.eps ,0.5255, 0.021         ],NumberOfPoints=1))
+points.append(PointSource(Center=[2.3995-opts.eps ,0.5255, 0.061         ],NumberOfPoints=1))
+points.append(PointSource(Center=[2.4955          ,0.4745, 0.161+opts.eps],NumberOfPoints=1))
+points.append(PointSource(Center=[2.5355          ,0.4745, 0.161+opts.eps],NumberOfPoints=1))
 
 probes=[]
 for point in points:
@@ -40,6 +48,7 @@ for time in timesteps:
 
      fp = servermanager.Fetch(probe)
      pdata= fp.GetPointData()
+
      pressure = pdata.GetArray("p").GetTuple1(0)
 
      outfile.write("  " + str(pressure))

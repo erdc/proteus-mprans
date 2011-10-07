@@ -197,7 +197,7 @@ def H5toXMF(basename,size,start,finaltime,stride):
 			string = string + t3+'</Grid>'+"\n"
 			     
 	     		f1.close()
-			os.remove(solname)
+			#os.remove(solname)
 
         	string = string + t2 + '</Grid>'+"\n"  
 		     
@@ -217,7 +217,7 @@ def H5toXMF(basename,size,start,finaltime,stride):
      XMFfile1.write('</Xdmf>'+"\n")		
      XMFfile1.close()
 
-def H5toVTK(basename,size,start,finaltime,stride):
+def H5toVTK_new(basename,size,start,finaltime,stride):
 
      if not paraview.servermanager.ActiveConnection:
 		connection = paraview.servermanager.Connect()
@@ -233,7 +233,7 @@ def H5toVTK(basename,size,start,finaltime,stride):
 		writer.UpdatePipeline()
 
 
-def H5toVTK_old(basename,size,start,finaltime,stride):
+def H5toVTK(basename,size,start,finaltime,stride):
 
 # Open XMF files
 
@@ -278,7 +278,7 @@ def H5toVTK_old(basename,size,start,finaltime,stride):
 	sys.exit("No element type for NHSL: "+ str(nshl))
 	
      string="" 
-     print "   Step:",
+     #print "   Step:",
      
      try: 
      	os.mkdir(basename)
@@ -289,8 +289,8 @@ def H5toVTK_old(basename,size,start,finaltime,stride):
                 print step,		
 		sys.stdout.flush()
 		
-                filename = "solution."+str(step)+".vtk"
-     	     	vtkFile =  open(os.path.join(basename,filename),"w")     
+                filename = basename + "."+str(step)+".vtk"
+     	     	vtkFile =  open(filename,"w")     
 
      	     	vtkFile.write('# vtk DataFile Version 3.0\n')
      	     	vtkFile.write('vtk output\n')
@@ -367,7 +367,7 @@ def H5toVTK_old(basename,size,start,finaltime,stride):
      			data=f1.getNode("/","phi")
      			data2=f1.getNode("/","phic")
 			for d in data:				
-				vtkFile.write(str(d+data2[i]) + "\n" )		
+				vtkFile.write(str(d) + "\n" )		
 			       			     
 	     		f1.close()
 								
@@ -427,7 +427,7 @@ if __name__ == '__main__':
     else:
       rd_default=opts.ns_filebase
       corr_default=opts.ns_filebase
-      sol_default=opts.ns_filebase.rstrip("_p")
+      sol_default="solution" #opts.ns_filebase.rstrip("_p")
 
           		      
     parser.add_option("-p","--filebase_phi",
@@ -481,4 +481,4 @@ if __name__ == '__main__':
     print "   Composing" 
     print "=================="       
     H5toXMF(opts.sol_filebase,opts.size,opts.start,opts.end,opts.increment)
-    H5toVTK(opts.sol_filebase,opts.size,opts.start,opts.finaltime,opts.stride)
+    H5toVTK(opts.sol_filebase,opts.size,opts.start,opts.end,opts.increment)
