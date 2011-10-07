@@ -57,11 +57,11 @@ if useHex:
 
     comm=Comm.get()	
     if comm.isMaster():	
-        size = numpy.array([[0.520,0.510,0.520],
-	                    [0.330,0.340,0.330],
-			    [0.320,0.325,0.000]])/Refinement
+        size = numpy.array([[0.520,0.510   ,0.520],
+	                    [0.330,0.335833,0.330],
+			    [0.320,0.325   ,0.000]])/Refinement
         numpy.savetxt('size.mesh', size)
-        failed = os.system("marinHexMesh")      
+        failed = os.system("../../scripts/marinHexMesh")      
      
     domain = Domain.MeshHexDomain("marinHex") 
 else:
