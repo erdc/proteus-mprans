@@ -10,7 +10,19 @@ Installation
 First install the base proteusModule and set the related enviroment setttings.
 Then set the following environment variables and type 'make' in the root directory.
 
-For convenience, the scripts directory could be added to the $PATH variable. 
+For easy pre/postprocessing and general convenience, set the following enviroment variables. 
+
+:: 
+
+  setenv PROTEUS_MPRANS $HOME/proteus_mprans   #or wherever you put it
+  setenv PATH $PATH:$PROTEUS_MPRANS/scripts
+
+Benchmarks
+===========
+
+The directory benchmarks contains different directories for each benchmark.
+Consult the README in each subdirectory to get relevant information on how 
+to preprocess, run and postprocess each benchmark case. 
   
 Developer Information
 ======================
