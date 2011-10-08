@@ -50,7 +50,8 @@ the following commands in the directory containing the xmf/h5 solution files.
   $PROTEUS_MPRANS/scripts/marinExtractHeight.py   -f marin_p_all#NP.xmf
 
 This will produce the files pressure.txt and height.txt that contain the pressure and height time series.
-Experimental reference data is provided by the files ?????
+The full experimental  data is provided exp_full.dat, while exp_height.dat and exp_pres.dat only contain the relevant extracted form exp_full.dat.
+
 
 For visualizing purposes it might be beneficial to repackage the xmf/h5 solution files. 
 There are three distinct reasons/benefits to do this:
