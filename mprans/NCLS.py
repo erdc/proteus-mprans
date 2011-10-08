@@ -12,7 +12,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  ME_model=1,
                  EikonalSolverFlag=0,
                  checkMass=True,epsFact=1.5,
-                 useMetrics=0.0,sc_uref=1.0,sc_beta=1.0):
+                 useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,
+		 waterline_interval=-1):
 	self.useMetrics=useMetrics
         self.epsFact=epsFact
         self.variableNames=['phi']
@@ -44,6 +45,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
 	self.sc_uref=sc_uref
 	self.sc_beta=sc_beta	
 	
+        self.waterline_interval = waterline_interval
+		
     def attachModels(self,modelList):
         #the level set model
         self.model = modelList[self.modelIndex]
@@ -550,9 +553,6 @@ class LevelModel(OneLevelTransport):
         if self.mesh.nodeVelocityArray==None:
             self.mesh.nodeVelocityArray = numpy.zeros(self.mesh.nodeArray.shape,'d')
 
-        #ido water line stuff
-
-	self.waterline_interval = 10
 	self.waterline_calls  = 0
 	self.waterline_prints = 0
 
@@ -786,7 +786,7 @@ class LevelModel(OneLevelTransport):
 
         self.waterline_calls += 1 
     
-        if self.waterline_calls%self.waterline_interval == 0:
+        if self.coefficients.waterline_interval > 0 and self.waterline_calls%self.coefficients.waterline_interval == 0:
 		self.waterline_npoints = numpy.zeros((1),'i')
         	self.waterline_data    = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nSpace_global),'d')	
 	
