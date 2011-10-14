@@ -1,6 +1,5 @@
 from proteus.default_so import *
 import dambreak
-from dambreak import *
 
 pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
           ("ls_p",                "ls_n"),
