@@ -106,6 +106,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
     def initializeMesh(self,mesh):
         self.mesh = mesh
     def postStep(self,t,firstStep=False):
+    	self.model.postStep()
         self.mesh.nodeArray[:,0]+=self.model.u[0].dof
         self.mesh.nodeArray[:,1]+=self.model.u[1].dof
         self.mesh.nodeArray[:,2]+=self.model.u[2].dof
@@ -113,7 +114,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.mesh.nodeVelocityArray[:,1]=self.model.u[1].dof
         self.mesh.nodeVelocityArray[:,2]=self.model.u[2].dof
         self.mesh.nodeVelocityArray/=self.model.timeIntegration.dt
-	self.model.postStep()
+
     def preStep(self,t,firstStep=False):
         pass
     def evaluate(self,t,c):
@@ -596,20 +597,25 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 	
         self.forceStrongConditions=True  ##False#True
         self.dirichletConditionsForceDOF = {}        
-	self.nodeDisplacements = {}   
+	self.nodeDisplacements = {}    
 	if self.forceStrongConditions:
             for cj in range(self.nc):
                 self.dirichletConditionsForceDOF[cj] = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False,allowNodalMaterialBoundaryTypes=False)		
-		self.nodeDisplacements[cj] = numpy.zeros(len(self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict),'d')
+	        i=0
+		for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
+		    if self.dirichletConditionsForceDOF[cj].DOFBoundaryMaterialFlag[dofN] == self.coefficients.rigidBodyMaterialFlag:	    		       		       		       
+		       i+=1		
 		
-		
+		self.nodeDisplacements[cj] = numpy.zeros(i,'d')
+  
+  
         forceExtractionFaces = []
         for ebNE in range(self.mesh.nExteriorElementBoundaries_global):
             ebN = self.mesh.exteriorElementBoundariesArray[ebNE]
             materialFlag =self.mesh.elementBoundaryMaterialTypes[ebN]
             if materialFlag == self.coefficients.rigidBodyMaterialFlag:  
                forceExtractionFaces.append(ebNE)
- 
+
 	self.forceExtractionFaces =  numpy.zeros(len(forceExtractionFaces),'i');      
 	for i in range(len(forceExtractionFaces)):
 	   self.forceExtractionFaces[i] = forceExtractionFaces[i]       
@@ -651,6 +657,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.forceStrongConditions:
             for cj in range(len(self.dirichletConditionsForceDOF)):
 	        i=0
+		print "MoveMesh Res",cj,len(self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict)
                 for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
 		    if self.dirichletConditionsForceDOF[cj].DOFBoundaryMaterialFlag[dofN] == self.coefficients.rigidBodyMaterialFlag:	     
 		              
@@ -661,7 +668,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 		       i+=1
 		    else:
                        self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
-
+                    #print cj,self.dirichletConditionsForceDOF[cj].DOFBoundaryMaterialFlag[dofN],self.coefficients.rigidBodyMaterialFlag,self.u[cj].dof[dofN]
 
         #import pdb
         #print self.mesh.elementMaterialTypes,
@@ -1080,8 +1087,13 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 	        i=0
                 for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
 		    if self.dirichletConditionsForceDOF[cj].DOFBoundaryMaterialFlag[dofN] == self.coefficients.rigidBodyMaterialFlag:	     		              
+                       self.u[cj].dof[dofN] = (sum(self.rot1[cj,:]*(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)) 
+		                            - (self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)[cj] + self.disp1[cj]
+					    -  self.nodeDisplacements[cj][i])	
+
                        self.nodeDisplacements[cj][i] = (sum(self.rot1[cj,:]*(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)) 
 		                            - (self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)[cj] + self.disp1[cj])
+
 		       i+=1	       		       
 
-	    #print self.nodeDisplacements[cj]
+	    print i,self.nodeDisplacements[cj]
