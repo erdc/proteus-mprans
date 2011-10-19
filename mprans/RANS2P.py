@@ -897,11 +897,19 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.mesh.nodeVelocityArray==None:
             self.mesh.nodeVelocityArray = numpy.zeros(self.mesh.nodeArray.shape,'d')
         #cek/ido todo replace python loops in modules with optimized code if possible/necessary
-        self.forceStrongConditions=False
+        self.forceStrongConditions=True
         self.dirichletConditionsForceDOF = {}
         if self.forceStrongConditions:
             for cj in range(self.nc):
                 self.dirichletConditionsForceDOF[cj] = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False)
+
+        for cj in range(self.nc):
+	    tmp = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False)
+            print "RANS2P init ",cj, len(tmp.DOFBoundaryConditionsDict)
+	    tmp = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False,allowNodalMaterialBoundaryTypes=False)		
+	    print "RANS2P init ",cj, len(tmp.DOFBoundaryConditionsDict)
+ 
+
         compKernelFlag = 0
         if self.coefficients.useConstantH:
             self.elementDiameter = self.mesh.elementDiametersArray.copy()
@@ -1339,3 +1347,190 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #                                      self.ebq_global[('velocityAverage',0)])
         OneLevelTransport.calculateAuxiliaryQuantitiesAfterStep(self)
 
+    def getForce(self,cg,forceExtractionFaces,force,moment):
+        """
+        Calculate the element residuals and add in to the global residual
+        """
+
+        #Load the unknowns into the finite element dof
+        #self.timeIntegration.calculateCoefs()
+        #self.timeIntegration.calculateU(u)
+        #self.setUnknowns(self.timeIntegration.u)
+        #cek todo put in logic to skip if BC's don't depend on t or u
+        #hack
+        if self.bcsTimeDependent or not self.bcsSet:
+            self.bcsSet=True
+            #Dirichlet boundary conditions
+            self.numericalFlux.setDirichletValues(self.ebqe)
+            #Flux boundary conditions
+            for ci,fbcObject  in self.fluxBoundaryConditionsObjectsDict.iteritems():
+                for t,g in fbcObject.advectiveFluxBoundaryConditionsDict.iteritems():
+                    if self.coefficients.advection.has_key(ci):
+                        self.ebqe[('advectiveFlux_bc',ci)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
+                        self.ebqe[('advectiveFlux_bc_flag',ci)][t[0],t[1]] = 1
+                for ck,diffusiveFluxBoundaryConditionsDict in fbcObject.diffusiveFluxBoundaryConditionsDictDict.iteritems():
+                    for t,g in diffusiveFluxBoundaryConditionsDict.iteritems():
+                        self.ebqe[('diffusiveFlux_bc',ck,ci)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
+                        self.ebqe[('diffusiveFlux_bc_flag',ck,ci)][t[0],t[1]] = 1
+
+        # Tag boundaries for force/moment extraction
+        #for cj in range(len(self.dirichletConditionsForceDOF)):
+        #     for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
+
+
+	
+	print "RANS2P Force Faces",len(forceExtractionFaces)
+
+	#force  = numpy.zeros(3,'d') 
+	#moment = numpy.zeros(3,'d')
+
+        self.Ct_sge = 4.0
+        self.Cd_sge = 144.0
+	self.C_b    = 10.0
+ 
+        self.rans2p.calculateForce(#element
+            self.u[0].femSpace.elementMaps.psi,
+            self.u[0].femSpace.elementMaps.grad_psi,
+            self.mesh.nodeArray,
+            self.mesh.elementNodesArray,
+            self.elementQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            self.u[0].femSpace.psi,
+            self.u[0].femSpace.grad_psi,
+            self.u[1].femSpace.psi,
+            self.u[1].femSpace.grad_psi,
+            self.u[1].femSpace.psi,
+            self.u[1].femSpace.grad_psi,
+            #element boundary
+            self.u[0].femSpace.elementMaps.psi_trace,
+            self.u[0].femSpace.elementMaps.grad_psi_trace,
+            self.elementBoundaryQuadratureWeights[('u',0)],
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[0].femSpace.psi_trace,
+            self.u[0].femSpace.grad_psi_trace,
+            self.u[1].femSpace.psi_trace,
+            self.u[1].femSpace.grad_psi_trace,
+            self.u[1].femSpace.psi_trace,
+            self.u[1].femSpace.grad_psi_trace,
+            self.u[0].femSpace.elementMaps.boundaryNormals,
+            self.u[0].femSpace.elementMaps.boundaryJacobians,
+            #physics
+            self.mesh.elementDiametersArray,
+            self.stabilization.hFactor,
+            self.mesh.nElements_global,
+            self.coefficients.useRBLES,
+            self.coefficients.useMetrics,
+            self.timeIntegration.alpha_bdf,
+            self.coefficients.epsFact_density,
+            self.coefficients.epsFact,
+            self.coefficients.sigma,
+            self.coefficients.rho_0,
+            self.coefficients.nu_0,
+            self.coefficients.rho_1,
+            self.coefficients.nu_1,
+            self.Ct_sge,
+            self.Cd_sge,
+            self.shockCapturing.shockCapturingFactor,
+	    self.C_b,
+            self.u[0].femSpace.dofMap.l2g,
+            self.u[1].femSpace.dofMap.l2g,
+            self.u[0].dof,
+            self.u[1].dof,
+            self.u[2].dof,
+            self.u[3].dof,
+            self.coefficients.g,
+	     self.q[('cfl',0)],   # ULTRA UGLY HACK self.q[('rho_0')],
+            self.coefficients.q_phi,
+            self.coefficients.q_n,
+            self.coefficients.q_kappa,
+            self.timeIntegration.m_tmp[1],
+            self.timeIntegration.m_tmp[2],
+            self.timeIntegration.m_tmp[3],
+            self.q[('f',0)],
+            self.timeIntegration.beta_bdf[1],
+            self.timeIntegration.beta_bdf[2],
+            self.timeIntegration.beta_bdf[3],
+            self.stabilization.v_last,
+            self.q[('cfl',0)],
+            self.q[('numDiff',1,1)], 
+            self.q[('numDiff',2,2)], 
+            self.q[('numDiff',3,3)],
+            self.shockCapturing.numDiff_last[1],
+            self.shockCapturing.numDiff_last[2],
+            self.shockCapturing.numDiff_last[3],
+            self.coefficients.sdInfo[(1,1)][0],self.coefficients.sdInfo[(1,1)][1],
+            self.coefficients.sdInfo[(1,2)][0],self.coefficients.sdInfo[(1,2)][1],
+            self.coefficients.sdInfo[(1,3)][0],self.coefficients.sdInfo[(1,3)][1],
+            self.coefficients.sdInfo[(2,2)][0],self.coefficients.sdInfo[(2,2)][1],
+            self.coefficients.sdInfo[(2,1)][0],self.coefficients.sdInfo[(2,1)][1],
+            self.coefficients.sdInfo[(2,3)][0],self.coefficients.sdInfo[(2,3)][1],
+            self.coefficients.sdInfo[(3,3)][0],self.coefficients.sdInfo[(3,3)][1],
+            self.coefficients.sdInfo[(3,1)][0],self.coefficients.sdInfo[(3,1)][1],
+            self.coefficients.sdInfo[(3,2)][0],self.coefficients.sdInfo[(3,2)][1],
+            self.offset[0],self.offset[1],self.offset[2],self.offset[3],
+            self.stride[0],self.stride[1],self.stride[2],self.stride[3],
+            cg, force, moment,
+            self.mesh.nExteriorElementBoundaries_global,
+            self.mesh.exteriorElementBoundariesArray,
+            self.mesh.elementBoundaryElementsArray,
+            self.mesh.elementBoundaryLocalElementBoundariesArray,
+	    forceExtractionFaces,len(forceExtractionFaces),
+            self.coefficients.ebqe_phi,
+            self.coefficients.ebqe_n,
+            self.coefficients.ebqe_kappa,
+            self.numericalFlux.isDOFBoundary[0],
+            self.numericalFlux.isDOFBoundary[1],
+            self.numericalFlux.isDOFBoundary[2],
+            self.numericalFlux.isDOFBoundary[3],
+            self.ebqe[('advectiveFlux_bc_flag',0)],
+            self.ebqe[('advectiveFlux_bc_flag',1)],
+            self.ebqe[('advectiveFlux_bc_flag',2)],
+            self.ebqe[('advectiveFlux_bc_flag',3)],
+            self.ebqe[('diffusiveFlux_bc_flag',1,1)],
+            self.ebqe[('diffusiveFlux_bc_flag',2,2)],
+            self.ebqe[('diffusiveFlux_bc_flag',3,3)],
+            self.numericalFlux.ebqe[('u',0)],
+            self.ebqe[('advectiveFlux_bc',0)],
+            self.ebqe[('advectiveFlux_bc',1)],
+            self.ebqe[('advectiveFlux_bc',2)],
+            self.ebqe[('advectiveFlux_bc',3)],
+            self.numericalFlux.ebqe[('u',1)],
+            self.ebqe[('diffusiveFlux_bc',1,1)],
+            self.ebqe[('penalty')],
+            self.numericalFlux.ebqe[('u',2)],
+            self.ebqe[('diffusiveFlux_bc',2,2)],
+            self.numericalFlux.ebqe[('u',3)],
+            self.ebqe[('diffusiveFlux_bc',3,3)],
+            self.q[('velocity',0)],
+            self.ebqe[('velocity',0)],
+            self.ebq_global[('totalFlux',0)],
+            self.elementResidual[0])
+
+        #from mpi4py import MPI	
+	#comm = MPI.COMM_WORLD
+
+	#tmp1 = numpy.zeros(3,'d')
+	#tmp2 = numpy.zeros(3,'d')	         
+	#comm.Allreduce(force,  tmp1, op=MPI.SUM)     
+	#comm.Allreduce(moment, tmp2, op=MPI.SUM) 
+        #force  [:] = tmp1
+	#moment [:] = tmp2
+
+	from proteus.flcbdfWrappers import globalSum
+        for i in range(3):
+		force[i]  = globalSum(force[i]) 
+		moment[i] = globalSum(moment[i]) 
+
+        #simport time
+        #time.sleep(1)
+	##comm.Barrier()	
+        ##if self.comm.rank() == 0:
+	#print cg
+        #print "Force and moment in rans2p getForce"
+        #print force 
+	#print moment 
+	##comm.Barrier()
+        #import time
+        #time.sleep(1)
