@@ -3,6 +3,7 @@
 import os
 import tables
 import sys
+import numpy
 
 def splitH5(NavStoBaseName,PhiBaseName,CorrBaseName,size,start,finaltime,stride):
 
@@ -216,6 +217,7 @@ def H5toXMF(basename,size,start,finaltime,stride):
      XMFfile1.write(t1 + '</Domain>'+"\n")			
      XMFfile1.write('</Xdmf>'+"\n")		
      XMFfile1.close()
+     print  "Finised \n"
 
 def H5toVTK_new(basename,size,start,finaltime,stride):
 
@@ -248,8 +250,12 @@ def H5toVTK(basename,size,start,finaltime,stride):
      nodes = 0
      elems = 0	
      
-     offsets=range(size+1)
-     
+     eoffsets=range(size+1)
+     noffsets=range(size+1)
+ 
+     noffsets[0] = nodes
+     eoffsets[0] = elems
+	         
      for proc in range(0,size):
      	     solname="sol.p"+str(proc)+"."+str(start)+".h5"
      	     f1 = tables.openFile(solname)   
@@ -259,7 +265,8 @@ def H5toVTK(basename,size,start,finaltime,stride):
 	     
 	     data=f1.getNode("/","nodes")[:]
 	     nodes = nodes + len(data)	
-	     offsets[proc+1] = nodes
+	     noffsets[proc+1] = nodes
+	     eoffsets[proc+1] = elems
 	     f1.close()
 	          
      print "   Nodes  = " + str(nodes)
@@ -301,11 +308,8 @@ def H5toVTK(basename,size,start,finaltime,stride):
                 for proc in range(0,size):
       
                         solname="sol.p"+str(proc)+"."+str(step)+".h5"
-     	        	f1 = tables.openFile(solname)  
-
-     			data=f1.getNode("/","nodes")			
-			for d in data:
-				vtkFile.write(str(d[0]) + " " + str(d[1])  +  " "   + str(d[2]) +  "\n" )
+     	        	f1 = tables.openFile(solname)  		
+			numpy.savetxt(vtkFile, f1.getNode("/","nodes"), fmt='%e') 	
 			f1.close()
 			
      	     	vtkFile.write('CELLS '+ str(elems) + " " + str(elems*(nshl+1)) + "\n")			     
@@ -314,18 +318,16 @@ def H5toVTK(basename,size,start,finaltime,stride):
                         solname="sol.p"+str(proc)+"."+str(step)+".h5"
      	        	f1 = tables.openFile(solname)  
 			
-     			data=f1.getNode("/","elements")
-			for d in data:
-			        vtkFile.write(str(nshl) + " ")
-				for i in range(nshl):
-					vtkFile.write(str(d[i]+offsets[proc]) + " ")
-				vtkFile.write( "\n" )
-					
+			data = numpy.empty((eoffsets[proc+1] -eoffsets[proc] ,nshl+1), dtype=numpy.int)
+	                data[:,0] = nshl			
+     			data[:,1:nshl+1] = numpy.array(f1.getNode("/","elements").read()) + noffsets[proc]			
+			numpy.savetxt(vtkFile, data, fmt='%d') 			
 			f1.close()
 						
      	     	vtkFile.write('CELL_TYPES '+ str(elems) + "\n")
-		for proc in range(0,elems):
-		        vtkFile.write(etype)
+	        data = numpy.empty((elems,), dtype=numpy.int)
+	        data[:] = etype
+		numpy.savetxt(vtkFile, data, fmt='%d') 	
 
      	     	vtkFile.write('POINT_DATA '+ str(nodes) + "\n")	
 		
@@ -335,13 +337,12 @@ def H5toVTK(basename,size,start,finaltime,stride):
                         solname="sol.p"+str(proc)+"."+str(step)+".h5"
      	        	f1 = tables.openFile(solname)  	
 								
-     			udata=f1.getNode("/","u")			  			
-     			vdata=f1.getNode("/","v")
-			wdata=f1.getNode("/","w")
-			
-			for i in range(0,len(udata)):
-				vtkFile.write(str(udata[i]) + " " + str(vdata[i])  +  " "   + str(wdata[i]) +  "\n" )
-			       			     
+			data = numpy.empty((noffsets[proc+1] -noffsets[proc],3), dtype=numpy.float)
+			     	
+			data[:,0] = f1.getNode("/","u")
+			data[:,1] = f1.getNode("/","v")
+			data[:,2] = f1.getNode("/","w")
+			numpy.savetxt(vtkFile, data, fmt='%e') 			       			     
 	     		f1.close()
 
      	     	vtkFile.write('SCALARS p double \n')
@@ -349,12 +350,8 @@ def H5toVTK(basename,size,start,finaltime,stride):
                 for proc in range(0,size):
       
                         solname="sol.p"+str(proc)+"."+str(step)+".h5"
-     	        	f1 = tables.openFile(solname)  	
-								
-     			data=f1.getNode("/","p")
-			for d in data:				
-				vtkFile.write(str(d) + "\n" )		
-			       			     
+     	        	f1 = tables.openFile(solname)  									
+	    	        numpy.savetxt(vtkFile, f1.getNode("/","p"), fmt='%e') 					       			     
 	     		f1.close()
 
      	     	vtkFile.write('SCALARS phi double \n')
@@ -364,12 +361,10 @@ def H5toVTK(basename,size,start,finaltime,stride):
                         solname="sol.p"+str(proc)+"."+str(step)+".h5"
      	        	f1 = tables.openFile(solname)  	
 								
-     			data=f1.getNode("/","phi")
-     			data2=f1.getNode("/","phic")
-			for d in data:				
-				vtkFile.write(str(d) + "\n" )		
-			       			     
-	     		f1.close()
+     			data=numpy.array(f1.getNode("/","phi")) + numpy.array(f1.getNode("/","phic"))			
+			numpy.savetxt(vtkFile, data, fmt='%e') 			     
+	     		
+			f1.close()
 								
 		vtkFile.close()
 		for proc in range(0,size):
