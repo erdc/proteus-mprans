@@ -13,7 +13,7 @@ subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)
 
 massLumping = False
 
-numericalFluxType = DoNothing
+numericalFluxType =  Advection_DiagonalUpwind_IIPG_exterior
 
 shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=False)
 
