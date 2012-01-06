@@ -1878,7 +1878,19 @@ namespace proteus
 	      dmom_adv_star[0] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+0] - MOVING_DOMAIN*xt + useRBLES*subgridError_u);
 	      dmom_adv_star[1] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+1] - MOVING_DOMAIN*yt + useRBLES*subgridError_v);
               dmom_adv_star[2] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+2] - MOVING_DOMAIN*zt + useRBLES*subgridError_w);
-        
+         
+	      mom_u_adv[0] += dmom_u_acc_u*(useRBLES*subgridError_u*q_velocity_sge[eN_k_nSpace+0]);  	   
+	      mom_u_adv[1] += dmom_u_acc_u*(useRBLES*subgridError_v*q_velocity_sge[eN_k_nSpace+0]); 
+              mom_u_adv[2] += dmom_u_acc_u*(useRBLES*subgridError_w*q_velocity_sge[eN_k_nSpace+0]); 
+         
+	      mom_v_adv[0] += dmom_u_acc_u*(useRBLES*subgridError_u*q_velocity_sge[eN_k_nSpace+1]);   	   
+	      mom_v_adv[1] += dmom_u_acc_u*(useRBLES*subgridError_v*q_velocity_sge[eN_k_nSpace+1]); 
+              mom_v_adv[2] += dmom_u_acc_u*(useRBLES*subgridError_w*q_velocity_sge[eN_k_nSpace+1]); 
+         
+	      mom_w_adv[0] += dmom_u_acc_u*(useRBLES*subgridError_u*q_velocity_sge[eN_k_nSpace+2]);   	   
+	      mom_w_adv[1] += dmom_u_acc_u*(useRBLES*subgridError_v*q_velocity_sge[eN_k_nSpace+2]); 
+              mom_w_adv[2] += dmom_u_acc_u*(useRBLES*subgridError_w*q_velocity_sge[eN_k_nSpace+2]); 
+              
 	      // adjoint times the test functions 
 	      for (int i=0;i<nDOF_test_element;i++)
 		{
@@ -3130,6 +3142,19 @@ namespace proteus
 		  Lstar_p_v[i]=ck.Hamiltonian_adjoint(dmom_v_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
 		  Lstar_p_w[i]=ck.Hamiltonian_adjoint(dmom_w_ham_grad_p,&vel_grad_test_dV[i_nSpace]);
 		}
+
+              // Assumes non-lagged subgrid velocity
+	      dmom_u_adv_u[0] += dmom_u_acc_u*(useRBLES*subgridError_u);  	   
+	      dmom_u_adv_u[1] += dmom_u_acc_u*(useRBLES*subgridError_v); 
+              dmom_u_adv_u[2] += dmom_u_acc_u*(useRBLES*subgridError_w); 
+         
+	      dmom_v_adv_v[0] += dmom_u_acc_u*(useRBLES*subgridError_u);   	   
+	      dmom_v_adv_v[1] += dmom_u_acc_u*(useRBLES*subgridError_v); 
+              dmom_v_adv_v[2] += dmom_u_acc_u*(useRBLES*subgridError_w); 
+         
+	      dmom_w_adv_w[0] += dmom_u_acc_u*(useRBLES*subgridError_u);   	   
+	      dmom_w_adv_w[1] += dmom_u_acc_u*(useRBLES*subgridError_v); 
+              dmom_w_adv_w[2] += dmom_u_acc_u*(useRBLES*subgridError_w); 
 
 
 	      //cek todo add RBLES terms consistent to residual modifications or ignore them partials w.r.t the additional RBLES terms
