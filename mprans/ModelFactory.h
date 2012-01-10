@@ -4,40 +4,29 @@
 namespace proteus
 {
   template<class Model_Base, 
-	   template<class CompKernelType,
-		    int nSpace,
-		    int nQuadraturePoints_element,
-		    int nDOF_mesh_trial_element,
-		    int nDOF_trial_element,
-		    int nDOF_test_element,
-		    int nQuadraturePoints_elementBoundary>
-	   class ModelTemplate,
-	   template<int nSpace,
-		    int nDOF_mesh_trial_element,
-		    int nDOF_trial_element,
-		    int nDOF_test_element>
-	   class CompKernelTemplate>
-  Model_Base* chooseAndAllocateDiscretization(int nSpaceIn,
-					      int nQuadraturePoints_elementIn,
-					      int nDOF_mesh_trial_elementIn,
-					      int nDOF_trial_elementIn,
-					      int nDOF_test_elementIn,
-					      int nQuadraturePoints_elementBoundaryIn,
-					      int CompKernelFlag)//0=Parametric
-	   {
-	     std::cout<<"Constructing model object from template class:"<<std::endl
-		      <<"return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<"
-		      <<nSpaceIn<<","
-		      <<nDOF_mesh_trial_elementIn<<","
-		      <<nDOF_trial_elementIn<<","
-		      <<nDOF_test_elementIn<<">,"
-		      <<nSpaceIn<<","
-		      <<nQuadraturePoints_elementIn<<","
-		      <<nDOF_mesh_trial_elementIn<<","
-		      <<nDOF_trial_elementIn<<","
-		      <<nDOF_test_elementIn<<","
-		      <<nQuadraturePoints_elementBoundaryIn<<">());"
-		      <<std::endl<<std::flush;
+    template<class CompKernelType, int nSpace, int nQuadraturePoints_element, int nDOF_mesh_trial_element,int nDOF_trial_element, int nDOF_test_element, int nQuadraturePoints_elementBoundary> class ModelTemplate,
+    template<int nSpace, int nDOF_mesh_trial_element, int nDOF_trial_element, int nDOF_test_element> class CompKernelTemplate >
+    Model_Base* chooseAndAllocateDiscretization(int nSpaceIn,
+						int nQuadraturePoints_elementIn,
+						int nDOF_mesh_trial_elementIn,
+						int nDOF_trial_elementIn,
+						int nDOF_test_elementIn,
+						int nQuadraturePoints_elementBoundaryIn,
+						int CompKernelFlag)//0=Parametric
+    {
+      std::cout<<"Constructing model object from template class:"<<std::endl
+	       <<"return static_cast<Model_Base*>(new ModelTemplate<CompKernelTemplate<"
+	       <<nSpaceIn<<","
+	       <<nDOF_mesh_trial_elementIn<<","
+	       <<nDOF_trial_elementIn<<","
+	       <<nDOF_test_elementIn<<">,"
+	       <<nSpaceIn<<","
+	       <<nQuadraturePoints_elementIn<<","
+	       <<nDOF_mesh_trial_elementIn<<","
+	       <<nDOF_trial_elementIn<<","
+	       <<nDOF_test_elementIn<<","
+	       <<nQuadraturePoints_elementBoundaryIn<<">());"
+	       <<std::endl<<std::flush;
 	     if (CompKernelFlag == 0)
 	       {
 		 if (nSpaceIn == 3)

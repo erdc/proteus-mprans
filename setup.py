@@ -9,7 +9,7 @@ import numpy
 #
 try:
     import sys,os.path
-    sys.path.append(os.path.join(sys.prefix,'proteusConfig'))
+    sys.path.insert(0,os.path.join(sys.prefix,'proteusConfig'))
     from config import *
 except:
     raise RuntimeError("Missing or invalid config.py file. See proteusConfig for examples")

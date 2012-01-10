@@ -1241,12 +1241,19 @@ namespace proteus
 			    int CompKernelFlag)
   {
     return proteus::chooseAndAllocateDiscretization<NCLS_base,NCLS,CompKernel>(nSpaceIn,
-									       nQuadraturePoints_elementIn,
-									       nDOF_mesh_trial_elementIn,
-									       nDOF_trial_elementIn,
-									       nDOF_test_elementIn,
-									       nQuadraturePoints_elementBoundaryIn,
-									       CompKernelFlag);
+    									       nQuadraturePoints_elementIn,
+    									       nDOF_mesh_trial_elementIn,
+    									       nDOF_trial_elementIn,
+    									       nDOF_test_elementIn,
+    									       nQuadraturePoints_elementBoundaryIn,
+    									       CompKernelFlag);
+    /* return proteus::chooseAndAllocateDiscretization<NCLS_base,NCLS>(nSpaceIn, */
+    /* 									       nQuadraturePoints_elementIn, */
+    /* 									       nDOF_mesh_trial_elementIn, */
+    /* 									       nDOF_trial_elementIn, */
+    /* 									       nDOF_test_elementIn, */
+    /* 									       nQuadraturePoints_elementBoundaryIn, */
+    /* 									       CompKernelFlag); */
   }
 }//proteus
 #endif
