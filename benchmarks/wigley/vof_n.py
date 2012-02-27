@@ -6,12 +6,11 @@ from vof_p import *
 elementQuadrature = SimplexGaussQuadrature(nd,quad_order)
 elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,quad_order)
 
-
 timeIntegration = BackwardEuler
 stepController  = FixedStep
 
 femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)#linear
+shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=False)#linear
 subgridError = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)
 massLumping = False
 numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
@@ -39,7 +38,6 @@ linear_solver_options_prefix = 'vof_'
 
 nonlinearSolverConvergenceTest = 'rits'
 levelNonlinearSolverConvergenceTest = 'rits'
-
 
 linTolFac = 0.001
 

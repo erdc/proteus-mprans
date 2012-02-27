@@ -19,12 +19,8 @@ except:
 from distutils import sysconfig
 cv = sysconfig.get_config_vars()
 cv["OPT"] = cv["OPT"].replace("-g","")
-#cv["OPT"] +=" -funroll-all-loops"
 cv["CFLAGS"] = cv["CFLAGS"].replace("-g","")
-#cv["CFLAGS"] += " -funroll-all-loops"
-#cv["OPT"] = cv["OPT"].replace("-DNDEBUG","-DDEBUG")
-#cv["CFLAGS"] = cv["CFLAGS"].replace("-DNDEBUG","-DDEBUG")
-#cv["CFLAGS"] = cv["CFLAGS"].replace("-O3","-g")
+
 
 setup(name='proteus_mprans',
       version='0.9.0',
@@ -82,14 +78,38 @@ setup(name='proteus_mprans',
                                             ('PROTEUS_BLAS_H',PROTEUS_BLAS_H)],language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/include',os.getenv('PROTEUS')+'/proteusModule/proteus'],
                              extra_compile_args=PROTEUS_EXTRA_COMPILE_ARGS,
                              extra_link_args=PROTEUS_EXTRA_LINK_ARGS),
-                   Extension("cRANS2P",["mprans/cRANS2P.pyx"],depends=["mprans/RANS2P.h"],language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
-                   Extension("cRANS2P2",["mprans/cRANS2P2.pyx"],depends=["mprans/RANS2P2.h"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),                 
-		   Extension("cRBLES",["mprans/cRBLES.pyx"],depends=["mprans/RBLES.h"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
-                   Extension("cVRANS2P",["mprans/cVRANS2P.pyx"],depends=["mprans/VRANS2P.h"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
-                   Extension("cRDLS",["mprans/cRDLS.pyx"],depends=["mprans/RDLS.h"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
-                   Extension("cVOF",["mprans/cVOF.pyx"],depends=["mprans/VOF.h"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
-                   Extension("cVolumeAveragedVOF",["mprans/cVolumeAveragedVOF.pyx"],depends=["mprans/VolumeAveragedVOF.h"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
-                   Extension("cMoveMesh",["mprans/cMoveMesh.pyx"],depends=["mprans/MoveMesh.h"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cRANS2P",["mprans/cRANS2P.pyx"],
+		             depends=["mprans/RANS2P.h","mprans/ModelFactory.h",os.getenv('PROTEUS')+'/proteusModule/proteus/CompKernel.h'],
+			     language="c++",
+			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cRANS2P2",["mprans/cRANS2P2.pyx"],
+		             depends=["mprans/RANS2P2.h","mprans/ModelFactory.h",os.getenv('PROTEUS')+'/proteusModule/proteus/CompKernel.h'], 
+		             language="c++",
+			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),                 
+		   Extension("cRBLES",["mprans/cRBLES.pyx"],
+		             depends=["mprans/RBLES.h","mprans/ModelFactory.h",os.getenv('PROTEUS')+'/proteusModule/proteus/CompKernel.h'],
+		             language="c++",
+			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cVRANS2P",["mprans/cVRANS2P.pyx"],
+		             depends=["mprans/VRANS2P.h","mprans/ModelFactory.h",os.getenv('PROTEUS')+'/proteusModule/proteus/CompKernel.h'], 
+		             language="c++",
+			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cRDLS",["mprans/cRDLS.pyx"],
+		             depends=["mprans/RDLS.h","mprans/ModelFactory.h",os.getenv('PROTEUS')+'/proteusModule/proteus/CompKernel.h'], 
+		             language="c++",
+			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cVOF",["mprans/cVOF.pyx"],
+		             depends=["mprans/VOF.h","mprans/ModelFactory.h",os.getenv('PROTEUS')+'/proteusModule/proteus/CompKernel.h'], 
+		             language="c++",
+			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cVolumeAveragedVOF",["mprans/cVolumeAveragedVOF.pyx"],
+		             depends=["mprans/VolumeAveragedVOF.h","mprans/ModelFactory.h",os.getenv('PROTEUS')+'/proteusModule/proteus/CompKernel.h'], 
+		             language="c++",
+			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
+                   Extension("cMoveMesh",["mprans/cMoveMesh.pyx"],
+		             depends=["mprans/MoveMesh.h","mprans/ModelFactory.h",os.getenv('PROTEUS')+'/proteusModule/proteus/CompKernel.h'], 
+		             language="c++",
+			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/proteus']),
                    ],
       requires=['numpy']
       )

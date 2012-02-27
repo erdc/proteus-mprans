@@ -14,13 +14,14 @@ femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis,
 elementQuadrature = SimplexGaussQuadrature(nd,quad_order)
 elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,quad_order)
 
-subgridError = NavierStokesASGS_velocity_pressure_opt(coefficients,nd,lag=False,delayLagSteps=1,hFactor=1.0)
-
-numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior #need weak for parallel and global conservation
-
-massLumping = False
-
+massLumping       = False
+numericalFluxType = None
+conservativeFlux  = None
+numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_IIPG_exterior 
+subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=False,delayLagSteps=1,hFactor=1.0,noPressureStabilization=False)
 shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=False)
+
+
 
 
 multilevelNonlinearSolver  = NewtonNS
@@ -33,9 +34,9 @@ nonlinearSmoother = None
 
 fullNewtonFlag = True
 
-tolFac = 1e-3
+tolFac = 1e-4
 
-nl_atol_res = 0.0
+nl_atol_res = 1e-4
 
 matrix = SparseMatrix
 

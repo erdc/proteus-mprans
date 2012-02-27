@@ -23,13 +23,12 @@ if freezeLevelSet:
         weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs}
 
 class Flat_phi:
-    def __init__(self,waterLevel):
-        self.waterLevel=waterLevel
+    def __init__(self):
+        pass
     def uOfXT(self,x,t):
-        signedDistance = x[2] - self.waterLevel
-        return signedDistance
+        return  ls_wave(x,t)
 
-initialConditions  = {0:Flat_phi(waterLevel)}
+initialConditions  = {0:Flat_phi()}
 
 fluxBoundaryConditions = {0:'noFlow'}
 

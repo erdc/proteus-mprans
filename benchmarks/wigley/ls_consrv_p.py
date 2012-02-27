@@ -19,10 +19,10 @@ coefficients = MCorr.Coefficients(applyCorrection=applyCorrection,
 class zero_phi:
     def __init__(self):
         pass
-    def uOfX(self,X):
+    def uOfXT(self,x,t):
         return 0.0
-    def uOfXT(self,X,t):
-        return self.uOfX(X)
+	#lambda x,t: 0.0 
+	#vof_wave(x,t)
 
 analyticalSolutions = None
 
