@@ -50,7 +50,8 @@ elif spaceOrder == 2:
 L = (0.584,0.146,0.350)
 
 nLevels = 1
-parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
+#parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
+parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 1
 
 if useHex:   
