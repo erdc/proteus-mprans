@@ -4,7 +4,8 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options    
-Refinement=2
+Refinement=10
+genMesh=True
 spaceOrder=1
 useHex=False
 useRBLES   = 0.0
@@ -50,7 +51,8 @@ elif spaceOrder == 2:
 # Domain and mesh
 nLevels = 1
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
-nLayersOfOverlapForParallel = 1
+nLayersOfOverlapForParallel = 0
+use_petsc4py=True#False
 
 if useHex: 
     hex=True 
@@ -59,7 +61,7 @@ if useHex:
     if comm.isMaster():	
         size = numpy.array([[0.520,0.510   ,0.520],
 	                    [0.330,0.335833,0.330],
-			    [0.320,0.325   ,0.000]])/Refinement
+			    [0.320,0.325   ,0.000]])/float(Refinement)
         numpy.savetxt('size.mesh', size)
         failed = os.system("../../scripts/marinHexMesh")      
      
@@ -139,8 +141,7 @@ else:
     domain.writePoly("mesh")
     domain.writePLY("mesh")
     domain.writeAsymptote("mesh")
-    triangleOptions="VApq1.5q1.5ena%21.16e" % ((he**3)/6.0,)
-
+    triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
 
 # Time stepping
 T=2.00

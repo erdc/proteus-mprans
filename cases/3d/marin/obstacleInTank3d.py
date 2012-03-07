@@ -37,7 +37,7 @@ he = 0.75*box_width#
 he = 0.33*box_width#1.87G
 he /=2.0 # <16G?
 he /=2.0 # 219K nodes
-he /=2.0 # 219K nodes
+#he /=2.0 # 219K nodes
 #he /=2.0 # <16G? 219K nodes
 #he = 0.25*box_width
 #he = 0.4*box_width
@@ -48,7 +48,7 @@ he /=2.0 # 219K nodes
 #he = 0.25*0.4*box_width#64*2G
 #he = 0.5*0.25*0.4*box_width#64*2G
 
-genMesh=False#True
+genMesh=True
 from boxInTank3dDomain import *
 domain = boxInTank3d(L=[length,width,height],
                      box_xy=box_xy,
@@ -156,5 +156,5 @@ epsFact_vof=3.0#1.5
 usePETSc=True#False
 spaceOrder=1
 restrictFineSolutionToAllMeshes=False
-parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
-nLayersOfOverlapForParallel = 1
+parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.element
+nLayersOfOverlapForParallel = 0

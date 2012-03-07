@@ -1,9 +1,14 @@
 #PBS -A ERDCV00898ENQ
-#PBS -l walltime=72:00:00
-#PBS -l ncpus=512
+#PBS -l application=proteus
+#PBS -l walltime=12:00:00
+#PBS -l ncpus=128
 #PBS -q standard
 #PBS -N obstacle3d
 #PBS -j oe
+# nnodes = ncpus/16
 cd $PBS_O_WORKDIR
+export MPICH_RANK_REORDER_METHOD=0
 mkdir $WORKDIR/obstacle3d.$PBS_JOBID
-aprun -n 128 -N 4 -S 1 parun obstacleInTank3d_so.py -l 5 -v -O petsc.options -D $WORKDIR/obstacle3d.$PBS_JOBID
+# n = N*nnodes = N*ncpus/16
+# S determines placement of mpi processes on the "NUMA nodes" of each node. for distributed memory I think we want S=1 or 3 to distribute on the numa nodes
+aprun -n 64 -N 8 parun obstacleInTank3d_so.py -l 5 -v -O petsc.options -D $WORKDIR/obstacle3d.$PBS_JOBID
