@@ -1,0 +1,12 @@
+#! /bin/bash
+#PBS -A ERDCV00898ENQ
+#PBS -l walltime=001:00:00
+#PBS -N dambreak
+#PBS -q debug
+#PBS -j oe
+#PBS -l select=8:ncpus=8:mpiprocs=8
+#PBS -l place=scatter:excl
+#PBS -l application=proteus
+cd $PBS_O_WORKDIR
+mkdir $(WORKDIR)/marin.diamond.$(PBS_JOBID)
+mpirun -np 64 parun marin_so.py -l 7 -v -O petsc.options -D $(WORKDIR)/marin.diamond.$(PBS_JOBID)
