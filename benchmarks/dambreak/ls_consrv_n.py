@@ -22,13 +22,17 @@ linearSmoother    = None
 
 matrix = SparseMatrix
 
-multilevelLinearSolver = PETSc
-levelLinearSolver      = PETSc
+if useOldPETSc:
+    multilevelLinearSolver = PETSc
+    levelLinearSolver      = PETSc
+else:
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver      = KSP_petsc4py
 linear_solver_options_prefix = 'mcorr_'
 linearSolverConvergenceTest  = 'rits'
 
-tolFac = 1e-4
-nl_atol_res = 0.0
+tolFac = 0.0
+nl_atol_res = 1.0e-5
 
 maxNonlinearIts = 10
 maxLineSearches = 0
