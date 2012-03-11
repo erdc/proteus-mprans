@@ -4,8 +4,8 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options  
-Refinement = 4
-spaceOrder = 2
+Refinement = 10
+spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 0.0
@@ -52,7 +52,7 @@ L = (0.584,0.146,0.350)
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
-nLayersOfOverlapForParallel = 1
+nLayersOfOverlapForParallel = 0
 
 if useHex:   
     nnx=4*Refinement
