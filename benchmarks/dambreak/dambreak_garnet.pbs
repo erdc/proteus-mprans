@@ -6,4 +6,5 @@
 #PBS -j oe
 #PBS -l application=proteus
 cd $PBS_O_WORKDIR
-aprun -n 16 -N 4 -S 1 parun dambreak_so.py -l 7 -v -O petsc.options
+mkdir $(WORKDIR)/dambreak.garnet.$(PBS_JOBID)
+aprun -n 32 -N 8 -S 2 parun dambreak_so.py -l 7 -v -O petsc.options -D $(WORKDIR)/dambreak.garnet.$(PBS_JOBID)
