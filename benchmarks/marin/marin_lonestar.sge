@@ -1,0 +1,16 @@
+#!/bin/bash
+#$ -V                    #Inherit the submission environment
+#$ -cwd                  # Start job in submission directory
+#$ -N marin           # Job Name
+#$ -j y                  # Combine stderr and stdout
+#$ -o $JOB_NAME.o$JOB_ID # Name of the output file (eg. myMPI.oJobID)
+#$ -pe 6way 264          # Requests 12 tasks/node, 24 cores total
+#$ -q development             # Queue name normal
+#$ -l h_rt=01:00:00      # Run time (hh:mm:ss) - 1.5 hours
+#$ -M cekees@gmail.com                    # Use email notification address
+#$ -m be                 # Email at Begin and End of job
+set -x                   # Echo commands, use set echo with csh
+pwd
+mkdir $WORK/$JOB_NAME.$JOB_ID
+export MV2_ON_DEMAND_THRESHOLD=2048
+ibrun tacc_affinity parun marin_so.py -O petsc.options -l 5 -v --dataDir=$WORK/$JOB_NAME.$JOB_ID
