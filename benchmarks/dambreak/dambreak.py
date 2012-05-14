@@ -4,7 +4,7 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options  
-Refinement = 15
+Refinement = 3#15
 genMesh=True
 useOldPETSc=False
 spaceOrder = 1
