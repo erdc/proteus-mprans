@@ -307,6 +307,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.ebqe={}
         self.phi_ip={}
         #mesh
+        self.h_dof_sge = self.u[0].dof.copy()
+        self.u_dof_sge = self.u[1].dof.copy()
+        self.v_dof_sge = self.u[2].dof.copy()
         self.ebqe['x'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
         self.ebq_global[('totalFlux',0)] = numpy.zeros((self.mesh.nElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.ebq_global[('velocityAverage',0)] = numpy.zeros((self.mesh.nElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
@@ -605,6 +608,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].dof,
             self.u[1].dof,
             self.u[2].dof,
+            self.h_dof_sge,
+            self.u_dof_sge,
+            self.v_dof_sge,
             self.timeIntegration.m_tmp[0],
             self.timeIntegration.m_tmp[1],
             self.timeIntegration.m_tmp[2],
@@ -723,6 +729,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].dof,
             self.u[1].dof,
             self.u[2].dof,
+            self.h_dof_sge,
+            self.u_dof_sge,
+            self.v_dof_sge,
             self.timeIntegration.beta_bdf[0],
             self.timeIntegration.beta_bdf[1],
             self.timeIntegration.beta_bdf[2],
@@ -873,7 +882,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def calculateSolutionAtQuadrature(self):
         pass
     def calculateAuxiliaryQuantitiesAfterStep(self):
-        pass
+        self.h_dof_sge[:] = self.u[0].dof
+        self.u_dof_sge[:] = self.u[1].dof
+        self.v_dof_sge[:] = self.u[2].dof
         # if self.postProcessing:
         #     from proteus.cSW2D import calculateVelocityAverage as cva
         #     cva(self.mesh.nExteriorElementBoundaries_global,

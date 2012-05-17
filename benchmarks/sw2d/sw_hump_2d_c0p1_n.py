@@ -32,7 +32,7 @@ if implicit:
     levelNonlinearSolver = Newton
 
     fullNewtonFlag = True
-    nDTout=201
+    nDTout=2001
 else:
     runCFL=0.25
     timeOrder = 1

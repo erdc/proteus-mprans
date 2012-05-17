@@ -59,6 +59,9 @@ namespace proteus
 				   double* h_dof, 
 				   double* u_dof, 
 				   double* v_dof,
+				   double* h_dof_sge, 
+				   double* u_dof_sge, 
+				   double* v_dof_sge,
 				   double* q_mass_acc,
 				   double* q_mom_u_acc,
 				   double* q_mom_v_acc,
@@ -158,6 +161,9 @@ namespace proteus
 				   double* h_dof, 
 				   double* u_dof, 
 				   double* v_dof,
+				   double* h_dof_sge, 
+				   double* u_dof_sge, 
+				   double* v_dof_sge,
 				   double* q_mass_acc_beta_bdf,
 				   double* q_mom_u_acc_beta_bdf, 
 				   double* q_mom_v_acc_beta_bdf,
@@ -360,31 +366,114 @@ namespace proteus
       dmom_v_source_h = g*grad_b[1];
     }
 
-    /* inline */
-    /* void calculateSubgridError_tau(const double&  hFactor, */
-    /* 				   const double& elementDiameter, */
-    /* 				   const double& dmt, */
-    /* 				   const double& dm, */
-    /* 				   const double df[nSpace], */
-    /* 				   const double& a, */
-    /* 				   const double&  pfac, */
-    /* 				   double& tau_v, */
-    /* 				   double& tau_h, */
-    /* 				   double& cfl) */
-    /* { */
-    /*   double h,oneByAbsdt,density,viscosity,nrm_df; */
-    /*   h = hFactor*elementDiameter; */
-    /*   density = dm; */
-    /*   viscosity =  a; */
-    /*   nrm_df=0.0; */
-    /*   for(int I=0;I<nSpace;I++) */
-    /* 	nrm_df+=df[I]*df[I]; */
-    /*   nrm_df = sqrt(nrm_df); */
-    /*   cfl = nrm_df/(h*density);//this is really cfl/dt, but that's what we want to know, the step controller expect this */
-    /*   oneByAbsdt =  fabs(dmt); */
-    /*   tau_v = 1.0/(4.0*viscosity/(h*h) + 2.0*nrm_df/h + oneByAbsdt); */
-    /*   tau_h = (4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h)/pfac; */
-    /* } */
+    inline
+    void calculateSubgridError_tau(const double& elementDiameter,
+    				   const double& nu,
+    				   const double& g,
+    				   const double& h,
+    				   const double& u,
+    				   const double& v,
+    				   double tau[9],
+    				   double& cfl)
+    {
+      double rx[9],ry[9],c=sqrt(fmax(0.0,g*h)),lambdax[3],lambday[3],tauxHat[3],tauyHat[3],taux[9],tauy[9],tauc[9],cflx,cfly,L[9];
+      lambdax[0] = u - c;
+      lambdax[1] = u;
+      lambdax[2] = u + c;
+      if (u > 0.0)
+	cflx = (u+c)/h;
+      else
+	cflx = fabs(u-c)/h;
+
+      rx[0*3+0] = 1.0;
+      rx[1*3+0] = u - c;
+      rx[2*3+0] = v;
+
+      rx[0*3+1] = 0.0;
+      rx[1*3+1] = 0.0;
+      rx[2*3+1] = 1.0;
+
+      rx[0*3+2] = 1.0;
+      rx[1*3+2] = u + c;
+      rx[2*3+2] = v;
+
+      //cek hack assume no viscosity for now
+      tauxHat[0] = 0.5*elementDiameter/(fabs(lambdax[0])+1.0e-8);
+      tauxHat[1] = 0.5*elementDiameter/(fabs(lambdax[1])+1.0e-8);
+      tauxHat[2] = 0.5*elementDiameter/(fabs(lambdax[2])+1.0e-8);
+
+      lambday[0] = v - c;
+      lambday[1] = v;
+      lambday[2] = v + c;
+
+      ry[0*3+0] = 1.0;
+      ry[1*3+0] = u;
+      ry[2*3+0] = v - c;
+
+      ry[0*3+1] = 0.0;
+      ry[1*3+1] = -1.0;
+      ry[2*3+1] = 0.0;
+
+      ry[0*3+2] = 1.0;
+      ry[1*3+2] = u;
+      ry[2*3+2] = v + c;
+
+      //cek hack assume no viscosity for now
+      tauyHat[0] = 0.5*elementDiameter/(fabs(lambday[0])+1.0e-8);
+      tauyHat[1] = 0.5*elementDiameter/(fabs(lambday[1])+1.0e-8);
+      tauyHat[2] = 0.5*elementDiameter/(fabs(lambday[2])+1.0e-8);
+      if (v > 0.0)
+	cfly = (v+c)/h;
+      else
+	cfly = fabs(v-c)/h;
+      cfl = sqrt(cflx*cflx+cfly*cfly);//hack, conservative
+
+      //project back to solution variables
+      for (int i=0;i<3;i++)
+	for (int j=0;j<3;j++)
+	  {
+	    taux[i*3+j] = 0.0;
+	    tauy[i*3+j] = 0.0;
+	    tauc[i*3+j] = 0.0;
+	    tau[i*3+j] = 0.0;
+	    L[i*3+j] = 0.0;
+	  }
+      for (int i=0;i<3;i++)
+	for (int j=0;j<3;j++)
+	  for (int m=0;m<3;m++)
+	  {
+	    taux[i*3+j] += rx[i*3+m]*tauxHat[m]*rx[j*3+m];
+	    tauy[i*3+j] += ry[i*3+m]*tauyHat[m]*ry[j*3+m];
+	  }
+      
+      //matrix norm
+      for (int i=0;i<3;i++)
+	for (int j=0;j<3;j++)
+	  tauc[i*3+j] = sqrt(taux[i*3+j]*taux[i*3+j] + tauy[i*3+j]*tauy[i*3+j]);
+      //change variables to h,u,v
+      if (h > 1.0e-8)
+	{
+	  L[0*3+0] = 1.0;
+	  L[1*3+0] = -u/h;
+	  L[1*3+1] = 1.0/h;
+	  L[2*3+0] = -v/h;
+	  L[2*3+2] = 1.0/h;
+	}
+      for (int i=0;i<3;i++)
+      	for (int j=0;j<3;j++)
+	  for (int k=0;k<3;k++)
+	    tau[i*3+j] += L[i*3+k]*tauc[k*3+j];
+
+      /* std::cout<<"tau"<<std::endl; */
+      /* for (int i=0;i<3;i++) */
+      /* 	{ */
+      /* 	  for (int j=0;j<3;j++) */
+      /* 	    { */
+      /* 	      std::cout<<tau[i*3+j]<<'\t'; */
+      /* 	    } */
+      /* 	  std::cout<<std::endl; */
+      /* 	} */
+    }
 
 
     /* inline */
@@ -855,6 +944,9 @@ namespace proteus
 			   double* h_dof, 
 			   double* u_dof, 
 			   double* v_dof, 
+			   double* h_dof_sge, 
+			   double* u_dof_sge, 
+			   double* v_dof_sge, 
 			   double* q_mass_acc,
 			   double* q_mom_u_acc,
 			   double* q_mom_v_acc,
@@ -939,7 +1031,7 @@ namespace proteus
       	      register int eN_k = eN*nQuadraturePoints_element+k,
       		eN_k_nSpace = eN_k*nSpace,
       		eN_nDOF_trial_element = eN*nDOF_trial_element;
-      	      register double b=0.0,h=0.0,u=0.0,v=0.0,
+      	      register double b=0.0,h=0.0,u=0.0,v=0.0,h_sge=0.0,u_sge=0.0,v_sge=0.0,
       		grad_b[nSpace],grad_h[nSpace],grad_u[nSpace],grad_v[nSpace],
       		mass_acc=0.0,
       		dmass_acc_h=0.0,
@@ -953,14 +1045,23 @@ namespace proteus
       		dmass_adv_h[nSpace],
       		dmass_adv_u[nSpace],
       		dmass_adv_v[nSpace],
+      		dmass_adv_h_sge[nSpace],
+      		dmass_adv_u_sge[nSpace],
+      		dmass_adv_v_sge[nSpace],
       		mom_u_adv[nSpace],
       		dmom_u_adv_h[nSpace],
       		dmom_u_adv_u[nSpace],
       		dmom_u_adv_v[nSpace],
+      		dmom_u_adv_h_sge[nSpace],
+      		dmom_u_adv_u_sge[nSpace],
+      		dmom_u_adv_v_sge[nSpace],
       		mom_v_adv[nSpace],
       		dmom_v_adv_h[nSpace],
       		dmom_v_adv_u[nSpace],
       		dmom_v_adv_v[nSpace],
+      		dmom_v_adv_h_sge[nSpace],
+      		dmom_v_adv_u_sge[nSpace],
+      		dmom_v_adv_v_sge[nSpace],
       		mom_u_diff_ten[nSpace],
       		mom_v_diff_ten[nSpace],
       		mom_uv_diff_ten[1],
@@ -977,6 +1078,7 @@ namespace proteus
       		mom_v_acc_t=0.0,
       		dmom_v_acc_h_t=0.0,
       		dmom_v_acc_v_t=0.0,
+		tau[9],
       		pdeResidual_h=0.0,
       		pdeResidual_u=0.0,
       		pdeResidual_v=0.0,
@@ -1029,6 +1131,9 @@ namespace proteus
       	      ck.valFromDOF(h_dof,&h_l2g[eN_nDOF_trial_element],&h_trial_ref[k*nDOF_trial_element],h);
       	      ck.valFromDOF(u_dof,&vel_l2g[eN_nDOF_trial_element],&vel_trial_ref[k*nDOF_trial_element],u);
       	      ck.valFromDOF(v_dof,&vel_l2g[eN_nDOF_trial_element],&vel_trial_ref[k*nDOF_trial_element],v);
+      	      ck.valFromDOF(h_dof_sge,&h_l2g[eN_nDOF_trial_element],&h_trial_ref[k*nDOF_trial_element],h_sge);
+      	      ck.valFromDOF(u_dof_sge,&vel_l2g[eN_nDOF_trial_element],&vel_trial_ref[k*nDOF_trial_element],u_sge);
+      	      ck.valFromDOF(v_dof_sge,&vel_l2g[eN_nDOF_trial_element],&vel_trial_ref[k*nDOF_trial_element],v_sge);
       	      //get the solution gradients
       	      ck.gradFromDOF(b_dof,&h_l2g[eN_nDOF_trial_element],h_grad_trial,grad_b);
       	      ck.gradFromDOF(h_dof,&h_l2g[eN_nDOF_trial_element],h_grad_trial,grad_h);
@@ -1144,34 +1249,69 @@ namespace proteus
       	      //calculate subgrid error (strong residual and adjoint)
       	      //
       	      //calculate strong residual
-      	      /* pdeResidual_h = ck.Mass_strong(mass_acc_t) + */
-      	      /* 	ck.Advection_strong(dmass_adv_u,grad_u) + */
-      	      /* 	ck.Advection_strong(dmass_adv_v,grad_v); */
-	  
-              /* dmom_adv_sge[0] = (q_velocity_sge[eN_k_nSpace+0] - MOVING_DOMAIN*h*xt); */
-              /* dmom_adv_sge[1] = (q_velocity_sge[eN_k_nSpace+1] - MOVING_DOMAIN*h*yt); */
+              //dmom_adv_sge[0] = (q_velocity_sge[eN_k_nSpace+0] - MOVING_DOMAIN*mass_acc*xt);
+              //dmom_adv_sge[1] = (q_velocity_sge[eN_k_nSpace+1] - MOVING_DOMAIN*mass_acc*yt);
 
-      	      /* pdeResidual_u = ck.Mass_strong(mom_u_acc_t) + */
-      	      /* 	ck.Advection_strong(dmom_adv_sge,grad_u) + */
-      	      /* 	ck.Reaction_strong(mom_u_source); */
+	      //mass advective flux
+	      dmass_adv_h_sge[0]=u_sge;
+	      dmass_adv_h_sge[1]=v_sge;
+	      
+	      dmass_adv_u_sge[0]=h_sge;
+	      dmass_adv_u_sge[1]=0.0;
+	      
+	      dmass_adv_v_sge[0]=0.0;
+	      dmass_adv_v_sge[1]=h_sge;
+	      
+	      //u momentum advective flux
+	      dmom_u_adv_h_sge[0]=u_sge*u_sge + g*h_sge;
+	      dmom_u_adv_h_sge[1]=u_sge*v_sge;
+	      
+	      dmom_u_adv_u_sge[0]=h_sge*2.0*u_sge;
+	      dmom_u_adv_u_sge[1]=h_sge*v_sge;
+	      
+	      dmom_u_adv_v_sge[0]=0.0;
+	      dmom_u_adv_v_sge[1]=h_sge*u_sge;
+	      
+	      //v momentum advective_flux
+	      dmom_v_adv_h_sge[0]=v_sge*u_sge;
+	      dmom_v_adv_h_sge[1]=v_sge*v_sge + g*h_sge;
+	      
+	      dmom_v_adv_u_sge[0]=h_sge*v_sge;
+	      dmom_v_adv_u_sge[1]=0.0;
+	      
+	      dmom_v_adv_v_sge[0]=h_sge*u_sge;
+	      dmom_v_adv_v_sge[1]=h_sge*2.0*v_sge;
+
+      	      pdeResidual_h = //ck.Mass_strong(mass_acc_t) +
+      	      	ck.Advection_strong(dmass_adv_h_sge,grad_h) +
+      	      	ck.Advection_strong(dmass_adv_u_sge,grad_u) +
+      	      	ck.Advection_strong(dmass_adv_v_sge,grad_v);
 	  
-      	      /* pdeResidual_v = ck.Mass_strong(mom_v_acc_t) + */
-      	      /* 	ck.Advection_strong(dmom_adv_sge,grad_v) + */
-      	      /* 	ck.Reaction_strong(mom_v_source); */
+      	      pdeResidual_u = //ck.Mass_strong(mom_u_acc_t) +
+      	      	ck.Advection_strong(dmom_u_adv_h_sge,grad_h) +
+      	      	ck.Advection_strong(dmom_u_adv_u_sge,grad_u) +
+      	      	ck.Advection_strong(dmom_u_adv_v_sge,grad_v) +
+      	      	ck.Reaction_strong(mom_u_source);
+	  
+      	      pdeResidual_v = //ck.Mass_strong(mom_v_acc_t) +
+      	      	ck.Advection_strong(dmom_v_adv_h_sge,grad_h) +
+      	      	ck.Advection_strong(dmom_v_adv_u_sge,grad_u) +
+      	      	ck.Advection_strong(dmom_v_adv_v_sge,grad_v) +
+      	      	ck.Reaction_strong(mom_v_source);
 	  
       	      //calculate tau and tau*Res
-      	      /* calculateSubgridError_tau(hFactor, */
-      	      /* 				elementDiameter[eN], */
-      	      /* 				dmom_u_acc_u_t, */
-      	      /* 				dmom_u_acc_u, */
-      	      /* 				dmom_adv_sge, */
-      	      /* 				mom_u_diff_ten[1], */
-      	      /* 				dmom_u_ham_grad_h[0], */
-      	      /* 				tau_v0, */
-      	      /* 				tau_h0, */
-      	      /* 				q_cfl[eN_k]); */
+      	      calculateSubgridError_tau(elementDiameter[eN],
+					nu,
+					g,
+					h_sge,
+					u_sge,
+					v_sge,
+					tau,
+					q_cfl[eN_k]);
 
-
+	      subgridError_h = tau[0*3+0]*pdeResidual_h + tau[0*3+1]*pdeResidual_u + tau[0*3+2]*pdeResidual_v;
+	      subgridError_u = tau[1*3+0]*pdeResidual_h + tau[1*3+1]*pdeResidual_u + tau[1*3+2]*pdeResidual_v;
+	      subgridError_v = tau[2*3+0]*pdeResidual_h + tau[2*3+1]*pdeResidual_u + tau[2*3+2]*pdeResidual_v;
       	      /* calculateSubgridError_tau(Ct_sge,Cd_sge, */
       	      /* 		                G,G_dd_G,tr_G, */
       	      /* 				dmom_u_acc_u_t, */
@@ -1205,18 +1345,22 @@ namespace proteus
       	      /* mom_v_adv[0] += dmom_u_acc_u*(useRBLES*subgridError_u*q_velocity_sge[eN_k_nSpace+1]);   	    */
       	      /* mom_v_adv[1] += dmom_u_acc_u*(useRBLES*subgridError_v*q_velocity_sge[eN_k_nSpace+1]);  */
          
-      	      /* adjoint times the test functions  */
-      	      /* for (int i=0;i<nDOF_test_element;i++) */
-      	      /* 	{ */
-      	      /* 	  register int i_nSpace = i*nSpace; */
-      	      /* 	  Lstar_u_h[i]=ck.Advection_adjoint(dmass_adv_u,&h_grad_test_dV[i_nSpace]); */
-      	      /* 	  Lstar_v_h[i]=ck.Advection_adjoint(dmass_adv_v,&h_grad_test_dV[i_nSpace]); */
-              /*     use the same advection adjoint for all three since we're approximating the linearized adjoint */
-      	      /* 	  Lstar_u_u[i]=ck.Advection_adjoint(dmom_adv_star,&vel_grad_test_dV[i_nSpace]); */
-      	      /* 	  Lstar_v_v[i]=ck.Advection_adjoint(dmom_adv_star,&vel_grad_test_dV[i_nSpace]); */
-      	      /* 	  Lstar_h_u[i]=ck.Hamiltonian_adjoint(dmom_u_ham_grad_h,&vel_grad_test_dV[i_nSpace]); */
-      	      /* 	  Lstar_h_v[i]=ck.Hamiltonian_adjoint(dmom_v_ham_grad_h,&vel_grad_test_dV[i_nSpace]); */
-      	      /* 	} */
+      	      //adjoint times the test functions
+      	      for (int i=0;i<nDOF_test_element;i++)
+      	      	{
+      	      	  register int i_nSpace = i*nSpace;
+      	      	  Lstar_h_h[i]=ck.Advection_adjoint(dmass_adv_h_sge,&h_grad_test_dV[i_nSpace]);
+      	      	  Lstar_u_h[i]=ck.Advection_adjoint(dmass_adv_u_sge,&h_grad_test_dV[i_nSpace]);
+      	      	  Lstar_v_h[i]=ck.Advection_adjoint(dmass_adv_v_sge,&h_grad_test_dV[i_nSpace]);
+
+      	      	  Lstar_h_u[i]=ck.Advection_adjoint(dmom_u_adv_h_sge,&vel_grad_test_dV[i_nSpace]);//hack, should have Reaction adjoint
+      	      	  Lstar_u_u[i]=ck.Advection_adjoint(dmom_u_adv_u_sge,&vel_grad_test_dV[i_nSpace]);
+      	      	  Lstar_v_u[i]=ck.Advection_adjoint(dmom_u_adv_v_sge,&vel_grad_test_dV[i_nSpace]);
+
+      	      	  Lstar_h_v[i]=ck.Advection_adjoint(dmom_v_adv_h_sge,&vel_grad_test_dV[i_nSpace]);//hack, should have Reaction adjoint
+      	      	  Lstar_u_v[i]=ck.Advection_adjoint(dmom_v_adv_u_sge,&vel_grad_test_dV[i_nSpace]);
+      	      	  Lstar_v_v[i]=ck.Advection_adjoint(dmom_v_adv_v_sge,&vel_grad_test_dV[i_nSpace]);
+      	      	}
 
       	      /* norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v); */
       	      /* q_numDiff_u[eN_k] = C_dc*norm_Rv*(useMetrics/sqrt(G_dd_G)  +  */
@@ -1230,31 +1374,31 @@ namespace proteus
       		  register int i_nSpace=i*nSpace;
 
       		  elementResidual_h[i] += ck.Mass_weak(mass_acc_t,h_test_dV[i]) +
-      		    ck.Advection_weak(mass_adv,&h_grad_test_dV[i_nSpace]);
-      		  /* + */
-      		  /*   ck.SubgridError(subgridError_u,Lstar_u_h[i]) +  */
-      		  /*   ck.SubgridError(subgridError_v,Lstar_v_h[i]) +  */
-
+      		    ck.Advection_weak(mass_adv,&h_grad_test_dV[i_nSpace]) +
+      		    ck.SubgridError(subgridError_h,Lstar_h_h[i]) +
+      		    ck.SubgridError(subgridError_u,Lstar_u_h[i]) +
+      		    ck.SubgridError(subgridError_v,Lstar_v_h[i]);
+      		  /*   ck.NumericalDiffusion(q_numDiff_h_last[eN_k],grad_h,&h_grad_test_dV[i_nSpace]);  */
+		  
       		  elementResidual_u[i] += ck.Mass_weak(mom_u_acc_t,vel_test_dV[i]) +
       		    ck.Advection_weak(mom_u_adv,&vel_grad_test_dV[i_nSpace]) +
       		    ck.Diffusion_weak(sdInfo_u_u_rowptr,sdInfo_u_u_colind,mom_u_diff_ten,grad_u,&vel_grad_test_dV[i_nSpace]) +
       		    ck.Diffusion_weak(sdInfo_u_v_rowptr,sdInfo_u_v_colind,mom_uv_diff_ten,grad_v,&vel_grad_test_dV[i_nSpace]) +
-      		    ck.Reaction_weak(mom_u_source,vel_test_dV[i]);
-      		  /* +  */
-      		  /*   ck.SubgridError(subgridError_h,Lstar_h_u[i]) +  */
-      		  /*   ck.SubgridError(subgridError_u,Lstar_u_u[i]) +  */
+      		    ck.Reaction_weak(mom_u_source,vel_test_dV[i]) +
+      		    ck.SubgridError(subgridError_h,Lstar_h_u[i]) +
+      		    ck.SubgridError(subgridError_u,Lstar_u_u[i]) +
+		    ck.SubgridError(subgridError_v,Lstar_v_u[i]);
       		  /*   ck.NumericalDiffusion(q_numDiff_u_last[eN_k],grad_u,&vel_grad_test_dV[i_nSpace]);  */
 		 
       		  elementResidual_v[i] += ck.Mass_weak(mom_v_acc_t,vel_test_dV[i]) +
       		    ck.Advection_weak(mom_v_adv,&vel_grad_test_dV[i_nSpace]) +
       		    ck.Diffusion_weak(sdInfo_v_v_rowptr,sdInfo_v_v_colind,mom_v_diff_ten,grad_v,&vel_grad_test_dV[i_nSpace]) +
       		    ck.Diffusion_weak(sdInfo_v_u_rowptr,sdInfo_v_u_colind,mom_vu_diff_ten,grad_u,&vel_grad_test_dV[i_nSpace]) +
-      		    ck.Reaction_weak(mom_v_source,vel_test_dV[i]);
-      		  /* +  */
-      		  /*   ck.SubgridError(subgridError_h,Lstar_h_v[i]) +  */
-      		  /*   ck.SubgridError(subgridError_v,Lstar_v_v[i]) +  */
+      		    ck.Reaction_weak(mom_v_source,vel_test_dV[i]) +
+      		    ck.SubgridError(subgridError_h,Lstar_h_v[i]) +
+      		    ck.SubgridError(subgridError_u,Lstar_u_v[i]) +
+      		    ck.SubgridError(subgridError_v,Lstar_v_v[i]);
       		  /*   ck.NumericalDiffusion(q_numDiff_v_last[eN_k],grad_v,&vel_grad_test_dV[i_nSpace]);  */
-
       		}
       	    }
       	  
@@ -1712,6 +1856,9 @@ namespace proteus
 			   double* h_dof, 
 			   double* u_dof, 
 			   double* v_dof, 
+			   double* h_dof_sge, 
+			   double* u_dof_sge, 
+			   double* v_dof_sge, 
 			   double* q_mass_acc_beta_bdf,
 			   double* q_mom_u_acc_beta_bdf, 
 			   double* q_mom_v_acc_beta_bdf,
@@ -1817,6 +1964,9 @@ namespace proteus
 		h=0.0,
 		u=0.0,
 		v=0.0,
+		h_sge=0.0,
+		u_sge=0.0,
+		v_sge=0.0,
 		grad_b[nSpace],
 		grad_h[nSpace],
 		grad_u[nSpace],
@@ -1833,14 +1983,23 @@ namespace proteus
 		dmass_adv_h[nSpace],
 		dmass_adv_u[nSpace],
 		dmass_adv_v[nSpace],
+		dmass_adv_h_sge[nSpace],
+		dmass_adv_u_sge[nSpace],
+		dmass_adv_v_sge[nSpace],
 		mom_u_adv[nSpace],
 		dmom_u_adv_h[nSpace],
 		dmom_u_adv_u[nSpace],
 		dmom_u_adv_v[nSpace],
+		dmom_u_adv_h_sge[nSpace],
+		dmom_u_adv_u_sge[nSpace],
+		dmom_u_adv_v_sge[nSpace],
 		mom_v_adv[nSpace],
 		dmom_v_adv_h[nSpace],
 		dmom_v_adv_u[nSpace],
 		dmom_v_adv_v[nSpace],
+		dmom_v_adv_h_sge[nSpace],
+		dmom_v_adv_u_sge[nSpace],
+		dmom_v_adv_v_sge[nSpace],
 		mom_u_diff_ten[nSpace],
 		mom_v_diff_ten[nSpace],
 		mom_uv_diff_ten[1],
@@ -1857,6 +2016,7 @@ namespace proteus
 		mom_v_acc_t=0.0,
 		dmom_v_acc_h_t=0.0,
 		dmom_v_acc_v_t=0.0,
+		tau[9],
 		pdeResidual_h=0.0,
 		pdeResidual_u=0.0,
 		pdeResidual_v=0.0,
@@ -1932,6 +2092,9 @@ namespace proteus
 	      ck.valFromDOF(h_dof,&h_l2g[eN_nDOF_trial_element],&h_trial_ref[k*nDOF_trial_element],h);
 	      ck.valFromDOF(u_dof,&vel_l2g[eN_nDOF_trial_element],&vel_trial_ref[k*nDOF_trial_element],u);
 	      ck.valFromDOF(v_dof,&vel_l2g[eN_nDOF_trial_element],&vel_trial_ref[k*nDOF_trial_element],v);
+	      ck.valFromDOF(h_dof_sge,&h_l2g[eN_nDOF_trial_element],&h_trial_ref[k*nDOF_trial_element],h_sge);
+	      ck.valFromDOF(u_dof_sge,&vel_l2g[eN_nDOF_trial_element],&vel_trial_ref[k*nDOF_trial_element],u_sge);
+	      ck.valFromDOF(v_dof_sge,&vel_l2g[eN_nDOF_trial_element],&vel_trial_ref[k*nDOF_trial_element],v_sge);
 	      //get the solution gradients
 	      ck.gradFromDOF(b_dof,&h_l2g[eN_nDOF_trial_element],h_grad_trial,grad_b);
 	      ck.gradFromDOF(h_dof,&h_l2g[eN_nDOF_trial_element],h_grad_trial,grad_h);
@@ -2037,11 +2200,41 @@ namespace proteus
 	      //calculate subgrid error contribution to the Jacobian (strong residual, adjoint, jacobian of strong residual)
 	      //
 	      //cek todo, decide to store velocity or discharge
-              dmom_adv_sge[0] = q_velocity_sge[eN_k_nSpace+0] - MOVING_DOMAIN*mass_acc*xt;
-              dmom_adv_sge[1] = q_velocity_sge[eN_k_nSpace+1] - MOVING_DOMAIN*mass_acc*yt;
+              /* dmom_adv_sge[0] = q_velocity_sge[eN_k_nSpace+0] - MOVING_DOMAIN*mass_acc*xt; */
+              /* dmom_adv_sge[1] = q_velocity_sge[eN_k_nSpace+1] - MOVING_DOMAIN*mass_acc*yt; */
 	      //
 	      //calculate strong residual
 	      //
+	      //mass advective flux
+	      dmass_adv_h_sge[0]=u_sge;
+	      dmass_adv_h_sge[1]=v_sge;
+	      
+	      dmass_adv_u_sge[0]=h_sge;
+	      dmass_adv_u_sge[1]=0.0;
+	      
+	      dmass_adv_v_sge[0]=0.0;
+	      dmass_adv_v_sge[1]=h_sge;
+	      
+	      //u momentum advective flux
+	      dmom_u_adv_h_sge[0]=u_sge*u_sge + g*h_sge;
+	      dmom_u_adv_h_sge[1]=u_sge*v_sge;
+	      
+	      dmom_u_adv_u_sge[0]=h_sge*2.0*u_sge;
+	      dmom_u_adv_u_sge[1]=h_sge*v_sge;
+	      
+	      dmom_u_adv_v_sge[0]=0.0;
+	      dmom_u_adv_v_sge[1]=h_sge*u_sge;
+	      
+	      //v momentum advective_flux
+	      dmom_v_adv_h_sge[0]=v_sge*u_sge;
+	      dmom_v_adv_h_sge[1]=v_sge*v_sge + g*h_sge;
+	      
+	      dmom_v_adv_u_sge[0]=h_sge*v_sge;
+	      dmom_v_adv_u_sge[1]=0.0;
+	      
+	      dmom_v_adv_v_sge[0]=h_sge*u_sge;
+	      dmom_v_adv_v_sge[1]=h_sge*2.0*v_sge;
+
               //cek going to have to figure out how the best way to do this for SWE
 	      /* pdeResidual_h = ck.Mass_strong(mass_u_acc_t) + */
 	      /* 	ck.Advection_strong(dmass_adv_sge,grad_u) + */
@@ -2055,33 +2248,32 @@ namespace proteus
 	      /* 	ck.Advection_strong(dmom_adv_sge,grad_v) + */
 	      /* 	ck.Reaction_strong(mom_v_source); */
 	  
-	      /* //calculate the Jacobian of strong residual */
-	      /* for (int j=0;j<nDOF_trial_element;j++) */
-	      /* 	{ */
-	      /* 	  register int j_nSpace = j*nSpace; */
-	      /* 	  dpdeResidual_h_u[j]=ck.AdvectionJacobian_strong(dmass_adv_u,&vel_grad_trial[j_nSpace]); */
-	      /* 	  dpdeResidual_h_v[j]=ck.AdvectionJacobian_strong(dmass_adv_v,&vel_grad_trial[j_nSpace]); */
+	      //calculate the Jacobian of strong residual
+	      for (int j=0;j<nDOF_trial_element;j++)
+	      	{
+	      	  register int j_nSpace = j*nSpace;
+		  //cek hack
+	      	  dpdeResidual_h_h[j]=ck.AdvectionJacobian_strong(dmass_adv_h_sge,&h_grad_trial[j_nSpace]);
+	      	  dpdeResidual_h_u[j]=ck.AdvectionJacobian_strong(dmass_adv_u_sge,&h_grad_trial[j_nSpace]);
+	      	  dpdeResidual_h_v[j]=ck.AdvectionJacobian_strong(dmass_adv_v_sge,&h_grad_trial[j_nSpace]);
 
-	      /* 	  dpdeResidual_u_h[j]=ck.HamiltonianJacobian_strong(dmom_u_ham_grad_h,&h_grad_trial[j_nSpace]); */
-	      /* 	  dpdeResidual_u_u[j]=ck.MassJacobian_strong(dmom_u_acc_u_t,vel_trial_ref[k*nDOF_trial_element+j]) + */
-	      /* 	    ck.AdvectionJacobian_strong(dmom_adv_sge,&vel_grad_trial[j_nSpace]); */
-	      
-	      /* 	  dpdeResidual_v_h[j]=ck.HamiltonianJacobian_strong(dmom_v_ham_grad_h,&h_grad_trial[j_nSpace]); */
-	      /* 	  dpdeResidual_v_v[j]=ck.MassJacobian_strong(dmom_v_acc_v_t,vel_trial_ref[k*nDOF_trial_element+j]) + */
-	      /* 	    ck.AdvectionJacobian_strong(dmom_adv_sge,&vel_grad_trial[j_nSpace]); */
-	      
-	      /* 	} */
+	      	  dpdeResidual_u_h[j]=ck.AdvectionJacobian_strong(dmom_u_adv_h_sge,&vel_grad_trial[j_nSpace]);
+	      	  dpdeResidual_u_u[j]=ck.AdvectionJacobian_strong(dmom_u_adv_u_sge,&vel_grad_trial[j_nSpace]);
+	      	  dpdeResidual_u_v[j]=ck.AdvectionJacobian_strong(dmom_u_adv_v_sge,&vel_grad_trial[j_nSpace]);
+
+	      	  dpdeResidual_v_h[j]=ck.AdvectionJacobian_strong(dmom_v_adv_h_sge,&vel_grad_trial[j_nSpace]);
+	      	  dpdeResidual_v_u[j]=ck.AdvectionJacobian_strong(dmom_v_adv_u_sge,&vel_grad_trial[j_nSpace]);
+	      	  dpdeResidual_v_v[j]=ck.AdvectionJacobian_strong(dmom_v_adv_v_sge,&vel_grad_trial[j_nSpace]);
+	      	}
 	      /* //calculate tau and tau*Res */
-	      /* calculateSubgridError_tau(hFactor, */
-	      /* 				elementDiameter[eN], */
-	      /* 				dmom_u_acc_u_t, */
-	      /* 				dmom_u_acc_u, */
-	      /* 				dmom_adv_sge, */
-	      /* 				mom_u_diff_ten[1], */
-	      /* 				dmom_u_ham_grad_h[0], */
-	      /* 				tau_v0, */
-	      /* 				tau_h0, */
-	      /* 				q_cfl[eN_k]); */
+	      calculateSubgridError_tau(elementDiameter[eN],
+	      				nu,
+					g,
+					h_sge,
+					u_sge,
+					v_sge,
+					tau,
+	      				q_cfl[eN_k]);
 					
 	      /* calculateSubgridError_tau(Ct_sge,Cd_sge, */
 	      /* 		                G,G_dd_G,tr_G, */
@@ -2141,18 +2333,37 @@ namespace proteus
 	      /* // velocity used in adjoint (VMS or RBLES, with or without lagging the grid scale velocity) */
 	      /* dmom_adv_star[0] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+0] - MOVING_DOMAIN*xt + useRBLES*subgridError_u); */
 	      /* dmom_adv_star[1] = dmom_u_acc_u*(q_velocity_sge[eN_k_nSpace+1] - MOVING_DOMAIN*yt + useRBLES*subgridError_v); */
-          
-	      /* //calculate the adjoint times the test functions */
-	      /* for (int i=0;i<nDOF_test_element;i++) */
-	      /* 	{ */
-	      /* 	  register int i_nSpace = i*nSpace; */
-	      /* 	  Lstar_u_h[i]=ck.Advection_adjoint(dmass_adv_u,&h_grad_test_dV[i_nSpace]); */
-	      /* 	  Lstar_v_h[i]=ck.Advection_adjoint(dmass_adv_v,&h_grad_test_dV[i_nSpace]); */
-	      /* 	  Lstar_u_u[i]=ck.Advection_adjoint(dmom_adv_star,&vel_grad_test_dV[i_nSpace]); */
-	      /* 	  Lstar_v_v[i]=ck.Advection_adjoint(dmom_adv_star,&vel_grad_test_dV[i_nSpace]); */
-	      /* 	  Lstar_h_u[i]=ck.Hamiltonian_adjoint(dmom_u_ham_grad_h,&vel_grad_test_dV[i_nSpace]); */
-	      /* 	  Lstar_h_v[i]=ck.Hamiltonian_adjoint(dmom_v_ham_grad_h,&vel_grad_test_dV[i_nSpace]); */
-	      /* 	} */
+
+	      for (int j=0;j<nDOF_trial_element;j++)
+	      	{
+		  dsubgridError_h_h[j] = tau[0*3+0]*dpdeResidual_h_h[j] + tau[0*3+1]*dpdeResidual_u_h[j] + tau[0*3+2]*dpdeResidual_v_h[j];
+		  dsubgridError_h_u[j] = tau[0*3+0]*dpdeResidual_h_u[j] + tau[0*3+1]*dpdeResidual_u_u[j] + tau[0*3+2]*dpdeResidual_v_u[j];
+		  dsubgridError_h_v[j] = tau[0*3+0]*dpdeResidual_h_v[j] + tau[0*3+1]*dpdeResidual_u_v[j] + tau[0*3+2]*dpdeResidual_v_v[j];
+
+		  dsubgridError_u_h[j] = tau[1*3+0]*dpdeResidual_h_h[j] + tau[1*3+1]*dpdeResidual_u_h[j] + tau[1*3+2]*dpdeResidual_v_h[j];
+		  dsubgridError_u_u[j] = tau[1*3+0]*dpdeResidual_h_u[j] + tau[1*3+1]*dpdeResidual_u_u[j] + tau[1*3+2]*dpdeResidual_v_u[j];
+		  dsubgridError_u_v[j] = tau[1*3+0]*dpdeResidual_h_v[j] + tau[1*3+1]*dpdeResidual_u_v[j] + tau[1*3+2]*dpdeResidual_v_v[j];
+
+		  dsubgridError_v_h[j] = tau[2*3+0]*dpdeResidual_h_h[j] + tau[2*3+1]*dpdeResidual_u_h[j] + tau[2*3+2]*dpdeResidual_v_h[j];
+		  dsubgridError_v_u[j] = tau[2*3+0]*dpdeResidual_h_u[j] + tau[2*3+1]*dpdeResidual_u_u[j] + tau[2*3+2]*dpdeResidual_v_u[j];
+		  dsubgridError_v_v[j] = tau[2*3+0]*dpdeResidual_h_v[j] + tau[2*3+1]*dpdeResidual_u_v[j] + tau[2*3+2]*dpdeResidual_v_v[j];
+		}
+      	      //adjoint times the test functions
+      	      for (int i=0;i<nDOF_test_element;i++)
+      	      	{
+      	      	  register int i_nSpace = i*nSpace;
+      	      	  Lstar_h_h[i]=ck.Advection_adjoint(dmass_adv_h_sge,&h_grad_test_dV[i_nSpace]);
+      	      	  Lstar_u_h[i]=ck.Advection_adjoint(dmass_adv_u_sge,&h_grad_test_dV[i_nSpace]);
+      	      	  Lstar_v_h[i]=ck.Advection_adjoint(dmass_adv_v_sge,&h_grad_test_dV[i_nSpace]);
+
+      	      	  Lstar_h_u[i]=ck.Advection_adjoint(dmom_u_adv_h_sge,&vel_grad_test_dV[i_nSpace]);//hack, should have Reaction adjoint
+      	      	  Lstar_u_u[i]=ck.Advection_adjoint(dmom_u_adv_u_sge,&vel_grad_test_dV[i_nSpace]);
+      	      	  Lstar_v_u[i]=ck.Advection_adjoint(dmom_u_adv_v_sge,&vel_grad_test_dV[i_nSpace]);
+
+      	      	  Lstar_h_v[i]=ck.Advection_adjoint(dmom_v_adv_h_sge,&vel_grad_test_dV[i_nSpace]);//hack, should have Reaction adjoint
+      	      	  Lstar_u_v[i]=ck.Advection_adjoint(dmom_v_adv_u_sge,&vel_grad_test_dV[i_nSpace]);
+      	      	  Lstar_v_v[i]=ck.Advection_adjoint(dmom_v_adv_v_sge,&vel_grad_test_dV[i_nSpace]);
+      	      	}
 
               /* // Assumes non-lagged subgrid velocity */
 	      /* dmom_u_adv_u[0] += dmom_u_acc_u*(useRBLES*subgridError_u);  	    */
@@ -2168,49 +2379,63 @@ namespace proteus
 		  for(int j=0;j<nDOF_trial_element;j++) 
 		    { 
 		      register int j_nSpace = j*nSpace;
+		      //h
 		      elementJacobian_h_h[i][j] += ck.MassJacobian_weak(dmass_acc_h_t,h_trial_ref[k*nDOF_trial_element+j],h_test_dV[i]) + 
-			ck.AdvectionJacobian_weak(dmass_adv_h,h_trial_ref[k*nDOF_trial_element+j],&h_grad_test_dV[i_nSpace]);
-		      /* +  */
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_u_h[j],Lstar_u_h[i]) +  */
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_v_h[j],Lstar_v_h[i]) +  */
+			ck.AdvectionJacobian_weak(dmass_adv_h,h_trial_ref[k*nDOF_trial_element+j],&h_grad_test_dV[i_nSpace]) +
+		      	ck.SubgridErrorJacobian(dsubgridError_h_h[j],Lstar_h_h[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_u_h[j],Lstar_u_h[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_v_h[j],Lstar_v_h[i]);
+		      
+		      elementJacobian_h_u[i][j] += ck.AdvectionJacobian_weak(dmass_adv_u,vel_trial_ref[k*nDOF_trial_element+j],&h_grad_test_dV[i_nSpace]) +
+		      	ck.SubgridErrorJacobian(dsubgridError_h_u[j],Lstar_h_h[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u_h[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_v_u[j],Lstar_v_h[i]);
 
-		      elementJacobian_h_u[i][j] += ck.AdvectionJacobian_weak(dmass_adv_u,vel_trial_ref[k*nDOF_trial_element+j],&h_grad_test_dV[i_nSpace]);
-		      /* +  */
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u_h[i]);  */
-		      elementJacobian_h_v[i][j] += ck.AdvectionJacobian_weak(dmass_adv_v,vel_trial_ref[k*nDOF_trial_element+j],&h_grad_test_dV[i_nSpace]);
-		      /* +  */
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_v_v[j],Lstar_v_h[i]);  */
+		      elementJacobian_h_v[i][j] += ck.AdvectionJacobian_weak(dmass_adv_v,vel_trial_ref[k*nDOF_trial_element+j],&h_grad_test_dV[i_nSpace]) +
+		      	ck.SubgridErrorJacobian(dsubgridError_h_v[j],Lstar_h_h[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_u_v[j],Lstar_u_h[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_v_v[j],Lstar_v_h[i]);
+
+		      //u
 		      elementJacobian_u_h[i][j] += ck.MassJacobian_weak(dmom_u_acc_h_t,h_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) + 
 			ck.AdvectionJacobian_weak(dmom_u_adv_h,h_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +
-			ck.ReactionJacobian_weak(dmom_u_source_h,h_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]);
-		      /* +  */
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_u_h[j],Lstar_u_u[i]);  */
+			ck.ReactionJacobian_weak(dmom_u_source_h,h_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
+		      	ck.SubgridErrorJacobian(dsubgridError_h_h[j],Lstar_h_u[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_u_h[j],Lstar_u_u[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_v_h[j],Lstar_v_u[i]);
+
 		      elementJacobian_u_u[i][j] += ck.MassJacobian_weak(dmom_u_acc_u_t,vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) + 
 			ck.AdvectionJacobian_weak(dmom_u_adv_u,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +
-			ck.SimpleDiffusionJacobian_weak(sdInfo_u_u_rowptr,sdInfo_u_u_colind,mom_u_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]);
-		      /* +  */
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_h_u[j],Lstar_h_u[i]) +  */
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u_u[i]) +  */
-		      /* 	ck.NumericalDiffusionJacobian(q_numDiff_u_last[eN_k],&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]);  */
-		      elementJacobian_u_v[i][j] += ck.AdvectionJacobian_weak(dmom_u_adv_v,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +  
-		       	ck.SimpleDiffusionJacobian_weak(sdInfo_u_v_rowptr,sdInfo_u_v_colind,mom_uv_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]);
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_h_v[j],Lstar_h_u[i]);  */
+			ck.SimpleDiffusionJacobian_weak(sdInfo_u_u_rowptr,sdInfo_u_u_colind,mom_u_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) +
+		      	ck.SubgridErrorJacobian(dsubgridError_h_u[j],Lstar_h_u[i]) +
+		      	ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u_u[i]) +
+		      	ck.SubgridErrorJacobian(dsubgridError_v_u[j],Lstar_v_u[i]);
+		      /* ck.NumericalDiffusionJacobian(q_numDiff_u_last[eN_k],&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]); */
 
+		      elementJacobian_u_v[i][j] += ck.AdvectionJacobian_weak(dmom_u_adv_v,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +  
+		       	ck.SimpleDiffusionJacobian_weak(sdInfo_u_v_rowptr,sdInfo_u_v_colind,mom_uv_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) +
+		      	ck.SubgridErrorJacobian(dsubgridError_h_v[j],Lstar_h_u[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_u_v[j],Lstar_u_u[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_v_v[j],Lstar_v_u[i]);
+		      
+		      //v
 		      elementJacobian_v_h[i][j] += ck.MassJacobian_weak(dmom_v_acc_h_t,vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
 			ck.AdvectionJacobian_weak(dmom_v_adv_h,h_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace])+
-			ck.ReactionJacobian_weak(dmom_v_source_h,h_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]);
-		      /* + */
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_v_h[j],Lstar_v_v[i]);  */
+			ck.ReactionJacobian_weak(dmom_v_source_h,h_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
+		      	ck.SubgridErrorJacobian(dsubgridError_h_h[j],Lstar_h_v[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_u_h[j],Lstar_u_v[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_v_h[j],Lstar_v_v[i]);
 		      elementJacobian_v_u[i][j] += ck.AdvectionJacobian_weak(dmom_v_adv_u,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) + 
-			ck.SimpleDiffusionJacobian_weak(sdInfo_v_u_rowptr,sdInfo_v_u_colind,mom_vu_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]);
-		      /* +  */
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_h_u[j],Lstar_h_v[i]); */
+			ck.SimpleDiffusionJacobian_weak(sdInfo_v_u_rowptr,sdInfo_v_u_colind,mom_vu_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) +
+		      	ck.SubgridErrorJacobian(dsubgridError_h_u[j],Lstar_h_v[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u_v[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_v_u[j],Lstar_v_v[i]);
 		      elementJacobian_v_v[i][j] += ck.MassJacobian_weak(dmom_v_acc_v_t,vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) + 
 			ck.AdvectionJacobian_weak(dmom_v_adv_v,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +
-			ck.SimpleDiffusionJacobian_weak(sdInfo_v_v_rowptr,sdInfo_v_v_colind,mom_v_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]);
-		      /* +  */
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_h_v[j],Lstar_h_v[i]) + */
-		      /* 	ck.SubgridErrorJacobian(dsubgridError_v_v[j],Lstar_v_v[i]) +  */
+			ck.SimpleDiffusionJacobian_weak(sdInfo_v_v_rowptr,sdInfo_v_v_colind,mom_v_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace])+
+		      	ck.SubgridErrorJacobian(dsubgridError_h_v[j],Lstar_h_v[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_u_v[j],Lstar_u_v[i])+
+		      	ck.SubgridErrorJacobian(dsubgridError_v_v[j],Lstar_v_v[i]);
 		      /* 	ck.NumericalDiffusionJacobian(q_numDiff_v_last[eN_k],&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]);  */
 		    }//j
 		}//i
