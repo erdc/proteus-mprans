@@ -7,13 +7,13 @@ nd=2
 L=(2.0,2.0,1.0)
 g = 1.0
 H0=1.0
-HH=1.1
+HH=2.0
 shock=True
 
 #coefficients = ShallowWater(g=g,
 #                            nd=nd)
 LevelModelType = SW2D.LevelModel
-coefficients = SW2D.Coefficients(nu=1.0e-2,g=1.0)
+coefficients = SW2D.Coefficients(nu=0.0,g=1.0)
 #coefficients = SW2D.Coefficients(nu=0,g=1.0)
 
 class HumpIC:
@@ -99,6 +99,6 @@ diffusiveFluxBoundaryConditions = {0:{},
                                    1:{1:getDFBC_u},
                                    2:{2:getDFBC_v}}
 
-T=10.0
+T=1.0
 
 

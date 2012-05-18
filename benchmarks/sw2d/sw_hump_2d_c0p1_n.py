@@ -9,6 +9,9 @@ if implicit:
     stepController = FLCBDF_controller
     timeIntegration = BackwardEuler
     stepController  = Min_dt_controller
+    timeIntegration = BackwardEuler_cfl
+    stepController = Min_dt_controller
+    runCFL=0.33
     rtol_u[0] = 1.0e-4
     rtol_u[1] = 1.0e-4
     rtol_u[2] = 1.0e-4
@@ -18,21 +21,21 @@ if implicit:
     femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis,
                  1:C0_AffineLinearOnSimplexWithNodalBasis,
                  2:C0_AffineLinearOnSimplexWithNodalBasis}
-    elementQuadrature = SimplexGaussQuadrature(nd,3)
-    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,3)
-    femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis,
-                 1:C0_AffineQuadraticOnSimplexWithNodalBasis,
-                 2:C0_AffineQuadraticOnSimplexWithNodalBasis}    
+    #elementQuadrature = SimplexGaussQuadrature(nd,3)
+    #elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,3)
+    # femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis,
+    #              1:C0_AffineQuadraticOnSimplexWithNodalBasis,
+    #              2:C0_AffineQuadraticOnSimplexWithNodalBasis}    
     elementQuadrature = SimplexGaussQuadrature(nd,4)
     elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
-    elementQuadrature = SimplexGaussQuadrature(nd,5)
-    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,5)
+    # elementQuadrature = SimplexGaussQuadrature(nd,5)
+    # elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,5)
     multilevelNonlinearSolver  = Newton
     
     levelNonlinearSolver = Newton
 
     fullNewtonFlag = True
-    nDTout=2001
+    nDTout=51
 else:
     runCFL=0.25
     timeOrder = 1
@@ -61,8 +64,8 @@ else:
 #femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis,
 #             1:C0_AffineQuadraticOnSimplexWithNodalBasis}
 
-nnx=21
-nny=21
+nnx=41
+nny=41
 nLevels = 1
 
 #subgridError = ShallowWater_CFL(coefficients,nd,g)
