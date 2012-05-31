@@ -1,6 +1,7 @@
 from proteus import *
 from proteus.default_p import *
 from proteus.mprans import SW2D
+from proteus.mprans import SW2DCV
 nd=2
 
 
@@ -12,8 +13,14 @@ shock=True
 
 #coefficients = ShallowWater(g=g,
 #                            nd=nd)
-LevelModelType = SW2D.LevelModel
-coefficients = SW2D.Coefficients(nu=0.0,g=1.0)
+useCV=False
+if useCV:
+    LevelModelType = SW2DCV.LevelModel
+    coefficients = SW2DCV.Coefficients(nu=0.0,g=1.0)
+else:
+    LevelModelType = SW2D.LevelModel
+    coefficients = SW2D.Coefficients(nu=0.0,g=1.0)
+
 #coefficients = SW2D.Coefficients(nu=0,g=1.0)
 
 class HumpIC:
@@ -99,6 +106,6 @@ diffusiveFluxBoundaryConditions = {0:{},
                                    1:{1:getDFBC_u},
                                    2:{2:getDFBC_v}}
 
-T=1.0
+T=0.1#5
 
 

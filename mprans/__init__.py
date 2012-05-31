@@ -29,4 +29,8 @@ __all__ = ["RANS2PV2",
            "MCorr",
            "cMCorr",
            "MoveMesh",
-           "cMoveMesh"]
+           "cMoveMesh",
+           "SW2D",
+           "cSW2D",
+           "SW2DCV",
+           "cSW2DCV"]

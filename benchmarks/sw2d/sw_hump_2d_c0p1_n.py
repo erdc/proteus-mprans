@@ -21,21 +21,21 @@ if implicit:
     femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis,
                  1:C0_AffineLinearOnSimplexWithNodalBasis,
                  2:C0_AffineLinearOnSimplexWithNodalBasis}
-    #elementQuadrature = SimplexGaussQuadrature(nd,3)
-    #elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,3)
-    # femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis,
-    #              1:C0_AffineQuadraticOnSimplexWithNodalBasis,
-    #              2:C0_AffineQuadraticOnSimplexWithNodalBasis}    
-    elementQuadrature = SimplexGaussQuadrature(nd,4)
-    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
-    # elementQuadrature = SimplexGaussQuadrature(nd,5)
-    # elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,5)
+    elementQuadrature = SimplexGaussQuadrature(nd,3)
+    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,3)
+    #femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis,
+    #             1:C0_AffineQuadraticOnSimplexWithNodalBasis,
+    #             2:C0_AffineQuadraticOnSimplexWithNodalBasis}    
+    # elementQuadrature = SimplexGaussQuadrature(nd,4)
+    # elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
+    elementQuadrature = SimplexGaussQuadrature(nd,5)
+    elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,5)
     multilevelNonlinearSolver  = Newton
     
     levelNonlinearSolver = Newton
 
     fullNewtonFlag = True
-    nDTout=51
+    nDTout=11
 else:
     runCFL=0.25
     timeOrder = 1
@@ -82,7 +82,8 @@ numericalFluxType = ShallowWater_2D
 
 tolFac = 0.0
 
-nl_atol_res = 1.0e-8
+nl_atol_res = 1.0e-4
+#nl_atol_res = 1.0e-8
 
 matrix = SparseMatrix
 #matrix = numpy.array

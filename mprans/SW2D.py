@@ -882,9 +882,13 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def calculateSolutionAtQuadrature(self):
         pass
     def calculateAuxiliaryQuantitiesAfterStep(self):
+        print "updating lagged values========================="
         self.h_dof_sge[:] = self.u[0].dof
         self.u_dof_sge[:] = self.u[1].dof
         self.v_dof_sge[:] = self.u[2].dof
+        self.shockCapturing.numDiff_last[0][:] = self.q[('numDiff',0,0)]
+        self.shockCapturing.numDiff_last[1][:] = self.q[('numDiff',1,1)] 
+        self.shockCapturing.numDiff_last[2][:] = self.q[('numDiff',2,2)] 
         # if self.postProcessing:
         #     from proteus.cSW2D import calculateVelocityAverage as cva
         #     cva(self.mesh.nExteriorElementBoundaries_global,

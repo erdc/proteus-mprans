@@ -5,10 +5,10 @@
 #include "CompKernel.h"
 #include "ModelFactory.h"
 //cek todo
-//1. Add element stabilization
-//2. Add element shock capturing
+//2. Get stabilization right
 //3. Add Riemann solvers for external flux
 //4. Add Riemann solvers for internal flux and DG terms 
+//5. Try other choices of variables h,hu,hv, Bova-Carey symmetrization?
 namespace proteus
 {
   class SW2D_base
@@ -386,17 +386,19 @@ namespace proteus
       else
 	cflx = fabs(u-c)/elementDiameter;
 
-      rx[0*3+0] = 1.0;
-      rx[1*3+0] = u - c;
-      rx[2*3+0] = v;
+      double rn=sqrt(1.0+(u-c)*(u-c) + v*v);
+      rx[0*3+0] = 1.0/rn;
+      rx[1*3+0] = (u - c)/rn;
+      rx[2*3+0] = v/rn;
 
       rx[0*3+1] = 0.0;
       rx[1*3+1] = 0.0;
-      rx[2*3+1] = 1.0;
+      rx[2*3+1] = 1.0/rn;
 
-      rx[0*3+2] = 1.0;
-      rx[1*3+2] = u + c;
-      rx[2*3+2] = v;
+      rn = sqrt(1.0 + (u+c)*(u+c) + v*v);
+      rx[0*3+2] = 1.0/rn;
+      rx[1*3+2] = (u + c)/rn;
+      rx[2*3+2] = v/rn;
 
       rxInv[0*3+0] = 1.0 - (c - u)/(2.0*c);
       rxInv[1*3+0] = -v;
@@ -424,17 +426,18 @@ namespace proteus
       lambday[1] = v;
       lambday[2] = v + c;
 
-      ry[0*3+0] = 1.0;
-      ry[1*3+0] = u;
-      ry[2*3+0] = v - c;
-
+      rn=sqrt(1.0 + u*u+(v-c)*(v-c));
+      ry[0*3+0] = 1.0/rn;
+      ry[1*3+0] = u/rn;
+      ry[2*3+0] = (v - c)/rn;
+      
       ry[0*3+1] =  0.0;
       ry[1*3+1] = -1.0;
       ry[2*3+1] =  0.0;
-
-      ry[0*3+2] = 1.0;
-      ry[1*3+2] = u;
-      ry[2*3+2] = v + c;
+      rn = sqrt(1.0 + u*u + (v+c)*(v+c));
+      ry[0*3+2] = 1.0/rn;
+      ry[1*3+2] = u/rn;
+      ry[2*3+2] = (v + c)/rn;
 
       ryInv[0*3+0] = 1.0 - (c - v)/(2*c);
       ryInv[1*3+0] = u;
@@ -460,6 +463,7 @@ namespace proteus
 
       //project back to solution variables
       //initialize, hack do with memset
+      double tmpx[9],tmpy[9];
       for (int i=0;i<3;i++)
 	for (int j=0;j<3;j++)
 	  {
@@ -467,6 +471,8 @@ namespace proteus
 	    tauy[i*3+j] = 0.0;
 	    tauc[i*3+j] = 0.0;
 	    tau[i*3+j] = 0.0;
+	    tmpx[i*3+j] = 0.0;
+	    tmpy[i*3+j] = 0.0;
 	    L[i*3+j] = 0.0;
 	    /* double Ix=0,Iy=0.0; */
 	    /* for (int k=0;k<3;k++) */
@@ -481,8 +487,22 @@ namespace proteus
 	for (int j=0;j<3;j++)
 	  for (int m=0;m<3;m++)
 	  {
-	    taux[i*3+j] += rx[i*3+m]*tauxHat[m]*rxInv[m*3+j];
-	    tauy[i*3+j] += ry[i*3+m]*tauyHat[m]*ryInv[m*3+j];
+	    //taux[i*3+j] += rx[i*3+m]*tauxHat[m]*rxInv[m*3+j];
+	    //tauy[i*3+j] += ry[i*3+m]*tauyHat[m]*ryInv[m*3+j];
+	    if (m==j)
+	      {
+		tmpx[i*3+j] += rx[i*3+m]*tauxHat[m];
+		tmpy[i*3+j] += ry[i*3+m]*tauyHat[m];
+	      }
+	  }
+      for (int i=0;i<3;i++)
+	for (int j=0;j<3;j++)
+	  for (int m=0;m<3;m++)
+	  {
+	    //taux[i*3+j] += tmpx[i*3+m]*rxInv[m*3 + j];
+	    //tauy[i*3+j] += tmpy[i*3+m]*ryInv[m*3 + j];
+	    taux[i*3+j] += tmpx[i*3+m]*rx[j*3 + m];
+	    tauy[i*3+j] += tmpy[i*3+m]*ry[j*3 + m];
 	  }
       //matrix norm
       for (int i=0;i<3;i++)
@@ -499,6 +519,8 @@ namespace proteus
 	  {
 	    for (int k=0;k<3;k++)
 	      tau[i*3+j] += L[i*3+k]*tauc[k*3+j];
+	    //cek hack, turn it off until I get the ASGS stuff straigtened out
+	    tau[i*3+j] = 0.0; 
 	  }
       /* std::cout<<"tau"<<std::endl; */
       /* for (int i=0;i<3;i++) */
@@ -1204,100 +1226,100 @@ namespace proteus
       	      //calculate subgrid error (strong residual and adjoint)
       	      //
       	      //calculate strong residual
-	      /* dmass_adv_h_sge[0]  = dmass_adv_h[0];   */
-	      /* dmass_adv_h_sge[1]  = dmass_adv_h[1];   */
-	      /* dmass_adv_u_sge[0]  = dmass_adv_u[0];   */
-	      /* dmass_adv_u_sge[1]  = dmass_adv_u[1];   */
-	      /* dmass_adv_v_sge[0]  = dmass_adv_v[0];   */
-	      /* dmass_adv_v_sge[1]  = dmass_adv_v[1];   */
-	      /* dmom_u_adv_h_sge[0] = dmom_u_adv_h[0];  */
-	      /* dmom_u_adv_h_sge[1] = dmom_u_adv_h[1];  */
-	      /* dmom_u_adv_u_sge[0] = dmom_u_adv_u[0];  */
-	      /* dmom_u_adv_u_sge[1] = dmom_u_adv_u[1];  */
-	      /* dmom_u_adv_v_sge[0] = dmom_u_adv_v[0];  */
-	      /* dmom_u_adv_v_sge[1] = dmom_u_adv_v[1];  */
-	      /* dmom_v_adv_h_sge[0] = dmom_v_adv_h[0];  */
-	      /* dmom_v_adv_h_sge[1] = dmom_v_adv_h[1];  */
-	      /* dmom_v_adv_u_sge[0] = dmom_v_adv_u[0];  */
-	      /* dmom_v_adv_u_sge[1] = dmom_v_adv_u[1];  */
-	      /* dmom_v_adv_v_sge[0] = dmom_v_adv_v[0];  */
-	      /* dmom_v_adv_v_sge[1] = dmom_v_adv_v[1];  */
-
-	      //mass advective flux
-	      dmass_adv_h_sge[0]=u_sge;
-	      dmass_adv_h_sge[1]=v_sge;
-	      
-	      dmass_adv_u_sge[0]=0.0;//h_sge;
-	      dmass_adv_u_sge[1]=0.0;
-	      
-	      dmass_adv_v_sge[0]=0.0;
-	      dmass_adv_v_sge[1]=0.0;//h_sge;
-	      
-	      //u momentum advective flux
-	      dmom_u_adv_h_sge[0]=0.0;//u_sge*u_sge + g*h_sge;
-	      dmom_u_adv_h_sge[1]=0.0;//u_sge*v_sge;
-	      
-	      dmom_u_adv_u_sge[0]=h_sge*u_sge;//h_sge*2.0*u_sge;
-	      dmom_u_adv_u_sge[1]=h_sge*v_sge;
-	      
-	      dmom_u_adv_v_sge[0]=0.0;
-	      dmom_u_adv_v_sge[1]=0.0;//h_sge*u_sge;
-	      
-	      //v momentum advective_flux
-	      dmom_v_adv_h_sge[0]=0.0;//v_sge*u_sge;
-	      dmom_v_adv_h_sge[1]=0.0;//v_sge*v_sge + g*h_sge;
-	      
-	      dmom_v_adv_u_sge[0]=0.0;//h_sge*v_sge;
-	      dmom_v_adv_u_sge[1]=0.0;
-	      
-	      dmom_v_adv_v_sge[0]=h_sge*u_sge;
-	      dmom_v_adv_v_sge[1]=h_sge*v_sge;//h_sge*2.0*v_sge;
-
-
-	      /* //full linearization, lagged */
+	      dmass_adv_h_sge[0]  = dmass_adv_h[0];
+	      dmass_adv_h_sge[1]  = dmass_adv_h[1];
+	      dmass_adv_u_sge[0]  = dmass_adv_u[0];
+	      dmass_adv_u_sge[1]  = dmass_adv_u[1];
+	      dmass_adv_v_sge[0]  = dmass_adv_v[0];
+	      dmass_adv_v_sge[1]  = dmass_adv_v[1];
+	      dmom_u_adv_h_sge[0] = dmom_u_adv_h[0];
+	      dmom_u_adv_h_sge[1] = dmom_u_adv_h[1];
+	      dmom_u_adv_u_sge[0] = dmom_u_adv_u[0];
+	      dmom_u_adv_u_sge[1] = dmom_u_adv_u[1];
+	      dmom_u_adv_v_sge[0] = dmom_u_adv_v[0];
+	      dmom_u_adv_v_sge[1] = dmom_u_adv_v[1];
+	      dmom_v_adv_h_sge[0] = dmom_v_adv_h[0];
+	      dmom_v_adv_h_sge[1] = dmom_v_adv_h[1];
+	      dmom_v_adv_u_sge[0] = dmom_v_adv_u[0];
+	      dmom_v_adv_u_sge[1] = dmom_v_adv_u[1];
+	      dmom_v_adv_v_sge[0] = dmom_v_adv_v[0];
+	      dmom_v_adv_v_sge[1] = dmom_v_adv_v[1];
 
 	      /* //mass advective flux */
 	      /* dmass_adv_h_sge[0]=u_sge; */
 	      /* dmass_adv_h_sge[1]=v_sge; */
 	      
-	      /* dmass_adv_u_sge[0]=h_sge; */
+	      /* dmass_adv_u_sge[0]=0.0;//h_sge; */
 	      /* dmass_adv_u_sge[1]=0.0; */
 	      
 	      /* dmass_adv_v_sge[0]=0.0; */
-	      /* dmass_adv_v_sge[1]=h_sge; */
+	      /* dmass_adv_v_sge[1]=0.0;//h_sge; */
 	      
 	      /* //u momentum advective flux */
-	      /* dmom_u_adv_h_sge[0]=u_sge*u_sge + g*h_sge; */
-	      /* dmom_u_adv_h_sge[1]=u_sge*v_sge; */
+	      /* dmom_u_adv_h_sge[0]=0.0;//u_sge*u_sge + g*h_sge; */
+	      /* dmom_u_adv_h_sge[1]=0.0;//u_sge*v_sge; */
 	      
-	      /* dmom_u_adv_u_sge[0]=h_sge*2.0*u_sge; */
+	      /* dmom_u_adv_u_sge[0]=h_sge*u_sge;//h_sge*2.0*u_sge; */
 	      /* dmom_u_adv_u_sge[1]=h_sge*v_sge; */
 	      
 	      /* dmom_u_adv_v_sge[0]=0.0; */
-	      /* dmom_u_adv_v_sge[1]=h_sge*u_sge; */
+	      /* dmom_u_adv_v_sge[1]=0.0;//h_sge*u_sge; */
 	      
 	      /* //v momentum advective_flux */
-	      /* dmom_v_adv_h_sge[0]=v_sge*u_sge; */
-	      /* dmom_v_adv_h_sge[1]=v_sge*v_sge + g*h_sge; */
+	      /* dmom_v_adv_h_sge[0]=0.0;//v_sge*u_sge; */
+	      /* dmom_v_adv_h_sge[1]=0.0;//v_sge*v_sge + g*h_sge; */
 	      
-	      /* dmom_v_adv_u_sge[0]=h_sge*v_sge; */
+	      /* dmom_v_adv_u_sge[0]=0.0;//h_sge*v_sge; */
 	      /* dmom_v_adv_u_sge[1]=0.0; */
 	      
 	      /* dmom_v_adv_v_sge[0]=h_sge*u_sge; */
-	      /* dmom_v_adv_v_sge[1]=h_sge*2.0*v_sge; */
+	      /* dmom_v_adv_v_sge[1]=h_sge*v_sge;//h_sge*2.0*v_sge; */
+
+
+	      //full linearization, lagged
+
+	      //mass advective flux
+	      dmass_adv_h_sge[0]=u_sge;
+	      dmass_adv_h_sge[1]=v_sge;
 	      
-      	      pdeResidual_h = //ck.Mass_strong(mass_acc_t) +
+	      dmass_adv_u_sge[0]=h_sge;
+	      dmass_adv_u_sge[1]=0.0;
+	      
+	      dmass_adv_v_sge[0]=0.0;
+	      dmass_adv_v_sge[1]=h_sge;
+	      
+	      //u momentum advective flux
+	      dmom_u_adv_h_sge[0]=u_sge*u_sge + g*h_sge;
+	      dmom_u_adv_h_sge[1]=u_sge*v_sge;
+	      
+	      dmom_u_adv_u_sge[0]=h_sge*2.0*u_sge;
+	      dmom_u_adv_u_sge[1]=h_sge*v_sge;
+	      
+	      dmom_u_adv_v_sge[0]=0.0;
+	      dmom_u_adv_v_sge[1]=h_sge*u_sge;
+	      
+	      //v momentum advective_flux
+	      dmom_v_adv_h_sge[0]=v_sge*u_sge;
+	      dmom_v_adv_h_sge[1]=v_sge*v_sge + g*h_sge;
+	      
+	      dmom_v_adv_u_sge[0]=h_sge*v_sge;
+	      dmom_v_adv_u_sge[1]=0.0;
+	      
+	      dmom_v_adv_v_sge[0]=h_sge*u_sge;
+	      dmom_v_adv_v_sge[1]=h_sge*2.0*v_sge;
+	      
+      	      pdeResidual_h = ck.Mass_strong(mass_acc_t) +
       	      	ck.Advection_strong(dmass_adv_h_sge,grad_h) +
       	      	ck.Advection_strong(dmass_adv_u_sge,grad_u) +
       	      	ck.Advection_strong(dmass_adv_v_sge,grad_v);
 	  
-      	      pdeResidual_u = //ck.Mass_strong(mom_u_acc_t) +
+      	      pdeResidual_u = ck.Mass_strong(mom_u_acc_t) +
       	      	ck.Advection_strong(dmom_u_adv_h_sge,grad_h) +
       	      	ck.Advection_strong(dmom_u_adv_u_sge,grad_u) +
       	      	ck.Advection_strong(dmom_u_adv_v_sge,grad_v) +
       	      	ck.Reaction_strong(mom_u_source);
 	  
-      	      pdeResidual_v = //ck.Mass_strong(mom_v_acc_t) +
+      	      pdeResidual_v = ck.Mass_strong(mom_v_acc_t) +
 		ck.Advection_strong(dmom_v_adv_h_sge,grad_h) +
       	      	ck.Advection_strong(dmom_v_adv_u_sge,grad_u) +
       	      	ck.Advection_strong(dmom_v_adv_v_sge,grad_v) +
@@ -1336,13 +1358,33 @@ namespace proteus
 
       	      	}
 
-      	      /* norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v); */
-      	      /* q_numDiff_u[eN_k] = C_dc*norm_Rv*(useMetrics/sqrt(G_dd_G)  +  */
-      	      /*                                   (1.0-useMetrics)*hFactor*hFactor*elementDiameter[eN]*elementDiameter[eN]); */
-      	      /* q_numDiff_v[eN_k] = q_numDiff_u[eN_k]; */
-      	      q_numDiff_h_last[eN_k] = 0.0;
-	      q_numDiff_u_last[eN_k] = 0.0;
-	      q_numDiff_v_last[eN_k] = 0.0;
+      	      norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v);
+	      /* double */
+	      /* 	norm_grad = sqrt((grad_u[0]*grad_u[0] + grad_u[1]*grad_u[1] + grad_v[0]*grad_v[0] + grad_v[1]*grad_v[1])/4.0);//try RMS */
+	      /* q_numDiff_u[eN_k] = 0.5*elementDiameter[eN]*norm_Rv/(norm_grad+1.0e-8); */
+	      q_numDiff_u[eN_k] = 0.5*elementDiameter[eN]*norm_Rv;
+	      q_numDiff_v[eN_k] = q_numDiff_u[eN_k];
+	      q_numDiff_h[eN_k] = 0.0;
+
+	      ck.calculateNumericalDiffusion(1.0,
+	      				     elementDiameter[eN],
+	      				     pdeResidual_h,
+	      				     //norm_Rv,//pdeResidual_h,
+	      				     grad_h,
+	      				     q_numDiff_h[eN_k]);
+	      /* ck.calculateNumericalDiffusion(1.0, */
+	      /* 				     elementDiameter[eN], */
+	      /* 				     pdeResidual_u, */
+	      /* 				     //norm_Rv,//pdeResidual_u, */
+	      /* 				     grad_u, */
+	      /* 				     q_numDiff_u[eN_k]); */
+	      /* ck.calculateNumericalDiffusion(1.0, */
+	      /* 				     elementDiameter[eN], */
+	      /* 				     pdeResidual_v, */
+	      /* 				     //norm_Rv,//pdeResidual_v, */
+	      /* 				     grad_v, */
+	      /* 				     q_numDiff_v[eN_k]); */
+
       	      //update element residual
       	      
       	      for(int i=0;i<nDOF_test_element;i++)
@@ -2177,115 +2219,115 @@ namespace proteus
 	      //
 	      //calculate strong residual
 	      //
-	      /* dmass_adv_h_sge[0]  = dmass_adv_h[0];   */
-	      /* dmass_adv_h_sge[1]  = dmass_adv_h[1];   */
-	      /* dmass_adv_u_sge[0]  = dmass_adv_u[0];   */
-	      /* dmass_adv_u_sge[1]  = dmass_adv_u[1];   */
-	      /* dmass_adv_v_sge[0]  = dmass_adv_v[0];   */
-	      /* dmass_adv_v_sge[1]  = dmass_adv_v[1];   */
-	      /* dmom_u_adv_h_sge[0] = dmom_u_adv_h[0];  */
-	      /* dmom_u_adv_h_sge[1] = dmom_u_adv_h[1];  */
-	      /* dmom_u_adv_u_sge[0] = dmom_u_adv_u[0];  */
-	      /* dmom_u_adv_u_sge[1] = dmom_u_adv_u[1];  */
-	      /* dmom_u_adv_v_sge[0] = dmom_u_adv_v[0];  */
-	      /* dmom_u_adv_v_sge[1] = dmom_u_adv_v[1];  */
-	      /* dmom_v_adv_h_sge[0] = dmom_v_adv_h[0];  */
-	      /* dmom_v_adv_h_sge[1] = dmom_v_adv_h[1];  */
-	      /* dmom_v_adv_u_sge[0] = dmom_v_adv_u[0];  */
-	      /* dmom_v_adv_u_sge[1] = dmom_v_adv_u[1];  */
-	      /* dmom_v_adv_v_sge[0] = dmom_v_adv_v[0];  */
-	      /* dmom_v_adv_v_sge[1] = dmom_v_adv_v[1];  */
-
-	      //mass advective flux
-	      dmass_adv_h_sge[0]=u_sge;
-	      dmass_adv_h_sge[1]=v_sge;
-	      
-	      dmass_adv_u_sge[0]=0.0;//h_sge;
-	      dmass_adv_u_sge[1]=0.0;
-	      
-	      dmass_adv_v_sge[0]=0.0;
-	      dmass_adv_v_sge[1]=0.0;//h_sge;
-	      
-	      //u momentum advective flux
-	      dmom_u_adv_h_sge[0]=0.0;//u_sge*u_sge + g*h_sge;
-	      dmom_u_adv_h_sge[1]=0.0;//u_sge*v_sge;
-	      
-	      dmom_u_adv_u_sge[0]=h_sge*u_sge;//h_sge*2.0*u_sge;
-	      dmom_u_adv_u_sge[1]=h_sge*v_sge;
-	      
-	      dmom_u_adv_v_sge[0]=0.0;
-	      dmom_u_adv_v_sge[1]=0.0;//h_sge*u_sge;
-	      
-	      //v momentum advective_flux
-	      dmom_v_adv_h_sge[0]=0.0;//v_sge*u_sge;
-	      dmom_v_adv_h_sge[1]=0.0;//v_sge*v_sge + g*h_sge;
-	      
-	      dmom_v_adv_u_sge[0]=0.0;//h_sge*v_sge;
-	      dmom_v_adv_u_sge[1]=0.0;
-	      
-	      dmom_v_adv_v_sge[0]=h_sge*u_sge;
-	      dmom_v_adv_v_sge[1]=h_sge*v_sge;//h_sge*2.0*v_sge;
-
-	      /* //full linearization, lagged */
+	      dmass_adv_h_sge[0]  = dmass_adv_h[0];
+	      dmass_adv_h_sge[1]  = dmass_adv_h[1];
+	      dmass_adv_u_sge[0]  = dmass_adv_u[0];
+	      dmass_adv_u_sge[1]  = dmass_adv_u[1];
+	      dmass_adv_v_sge[0]  = dmass_adv_v[0];
+	      dmass_adv_v_sge[1]  = dmass_adv_v[1];
+	      dmom_u_adv_h_sge[0] = dmom_u_adv_h[0];
+	      dmom_u_adv_h_sge[1] = dmom_u_adv_h[1];
+	      dmom_u_adv_u_sge[0] = dmom_u_adv_u[0];
+	      dmom_u_adv_u_sge[1] = dmom_u_adv_u[1];
+	      dmom_u_adv_v_sge[0] = dmom_u_adv_v[0];
+	      dmom_u_adv_v_sge[1] = dmom_u_adv_v[1];
+	      dmom_v_adv_h_sge[0] = dmom_v_adv_h[0];
+	      dmom_v_adv_h_sge[1] = dmom_v_adv_h[1];
+	      dmom_v_adv_u_sge[0] = dmom_v_adv_u[0];
+	      dmom_v_adv_u_sge[1] = dmom_v_adv_u[1];
+	      dmom_v_adv_v_sge[0] = dmom_v_adv_v[0];
+	      dmom_v_adv_v_sge[1] = dmom_v_adv_v[1];
 
 	      /* //mass advective flux */
 	      /* dmass_adv_h_sge[0]=u_sge; */
 	      /* dmass_adv_h_sge[1]=v_sge; */
 	      
-	      /* dmass_adv_u_sge[0]=h_sge; */
+	      /* dmass_adv_u_sge[0]=0.0;//h_sge; */
 	      /* dmass_adv_u_sge[1]=0.0; */
 	      
 	      /* dmass_adv_v_sge[0]=0.0; */
-	      /* dmass_adv_v_sge[1]=h_sge; */
+	      /* dmass_adv_v_sge[1]=0.0;//h_sge; */
 	      
 	      /* //u momentum advective flux */
-	      /* dmom_u_adv_h_sge[0]=u_sge*u_sge + g*h_sge; */
-	      /* dmom_u_adv_h_sge[1]=u_sge*v_sge; */
+	      /* dmom_u_adv_h_sge[0]=0.0;//u_sge*u_sge + g*h_sge; */
+	      /* dmom_u_adv_h_sge[1]=0.0;//u_sge*v_sge; */
 	      
-	      /* dmom_u_adv_u_sge[0]=h_sge*2.0*u_sge; */
+	      /* dmom_u_adv_u_sge[0]=h_sge*u_sge;//h_sge*2.0*u_sge; */
 	      /* dmom_u_adv_u_sge[1]=h_sge*v_sge; */
 	      
 	      /* dmom_u_adv_v_sge[0]=0.0; */
-	      /* dmom_u_adv_v_sge[1]=h_sge*u_sge; */
+	      /* dmom_u_adv_v_sge[1]=0.0;//h_sge*u_sge; */
 	      
 	      /* //v momentum advective_flux */
-	      /* dmom_v_adv_h_sge[0]=v_sge*u_sge; */
-	      /* dmom_v_adv_h_sge[1]=v_sge*v_sge + g*h_sge; */
+	      /* dmom_v_adv_h_sge[0]=0.0;//v_sge*u_sge; */
+	      /* dmom_v_adv_h_sge[1]=0.0;//v_sge*v_sge + g*h_sge; */
 	      
-	      /* dmom_v_adv_u_sge[0]=h_sge*v_sge; */
+	      /* dmom_v_adv_u_sge[0]=0.0;//h_sge*v_sge; */
 	      /* dmom_v_adv_u_sge[1]=0.0; */
 	      
 	      /* dmom_v_adv_v_sge[0]=h_sge*u_sge; */
-	      /* dmom_v_adv_v_sge[1]=h_sge*2.0*v_sge; */
+	      /* dmom_v_adv_v_sge[1]=h_sge*v_sge;//h_sge*2.0*v_sge; */
+
+	      //full linearization, lagged
+
+	      //mass advective flux
+	      dmass_adv_h_sge[0]=u_sge;
+	      dmass_adv_h_sge[1]=v_sge;
+	      
+	      dmass_adv_u_sge[0]=h_sge;
+	      dmass_adv_u_sge[1]=0.0;
+	      
+	      dmass_adv_v_sge[0]=0.0;
+	      dmass_adv_v_sge[1]=h_sge;
+	      
+	      //u momentum advective flux
+	      dmom_u_adv_h_sge[0]=u_sge*u_sge + g*h_sge;
+	      dmom_u_adv_h_sge[1]=u_sge*v_sge;
+	      
+	      dmom_u_adv_u_sge[0]=h_sge*2.0*u_sge;
+	      dmom_u_adv_u_sge[1]=h_sge*v_sge;
+	      
+	      dmom_u_adv_v_sge[0]=0.0;
+	      dmom_u_adv_v_sge[1]=h_sge*u_sge;
+	      
+	      //v momentum advective_flux
+	      dmom_v_adv_h_sge[0]=v_sge*u_sge;
+	      dmom_v_adv_h_sge[1]=v_sge*v_sge + g*h_sge;
+	      
+	      dmom_v_adv_u_sge[0]=h_sge*v_sge;
+	      dmom_v_adv_u_sge[1]=0.0;
+	      
+	      dmom_v_adv_v_sge[0]=h_sge*u_sge;
+	      dmom_v_adv_v_sge[1]=h_sge*2.0*v_sge;
 
 	      //calculate the Jacobian of strong residual
 	      for (int j=0;j<nDOF_trial_element;j++)
 	      	{
 	      	  register int j_nSpace = j*nSpace;
 
-	      	  dpdeResidual_h_h[j]= //ck.MassJacobian_strong(dmass_acc_h_t,h_trial_ref[k*nDOF_trial_element+j])+
+	      	  dpdeResidual_h_h[j]= ck.MassJacobian_strong(dmass_acc_h_t,h_trial_ref[k*nDOF_trial_element+j])+
 		    ck.AdvectionJacobian_strong(dmass_adv_h_sge,&h_grad_trial[j_nSpace]);
 
 	      	  dpdeResidual_h_u[j]=ck.AdvectionJacobian_strong(dmass_adv_u_sge,&vel_grad_trial[j_nSpace]);
 
 	      	  dpdeResidual_h_v[j]=ck.AdvectionJacobian_strong(dmass_adv_v_sge,&vel_grad_trial[j_nSpace]);
 
-	      	  dpdeResidual_u_h[j]= //ck.MassJacobian_strong(dmom_u_acc_h_t,h_trial_ref[k*nDOF_trial_element+j])+
+	      	  dpdeResidual_u_h[j]= ck.MassJacobian_strong(dmom_u_acc_h_t,h_trial_ref[k*nDOF_trial_element+j])+
 		    ck.AdvectionJacobian_strong(dmom_u_adv_h_sge,&h_grad_trial[j_nSpace]) +
 		    ck.ReactionJacobian_strong(dmom_u_source_h,h_trial_ref[k*nDOF_trial_element+j]);
 
-	      	  dpdeResidual_u_u[j]= //ck.MassJacobian_strong(dmom_u_acc_u_t,vel_trial_ref[k*nDOF_trial_element+j])+
+	      	  dpdeResidual_u_u[j]= ck.MassJacobian_strong(dmom_u_acc_u_t,vel_trial_ref[k*nDOF_trial_element+j])+
 		    ck.AdvectionJacobian_strong(dmom_u_adv_u_sge,&vel_grad_trial[j_nSpace]);
 
 	      	  dpdeResidual_u_v[j]=ck.AdvectionJacobian_strong(dmom_u_adv_v_sge,&vel_grad_trial[j_nSpace]);
 
-	      	  dpdeResidual_v_h[j]= //ck.MassJacobian_strong(dmom_v_acc_h_t,h_trial_ref[k*nDOF_trial_element+j])+
+	      	  dpdeResidual_v_h[j]= ck.MassJacobian_strong(dmom_v_acc_h_t,h_trial_ref[k*nDOF_trial_element+j])+
 		    ck.AdvectionJacobian_strong(dmom_v_adv_h_sge,&h_grad_trial[j_nSpace])+
 		    ck.ReactionJacobian_strong(dmom_v_source_h,h_trial_ref[k*nDOF_trial_element+j]);
 
 	      	  dpdeResidual_v_u[j]=ck.AdvectionJacobian_strong(dmom_v_adv_u_sge,&vel_grad_trial[j_nSpace]);
 
-	      	  dpdeResidual_v_v[j]= //ck.MassJacobian_strong(dmom_v_acc_v_t,vel_trial_ref[k*nDOF_trial_element+j])+
+	      	  dpdeResidual_v_v[j]= ck.MassJacobian_strong(dmom_v_acc_v_t,vel_trial_ref[k*nDOF_trial_element+j])+
 		    ck.AdvectionJacobian_strong(dmom_v_adv_v_sge,&vel_grad_trial[j_nSpace]);
 
 	      	}
@@ -2332,9 +2374,6 @@ namespace proteus
       	      	  Lstar_v_v[i]=ck.Advection_adjoint(dmom_v_adv_v_sge,&vel_grad_test_dV[i_nSpace]);
       	      	}
 
-      	      q_numDiff_h_last[eN_k] = 0.0;
-	      q_numDiff_u_last[eN_k] = 0.0;
-	      q_numDiff_v_last[eN_k] = 0.0;
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
 		  register int i_nSpace = i*nSpace;
