@@ -555,7 +555,6 @@ cdef class cSW2D_base:
                          numpy.ndarray csrColumnOffsets_eb_v_v):
        cdef numpy.ndarray rowptr,colind,globalJacobian_a
        (rowptr,colind,globalJacobian_a) = globalJacobian.getCSRrepresentation()
-       print "about to call jacobian"
        self.thisptr.calculateJacobian(<double*> mesh_trial_ref.data,
                                        <double*> mesh_grad_trial_ref.data,
                                        <double*> mesh_dof.data,

@@ -882,7 +882,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def calculateSolutionAtQuadrature(self):
         pass
     def calculateAuxiliaryQuantitiesAfterStep(self):
-        print "updating lagged values========================="
         self.h_dof_sge[:] = self.u[0].dof
         self.u_dof_sge[:] = self.u[1].dof
         self.v_dof_sge[:] = self.u[2].dof

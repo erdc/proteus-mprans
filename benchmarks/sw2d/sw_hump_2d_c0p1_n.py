@@ -35,7 +35,7 @@ if implicit:
     levelNonlinearSolver = Newton
 
     fullNewtonFlag = True
-    nDTout=11
+    nDTout=201
 else:
     runCFL=0.25
     timeOrder = 1
@@ -64,8 +64,8 @@ else:
 #femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis,
 #             1:C0_AffineQuadraticOnSimplexWithNodalBasis}
 
-nnx=41
-nny=41
+nnx=51
+nny=51
 nLevels = 1
 
 #subgridError = ShallowWater_CFL(coefficients,nd,g)
@@ -83,13 +83,15 @@ numericalFluxType = ShallowWater_2D
 tolFac = 0.0
 
 nl_atol_res = 1.0e-4
+l_atol_res = 1.0e-8
+l_rtol_res = 0.0
 #nl_atol_res = 1.0e-8
 
 matrix = SparseMatrix
 #matrix = numpy.array
-multilevelLinearSolver = LU
+multilevelLinearSolver = KSP_petsc4py
 
-levelLinearSolver = LU
+levelLinearSolver = KSP_petsc4py
 
 linTolFac = 0.001
 

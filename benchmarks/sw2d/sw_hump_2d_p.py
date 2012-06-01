@@ -16,10 +16,10 @@ shock=True
 useCV=False
 if useCV:
     LevelModelType = SW2DCV.LevelModel
-    coefficients = SW2DCV.Coefficients(nu=0.0,g=1.0)
+    coefficients = SW2DCV.Coefficients(nu=0.1,g=1.0)
 else:
     LevelModelType = SW2D.LevelModel
-    coefficients = SW2D.Coefficients(nu=0.0,g=1.0)
+    coefficients = SW2D.Coefficients(nu=0.1,g=1.0)
 
 #coefficients = SW2D.Coefficients(nu=0,g=1.0)
 
@@ -84,28 +84,36 @@ def getAFBC_h(x,flag):
     return lambda x,t: 0.0
 
 def getAFBC_u(x,flag):
-#    return lambda x,t: 0.0
-    return None
+    if flag == 0:
+        return lambda x,t: 0.0
+    else:
+        return None
 def getAFBC_v(x,flag):
-#    return lambda x,t: 0.0
-    return None
+    if flag == 0:
+        return lambda x,t: 0.0
+    else:
+        return None
 
 advectiveFluxBoundaryConditions =  {0:getAFBC_h,
                                     1:getAFBC_u,
                                     2:getAFBC_v}
 
 def getDFBC_u(x,flag):
-    return None
-#    return lambda x,t: 0.0
+    if flag == 0:
+        return lambda x,t: 0.0
+    else:
+        return None
 
 def getDFBC_v(x,flag):
-    return None
-#    return lambda x,t: 0.0
+    if flag == 0:
+        return lambda x,t: 0.0
+    else:
+        return None
 
 diffusiveFluxBoundaryConditions = {0:{},
                                    1:{1:getDFBC_u},
                                    2:{2:getDFBC_v}}
 
-T=0.1#5
+T=5
 
 
