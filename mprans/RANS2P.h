@@ -1016,17 +1016,18 @@ namespace proteus
 	}
       else
 	{
-	  flux_mass += n[0]*bc_f_mass[0];
-	  velocity[0] = bc_f_mass[0];
-	  //cek still upwind the advection for Dirichlet?
 	  if (flowDirection >= 0.0)
 	    {
+	      flux_mass += n[0]*f_mass[0];
+	      velocity[0] = f_mass[0];
 	      flux_umom += n[0]*f_umom[0];
 	      flux_vmom += n[0]*f_vmom[0];
 	      flux_wmom += n[0]*f_wmom[0];
 	    }
 	  else
 	    {
+	      flux_mass += n[0]*bc_f_mass[0];
+	      velocity[0] = bc_f_mass[0];
 	      flux_umom+=n[0]*bc_f_umom[0];
 	      flux_vmom+=n[0]*bc_f_vmom[0];
 	      flux_wmom+=n[0]*bc_f_wmom[0];
@@ -1045,17 +1046,18 @@ namespace proteus
 	}
       else
 	{
-	  flux_mass+=n[1]*bc_f_mass[1];
-	  velocity[1] = bc_f_mass[1];
-	  //cek still upwind the advection for Dirichlet?
 	  if (flowDirection >= 0.0)
 	    {
+	      flux_mass+=n[1]*f_mass[1];
+	      velocity[1] = f_mass[1];
 	      flux_umom+=n[1]*f_umom[1];
 	      flux_vmom+=n[1]*f_vmom[1];
 	      flux_wmom+=n[1]*f_wmom[1];
 	    }
 	  else
 	    {
+	      flux_mass+=n[1]*bc_f_mass[1];
+	      velocity[1] = bc_f_mass[1];
 	      flux_umom+=n[1]*bc_f_umom[1];
 	      flux_vmom+=n[1]*bc_f_vmom[1];
 	      flux_wmom+=n[1]*bc_f_wmom[1];
@@ -1074,17 +1076,18 @@ namespace proteus
 	}
       else
 	{
-	  flux_mass +=n[2]*bc_f_mass[2];
-	  velocity[2] = bc_f_mass[2];
-	  //cek still upwind the advection for Dirichlet?
 	  if (flowDirection >= 0.0)
 	    {
+	      flux_mass +=n[2]*f_mass[2];
+	      velocity[2] = f_mass[2];
 	      flux_umom+=n[2]*f_umom[2];
 	      flux_vmom+=n[2]*f_vmom[2];
 	      flux_wmom+=n[2]*f_wmom[2];
 	    }
 	  else
 	    {
+	      flux_mass +=n[2]*bc_f_mass[2];
+	      velocity[2] = bc_f_mass[2];
 	      flux_umom+=n[2]*bc_f_umom[2];
 	      flux_vmom+=n[2]*bc_f_vmom[2];
 	      flux_wmom+=n[2]*bc_f_wmom[2];
@@ -1211,6 +1214,7 @@ namespace proteus
 	  //cek still upwind the advection for Dirichlet?
 	  if (flowDirection >= 0.0)
 	    {
+	      dflux_mass_du += n[0]*df_mass_du[0];
 	      dflux_umom_du += n[0]*df_umom_du[0];
 	      dflux_vmom_du += n[0]*df_vmom_du[0];
 	      dflux_vmom_dv += n[0]*df_vmom_dv[0];
@@ -1242,6 +1246,7 @@ namespace proteus
 	  //cek still upwind the advection for Dirichlet?
 	  if (flowDirection >= 0.0)
 	    {
+	      dflux_mass_dv += n[1]*df_mass_dv[1];
 	      dflux_umom_du += n[1]*df_umom_du[1];
 	      dflux_umom_dv += n[1]*df_umom_dv[1];
 	      dflux_vmom_dv += n[1]*df_vmom_dv[1];
@@ -1273,6 +1278,7 @@ namespace proteus
 	  //cek still upwind the advection for Dirichlet?
 	  if (flowDirection >= 0.0)
 	    {
+	      dflux_mass_dw += n[2]*df_mass_dw[2];
 	      dflux_umom_du += n[2]*df_umom_du[2];
 	      dflux_umom_dw += n[2]*df_umom_dw[2];
 	      dflux_vmom_dv += n[2]*df_vmom_dv[2];
@@ -2225,7 +2231,18 @@ namespace proteus
 	      //
 	      //load the boundary values
 	      //
-	      bc_p_ext = isDOFBoundary_p[ebNE_kb]*ebqe_bc_p_ext[ebNE_kb]+(1-isDOFBoundary_p[ebNE_kb])*p_ext;
+	      double ptmp=ebqe_bc_p_ext[ebNE_kb];
+	      if (ebqe_phi_ext[ebNE_kb] > 0)
+		ptmp = z_ext*rho_1*g[2];
+	      /* bool hydrostatic=true; */
+	      /* if (ebqe_phi_ext[ebNE_kb] > 0) */
+	      /* 	{ */
+	      /* 	  double Lz = 0.350; */
+	      /* 	  double p_L = Lz*rho_1*g[2]; */
+	      /* 	  double phi_L = Lz - ebqe_phi_ext[ebNE_kb]; */
+	      /* 	  ptmp = p_L -g[2]*(rho_0*(phi_L - ebqe_phi_ext[ebNE_kb])+(rho_1 -rho_0)*(smoothedHeaviside_integral(eps_rho,phi_L)-smoothedHeaviside_integral(eps_rho,ebqe_phi_ext[ebNE_kb]))); */
+	      /* 	} */
+	      bc_p_ext = isDOFBoundary_p[ebNE_kb]*ptmp+(1-isDOFBoundary_p[ebNE_kb])*p_ext;
 	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
 	      bc_v_ext = isDOFBoundary_v[ebNE_kb]*ebqe_bc_v_ext[ebNE_kb]+(1-isDOFBoundary_v[ebNE_kb])*v_ext;
 	      bc_w_ext = isDOFBoundary_w[ebNE_kb]*ebqe_bc_w_ext[ebNE_kb]+(1-isDOFBoundary_w[ebNE_kb])*w_ext;
@@ -2405,6 +2422,7 @@ namespace proteus
 					     isAdvectiveFluxBoundary_u[ebNE_kb],
 					     isAdvectiveFluxBoundary_v[ebNE_kb],
 					     isAdvectiveFluxBoundary_w[ebNE_kb],
+					     //dmom_u_ham_grad_p_ext[0],//=1/rho,
 					     dmom_u_ham_grad_p_ext[0],//=1/rho,
 					     normal,
 					     bc_p_ext,
