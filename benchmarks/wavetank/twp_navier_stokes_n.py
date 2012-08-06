@@ -4,6 +4,8 @@ from wavetank import *
 
 timeIntegration = BackwardEuler
 stepController  = Min_dt_controller
+timeIntegration = BackwardEuler_cfl
+stepController = Min_dt_controller
 
 femSpaces = {0:basis,
 	     1:basis,

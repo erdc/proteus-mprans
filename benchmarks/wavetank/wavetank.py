@@ -10,7 +10,7 @@ Refinement = 3#15
 genMesh=True
 useOldPETSc=False
 useSuperlu = True
-spaceOrder = 2
+spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 0.0
@@ -54,7 +54,7 @@ elif spaceOrder == 2:
 # Domain and mesh
 L = (5.0,
      5.0,
-     1.0)
+     0.5)
 
 quasi2D = True
 
@@ -168,7 +168,7 @@ waveLength = L[0]/4.0
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
 omega = 2.0*pi/period
 k=2.0*pi/waveLength
-amplitude = 0.1*inflowHeightMean
+amplitude = 0.05*inflowHeightMean
 
 def waveHeight(x,t):
     return inflowHeightMean + amplitude*sin(omega*t-k*x[0])
@@ -221,5 +221,9 @@ def outflowPressure(x,t):
 
 # Time 
 T=period*100
-dt_fixed = 0.04/(Refinement*spaceOrder) 
-nDTout = int(10*round(T/period))
+print "T",T
+dt_fixed = period/5.0 
+dt_init = 1.0e-4
+nDTout = int(T/dt_fixed)
+tnList = [i*dt_fixed for i in range(0,nDTout+1)] 
+print tnList

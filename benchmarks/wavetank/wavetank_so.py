@@ -10,9 +10,9 @@ pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
     
 name = "wavetank" 
 
-systemStepControllerType = Sequential_FixedStep
+systemStepControllerType = Sequential_MinAdaptiveModelStep#Sequential_FixedStep
     
 needEBQ_GLOBAL = False
 needEBQ = False
 
-tnList = [i*wavetank.dt_fixed for i in range(0,wavetank.nDTout+1)] 
+tnList = [wavetank.dt_init]+[i*wavetank.dt_fixed for i in range(0,wavetank.nDTout+1)] 
