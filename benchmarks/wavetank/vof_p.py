@@ -13,13 +13,9 @@ def getDBC_vof(x,flag):
     if x[2] > L[2] - 1.0e-8:
         return lambda x,t: 1.0
     elif x[0] > L[0] - 1.0e-8:
-        #print "outflow vof",smoothedHeaviside(epsFact_consrv_heaviside*he,x[2] - outflowHeight)
-        #return lambda x,t: smoothedHeaviside(epsFact_consrv_heaviside*he,x[2] - outflowHeight)
-        return outflowVOF
+        return outflowVF
     elif x[0] < 1.0e-8:
-        #print "inflow vof",smoothedHeaviside(epsFact_consrv_heaviside*he,x[2] - inflowHeight(0))
-        #return lambda x,t: smoothedHeaviside(epsFact_consrv_heaviside*he,x[2] - inflowHeight(t))
-        return inflowVOF
+        return waveVF
 
 dirichletConditions = {0:getDBC_vof}
 
@@ -36,12 +32,8 @@ def getAFBC_vof(x,flag):
 advectiveFluxBoundaryConditions = {0:getAFBC_vof}
 diffusiveFluxBoundaryConditions = {0:{}}
 
-class PerturbedSurface_H:
+class VF_IC:
     def uOfXT(self,x,t):
-        return smoothedHeaviside(epsFact_consrv_heaviside*he,x[2] - inflowHeight(t))
-        # if signedDistance(x) < 0.0:
-        #     return 0.0
-	# else:
-	#     return 1.0  
-	    
-initialConditions  = {0:PerturbedSurface_H()}
+        return waveVF(x,t)
+
+initialConditions  = {0:VF_IC()}

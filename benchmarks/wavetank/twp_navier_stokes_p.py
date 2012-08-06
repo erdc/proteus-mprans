@@ -27,19 +27,19 @@ def getDBC_p(x,flag):
 
 def getDBC_u(x,flag):
     if x[0] < 1.0e-8:
-        return inflowVelocity_u
+        return twpflowVelocity_u
     elif x[2] > L[2] - 1.0e-8:
         return lambda x,t: windspeed_u
 
 def getDBC_v(x,flag):
     if x[0] < 1.0e-8:
-        return inflowVelocity_v
+        return twpflowVelocity_v
     elif x[2] > L[2] - 1.0e-8:
         return lambda x,t: windspeed_v
 
 def getDBC_w(x,flag):
     if x[0] < 1.0e-8:
-        return inflowVelocity_w
+        return twpflowVelocity_w
     
 dirichletConditions = {0:getDBC_p,
                        1:getDBC_u,
@@ -48,7 +48,7 @@ dirichletConditions = {0:getDBC_p,
 
 def getAFBC_p(x,flag):
     if x[0] < 1.0e-8:
-        return inflowFlux
+        return twpflowFlux
     elif x[0] > L[0] - 1.0e-8: #right open
         return None
     elif x[2] > L[2] - 1.0e-8: #top open
@@ -126,25 +126,23 @@ diffusiveFluxBoundaryConditions = {0:{},
                                    2:{2:getDFBC_v},
                                    3:{3:getDFBC_w}}
 
-class PerturbedSurface_p:
-    def __init__(self,waterLevel):
-        self.waterLevel=waterLevel
+class P_IC:
     def uOfXT(self,x,t):
-        return smoothedHydrostaticPressure(self.waterLevel,x[2])
+        return twpflowPressure(x,t)
 
-class MeanFlow:
-    def __init__(self):
-        pass
+class U_IC:
     def uOfXT(self,x,t):
-        return inflowVelocityMean[0]
+        return twpflowVelocity_u(x,t)
 
-class AtRest:
-    def __init__(self):
-        pass
+class V_IC:
     def uOfXT(self,x,t):
-        return 0.0
+        return twpflowVelocity_v(x,t)
 
-initialConditions = {0:PerturbedSurface_p(inflowHeightMean),
-                     1:MeanFlow(),
-                     2:AtRest(),
-                     3:AtRest()}
+class W_IC:
+    def uOfXT(self,x,t):
+        return twpflowVelocity_w(x,t)
+
+initialConditions = {0:P_IC(),
+                     1:U_IC(),
+                     2:V_IC(),
+                     3:W_IC()}

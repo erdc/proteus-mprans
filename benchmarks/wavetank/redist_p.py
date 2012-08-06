@@ -24,8 +24,8 @@ weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCsSimple}
 advectiveFluxBoundaryConditions =  {}
 diffusiveFluxBoundaryConditions = {0:{}}
 
-class PerturbedSurface_phi:       
+class PHI_IC:       
     def uOfXT(self,x,t):
-        return signedDistance(x)
-    
-initialConditions  = {0:PerturbedSurface_phi()}
+        return wavePhi(x,t)
+
+initialConditions  = {0:PHI_IC()}

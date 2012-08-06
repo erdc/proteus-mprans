@@ -11,7 +11,7 @@ coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=1,
  
 def getDBC_ls(x,flag):
     if x[0] < 1.0e-8:
-        return inflowPhi
+        return wavePhi
 
 
 dirichletConditions = {0:getDBC_ls}
@@ -19,8 +19,8 @@ dirichletConditions = {0:getDBC_ls}
 advectiveFluxBoundaryConditions =  {}
 diffusiveFluxBoundaryConditions = {0:{}}
 
-class PerturbedSurface_phi:       
+class PHI_IC:       
     def uOfXT(self,x,t):
-        return signedDistance(x)
+        return wavePhi(x,t)
     
-initialConditions  = {0:PerturbedSurface_phi()}
+initialConditions  = {0:PHI_IC()}

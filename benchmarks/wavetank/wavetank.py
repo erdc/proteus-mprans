@@ -6,11 +6,11 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 5#15
+Refinement = 3#15
 genMesh=True
 useOldPETSc=False
 useSuperlu = True
-spaceOrder = 1
+spaceOrder = 2
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 0.0
@@ -154,7 +154,7 @@ sigma_01 = 0.0
 g = [0.0,0.0,-9.8]
 
 #wave/current properties
-windspeed_u = 2.0
+windspeed_u = 0.0
 windspeed_v = 0.0
 windspeed_w = 0.0
 
@@ -162,7 +162,7 @@ outflowHeight = 0.5*L[2]
 outflowVelocity = (0.0,0.0,0.0)#not used for now
 
 inflowHeightMean = 0.5*L[2]
-inflowVelocityMean = (0.1,0.0,0.0)
+inflowVelocityMean = (0.0,0.0,0.0)
 
 waveLength = L[0]/4.0
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
@@ -170,53 +170,56 @@ omega = 2.0*pi/period
 k=2.0*pi/waveLength
 amplitude = 0.1*inflowHeightMean
 
-def inflowHeight(t):
-    return inflowHeightMean + amplitude*sin(omega*t)
+def waveHeight(x,t):
+    return inflowHeightMean + amplitude*sin(omega*t-k*x[0])
 
-def inflowVelocity_u(x,t):
-    waterspeed = inflowVelocityMean[0] + omega*amplitude*sin(omega*t)/(k*inflowHeightMean)
-    H = smoothedHeaviside(epsFact_consrv_heaviside*he,inflowPhi(x,t)-epsFact_consrv_heaviside*he)
+def waveVelocity_u(x,t):
+    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k*x[0])/(k*inflowHeightMean)
+
+def waveVelocity_w(x,t):
+    z = x[2] - inflowHeightMean
+    return inflowVelocityMean[2] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k*x[0])/inflowHeightMean
+
+####
+def wavePhi(x,t):
+    return x[2] - waveHeight(x,t)
+
+def waveVF(x,t):
+    return smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t))
+
+
+def twpflowVelocity_u(x,t):
+    waterspeed = waveVelocity_u(x,t)
+    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
     return H*windspeed_u + (1.0-H)*waterspeed
 
-def inflowVelocity_v(x,t):
+def twpflowVelocity_v(x,t):
     waterspeed = 0.0
-    H = smoothedHeaviside(epsFact_consrv_heaviside*he,inflowPhi(x,t)-epsFact_consrv_heaviside*he)
+    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
     return H*windspeed_v+(1.0-H)*waterspeed
 
-def inflowVelocity_w(x,t):
-    z = x[2] - inflowHeightMean  
-    waterspeed = inflowVelocityMean[2] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t)/inflowHeightMean   
-    H = smoothedHeaviside(epsFact_consrv_heaviside*he,inflowPhi(x,t)-epsFact_consrv_heaviside*he)
+def twpflowVelocity_w(x,t):
+    waterspeed = waveVelocity_w(x,t)
+    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
     return H*windspeed_w+(1.0-H)*waterspeed
 
-######
+def twpflowFlux(x,t):
+    return -twpflowVelocity_u(x,t)
 
-def inflowPhi(x,t):
-    return x[2] - inflowHeight(t)
-
-def inflowVOF(x,t):
-    return smoothedHeaviside(epsFact_consrv_heaviside*he,inflowPhi(x,t))
-
-def inflowFlux(x,t):
-    return -inflowVelocity_u(x,t)
-
-def outflowVOF(x,t):
+def outflowVF(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,x[2] - outflowHeight)
 
-def smoothedHydrostaticPressure(waterLevel,z):
+def twpflowPressure(x,t):
     p_L = L[2]*rho_1*g[2]
-    phi = z - waterLevel 
-    phi_L = L[2] - waterLevel 
+    phi_L = wavePhi((x[0],x[1],L[2]),t) 
+    phi = wavePhi(x,t)
     return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 def outflowPressure(x,t):
-    return smoothedHydrostaticPressure(outflowHeight,x[2])
-
-def signedDistance(x):
-    return x[2] - inflowHeightMean
+    return twpflowPressure((0.0,0.0,x[2]),0.0)
 
 # Time 
-T=period*50
+T=period*100
 dt_fixed = 0.04/(Refinement*spaceOrder) 
 nDTout = int(10*round(T/period))
