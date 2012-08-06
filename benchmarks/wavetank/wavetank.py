@@ -121,14 +121,14 @@ else:
 
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.2
-ls_shockCapturingFactor  = 0.2
+ns_shockCapturingFactor  = 0.9
+ls_shockCapturingFactor  = 0.9
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.2
+vof_shockCapturingFactor = 0.9
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.2
+rd_shockCapturingFactor  = 0.9
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5
@@ -162,13 +162,13 @@ outflowHeight = 0.5*L[2]
 outflowVelocity = (0.0,0.0,0.0)#not used for now
 
 inflowHeightMean = 0.5*L[2]
-inflowVelocityMean = (0.0,0.0,0.0)
+inflowVelocityMean = (0.2,0.0,0.0)
 
 waveLength = L[0]/4.0
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
 omega = 2.0*pi/period
 k=2.0*pi/waveLength
-amplitude = 0.05*inflowHeightMean
+amplitude = 0.1*inflowHeightMean
 
 def waveHeight(x,t):
     return inflowHeightMean + amplitude*sin(omega*t-k*x[0])
