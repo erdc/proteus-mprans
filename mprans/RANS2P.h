@@ -2233,7 +2233,7 @@ namespace proteus
 	      //load the boundary values
 	      //
 	      double ptmp=ebqe_bc_p_ext[ebNE_kb]; 
-	      if (ebqe_phi_ext[ebNE_kb] > eps_rho)
+	      if (ebqe_phi_ext[ebNE_kb] > 0.0)
 	      	ptmp = z_ext*rho_1*g[2];
 
 	      /* double Lz = 0.5; */
@@ -2317,8 +2317,8 @@ namespace proteus
 				   rho_1,
 				   nu_1,
 				   g,
-				   //ebqe_phi_ext[ebNE_kb],
-				   z_ext - 0.5,//cek hack, hardwire phi on exterior boundary
+				   ebqe_phi_ext[ebNE_kb],
+				   //z_ext - 0.5,//cek hack, hardwire phi on exterior boundary
 				   &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 				   ebqe_kappa_phi_ext[ebNE_kb],
 				   bc_p_ext,
