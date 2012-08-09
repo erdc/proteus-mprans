@@ -961,6 +961,7 @@ namespace proteus
 					const int& isFluxBoundary_v,
 					const int& isFluxBoundary_w,
 					const double& oneByRho,
+					const double& bc_oneByRho,
 					const double n[nSpace],
 					const double& bc_p,
 					const double bc_f_mass[nSpace],
@@ -1095,9 +1096,9 @@ namespace proteus
 	}
       if (isDOFBoundary_p == 1)
 	{
-	  flux_umom+= n[0]*(bc_p-p)*oneByRho;
-	  flux_vmom+= n[1]*(bc_p-p)*oneByRho;
-	  flux_wmom+= n[2]*(bc_p-p)*oneByRho;
+	  flux_umom+= n[0]*(bc_p*bc_oneByRho-p*oneByRho);
+	  flux_vmom+= n[1]*(bc_p*bc_oneByRho-p*oneByRho);
+	  flux_wmom+= n[2]*(bc_p*bc_oneByRho-p*oneByRho);
 	}
       if (isFluxBoundary_p == 1)
 	{
@@ -2231,17 +2232,17 @@ namespace proteus
 	      //
 	      //load the boundary values
 	      //
-	      double ptmp=ebqe_bc_p_ext[ebNE_kb];
-	      if (ebqe_phi_ext[ebNE_kb] > 0)
-		ptmp = z_ext*rho_1*g[2];
-	      /* bool hydrostatic=true; */
-	      /* if (ebqe_phi_ext[ebNE_kb] > 0) */
-	      /* 	{ */
-	      /* 	  double Lz = 0.350; */
-	      /* 	  double p_L = Lz*rho_1*g[2]; */
-	      /* 	  double phi_L = Lz - ebqe_phi_ext[ebNE_kb]; */
-	      /* 	  ptmp = p_L -g[2]*(rho_0*(phi_L - ebqe_phi_ext[ebNE_kb])+(rho_1 -rho_0)*(smoothedHeaviside_integral(eps_rho,phi_L)-smoothedHeaviside_integral(eps_rho,ebqe_phi_ext[ebNE_kb]))); */
-	      /* 	} */
+	      double ptmp=ebqe_bc_p_ext[ebNE_kb]; 
+	      if (ebqe_phi_ext[ebNE_kb] > eps_rho)
+	      	ptmp = z_ext*rho_1*g[2];
+
+	      /* double Lz = 0.5; */
+	      /* double p_L = Lz*rho_1*g[2]; */
+	      /* double phi_L = Lz - (z_ext - ebqe_phi_ext[ebNE_kb]); */
+	      /* ptmp = p_L -g[2]*(rho_0*(phi_L - ebqe_phi_ext[ebNE_kb]) */
+	      /* 			+ */
+	      /* 			(rho_1 -rho_0)*(smoothedHeaviside_integral(eps_rho,phi_L) */
+	      /* 					-smoothedHeaviside_integral(eps_rho,ebqe_phi_ext[ebNE_kb]))); */
 	      bc_p_ext = isDOFBoundary_p[ebNE_kb]*ptmp+(1-isDOFBoundary_p[ebNE_kb])*p_ext;
 	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
 	      bc_v_ext = isDOFBoundary_v[ebNE_kb]*ebqe_bc_v_ext[ebNE_kb]+(1-isDOFBoundary_v[ebNE_kb])*v_ext;
@@ -2316,7 +2317,8 @@ namespace proteus
 				   rho_1,
 				   nu_1,
 				   g,
-				   ebqe_phi_ext[ebNE_kb],
+				   //ebqe_phi_ext[ebNE_kb],
+				   z_ext - 0.5,//cek hack, hardwire phi on exterior boundary
 				   &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 				   ebqe_kappa_phi_ext[ebNE_kb],
 				   bc_p_ext,
@@ -2424,6 +2426,7 @@ namespace proteus
 					     isAdvectiveFluxBoundary_w[ebNE_kb],
 					     //dmom_u_ham_grad_p_ext[0],//=1/rho,
 					     dmom_u_ham_grad_p_ext[0],//=1/rho,
+					     bc_dmom_u_ham_grad_p_ext[0],//=1/bc_rho,
 					     normal,
 					     bc_p_ext,
 					     bc_mass_adv_ext,

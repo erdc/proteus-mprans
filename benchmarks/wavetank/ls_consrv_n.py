@@ -36,7 +36,7 @@ linear_solver_options_prefix = 'mcorr_'
 linearSolverConvergenceTest  = 'rits'
 
 tolFac = 0.0
-nl_atol_res = 1.0e-5
+nl_atol_res = 1.0e-8
 
 maxNonlinearIts = 10
 maxLineSearches = 0

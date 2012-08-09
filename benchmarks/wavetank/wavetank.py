@@ -52,9 +52,9 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (5.0,
-     5.0,
-     0.5)
+L = (10.0,
+     10.0,
+     1.0)
 
 quasi2D = True
 
@@ -164,7 +164,7 @@ outflowVelocity = (0.0,0.0,0.0)#not used for now
 inflowHeightMean = 0.5*L[2]
 inflowVelocityMean = (0.2,0.0,0.0)
 
-waveLength = L[0]/4.0
+waveLength = inflowHeightMean*5 #
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
 omega = 2.0*pi/period
 k=2.0*pi/waveLength

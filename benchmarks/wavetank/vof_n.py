@@ -37,8 +37,8 @@ if useSuperlu:
 levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest         = 'rits'
 
-tolFac      = 1e-4
-nl_atol_res = 0.0
+tolFac      = 0.0
+nl_atol_res = 1.0e-6
 
 maxNonlinearIts = 10
 maxLineSearches = 0

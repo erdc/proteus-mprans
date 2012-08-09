@@ -37,8 +37,8 @@ linear_solver_options_prefix = 'ncls_'
 levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest         = 'rits'
 
-tolFac = 1e-3
-nl_atol_res = 0.0
+tolFac = 0.0
+nl_atol_res = 1.0e-6
 
 maxNonlinearIts = 10
 maxLineSearches = 0
