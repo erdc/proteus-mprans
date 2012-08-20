@@ -44,9 +44,9 @@ def getDBC_v(x,flag):
 def getDBC_w(x,flag):
     if x[0] < 1.0e-8:
         return twpflowVelocity_w
-    #elif x[0] > L[0] - 1.0e-8: #right velocity, only inforced on inflow
+    #    elif x[0] > L[0] - 1.0e-8: #right velocity, only inforced on inflow
     #    return lambda x,t: outflowVelocity[2]
-    
+
 dirichletConditions = {0:getDBC_p,
                        1:getDBC_u,
                        2:getDBC_v,
@@ -96,6 +96,7 @@ def getDFBC_u(x,flag):
     if x[0] < 1.0e-8:#left Dirichlet
         return None
     elif x[0] > L[0] - 1.0e-8: #right open
+        #return None
         return lambda x,t: 0.0
     elif x[2] > L[2] - 1.0e-8: #top Dirichlet on x-component
         return None
@@ -106,6 +107,7 @@ def getDFBC_v(x,flag):
     if x[0] < 1.0e-8:#left Dirichlet
         return None
     elif x[0] > L[0] - 1.0e-8: #right open
+        #return None
         return lambda x,t: 0.0
     elif x[2] > L[2] - 1.0e-8: #top Dirichlet on y-component
         return None
@@ -118,6 +120,7 @@ def getDFBC_w(x,flag):
     elif x[2] > L[2] - 1.0e-8: #top outflow
         return lambda x,t: 0.0
     elif x[0] > L[0] - 1.0e-8: #right open
+        #return None
         return lambda x,t: 0.0
     else: #no diffusive flux everywhere else
         return lambda x,t: 0.0

@@ -94,6 +94,7 @@ namespace proteus
 				   int* elementBoundaryElementsArray,
 				   int* elementBoundaryLocalElementBoundariesArray,
 				   double* ebqe_phi_ext,
+				   double* bc_ebqe_phi_ext,
 				   double* ebqe_normal_phi_ext,
 				   double* ebqe_kappa_phi_ext,
 				   int* isDOFBoundary_p,
@@ -1493,6 +1494,7 @@ namespace proteus
 			   int* elementBoundaryElementsArray,
 			   int* elementBoundaryLocalElementBoundariesArray,
 			   double* ebqe_phi_ext,
+			   double* bc_ebqe_phi_ext,
 			   double* ebqe_normal_phi_ext,
 			   double* ebqe_kappa_phi_ext,
 			   int* isDOFBoundary_p,
@@ -2232,9 +2234,9 @@ namespace proteus
 	      //
 	      //load the boundary values
 	      //
-	      double ptmp=ebqe_bc_p_ext[ebNE_kb]; 
-	      if (ebqe_phi_ext[ebNE_kb] > 0.0)
-	      	ptmp = z_ext*rho_1*g[2];
+	      /* double ptmp=ebqe_bc_p_ext[ebNE_kb];  */
+	      /* if (ebqe_phi_ext[ebNE_kb] > 0.0) */
+	      /* 	ptmp = z_ext*rho_1*g[2]; */
 
 	      /* double Lz = 0.5; */
 	      /* double p_L = Lz*rho_1*g[2]; */
@@ -2243,7 +2245,7 @@ namespace proteus
 	      /* 			+ */
 	      /* 			(rho_1 -rho_0)*(smoothedHeaviside_integral(eps_rho,phi_L) */
 	      /* 					-smoothedHeaviside_integral(eps_rho,ebqe_phi_ext[ebNE_kb]))); */
-	      bc_p_ext = isDOFBoundary_p[ebNE_kb]*ptmp+(1-isDOFBoundary_p[ebNE_kb])*p_ext;
+	      bc_p_ext = isDOFBoundary_p[ebNE_kb]*ebqe_bc_p_ext[ebNE_kb]+(1-isDOFBoundary_p[ebNE_kb])*p_ext;
 	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
 	      bc_v_ext = isDOFBoundary_v[ebNE_kb]*ebqe_bc_v_ext[ebNE_kb]+(1-isDOFBoundary_v[ebNE_kb])*v_ext;
 	      bc_w_ext = isDOFBoundary_w[ebNE_kb]*ebqe_bc_w_ext[ebNE_kb]+(1-isDOFBoundary_w[ebNE_kb])*w_ext;
@@ -2317,7 +2319,7 @@ namespace proteus
 				   rho_1,
 				   nu_1,
 				   g,
-				   ebqe_phi_ext[ebNE_kb],
+				   bc_ebqe_phi_ext[ebNE_kb],//cek new phi to cause correct density eval
 				   //z_ext - 0.5,//cek hack, hardwire phi on exterior boundary
 				   &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 				   ebqe_kappa_phi_ext[ebNE_kb],

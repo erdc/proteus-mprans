@@ -6,7 +6,7 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 3#15
+Refinement = 4#15
 genMesh=True
 useOldPETSc=False
 useSuperlu = True
@@ -54,7 +54,7 @@ elif spaceOrder == 2:
 # Domain and mesh
 L = (10.0,
      10.0,
-     1.0)
+     0.5)
 
 quasi2D = True
 

@@ -163,7 +163,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                 self.ebq_phi = modelList[self.LS_model].ebq[('u',0)]
             else:
                 self.ebq_phi = None
-            self.ebqe_phi = modelList[self.LS_model].ebqe[('u',0)]
+            self.ebqe_phi   = modelList[self.LS_model].ebqe[('u',0)]
+            self.bc_ebqe_phi = modelList[self.LS_model].numericalFlux.ebqe[('u',0)]
             #normal
             self.q_n = modelList[self.LS_model].q[('grad(u)',0)]
             if modelList[self.LS_model].ebq.has_key(('grad(u)',0)):
@@ -1045,6 +1046,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.elementBoundaryElementsArray,
             self.mesh.elementBoundaryLocalElementBoundariesArray,
             self.coefficients.ebqe_phi,
+            self.coefficients.bc_ebqe_phi,
             self.coefficients.ebqe_n,
             self.coefficients.ebqe_kappa,
             self.numericalFlux.isDOFBoundary[0],

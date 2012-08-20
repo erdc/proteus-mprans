@@ -12,6 +12,8 @@ coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=1,
 def getDBC_ls(x,flag):
     if x[0] < 1.0e-8:
         return wavePhi
+    if x[0] > L[0] - 1.0e-8:
+        return lambda x,t: x[2] - outflowHeight
 
 
 dirichletConditions = {0:getDBC_ls}
