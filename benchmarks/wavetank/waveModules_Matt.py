@@ -3,6 +3,19 @@ import numpy as np
     driving the wavemaker field, that will be
     fed in and constrasted with field data. """
 
+# class Linear2D:
+#     def __init__(self,amplitude,omega,k):
+#         self.A=amplitude
+#     def height(self,x,t):
+#         pass
+#     def velocity_u(self,x,t):
+#         pass
+#     def velocity_v(self,x,t):
+#         pass
+#     def velocity_w(self,x,t):
+#         pass
+#     def pressure(self,x,t):
+#         pass
 
 def linear2DHeight(amplitude, omega, k, t, x):
     """ Gives a linearized solution velocity in x-dir to the potential flow
