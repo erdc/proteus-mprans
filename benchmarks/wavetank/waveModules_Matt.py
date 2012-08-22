@@ -3,75 +3,143 @@ import numpy as np
     driving the wavemaker field, that will be
     fed in and constrasted with field data. """
 
-# class Linear2D:
-#     def __init__(self,amplitude,omega,k):
-#         self.A=amplitude
-#     def height(self,x,t):
-#         pass
-#     def velocity_u(self,x,t):
-#         pass
-#     def velocity_v(self,x,t):
-#         pass
-#     def velocity_w(self,x,t):
-#         pass
-#     def pressure(self,x,t):
-#         pass
+class Linear2D:
+    def __init__(self,amplitude,omega,k,depth,rho_0,rho_1):
+        self.A = amplitude
+        self.omega = omega
+        self.k = k
+        self.h = depth
+        self.rho_0 = rho_0      # density of water
+        self.rho_1 = rho_1      # density of air
 
-def linear2DHeight(amplitude, omega, k, t, x):
-    """ Gives a linearized solution velocity in x-dir to the potential flow
-        model in two dimensions (x,y=0,z) for finite depth and infinity and 
-        shllow water limits."""
-    A = amplitude
-    eta = A*np.exp(1j*k*x - omega*t)
-    return real(eta)
+    def height(self,x,t):
+        """ Gives a linearized solution for the air-water interface to the 
+            potential flow model in two dimensions (x,y,z=eta) for finite depth."""
+        eta = self.A*np.exp(1j*(self.k*x - self.omega*t))
+        return np.real(eta)
 
-def linear2DPressure(amplitude, omega, k, t, x, depth, z, rho):
-    """ Gives linearized pressured with P_atm = 0 """
-    g = 9.81
-    p = rho*g*amplitude * np.cosh(k*(z+h))/np.cosh(k*h) * np.exp(1j*k*x - 1j*omega*t)
-    return real(p)
+    def pressure(self,x,t,z):
+        """ Gives linearized pressured with P_atm = 0 """
+        g = (0.0,0.0,-9.81)
+        p = self.rho_0*(-g[2])*self.A* np.cosh(self.k*(z+self.h))/np.cosh(self.k*self.h) * np.exp(1j*(self.k*x - self.omega*t))
+        return np.real(p)
 
-def linear2DVelocity_u(amplitude, omega, k, t, x, depth, z):
-    """ Defines a linearized solution to the potential flow
-        model in two dimensions (x,y=0,z) for finite depth 
-        and infinity and shllow water limits."""
-    p_atm = 0.0                       # atmospheric pressure
-    g = 9.81                          # gravity
-    A = amplitude
-    h = depth
+    def velocity_u(self,x,t,z):
+        """ Defines a linearized solution to the potential flow
+            model in two dimensions (x,y,z) for finite depth,
+            as well as, deep and shllow water limits."""
+        g = (0.0,0.0,-9.81)                          # gravity
 
-    # Finite Depth (0 < kh < infty)
-    u = (g*k*A / omega) * np.cosh(k*(z+h))/np.cosh(k*h) * np.exp(1j*k*x - 1j*omega*t)  
+        # Finite Depth (0 < kh < infty)
+        u = (-g[2]*self.k*self.A / self.omega) * np.cosh(self.k*(z+self.h))/np.cosh(self.k*self.h) * np.exp(1j*(self.k*x - self.omega*t))  
 
-    # Deep water (kh >> 1)
-    # ... TODO
+        # Deep water (kh >> 1)
+        # ... TODO
                  
-    # Shallow water (kh << 1)
-    # ... TODO
+        # Shallow water (kh << 1)
+        # ... TODO
 
-    return real(u)
-
-
-def linear2DVelocity_v(amplitude,omega,k,t,x,depth):
-    return v = 0.0
+        return np.real(u)
 
 
-def linear2DVelocity_w(amplitude, omega, k,t, x, depth, z):
-    """ Gives a linearized solution velocity in x-dir to the potential flow
-        model in two dimensions (x,y=0,z) for finite depth and infinity and 
-        shllow water limits."""
-    p_atm = 0.0                       # atmospheric pressure                                                                                                                                  
-    g = 9.81                          # gravity
-    A = amplitude
-    h = depth
+    def velocity_v(self,x,t,z):
+        v = 0.0
+        return v
 
-    # Finite Depth (0 < kh < infty)                                                                                                                                      
-    w = -1j * (g*k*A/omega) * np.sinh(k*(z+h))/np.cosh(k*h) * np.exp(1j*k*x - 1j*omega*t)
+    def velocity_w(self,x,t,z):
+        """ Gives a linearized solution velocity in x-dir to the potential flow
+            model in two dimensions (x,y,z) for finite depth, as well as, deep
+            and shallow water limits."""
+        g = (0.0,0.0,-9.81)                          # gravity
+        
+        # Finite Depth (0 < kh < infty)                                                                                                                                      
+        w = -1j * (-g[2]*self.k*self.A/self.omega) * np.sinh(self.k*(z+self.h))/np.cosh(self.k*self.h) * np.exp(1j*(self.k*x - self.omega*t))
 
-    # Deep Water (kh >> 1)
-    # ... TODO
+        # Deep Water (kh >> 1)
+        # ... TODO
 
-    # Shallow Water
-    # ... TODO
+        # Shallow Water
+        # ... TODO
 
-    return real(w)
+        return np.real(w)
+
+
+class WaveGroup:
+    """ Class that defines a nearly monochromatic
+        wave train/group of waves of same amplitude."""
+
+    def __init__(self,amplitude,omega,k,depth,rho_0,rho_1):
+        self.A = amplitude
+        self.omega = omega
+        self.k = k
+        self.h = depth
+        self.rho_0 = rho_0      # density of water                                      
+        self.rho_1 = rho_1      # density of air  
+
+    def height(self,x,t):
+        N = 2
+        theta =  self.k*x - self.omega*t
+        dtheta = 0.1*theta
+        eta = self.A*np.cos(theta)
+
+        for i in range(N):
+            eta = eta + self.A*np.cos(theta+(i+1)*dtheta) + self.A*np.cos(theta-(i+1)*dtheta)
+
+        return eta
+
+
+    def velocity_u(self,x,t,z):
+        u = 0.0
+        return u
+        # NOTE: you can implement based on linearized ideal flow
+
+    def velocity_v(self,x,t,z):
+        v = 0.0
+        return v
+        # NOTE: you can implement based on linearized ideal flow   
+
+
+    def velocity_w(self,x,t,z):
+        w = 0.0
+        return w
+        # NOTE: you can implement based on linearized ideal flow   
+
+    def pressure(self,x,t,z):
+        p = 0.0    # P_atm
+        return p
+        # NOTE: also implement on ideal flow via linearized Bernoulli eqn.
+
+
+class Solitary:
+    def __init__(self,amplitude,omega,k,depth,rho_0,rho_1):
+        self.A = amplitude
+        self.omega = omega
+        self.k = k
+        self.h = depth
+        self.rho_0 = rho_0      # density of water
+        self.rho_1 = rho_1      # density of air         
+        self.sigma = 4.0        # std. dev.
+
+    def height(self,x,t):
+        eta = self.A/np.cosh((self.k*x - self.omega*t)**2 / self.sigma**2)
+        return eta
+
+    def pressure(self,x,t,z):
+        p = 0.0       # P_atm
+        return
+        # NOTE: define via Bernoulli eqn.
+
+    def velocity_u(self,x,t,z):
+        u = 0.0
+        return u
+        # NOTE: base it on linearized ideal fluid flow
+
+    def velocity_v(self,x,t,z):
+        v = 0.0
+        return v
+        # NOTE: base it on linearized ideal fluid flow
+    
+    def velocity_w(self,x,t,z):
+        w = 0.0
+        return w
+        # NOTE: base it on ideal fluid flow
