@@ -69,7 +69,7 @@ height=domain.L[2]
 length=domain.L[0]
 width =domain.L[1]
 L = domain.L
-constraintFactor = 0.2#0.1#0.2
+constraintFactor = 0.2
 volumeConstraint =  (((constraintFactor*height)**3)/6.0,)
 dx =0.05*height ; dy = dx ; dz = dx; he = dx;
 triangleOptions="VpAfq1.25ena%f" % (volumeConstraint)
@@ -94,7 +94,8 @@ waveCelerity  = 1.21#[m/s] don't know
 waveNumber= 1.04/waterLevelBase #[1/m]
 waveLength= 2.0*pi/waveNumber
 waveFrequency = 2.0*pi/wavePeriod
-source_height=max(5*dy,0.5*waterLevelBase)#max(5*dy,L[1])#max(5*dy,0.25*waterLevelBase)
+#source_height=max(5*dy,0.5*waterLevelBase)#max(5*dy,L[1])#max(5*dy,0.25*waterLevelBase)
+source_height=0.1*waterLevelBase#max(5*dy,0.5*waterLevelBase)#max(5*dy,L[1])#max(5*dy,0.25*waterLevelBase)
 source_zm    =domain.x[2]+0.3*waterLevelBase
 #source_ym    =domain.x[1]+0.5*L[1]#waterLevelBase
 source_xm    =0.75*domain.inflowLength#0.5*domain.inflowLength
@@ -103,7 +104,7 @@ Omega_s=[[source_xm,source_xm+source_length],
          [0,width],
          [source_zm-0.5*source_height,source_zm+0.5*source_height]]
     
-sourceVolume = (Omega_s[0][1]-Omega_s[0][0])*(Omega_s[1][1]-Omega_s[1][0])*(Omega_s[2][1]-Omega_s[2][0])
+sourceVolume = 0.1*(Omega_s[0][1]-Omega_s[0][0])*(Omega_s[1][1]-Omega_s[1][0])*(Omega_s[2][1]-Omega_s[2][0])
 waveFlag= 0 #0 -- monochromatic
             #1 -- second order stokes
             #2 -- solitary wave

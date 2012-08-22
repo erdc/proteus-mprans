@@ -50,6 +50,13 @@ cdef extern from "RANS2P.h" namespace "proteus":
 				   double Ct_sge,
 				   double Cd_sge,
 				   double C_dc,
+# VRANS start
+				   double linearDragFactor,
+				   double nonlinearDragFactor,
+				   double* q_porosity,
+				   double* q_meanGrain,
+				   double* q_mass_source,
+# VRANS end
 				   int* p_l2g, 
 				   int* vel_l2g, 
 				   double* p_dof, 
@@ -89,6 +96,9 @@ cdef extern from "RANS2P.h" namespace "proteus":
 				   double* bc_ebqe_phi_ext,
 				   double* ebqe_normal_phi_ext,
 				   double* ebqe_kappa_phi_ext,
+# VRANS start
+				   double* ebqe_porosity_ext,
+# VRANS end
 				   int* isDOFBoundary_p,
 				   int* isDOFBoundary_u,
 				   int* isDOFBoundary_v,
@@ -160,6 +170,13 @@ cdef extern from "RANS2P.h" namespace "proteus":
 				   double Ct_sge,
 				   double Cd_sge,
 				   double C_dg,
+# VRANS start
+				   double linearDragFactor,
+				   double nonlinearDragFactor,
+				   double* q_porosity,
+				   double* q_meanGrain,
+				   double* q_mass_source,
+# VRANS end
 				   int* p_l2g, 
 				   int* vel_l2g,
 				   double* p_dof, double* u_dof, double* v_dof, double* w_dof,
@@ -204,6 +221,9 @@ cdef extern from "RANS2P.h" namespace "proteus":
 				   double* ebqe_phi_ext,
 				   double* ebqe_normal_phi_ext,
 				   double* ebqe_kappa_phi_ext,
+# VRANS start
+				   double* ebqe_porosity_ext,
+# VRANS end
 				   int* isDOFBoundary_p,
 				   int* isDOFBoundary_u,
 				   int* isDOFBoundary_v,
@@ -444,6 +464,13 @@ cdef class cRANS2P_base:
                          double Ct_sge,
                          double Cd_sge,
                          double C_dc,
+# VRANS start
+                         double linearDragFactor,
+                         double nonlinearDragFactor,
+                         numpy.ndarray q_porosity,
+                         numpy.ndarray q_meanGrain,
+                         numpy.ndarray q_mass_source,
+# VRANS end
                          numpy.ndarray p_l2g, 
                          numpy.ndarray vel_l2g, 
                          numpy.ndarray p_dof, 
@@ -483,6 +510,9 @@ cdef class cRANS2P_base:
                          numpy.ndarray bc_ebqe_phi_ext,
                          numpy.ndarray ebqe_normal_phi_ext,
                          numpy.ndarray ebqe_kappa_phi_ext,
+# VRANS start
+                         numpy.ndarray ebqe_porosity_ext,
+# VRANS end
                          numpy.ndarray isDOFBoundary_p,
                          numpy.ndarray isDOFBoundary_u,
                          numpy.ndarray isDOFBoundary_v,
@@ -554,6 +584,13 @@ cdef class cRANS2P_base:
                                        Ct_sge,
                                        Cd_sge,
                                        C_dc,
+# VRANS start
+                                       linearDragFactor,
+                                       nonlinearDragFactor,
+                                       <double*> q_porosity.data,
+                                       <double*> q_meanGrain.data,
+                                       <double*> q_mass_source.data,
+# VRANS end
                                        <int*> p_l2g.data, 
                                        <int*> vel_l2g.data, 
                                        <double*> p_dof.data, 
@@ -593,6 +630,9 @@ cdef class cRANS2P_base:
                                        <double*> bc_ebqe_phi_ext.data,
                                        <double*> ebqe_normal_phi_ext.data,
                                        <double*> ebqe_kappa_phi_ext.data,
+# VRANS start
+                                       <double*> ebqe_porosity_ext.data,
+# VRANS end
                                        <int*> isDOFBoundary_p.data,
                                        <int*> isDOFBoundary_u.data,
                                        <int*> isDOFBoundary_v.data,
@@ -666,6 +706,13 @@ cdef class cRANS2P_base:
                          double Ct_sge,
                          double Cd_sge,
                          double C_dg,
+# VRANS start
+                         double linearDragFactor,
+                         double nonlinearDragFactor,
+                         numpy.ndarray q_porosity,
+                         numpy.ndarray q_meanGrain,
+                         numpy.ndarray q_mass_source,
+# VRANS end
                          numpy.ndarray p_l2g, 
                          numpy.ndarray vel_l2g,
                          numpy.ndarray p_dof, numpy.ndarray u_dof, numpy.ndarray v_dof, numpy.ndarray w_dof,
@@ -710,6 +757,9 @@ cdef class cRANS2P_base:
                          numpy.ndarray ebqe_phi_ext,
                          numpy.ndarray ebqe_normal_phi_ext,
                          numpy.ndarray ebqe_kappa_phi_ext,
+# VRANS start
+                         numpy.ndarray ebqe_porosity_ext,
+# VRANS end
                          numpy.ndarray isDOFBoundary_p,
                          numpy.ndarray isDOFBoundary_u,
                          numpy.ndarray isDOFBoundary_v,
@@ -795,6 +845,13 @@ cdef class cRANS2P_base:
                                       Ct_sge,
                                       Cd_sge,
                                       C_dg,
+# VRANS start
+                                      linearDragFactor,
+                                      nonlinearDragFactor,
+                                      <double*> q_porosity.data,
+                                      <double*> q_meanGrain.data,
+                                      <double*> q_mass_source.data,
+# VRANS end
                                       <int*> p_l2g.data, 
                                       <int*> vel_l2g.data,
                                       <double*> p_dof.data, <double*> u_dof.data, <double*> v_dof.data, <double*> w_dof.data,
@@ -839,6 +896,9 @@ cdef class cRANS2P_base:
                                       <double*> ebqe_phi_ext.data,
                                       <double*> ebqe_normal_phi_ext.data,
                                       <double*> ebqe_kappa_phi_ext.data,
+# VRANS start
+                                      <double*> ebqe_porosity_ext.data,
+# VRANS end
                                       <int*> isDOFBoundary_p.data,
                                       <int*> isDOFBoundary_u.data,
                                       <int*> isDOFBoundary_v.data,

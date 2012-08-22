@@ -41,6 +41,9 @@ namespace proteus
 				   int lag_shockCapturing,
 				   double shockCapturingDiffusion,
 			           double sc_uref, double sc_alpha,
+				   //VRANS
+				   const double* q_porosity,
+				   //
 				   int* u_l2g, 
 				   double* elementDiameter,
 				   double* u_dof,double* u_dof_old,	
@@ -58,6 +61,9 @@ namespace proteus
 				   int* elementBoundaryElementsArray,
 				   int* elementBoundaryLocalElementBoundariesArray,
 				   double* ebqe_velocity_ext,
+				   //VRANS
+				   const double* ebqe_porosity_ext,
+				   //
 				   int* isDOFBoundary_u,
 				   double* ebqe_bc_u_ext,
 				   int* isFluxBoundary_u,
@@ -93,6 +99,9 @@ namespace proteus
 				   double alphaBDF,
 				   int lag_shockCapturing,/*mwf not used yet*/
 				   double shockCapturingDiffusion,
+				   //VRANS
+				   const double* q_porosity,
+				   //
 				   int* u_l2g,
 				   double* elementDiameter,
 				   double* u_dof, 
@@ -107,6 +116,9 @@ namespace proteus
 				   int* elementBoundaryElementsArray,
 				   int* elementBoundaryLocalElementBoundariesArray,
 				   double* ebqe_velocity_ext,
+				   //VRANS
+				   const double* ebqe_porosity_ext,
+				   //
 				   int* isDOFBoundary_u,
 				   double* ebqe_bc_u_ext,
 				   int* isFluxBoundary_u,
@@ -133,18 +145,19 @@ namespace proteus
     inline
     void evaluateCoefficients(const double v[nSpace],
 			      const double& u,
+			      const double& porosity, //VRANS specific
 			      double& m,
 			      double& dm,
 			      double f[nSpace],
 			      double df[nSpace])
     {
-      m = u;
-      dm = 1.0;
-      for (int I=0; I < nSpace; I++)
-	{
-	  f[I] = v[I]*u;
-	  df[I] = v[I];
-	}
+    m = porosity*u;
+    dm= porosity;
+    for (int I=0; I < nSpace; I++)
+      {
+	f[I] = v[I]*porosity*u;
+	df[I] = v[I]*porosity;
+      }
     }
 
     inline
@@ -315,6 +328,9 @@ namespace proteus
 			   int lag_shockCapturing, /*mwf not used yet*/
 			   double shockCapturingDiffusion,
 			   double sc_uref, double sc_alpha,
+			   //VRANS
+			   const double* q_porosity,
+			   //
 			   int* u_l2g, 
 			   double* elementDiameter,
 			   double* u_dof,double* u_dof_old,			   
@@ -332,6 +348,9 @@ namespace proteus
 			   int* elementBoundaryElementsArray,
 			   int* elementBoundaryLocalElementBoundariesArray,
 			   double* ebqe_velocity_ext,
+			   //VRANS
+			   const double* ebqe_porosity_ext,
+			   //
 			   int* isDOFBoundary_u,
 			   double* ebqe_bc_u_ext,
 			   int* isFluxBoundary_u,
@@ -383,6 +402,9 @@ namespace proteus
 		u_test_dV[nDOF_trial_element],
 		u_grad_test_dV[nDOF_test_element*nSpace],
 		dV,x,y,z,xt,yt,zt,
+		//VRANS
+		porosity,
+		//
 		G[nSpace*nSpace],G_dd_G,tr_G;//norm_Rv;
 	      // //
 	      // //compute solution and gradients at quadrature points
@@ -438,11 +460,17 @@ namespace proteus
 		      u_grad_test_dV[j*nSpace+I]   = u_grad_trial[j*nSpace+I]*dV;//cek warning won't work for Petrov-Galerkin
 		    }
 		}
+	      //VRANS
+	      porosity = q_porosity[eN_k];
+	      //
 	      //
 	      //calculate pde coefficients at quadrature points
 	      //
 	      evaluateCoefficients(&velocity[eN_k_nSpace],
 				   u,
+				   //VRANS
+				   porosity,
+				   //
 				   m,
 				   dm,
 				   f,
@@ -579,6 +607,9 @@ namespace proteus
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
 		normal[3],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
+		//VRANS
+		porosity_ext,
+		//
 		G[nSpace*nSpace],G_dd_G,tr_G;
 	      // 
 	      //calculate the solution and gradients at quadrature points 
@@ -633,17 +664,26 @@ namespace proteus
 	      //load the boundary values
 	      //
 	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
+	      //VRANS
+	      porosity_ext = ebqe_porosity_ext[ebNE_kb];
+	      //
 	      // 
 	      //calculate the pde coefficients using the solution and the boundary values for the solution 
 	      // 
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
 				   u_ext,
+				   //VRANS
+				   porosity_ext,
+				   //
 				   m_ext,
 				   dm_ext,
 				   f_ext,
 				   df_ext);
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
 				   bc_u_ext,
+				   //VRANS
+				   porosity_ext,
+				   //
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
@@ -664,7 +704,8 @@ namespace proteus
 					     bc_u_ext,
 					     ebqe_bc_flux_u_ext[ebNE_kb],
 					     u_ext,//smoothedHeaviside(eps,ebqe_phi[ebNE_kb]),
-					     velocity_ext,
+					     df_ext,//VRANS includes porosity
+					     //velocity_ext,
 					     flux_ext);
 	      ebqe_flux[ebNE_kb] = flux_ext;
 	      //save for other models? cek need to be consistent with numerical flux
@@ -722,6 +763,9 @@ namespace proteus
 			   double alphaBDF,
 			   int lag_shockCapturing,/*mwf not used yet*/
 			   double shockCapturingDiffusion,
+			   //VRANS
+			   const double* q_porosity,
+			   //
 			   int* u_l2g,
 			   double* elementDiameter,
 			   double* u_dof, 
@@ -736,6 +780,9 @@ namespace proteus
 			   int* elementBoundaryElementsArray,
 			   int* elementBoundaryLocalElementBoundariesArray,
 			   double* ebqe_velocity_ext,
+			   //VRANS
+			   const double* ebqe_porosity_ext,
+			   //
 			   int* isDOFBoundary_u,
 			   double* ebqe_bc_u_ext,
 			   int* isFluxBoundary_u,
@@ -779,6 +826,9 @@ namespace proteus
 		u_test_dV[nDOF_test_element],
 		u_grad_test_dV[nDOF_test_element*nSpace],
 		x,y,z,xt,yt,zt,
+		//VRANS
+		porosity,
+		//
 		G[nSpace*nSpace],G_dd_G,tr_G;
 	      //
 	      //calculate solution and gradients at quadrature points
@@ -835,11 +885,17 @@ namespace proteus
 		      u_grad_test_dV[j*nSpace+I]   = u_grad_trial[j*nSpace+I]*dV;//cek warning won't work for Petrov-Galerkin
 		    }
 		}
+	      //VRANS
+	      porosity = q_porosity[eN_k];
+	      //
 	      //
 	      //calculate pde coefficients and derivatives at quadrature points
 	      //
 	      evaluateCoefficients(&velocity[eN_k_nSpace],
 				   u,
+				   //VRANS
+				   porosity,
+				   //
 				   m,
 				   dm,
 				   f,
@@ -969,6 +1025,9 @@ namespace proteus
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
 		normal[3],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
+		//VRANS
+		porosity_ext,
+		//
 		G[nSpace*nSpace],G_dd_G,tr_G;
 	      // 
 	      //calculate the solution and gradients at quadrature points 
@@ -1039,17 +1098,26 @@ namespace proteus
 	      //load the boundary values
 	      //
 	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
+	      //VRANS
+	      porosity_ext = ebqe_porosity_ext[ebNE_kb];
+	      //
 	      // 
 	      //calculate the internal and external trace of the pde coefficients 
 	      // 
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
 				   u_ext,
+				   //VRANS
+				   porosity_ext,
+				   //
 				   m_ext,
 				   dm_ext,
 				   f_ext,
 				   df_ext);
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
 				   bc_u_ext,
+				   //VRANS
+				   porosity_ext,
+				   //
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
@@ -1067,7 +1135,7 @@ namespace proteus
 	      exteriorNumericalAdvectiveFluxDerivative(isDOFBoundary_u[ebNE_kb],
 						       isFluxBoundary_u[ebNE_kb],
 						       normal,
-						       velocity_ext,//ebqe_velocity_ext[ebNE_kb_nSpace],
+						       df_ext,//VRANS holds porosity velocity_ext,//ebqe_velocity_ext[ebNE_kb_nSpace],
 						       dflux_u_u_ext);
 	      //
 	      //calculate the flux jacobian

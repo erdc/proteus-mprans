@@ -5,25 +5,27 @@ from proteus import TransportCoefficients
 from proteus.TransportCoefficients import TwophaseNavierStokes_ST_LS_SO
 from proteus import LinearAlgebraTools
 from proteus import MeshTools
-import beach_erosion_board_3dDomain
+
+import beach_erosion_board_2dDomain
 #numerics options
-useVANS2P=True
+useVANS2P2D=True
 useNCLS  =True
 useVOF   =True
-
 useRDLS  =True
 useMCorr =True
 
 applyCorrection  =True
 applyRedistancing=True
-rdtimeIntegration='osher'#'osher-psitc'#tte
-sloshbox_quad_order = 3 #need 4 for quadratics
-
-checkMass = False
-useBackwardEuler=True
-useBackwardEuler_ls=True
+rdtimeIntegration='newton'
+if useVANS2P2D or useNCLS or useVOF or useRDLS or useMCorr:
+    sloshbox_quad_order = 4 #need 4 for quadratics
+else:
+    sloshbox_quad_order = 3
+useBackwardEuler=True#True#False
+useBackwardEuler_ls=True#False
 
 nonlinearSolverNorm = LinearAlgebraTools.l2NormAvg
+checkMass = False
 
 lag_ns_subgridError=True
 lag_ls_shockCapturing=True
@@ -35,7 +37,7 @@ rd_freezeLS = True
 usePETSc=False#True
 nOverlap = 1
 partitioningType = MeshTools.MeshParallelPartitioningTypes.element
-#-P"-ksp_type bcgsl -pc_type asm -pc_asm_type basic -pc_asm_overlap 1 -sub_ksp_type preonly -sub_pc_type lu -sub_pc_factor_mat_solver_package spooles -ksp_atol 1.0e-7 -ksp_rtol 1.0e-7 "
+#-P"-ksp_type bcgsl -pc_type asm -pc_asm_type basic -pc_asm_overlap 1 -sub_ksp_type preonly -sub_pc_type lu -sub_pc_factor_mat_solver_package spooles -ksp_atol 1.0e-10 -ksp_rtol 0.0 "
 #
 useStokes=False
 VOF = False
@@ -45,40 +47,33 @@ if  VOF:
 spaceOrder=1
 
 #spatial domain
-nd = 3
-#set up absorbing boundary at left side using volume averaged ns formulation
-spongeLayerWidth = 0.2
-useSpongeLayer = True
+nd = 2
 
-domain = beach_erosion_board_3dDomain.beach_erosion_board_with_sponge_layer_3d(spongeLayerWidth=spongeLayerWidth,
-                                                                               domainHeightPad=0.2,
-                                                                               inflowLength=3.0,#0.45,3.0
-                                                                               beachLength=4.48,
-                                                                               beachSlope =0.1,
-                                                                               h_c=0.054,#0.054,
-                                                                               h_s=0.081,
-                                                                               s  =3.0,
-                                                                               B  = 0.0896,
-                                                                               s_2= -0.2,
-                                                                               backStepFraction=0.25,
-                                                                               outflowLength=0.5,
-                                                                               width = 0.3)
+domain = beach_erosion_board_2dDomain.beach_erosion_board_2d(domainHeightPad=0.2,
+                                                             inflowLength=3.0,#0.45,3.0
+                                                             beachLength=4.48,
+                                                             beachSlope =0.1,
+                                                             h_c=0.054,#0.054,
+                                                             h_s=0.081,
+                                                             s  =3.0,
+                                                             B  = 0.0896,
+                                                             s_2= -0.2,
+                                                             backStepFraction=0.25,
+                                                             outflowLength=0.5)
 nnx=3; nny=3
 nLevels = 1
-height=domain.L[2]
+height=domain.L[1]
 length=domain.L[0]
-width =domain.L[1]
 L = domain.L
-constraintFactor = 0.2#0.1#0.2
-volumeConstraint =  (((constraintFactor*height)**3)/6.0,)
-dx =0.05*height ; dy = dx ; dz = dx; he = dx;
-triangleOptions="VpAfq1.25ena%f" % (volumeConstraint)
-#triangleOptions="VpAq1.25en" 
+areaConstraint = 0.00250#0.0025#0.00125,0.001
+areaConstraint = 0.0005
+dx =sqrt(areaConstraint); dy=sqrt(areaConstraint)
+triangleOptions="VApq2q10ena%21.16e" % (areaConstraint,)
+#triangleOptions="q30DenAa%g" % areaConstraint
+he = dx;
 
-
-domain.writeAsymptote("beach_erosion_board_3d")
-domain.writePoly("beach_erosion_board_3d")
-domain.writePLY("beach_erosion_board_3d")
+#domain.writeAsymptote("beach_erosion_board_2d")
+domain.writePoly("beach_erosion_board_2d")
 
 
 
@@ -88,22 +83,23 @@ runWaveProblem=True
 #source zone for generating waves
 #background water level
 waterLevelBase = 0.529#domain.bathymetry([domain.x_be])+domain.h_s#backHeight#0.529#should be 0.529 #m
-waveHeight=0.107#0.5#default 0.107#m
+triangleOptions="VApq2q10ena%21.16e" % (((waterLevelBase)/5.0)**3/6.0,)
+waveHeight=0.05#107#0.5#default 0.107#m
 wavePeriod= 1.549   #[s]
 waveCelerity  = 1.21#[m/s] don't know
 waveNumber= 1.04/waterLevelBase #[1/m]
 waveLength= 2.0*pi/waveNumber
 waveFrequency = 2.0*pi/wavePeriod
 source_height=max(5*dy,0.5*waterLevelBase)#max(5*dy,L[1])#max(5*dy,0.25*waterLevelBase)
-source_zm    =domain.x[2]+0.3*waterLevelBase
+source_ym    =domain.x[1]+0.3*waterLevelBase
 #source_ym    =domain.x[1]+0.5*L[1]#waterLevelBase
 source_xm    =0.75*domain.inflowLength#0.5*domain.inflowLength
-source_length =max(3.0*dx,0.1)#better max(3.0*dx,0.2)
-Omega_s=[[source_xm,source_xm+source_length],
-         [0,width],
-         [source_zm-0.5*source_height,source_zm+0.5*source_height]]
+source_width =max(3.0*dx,0.1)#better max(3.0*dx,0.2)
+Omega_s=[[source_xm,source_xm+source_width],
+         [source_ym-0.5*source_height,source_ym+0.5*source_height],
+         [0.0,1.0]]
     
-sourceVolume = (Omega_s[0][1]-Omega_s[0][0])*(Omega_s[1][1]-Omega_s[1][0])*(Omega_s[2][1]-Omega_s[2][0])
+sourceVolume = (Omega_s[0][1]-Omega_s[0][0])*(Omega_s[1][1]-Omega_s[1][0])
 waveFlag= 0 #0 -- monochromatic
             #1 -- second order stokes
             #2 -- solitary wave
@@ -119,13 +115,20 @@ topOpen = True#False
 #slip on bottom, 
 #outflow on sides
 #top open with grate --> p = 0, u = 0, v is free
+#tolerances
+atolRedistance   = max(0.01*he,1.0e-5)
+atolConservation = 1.0e-5
+atolNavierStokes = 1.0e-5
+atolVolumeOfFluid= 1.0e-5
+atolLevelSet     = 1.0e-5
+linearSolverConvergenceTest = 'r-true' #r,its,r-true for true residual
  
 
 #
 #numerical fudge factors
 epsFact = 1.5
-epsFact_density = 1.5#0.33#1.5#1.5
-epsFact_viscosity = 1.5#0.33#1.5
+epsFact_density = 1.5#1.5
+epsFact_viscosity = 1.5
 epsFact_redistance = 0.33#1.5
 epsFact_curvature=0.001
 epsFact_source = 0.5
@@ -142,24 +145,26 @@ nu_0=1.004e-6
 rho_1=1.205
 nu_1= 1.500e-5
 #gravity
-g=[0.0,0.0,-9.8]
+g=[0.0,-9.8]
 #mwf play with density and viscosity ratios
 #rho_1 = rho_0/20.
 #nu_1  = nu_0*0.5
-turbulenceClosureFlag = None#1 Smagorinsky
+turbulenceClosureFlag = 1#Smagorinsky
 smagorinskyConstant_0 = 0.1
 smagorinskyConstant_1 = 0.5
 #surface tension
 sigma_01 = 0.0#72.8e-3
 
 import math
-T =wavePeriod*5.0#*10.0#10.#*10.0#2.5#3.0#10.0
-nDTout = int(math.ceil(T/wavePeriod)*10+1)#51#101#None#2#None, can't be 1
+T = wavePeriod*3.#*10.0#10.#*10.0#2.5#3.0#10.0
+nDTout = math.ceil(T/wavePeriod)*10+1#51#101#None#2#None, can't be 1
 runCFL = 0.33
 
 dt_init = min(0.01*wavePeriod,T)
-useSpongeFunc  = False
-spongeGrainSize= 0.01
+#set up absorbing boundary at left side using volume averaged ns formulation
+spongeLayerWidth = max(2.0*dx,0.3)#0.2*domain.inflowLength)
+useSpongeLayer = True#True#False
+spongeGrainSize= 0.001#0.01
 spongePorosity = 0.5
 killNonlinearDragInSpongeLayer = True#True
 def setSpongeLayer(x,porosity,meanGrain=None):
@@ -178,17 +183,10 @@ def setSpongeLayer(x,porosity,meanGrain=None):
     #mwf hack
     #porosity.flat[:] = obstaclePorosity
 #
-import numpy
-if useSpongeLayer == True and useSpongeFunc:
+if useSpongeLayer == True:
     spongeLayerFunc = setSpongeLayer
-elif useSpongeLayer == True:
-    spongeLayerFunc = None
-    porosityTypes      = numpy.array([1.0,spongePorosity])
-    meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize])
 else:
     spongeLayerFunc = None
-    porosityTypes      = None
-    meanGrainSizeTypes = None
 
 
 
@@ -202,39 +200,30 @@ def getDBC_p_ns(x,flag):
 def getDBC_u_ns(x,flag):
     if flag  == domain.boundaryTags['top']:
         return lambda x,t: 0.0
-
+    return None
     
 def getDBC_v_ns(x,flag):
-    if flag  == domain.boundaryTags['top']:
-        return lambda x,t: 0.0
-
-
-def getDBC_w_ns(x,flag):
     if not topOpen and flag  == domain.boundaryTags['top']:
         return lambda x,t: 0.0
 
 dirichletConditions_ns = {0:getDBC_p_ns,
                           1:getDBC_u_ns,
-                          2:getDBC_v_ns,
-                          3:getDBC_w_ns}
+                          2:getDBC_v_ns}
 
-slip_walls = [domain.boundaryTags['bottom'],domain.boundaryTags['front'],domain.boundaryTags['back']]
+slip_walls = [domain.boundaryTags['bottom']]
 outflow_walls = [domain.boundaryTags['left'],domain.boundaryTags['right']]
+
 def getAFBC_p_ns(x,flag):
     if flag in slip_walls:
         return lambda x,t: 0.0
     if not topOpen and flag  == domain.boundaryTags['top']:
         return lambda x,t: 0.0
-    
+
 def getAFBC_u_ns(x,flag):
     if flag in slip_walls:
         return lambda x,t: 0.0
         
 def getAFBC_v_ns(x,flag):
-    if flag in slip_walls:
-        return lambda x,t: 0.0
-
-def getAFBC_w_ns(x,flag):
     if flag in slip_walls:
         return lambda x,t: 0.0
 
@@ -254,29 +243,19 @@ def getDFBC_v_ns(x,flag):
     #go ahead and enforce no diffusive flux on outflow too for VANS2P
     if flag in outflow_walls:
         return lambda x,t: 0.0
-def getDFBC_w_ns(x,flag):
-    #need parallel boundaries as well
-    return lambda x,t: 0.0
-    if flag in  slip_walls:# or flag in [domain.boundaryTags['top']]:
-        return lambda x,t: 0.0
-    #go ahead and enforce no diffusive flux on outflow too for VANS2P
-    if flag in outflow_walls:
-        return lambda x,t: 0.0
+
 
 fluxBoundaryConditions_ns = {0:'outFlow',
                              1:'outFlow',
-                             2:'outFlow',
-                             3:'outFlow'}
+                             2:'outFlow'}
 
 advectiveFluxBoundaryConditions_ns =  {0:getAFBC_p_ns,
                                        1:getAFBC_u_ns,
-                                       2:getAFBC_v_ns,
-                                       3:getAFBC_w_ns}
+                                       2:getAFBC_v_ns}
 
 diffusiveFluxBoundaryConditions_ns = {0:{},
-                                      1:{1:getDFBC_u_ns},#,2:getDFBC_u_ns,3:getDFBC_u_ns},
-                                      2:{2:getDFBC_v_ns},#3:getDFBC_v_ns},
-                                      3:{3:getDFBC_w_ns}}
+                                      1:{1:getDFBC_u_ns},
+                                      2:{2:getDFBC_v_ns}}
 
 
 #try to vary free surface height at boundary
@@ -291,29 +270,28 @@ class Hydrostatic_p:
     def __init__(self):
         pass
     def uOfXT(self,x,t):
-        if x[2] >= waterLevelBase:
-            return -(domain.L[2]-x[2])*rho_1*g[2]
+        if x[1] >= waterLevelBase:
+            return -(domain.L[1]-x[1])*rho_1*g[1]
         else:
-            return -((domain.L[2]-waterLevelBase)*rho_1 +
-                     (waterLevelBase-x[2])*rho_0)*g[2]
+            return -((domain.L[1]-waterLevelBase)*rho_1 +
+                     (waterLevelBase-x[1])*rho_0)*g[1]
 
 initialConditions_ns = {0:Hydrostatic_p(),
                         1:AtRest(),
-                        2:AtRest(),
-                        3:AtRest()}
+                        2:AtRest()}
 
 
 class Flat_phi:
     def __init__(self):
         pass
     def uOfXT(self,x,t):
-        return x[2] - waterLevelBase
+        return x[1] - waterLevelBase
 
 class Flat_H:
     def __init__(self,eps=epsFact_consrv_heaviside*dy):
         self.eps=eps
     def uOfXT(self,x,t):
-        return smoothedHeaviside(self.eps,x[2] - waterLevelBase)
+        return smoothedHeaviside(self.eps,x[1] - waterLevelBase)
     
 def getDBC_vof(x,flag):
     if setWavesAtInflow:
@@ -325,11 +303,10 @@ def getDBC_vof(x,flag):
         return lambda x,t: 1.0
     #
     if flag in [domain.boundaryTags['left']]:
-        return lambda x,t: smoothedHeaviside(epsFact*dz,x[2]-waterLevelBase)
+        return lambda x,t: smoothedHeaviside(epsFact*dy,x[1]-waterLevelBase)
 def getAFBC_vof(x,flag):
-    #pass
+    #zero flux at internal boundaries
     if flag == 0: #internal boundary
         return lambda x,t: 0.0
-   
     if flag in  slip_walls:# or flag in [domain.boundaryTags['top']]:
         return lambda x,t: 0.0

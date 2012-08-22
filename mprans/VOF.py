@@ -5,7 +5,9 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import VOFCoefficientsEvaluate
     from proteus.UnstructuredFMMandFSWsolvers import FMMEikonalSolver,FSWEikonalSolver
     from proteus.NonlinearSolvers import EikonalSolver
-    def __init__(self,LS_model=-1,V_model=0,RD_model=-1,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0):
+    from proteus.ctransportCoefficients import VolumeAveragedVOFCoefficientsEvaluate
+    from proteus.cfemIntegrals import copyExteriorElementBoundaryValuesFromElementBoundaryValues
+    def __init__(self,LS_model=-1,V_model=0,RD_model=-1,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,setParamsFunc=None):
         self.useMetrics = useMetrics
         self.variableNames=['vof']
         nc=1
@@ -38,7 +40,10 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         if self.eikonalSolverFlag >= 1: #FMM
             assert self.RD_modelIndex < 0, "no redistance with eikonal solver too"
         self.checkMass = checkMass
-	
+        #VRANS
+        self.q_porosity = None; self.ebq_porosity = None; self.ebqe_porosity = None
+        self.setParamsFunc   = setParamsFunc
+        self.flowCoefficients=None
     def initializeMesh(self,mesh):
         self.eps = self.epsFact*mesh.h
     def attachModels(self,modelList):
@@ -105,16 +110,50 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         #                                                              self.model.ebqe[('advectiveFlux',0)],
         #                                                              self.model.mesh)
         #         log("Attach Models VOF: Phase  0 mass conservation after VOF step = %12.5e" % (self.m_post - self.m_pre + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
-            
+        #VRANS
+        self.flowCoefficients = modelList[self.flowModelIndex].coefficients
+        if hasattr(self.flowCoefficients,'q_porosity'):
+            self.q_porosity = self.flowCoefficients.q_porosity
+        else:
+            self.q_porosity = numpy.ones(modelList[self.modelIndex].q[('u',0)].shape,
+                                           'd')
+            if self.setParamsFunc != None:
+                self.setParamsFunc(modelList[self.modelIndex].q['x'],self.q_porosity)
+            #
+        #
+        if hasattr(self.flowCoefficients,'ebq_porosity'):
+            self.ebq_porosity = self.flowCoefficients.ebq_porosity
+        elif modelList[self.modelIndex].ebq.has_key(('u',0)):
+            self.ebq_porosity = numpy.ones(modelList[self.modelIndex].ebq[('u',0)].shape,
+                                           'd')
+            if self.setParamsFunc != None:
+                self.setParamsFunc(modelList[self.modelIndex].ebq['x'],self.ebq_porosity)
+            #
+        #
+        if hasattr(self.flowCoefficients,'ebqe_porosity'):
+            self.ebqe_porosity = self.flowCoefficients.ebqe_porosity
+        else:
+            self.ebqe_porosity = numpy.ones(modelList[self.LS_modelIndex].ebqe[('u',0)].shape,
+                                            'd')
+            if self.setParamsFunc != None:
+                self.setParamsFunc(modelList[self.LS_modelIndex].ebqe['x'],self.ebqe_porosity)
+            #
+        #            
     def initializeElementQuadrature(self,t,cq):
         if self.flowModelIndex == None:
             self.q_v = numpy.ones(cq[('f',0)].shape,'d')
+        #VRANS
+        self.q_porosity = numpy.ones(cq[('u',0)].shape,'d')
     def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
         if self.flowModelIndex == None:
             self.ebq_v = numpy.ones(cebq[('f',0)].shape,'d')
+        #VRANS
+        self.ebq_porosity = numpy.ones(cebq[('u',0)].shape,'d')
     def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
         if self.flowModelIndex == None:
             self.ebqe_v = numpy.ones(cebqe[('f',0)].shape,'d')
+        #VRANS
+        self.ebqe_porosity = numpy.ones(cebqe[('u',0)].shape,'d')
     def preStep(self,t,firstStep=False):
         # if self.checkMass:
         #     self.m_pre = Norms.scalarDomainIntegral(self.model.q['dV'],
@@ -155,24 +194,37 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         if c[('f',0)].shape == self.q_v.shape:
             v = self.q_v
             phi = self.q_phi
+            porosity  = self.q_porosity
         elif c[('f',0)].shape == self.ebqe_v.shape:
             v = self.ebqe_v
             phi = self.ebqe_phi
+            porosity  = self.ebq_porosity
         elif ((self.ebq_v != None and self.ebq_phi != None) and c[('f',0)].shape == self.ebq_v.shape):
             v = self.ebq_v
             phi = self.ebq_phi
+            porosity  = self.ebq_porosity
         else:
             v=None
             phi=None
+            porosity=None
         if v != None:
-            self.VOFCoefficientsEvaluate(self.eps,
-                                         v,
-                                         phi,
-                                         c[('u',0)],
-                                         c[('m',0)],
-                                         c[('dm',0,0)],
-                                         c[('f',0)],
-                                         c[('df',0,0)])
+            # self.VOFCoefficientsEvaluate(self.eps,
+            #                              v,
+            #                              phi,
+            #                              c[('u',0)],
+            #                              c[('m',0)],
+            #                              c[('dm',0,0)],
+            #                              c[('f',0)],
+            #                              c[('df',0,0)])
+            self.VolumeAveragedVOFCoefficientsEvaluate(self.eps,
+                                                       v,
+                                                       phi,
+                                                       porosity,
+                                                       c[('u',0)],
+                                                       c[('m',0)],
+                                                       c[('dm',0,0)],
+                                                       c[('f',0)],
+                                                       c[('df',0,0)])
         # if self.checkMass:
         #     log("Phase  0 mass in eavl = %12.5e" % (Norms.scalarDomainIntegral(self.model.q['dV'],
         #                                                                        self.model.q[('m',0)],
@@ -613,6 +665,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.shockCapturing.shockCapturingFactor,
 	    self.coefficients.sc_uref, 
 	    self.coefficients.sc_beta,
+            #VRANS start
+            self.coefficients.q_porosity,
+            #VRANS end
             self.u[0].femSpace.dofMap.l2g,
             self.mesh.elementDiametersArray,
             self.u[0].dof,
@@ -631,6 +686,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.elementBoundaryElementsArray,
             self.mesh.elementBoundaryLocalElementBoundariesArray,
             self.coefficients.ebqe_v,
+            #VRANS start
+            self.coefficients.ebqe_porosity,
+            #VRANS end
             self.numericalFlux.isDOFBoundary[0],
             self.numericalFlux.ebqe[('u',0)],
             self.ebqe[('advectiveFlux_bc_flag',0)],
@@ -682,6 +740,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                   self.timeIntegration.alpha_bdf,
                   self.shockCapturing.lag,
                   self.shockCapturing.shockCapturingFactor,
+                  #VRANS start
+                  self.coefficients.q_porosity,
+                  #VRANS end
                   self.u[0].femSpace.dofMap.l2g,
                   self.mesh.elementDiametersArray,
                   self.u[0].dof,
@@ -696,6 +757,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                   self.mesh.elementBoundaryElementsArray,
                   self.mesh.elementBoundaryLocalElementBoundariesArray,
                   self.coefficients.ebqe_v,
+                  #VRANS start
+                  self.coefficients.ebqe_porosity,
+                  #VRANS end
                   self.numericalFlux.isDOFBoundary[0],
                   self.numericalFlux.ebqe[('u',0)],
                   self.ebqe[('advectiveFlux_bc_flag',0)],

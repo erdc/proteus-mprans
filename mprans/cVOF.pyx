@@ -32,6 +32,9 @@ cdef extern from "VOF.h" namespace "proteus":
                                int lag_shockCapturing,
                                double shockCapturingDiffusion,
 		               double sc_uref, double sc_alpha,
+                               #VRANS
+                               double* q_porosity,
+                               #
                                int* u_l2g, 
                                double* elementDiameter,
                                double* u_dof,double* u_dof_old,	
@@ -49,6 +52,9 @@ cdef extern from "VOF.h" namespace "proteus":
                                int* elementBoundaryElementsArray,
                                int* elementBoundaryLocalElementBoundariesArray,
                                double* ebqe_velocity_ext,
+                               #VRANS
+                               double* ebqe_porosity_ext,
+                               #
                                int* isDOFBoundary_u,
                                double* ebqe_bc_u_ext,
                                int* isFluxBoundary_u,
@@ -81,6 +87,9 @@ cdef extern from "VOF.h" namespace "proteus":
                                double alphaBDF,
                                int lag_shockCapturing,
                                double shockCapturingDiffusion,
+                               #VRANS
+                               double* q_porosity,
+                               #
                                int* u_l2g,
                                double* elementDiameter,
                                double* u_dof, 
@@ -95,6 +104,9 @@ cdef extern from "VOF.h" namespace "proteus":
                                int* elementBoundaryElementsArray,
                                int* elementBoundaryLocalElementBoundariesArray,
                                double* ebqe_velocity_ext,
+                               #VRANS
+                               double* ebqe_porosity_ext,
+                               #
                                int* isDOFBoundary_u,
                                double* ebqe_bc_u_ext,
                                int* isFluxBoundary_u,
@@ -154,6 +166,9 @@ cdef class cVOF_base:
                          int lag_shockCapturing,
                          double shockCapturingDiffusion,
 			 double sc_uref, double sc_alpha,
+                         #VRANS
+                         numpy.ndarray q_porosity,
+                         #
                          numpy.ndarray u_l2g, 
                          numpy.ndarray elementDiameter,
                          numpy.ndarray u_dof,
@@ -172,6 +187,9 @@ cdef class cVOF_base:
                          numpy.ndarray elementBoundaryElementsArray,
                          numpy.ndarray elementBoundaryLocalElementBoundariesArray,
                          numpy.ndarray ebqe_velocity_ext,
+                         #VRANS
+                         numpy.ndarray ebqe_porosity_ext,
+                         #
                          numpy.ndarray isDOFBoundary_u,
                          numpy.ndarray ebqe_bc_u_ext,
                          numpy.ndarray isFluxBoundary_u,
@@ -205,6 +223,9 @@ cdef class cVOF_base:
                                        lag_shockCapturing,
                                        shockCapturingDiffusion,
 			               sc_uref, sc_alpha,
+                                       #VRANS
+                                       <double*> q_porosity.data,
+                                       #
                                        <int*> u_l2g.data, 
                                        <double*> elementDiameter.data,
                                        <double*> u_dof.data,
@@ -223,6 +244,9 @@ cdef class cVOF_base:
                                        <int*> elementBoundaryElementsArray.data,
                                        <int*> elementBoundaryLocalElementBoundariesArray.data,
                                        <double*> ebqe_velocity_ext.data,
+                                       #VRANS
+                                       <double*> ebqe_porosity_ext.data,
+                                       #
                                        <int*> isDOFBoundary_u.data,
                                        <double*> ebqe_bc_u_ext.data,
                                        <int*> isFluxBoundary_u.data,
@@ -257,6 +281,9 @@ cdef class cVOF_base:
                          double alphaBDF,
                          int lag_shockCapturing,
                          double shockCapturingDiffusion,
+                         #VRANS
+                         numpy.ndarray q_porosity,
+                         #
                          numpy.ndarray u_l2g,
                          numpy.ndarray elementDiameter,
                          numpy.ndarray u_dof, 
@@ -271,6 +298,9 @@ cdef class cVOF_base:
                          numpy.ndarray elementBoundaryElementsArray,
                          numpy.ndarray elementBoundaryLocalElementBoundariesArray,
                          numpy.ndarray ebqe_velocity_ext,
+                         #VRANS
+                         numpy.ndarray ebqe_porosity_ext,
+                         #
                          numpy.ndarray isDOFBoundary_u,
                          numpy.ndarray ebqe_bc_u_ext,
                          numpy.ndarray isFluxBoundary_u,
@@ -303,6 +333,9 @@ cdef class cVOF_base:
                                        alphaBDF,
                                        lag_shockCapturing,
                                        shockCapturingDiffusion,
+                                       #VRANS
+                                       <double*> q_porosity.data,
+                                       #
                                        <int*> u_l2g.data,
                                        <double*> elementDiameter.data,
                                        <double*> u_dof.data, 
@@ -317,6 +350,9 @@ cdef class cVOF_base:
                                        <int*> elementBoundaryElementsArray.data,
                                        <int*> elementBoundaryLocalElementBoundariesArray.data,
                                        <double*> ebqe_velocity_ext.data,
+                                       #VRANS
+                                       <double*> ebqe_porosity_ext.data,
+                                       #
                                        <int*> isDOFBoundary_u.data,
                                        <double*> ebqe_bc_u_ext.data,
                                        <int*> isFluxBoundary_u.data,
