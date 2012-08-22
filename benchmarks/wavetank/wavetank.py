@@ -1,5 +1,6 @@
 from math import *
 import proteus.MeshTools
+import waveModules_Matt as wm
 from proteus import Domain
 from proteus.default_n import *   
 from proteus.ctransportCoefficients import smoothedHeaviside
@@ -170,17 +171,25 @@ omega = 2.0*pi/period
 k=2.0*pi/waveLength
 amplitude = 0.1*inflowHeightMean
 
+# Wave Field Object
+waveField = wm.Linear2D(amplitude,omega,k,L[2],rho_0,rho_1)
+#waveField = wm.Solitary(amplitude,omega,k,L[2],rho_0,rho_1)
+
 def waveHeight(x,t):
-    return inflowHeightMean + amplitude*sin(omega*t-k*x[0])
+#    return inflowHeightMean + amplitude*sin(omega*t-k*x[0])
+    return inflowHeightMean + waveField.height(x,t)
 
 def waveVelocity_u(x,t):
-    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k*x[0])/(k*inflowHeightMean)
+#    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k*x[0])/(k*inflowHeightMean)
+    z = x[2] - inflowHeightMean
+    return inflowVelocityMean[0] + waveField.velocity_u(x,t,z)
 
 def waveVelocity_w(x,t):
     z = x[2] - inflowHeightMean
-    return inflowVelocityMean[2] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k*x[0])/inflowHeightMean
-
+#    return inflowVelocityMean[2] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k*x[0])/inflowHeightMean
+    return inflowVelocityMean[2] + waveField.velocity_w(x,t,z)
 ####
+
 def wavePhi(x,t):
     return x[2] - waveHeight(x,t)
 
@@ -210,11 +219,13 @@ def outflowVF(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,x[2] - outflowHeight)
 
 def twpflowPressure(x,t):
-    p_L = L[2]*rho_1*g[2]
-    phi_L = wavePhi((x[0],x[1],L[2]),t) 
-    phi = wavePhi(x,t)
-    return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
-                                                          -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
+#    p_L = L[2]*rho_1*g[2]
+#    phi_L = wavePhi((x[0],x[1],L[2]),t) 
+#    phi = wavePhi(x,t)
+#    return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
+#                                                          -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
+    z = x[2] - inflowHeightMean
+    return waveField.pressure(x,t,z)
 
 def outflowPressure(x,t):
     return twpflowPressure((0.0,0.0,x[2]),0.0)
