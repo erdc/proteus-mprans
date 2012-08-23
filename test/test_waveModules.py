@@ -9,7 +9,9 @@ except:
 
 """ Testing different analytic solution for wavetank benchmark case."""
 
-def test_Linear2D():
+#see nose docs for more complex testing
+
+def test_Linear2D(showPlots=False):
     """ Testing the Linearized 2D interface (phi) propagation. """
     g = (0.0,0.0,-9.81)        # gravity
     L = (5.0,5.0,0.25)         # tank dimensions
@@ -51,12 +53,14 @@ def test_Linear2D():
 
     try:
         plot(x, result, 'b', linewidth=2)
-        show()
+        if showPlots:
+            show()
     except:
         pass
 
+
 if __name__ == '__main__':
     print "The program name is: ", __name__
-    test_Linear2D()
+    test_Linear2D(showPlots=True)
     #-->test_WaveGroup()
     #-->test_Solitary()

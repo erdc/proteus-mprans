@@ -4,6 +4,26 @@ import numpy as np
     fed in and constrasted with field data. """
 
 class Linear2D:
+    """
+    A class for solutions of
+
+    Long form documentation
+
+    A todo item
+    
+    .. todo:: Finish the docs
+
+    An equation
+    
+    .. math:: 
+
+      u_t =  
+
+    More text, inline math :math:`x^3` 
+    """
+    #see this url for some useful restructured text directives
+    #
+    #http://matplotlib.sourceforge.net/devel/documenting_mpl.html#formatting-mpl-docs
     def __init__(self,amplitude,omega,k,depth,rho_0,rho_1):
         self.A = amplitude
         self.omega = omega
