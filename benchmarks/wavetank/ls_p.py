@@ -16,7 +16,7 @@ def getDBC_ls(x,flag):
     #     return lambda x,t: x[2] - outflowHeight
     if flag == boundaryTags['left']:#x[0] < 1.0e-8:
         return wavePhi
-    elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8:
+    elif (not rightEndClosed) and flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8:
         return lambda x,t: x[2] - outflowHeight
     elif flag == boundaryTags['top']:#x[0] > L[0] - 1.0e-8:
         return lambda x,t: x[2] - outflowHeight

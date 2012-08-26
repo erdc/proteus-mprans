@@ -859,7 +859,7 @@ namespace proteus
 
       if (porosity > epsZero && meanGrainSize > epsZero)
 	Kinv = 180.0*voidFrac*voidFrac/(meanGrainSize*meanGrainSize*porosity*porosity*porosity);
-    
+	
       Kinv *= linearDragFactor;
 
       mom_u_source += porosity*porosity*viscosity*Kinv*(1.0+Ftilde*uc)*u;

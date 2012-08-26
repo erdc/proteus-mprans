@@ -76,10 +76,10 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.waterDepth=waterDepth
         self.Omega_s=Omega_s
         self.epsFact_source=epsFact_source
-        self.linearDragFactor = 1.0; self.nonlinearDragFactor = 1.0
+        self.linearDragFactor = 1.0; 
+        self.nonlinearDragFactor = 1.0
         if self.killNonlinearDrag:
             self.nonlinearDragFactor = 0.0
-        
         mass={}
         advection={}
         diffusion={}

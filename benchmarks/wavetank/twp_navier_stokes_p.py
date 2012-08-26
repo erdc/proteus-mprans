@@ -4,20 +4,39 @@ from wavetank import *
 from proteus.mprans import RANS2P
 
 LevelModelType = RANS2P.LevelModel
-coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
-                                             sigma=0.0,
-                                             rho_0 = rho_0,
-                                             nu_0 = nu_0,
-                                             rho_1 = rho_1,
-                                             nu_1 = nu_1,
-                                             g=g,
-                                             nd=nd,
-                                             LS_model=1,
-                                             epsFact_density=epsFact_density,
-                                             stokes=False,
-                                             useRBLES=useRBLES,
-		                             useMetrics=useMetrics)
-					     
+
+if spongeLayer or levee:
+	coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
+					   sigma=0.0,
+					   rho_0 = rho_0,
+					   nu_0 = nu_0,
+					   rho_1 = rho_1,
+					   nu_1 = nu_1,
+					   g=g,
+					   nd=nd,
+					   LS_model=1,
+					   epsFact_density=epsFact_density,
+					   stokes=False,
+					   useRBLES=useRBLES,
+					   useMetrics=useMetrics,
+					   porosityTypes=porosityTypes,
+					   meanGrainSizeTypes=meanGrainSizeTypes,
+					   killNonlinearDrag = killNonlinearDragInSpongeLayer)
+else:
+	coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
+					   sigma=0.0,
+					   rho_0 = rho_0,
+					   nu_0 = nu_0,
+					   rho_1 = rho_1,
+					   nu_1 = nu_1,
+					   g=g,
+					   nd=nd,
+					   LS_model=1,
+					   epsFact_density=epsFact_density,
+					   stokes=False,
+					   useRBLES=useRBLES,
+					   useMetrics=useMetrics)
+	
 
 def getDBC_p(x,flag):
     # if x[2] > L[2] - 1.0e-8:#top atmospheric
@@ -26,7 +45,7 @@ def getDBC_p(x,flag):
     #     return outflowPressure
     if flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8:#top atmospheric
         return lambda x,t: rho_1*x[2]*g[2]
-    elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right hydrostatic w.r.t outflowHeight
+    elif (not rightEndClosed) and flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right hydrostatic w.r.t outflowHeight
         return outflowPressure
 
 def getDBC_u(x,flag):
@@ -38,7 +57,7 @@ def getDBC_u(x,flag):
     #     return lambda x,t: windspeed_u
     if flag == boundaryTags['left']:#x[0] < 1.0e-8:
         return twpflowVelocity_u
-    elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right velocity, only inforced on inflow
+    elif (not rightEndClosed) and flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right velocity, only inforced on inflow
         return lambda x,t: outflowVelocity[0]
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8:
         return lambda x,t: windspeed_u
@@ -52,7 +71,7 @@ def getDBC_v(x,flag):
     #     return lambda x,t: windspeed_v
     if flag == boundaryTags['left']:#x[0] < 1.0e-8:
         return twpflowVelocity_v
-    elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right velocity, only inforced on inflow
+    elif (not rightEndClosed) and flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right velocity, only inforced on inflow
        return lambda x,t: outflowVelocity[1]
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8:
         return lambda x,t: windspeed_v
@@ -64,7 +83,7 @@ def getDBC_w(x,flag):
     #     return lambda x,t: outflowVelocity[2]
     if flag == boundaryTags['left']:#x[0] < 1.0e-8:
         return twpflowVelocity_w
-    elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right velocity, only inforced on inflow
+    elif (not rightEndClosed) and flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right velocity, only inforced on inflow
         return lambda x,t: outflowVelocity[2]
 
 dirichletConditions = {0:getDBC_p,
@@ -84,7 +103,10 @@ def getAFBC_p(x,flag):
     if flag == boundaryTags['left']:#x[0] < 1.0e-8:
         return twpflowFlux
     elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right open
-        return None
+	if rightEndClosed:
+	    return lambda x,t: 0.0
+	else:
+	    return None
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8: #top open
         return None
     else:  #wall
@@ -102,7 +124,10 @@ def getAFBC_u(x,flag):
     if flag == boundaryTags['left']:#x[0] < 1.0e-8:#left Dirichlet
         return None
     elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right open
-        return None
+	if rightEndClosed:
+	    return lambda x,t: 0.0
+	else:
+	    return None
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8: #top Dirichlet on x-component
         return None
     else:
@@ -120,7 +145,10 @@ def getAFBC_v(x,flag):
     if flag == boundaryTags['left']:#x[0] < 1.0e-8:#left Dirichlet
         return None
     elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right open
-        return None
+	if rightEndClosed:
+	    return lambda x,t: 0.0
+	else:
+	    return None
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8: #top Dirichlet on y-component
         return None
     else:
@@ -138,7 +166,10 @@ def getAFBC_w(x,flag):
     if flag == boundaryTags['left']:#x[0] < 1.0e-8:#left Dirichlet
         return None
     elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right open
-        return None
+	if rightEndClosed:
+	    return lambda x,t: 0.0
+	else:
+	    return None
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8: #top open
         return None
     else:
@@ -157,7 +188,10 @@ def getDFBC_u(x,flag):
     if flag == boundaryTags['left']:#x[0] < 1.0e-8:#left Dirichlet
         return None
     elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right open
-        return None
+	if rightEndClosed:
+	    return lambda x,t: 0.0
+	else:
+	    return None
     #return lambda x,t: 0.0
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8: #top Dirichlet on x-component
         return None
@@ -177,7 +211,10 @@ def getDFBC_v(x,flag):
     if flag == boundaryTags['left']:#x[0] < 1.0e-8:#left Dirichlet
         return None
     elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right open
-        return None
+	if rightEndClosed:
+	    return lambda x,t: 0.0
+	else:
+            return None
     #return lambda x,t: 0.0
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8: #top Dirichlet on y-component
         return None
@@ -199,7 +236,10 @@ def getDFBC_w(x,flag):
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8: #top outflow
         return lambda x,t: 0.0
     elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right open
-        return None
+	if rightEndClosed:
+	    return lambda x,t: 0.0
+	else:
+            return None
     #return lambda x,t: 0.0
     else: #no diffusive flux everywhere else
         return lambda x,t: 0.0

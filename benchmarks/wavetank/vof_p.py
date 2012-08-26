@@ -18,7 +18,7 @@ def getDBC_vof(x,flag):
     #     return waveVF
     if flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8:
         return lambda x,t: 1.0
-    elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8:
+    elif (not rightEndClosed) and flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8:
         return outflowVF
     elif flag == boundaryTags['left']:#x[0] < 1.0e-8:
         return waveVF
@@ -37,7 +37,10 @@ def getAFBC_vof(x,flag):
     if flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8:
     	return None
     elif flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8:
-        return None
+        if rightEndClosed:
+	    return lambda x,t: 0.0
+	else:
+	    return None
     elif flag == boundaryTags['left']:#x[0] < 1.0e-8:
         return None
     else:

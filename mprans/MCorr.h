@@ -51,6 +51,7 @@ namespace proteus
 				   double* ebqe_u,
 				   double* ebqe_n,
 				   double* q_r,
+				   double* q_porosity,
 				   int offset_u, int stride_u, 
 				   double* globalResidual,			   
 				   int nExteriorElementBoundaries_global,
@@ -89,6 +90,7 @@ namespace proteus
 				   double* q_phi,
 				   double* q_normal_phi,
 				   double* q_H,
+				   double* q_porosity,
 				   int* csrRowIndeces_u_u,int* csrColumnOffsets_u_u,
 				   double* globalJacobian)=0;
     virtual void elementSolve(//element
@@ -130,6 +132,7 @@ namespace proteus
 			       double* ebqe_u,
 			       double* ebqe_n,
 			       double* q_r,
+			       double* q_porosity,
 			       int offset_u, int stride_u, 
 			       double* globalResidual,			   
 			       int nExteriorElementBoundaries_global,
@@ -177,6 +180,7 @@ namespace proteus
 			       double* ebqe_u,
 			       double* ebqe_n,
 			       double* q_r,
+			       double* q_porosity,
 			       int offset_u, int stride_u, 
 			       double* globalResidual,			   
 			       int nExteriorElementBoundaries_global,
@@ -224,6 +228,7 @@ namespace proteus
 			       double* ebqe_u,
 			       double* ebqe_n,
 			       double* q_r,
+			       double* q_porosity,
 			       int offset_u, int stride_u, 
 			       double* globalResidual,			   
 			       int nExteriorElementBoundaries_global,
@@ -274,6 +279,7 @@ namespace proteus
 				   double* ebqe_u,
 				   double* ebqe_n,
 				   double* q_r,
+				   double* q_porosity,
 				   int offset_u, int stride_u, 
 				   double* globalResidual,			   
 				   int nExteriorElementBoundaries_global,
@@ -320,6 +326,7 @@ namespace proteus
 				   double* ebqe_u,
 				   double* ebqe_n,
 				   double* q_r,
+				   double* q_porosity,
 				   int offset_u, int stride_u, 
 				   double* globalResidual,			   
 				   int nExteriorElementBoundaries_global,
@@ -391,11 +398,12 @@ namespace proteus
 			      const double& phi,
 			      const double& H,
 			      const double& u,
+			      const double& porosity,
 			      double& r,
 			      double& dr)
     {
-      r = smoothedHeaviside(epsHeaviside,phi+u) - H;
-      dr = smoothedDirac(epsDirac,phi+u);
+      r = porosity*smoothedHeaviside(epsHeaviside,phi+u) - H;
+      dr = porosity*smoothedDirac(epsDirac,phi+u);
     }
 
     inline void calculateElementResidual(//element
@@ -437,6 +445,7 @@ namespace proteus
 					 double* ebqe_u,
 					 double* ebqe_n,
 					 double* q_r,
+					 double* q_porosity,
 					 int offset_u, int stride_u, 
 					 double* elementResidual_u,			   
 					 int nExteriorElementBoundaries_global,
@@ -517,6 +526,7 @@ namespace proteus
 			       q_phi[eN_k],
 			       q_H[eN_k],
 			       u,
+			       q_porosity[eN_k],
 			       r,
 			       dr);
 	  // 
@@ -588,6 +598,7 @@ namespace proteus
 			   double* ebqe_u,
 			   double* ebqe_n,
 			   double* q_r,
+			   double* q_porosity,
 			   int offset_u, int stride_u, 
 			   double* globalResidual,			   
 			   int nExteriorElementBoundaries_global,
@@ -650,6 +661,7 @@ namespace proteus
 				   ebqe_u,
 				   ebqe_n,
 				   q_r,
+				   q_porosity,
 				   offset_u,stride_u, 
 				   elementResidual_u,			   
 				   nExteriorElementBoundaries_global,
@@ -803,6 +815,7 @@ namespace proteus
 					 double* q_phi,
 					 double* q_normal_phi,
 					 double* q_H,
+					 double* q_porosity,
 					 double* elementJacobian_u_u,
 					 double* element_u,
 					 int eN)
@@ -879,6 +892,7 @@ namespace proteus
 			       q_phi[eN_k],
 			       q_H[eN_k],
 			       u,
+			       q_porosity[eN_k],
 			       r,
 			       dr);
 	  for(int i=0;i<nDOF_test_element;i++)
@@ -934,6 +948,7 @@ namespace proteus
 			   double* q_phi,
 			   double* q_normal_phi,
 			   double* q_H,
+			   double* q_porosity,
 			   int* csrRowIndeces_u_u,int* csrColumnOffsets_u_u,
 			   double* globalJacobian)
     {
@@ -977,6 +992,7 @@ namespace proteus
 				   q_phi,
 				   q_normal_phi,
 				   q_H,
+				   q_porosity,
 				   elementJacobian_u_u,
 				   element_u,
 				   eN);
@@ -1034,6 +1050,7 @@ namespace proteus
 			       double* ebqe_u,
 			       double* ebqe_n,
 			       double* q_r,
+			       double* q_porosity,
 			       int offset_u, int stride_u, 
 			       double* globalResidual,			   
 			       int nExteriorElementBoundaries_global,
@@ -1103,6 +1120,7 @@ namespace proteus
 				   ebqe_u,
 				   ebqe_n,
 				   q_r,
+				   q_porosity,
 				   offset_u,stride_u, 
 				   elementResidual_u,			   
 				   nExteriorElementBoundaries_global,
@@ -1154,6 +1172,7 @@ namespace proteus
 				       q_phi,
 				       q_normal_phi,
 				       q_H,
+				       q_porosity,
 				       elementJacobian_u_u,
 				       element_u,
 				       eN);
@@ -1233,6 +1252,7 @@ namespace proteus
 					   ebqe_u,
 					   ebqe_n,
 					   q_r,
+					   q_porosity,
 					   offset_u,stride_u, 
 					   elementResidual_u,			   
 					   nExteriorElementBoundaries_global,
@@ -1297,6 +1317,7 @@ namespace proteus
 			       double* ebqe_u,
 			       double* ebqe_n,
 			       double* q_r,
+			       double* q_porosity,
 			       int offset_u, int stride_u, 
 			       double* globalResidual,			   
 			       int nExteriorElementBoundaries_global,
@@ -1353,6 +1374,7 @@ namespace proteus
 				   ebqe_u,
 				   ebqe_n,
 				   q_r,
+				   q_porosity,
 				   offset_u,stride_u, 
 				   elementResidual_u,			   
 				   nExteriorElementBoundaries_global,
@@ -1404,6 +1426,7 @@ namespace proteus
 				       q_phi,
 				       q_normal_phi,
 				       q_H,
+				       q_porosity,
 				       elementJacobian_u_u,
 				       element_u,
 				       eN);
@@ -1459,6 +1482,7 @@ namespace proteus
 				       ebqe_u,
 				       ebqe_n,
 				       q_r,
+				       q_porosity,
 				       offset_u,stride_u, 
 				       elementResidual_u,			   
 				       nExteriorElementBoundaries_global,
@@ -1518,6 +1542,7 @@ namespace proteus
 			     double* ebqe_u,
 			     double* ebqe_n,
 			     double* q_r,
+			     double* q_porosity,
 			     int offset_u, int stride_u, 
 			     double* globalResidual,			   
 			     int nExteriorElementBoundaries_global,
@@ -1578,6 +1603,7 @@ namespace proteus
 				   ebqe_u,
 				   ebqe_n,
 				   q_r,
+				   q_porosity,
 				   offset_u,stride_u, 
 				   elementResidual_u,			   
 				   nExteriorElementBoundaries_global,
@@ -1620,6 +1646,7 @@ namespace proteus
 				   q_phi,
 				   q_normal_phi,
 				   q_H,
+				   q_porosity,
 				   elementJacobian_u_u,
 				   element_u,
 				   eN);
@@ -1672,6 +1699,7 @@ namespace proteus
 		       double* ebqe_u,
 		       double* ebqe_n,
 		       double* q_r,
+		       double* q_porosity,
 		       int offset_u, int stride_u, 
 		       double* globalResidual,			   
 		       int nExteriorElementBoundaries_global,
@@ -1761,6 +1789,7 @@ namespace proteus
 			   double* ebqe_u,
 			   double* ebqe_n,
 			   double* q_r,
+			   double* q_porosity,
 			   int offset_u, int stride_u, 
 			   double* globalResidual,			   
 			   int nExteriorElementBoundaries_global,
@@ -1806,7 +1835,7 @@ namespace proteus
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
 	      ck.calculateGScale(G,&q_normal_phi[eN_k_nSpace],h_phi);
 	      epsHeaviside=epsFactHeaviside*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
-	      q_H[eN_k] = smoothedHeaviside(epsHeaviside,q_phi[eN_k]);
+	      q_H[eN_k] = q_porosity[eN_k]*smoothedHeaviside(epsHeaviside,q_phi[eN_k]);
 	    }//k
 	  for (int i=0;i<nDOF_trial_element;i++)
 	    {

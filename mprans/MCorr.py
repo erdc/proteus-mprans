@@ -72,6 +72,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         #volume of fluid
         self.vofModel = modelList[self.VOFModelIndex]
         self.q_H_vof = modelList[self.VOFModelIndex].q[('u',0)]
+        self.q_porosity = modelList[self.VOFModelIndex].coefficients.q_porosity
         self.ebqe_H_vof = modelList[self.VOFModelIndex].ebqe[('u',0)]
         if modelList[self.VOFModelIndex].ebq.has_key(('u',0)):
             self.ebq_H_vof = modelList[self.VOFModelIndex].ebq[('u',0)]
@@ -589,6 +590,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 				 self.ebqe[('u',0)],
 				 self.ebqe[('grad(u)',0)], 
                                  self.q[('r',0)],                 
+                                 self.coefficients.q_porosity,
 		                 self.offset[0],self.stride[0],
                                  r,
             self.mesh.nExteriorElementBoundaries_global,
@@ -637,6 +639,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                  self.coefficients.q_u_ls,
 				 self.coefficients.q_n_ls,
                                  self.coefficients.q_H_vof,
+                                 self.coefficients.q_porosity,
                                  self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
                                  jacobian)
         log("Jacobian ",level=10,data=jacobian)
@@ -694,6 +697,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('u',0)],
             self.ebqe[('grad(u)',0)], 
             self.q[('r',0)],                 
+            self.coefficients.q_porosity,
             self.offset[0],self.stride[0],
             r,
             self.mesh.nExteriorElementBoundaries_global,
@@ -753,6 +757,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 				 self.ebqe[('u',0)],
 				 self.ebqe[('grad(u)',0)], 
                                  self.q[('r',0)],                 
+                                 self.coefficients.q_porosity,
 		                 self.offset[0],self.stride[0],
                                  r,
             self.mesh.nExteriorElementBoundaries_global,
@@ -815,6 +820,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.q[('r',0)],                 
             self.offset[0],self.stride[0],
             r,
+            self.coefficients.q_porosity,
             self.mesh.nExteriorElementBoundaries_global,
             self.mesh.exteriorElementBoundariesArray,
             self.mesh.elementBoundaryElementsArray,
@@ -916,7 +922,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 				 self.q[('grad(u)',0)],
 				 self.ebqe[('u',0)],
 				 self.ebqe[('grad(u)',0)], 
-                                 self.q[('r',0)],                 
+                                 self.q[('r',0)],              
+                                 self.coefficients.q_porosity,
 		                 self.offset[0],self.stride[0],
             self.u[0].dof,#dummy r,not used
             self.mesh.nExteriorElementBoundaries_global,
@@ -962,7 +969,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.q[('grad(u)',0)],
             self.ebqe[('u',0)],
             self.ebqe[('grad(u)',0)], 
-            self.q[('r',0)],                 
+            self.q[('r',0)],              
+            self.coefficients.q_porosity,
             self.offset[0],self.stride[0],
             self.u[0].dof,#dummy r,not used
             self.mesh.nExteriorElementBoundaries_global,
