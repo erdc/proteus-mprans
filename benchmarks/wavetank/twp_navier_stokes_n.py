@@ -16,12 +16,14 @@ massLumping       = False
 numericalFluxType = None
 conservativeFlux  = None
 numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_IIPG_exterior 
-subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=True,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=False)
-shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=True)
+subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=False,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=False)
+shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=False)
 
 fullNewtonFlag = True
 multilevelNonlinearSolver = NewtonNS
 levelNonlinearSolver      = NewtonNS
+multilevelNonlinearSolver = Newton
+levelNonlinearSolver      = Newton
 
 nonlinearSmoother = None
 linearSmoother    = None
@@ -40,11 +42,11 @@ if useSuperlu:
     levelLinearSolver      = LU
     
 linear_solver_options_prefix = 'rans2p_'
-levelNonlinearSolverConvergenceTest = 'rits'
-linearSolverConvergenceTest         = 'rits'
+levelNonlinearSolverConvergenceTest = 'r'
+linearSolverConvergenceTest         = 'r'
 
 tolFac = 0.0
 nl_atol_res = 1.0e-6
 
-maxNonlinearIts = 10
+maxNonlinearIts = 15
 maxLineSearches = 0

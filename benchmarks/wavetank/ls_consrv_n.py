@@ -33,7 +33,7 @@ if useSuperlu:
     levelLinearSolver      = LU
 
 linear_solver_options_prefix = 'mcorr_'
-linearSolverConvergenceTest  = 'rits'
+linearSolverConvergenceTest  = 'r'
 
 tolFac = 0.0
 nl_atol_res = 1.0e-8

@@ -4,13 +4,15 @@ from wavetank import *
 
 timeIntegration = BackwardEuler
 stepController = Osher_PsiTC_controller2	     
+timeIntegrator  = ForwardIntegrator
+timeIntegration = NoIntegration
 femSpaces = {0:basis}
        
 massLumping       = False
 numericalFluxType = DoNothing    
 conservativeFlux  = None
-subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=True)
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=True)
+subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=False)
+shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=False)
 
 fullNewtonFlag = True
 multilevelNonlinearSolver  = NLNI
@@ -39,9 +41,9 @@ linearSolverConvergenceTest = 'rits'
 runCFL=1.0
 rtol_res[0] = 0.0
 atol_res[0] = 0.01*he
-psitc['nStepsForce']=5
+psitc['nStepsForce']=3
 psitc['nStepsMax']=10 
-psitc['reduceRatio']=1.0
+psitc['reduceRatio']=0.5
 psitc['startRatio']=1.0 
 
 tolFac = 0.0

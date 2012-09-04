@@ -42,7 +42,7 @@ elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,obstacleInTank_quad_orde
 
 subgridError = None
 
-subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
+subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=lag_ns_subgridError,delayLagSteps=2,hFactor=hFactor,noPressureStabilization=noPressureStabilization)
 
 massLumping = False
 

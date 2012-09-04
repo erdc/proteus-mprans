@@ -55,16 +55,17 @@ elif spaceOrder == 2:
 # Domain and mesh
 L = (5.0,
      10.0,
-     0.5)
+     1.0)
 spongeLayer = True
 xSponge = 8.0#0.8*L[0]
 levee=True; spongeLayer=False;
-leveeStart = 3.0
-leveeBottomWidth = 1.0
-leveeHeight =L[2]*3.0/4.0
+leveeStart = 1.9
+leveeBottomWidth = 3.0
+leveeHeight =L[2]*3.0/5.0
 leveeHeightDownstream = 0.0#0.25 
-leveeSlope = 2.0
-
+leveeSlope = 1.0/2.0
+bedHeight = 0.2*L[2]
+leveeHeightDownstream=bedHeight
 quasi2D = True
 
 nLevels = 1
@@ -142,22 +143,26 @@ else:
         porosityTypes      = numpy.array([1.0,spongePorosity])
         meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize])
     elif levee:
-        vertices=[[0.0,0.0,0.0],#0
+        vertices=[[0.0,0.0,bedHeight],#0
                   [L[0],0.0,leveeHeightDownstream],#1
                   [L[0],L[1],leveeHeightDownstream],#2
-                  [0.0,L[1],0.0],#3
+                  [0.0,L[1],bedHeight],#3
                   [0.0,0.0,L[2]],#4
                   [L[0],0.0,L[2]],#5
                   [L[0],L[1],L[2]],#6
                   [0.0,L[1],L[2]],#7
-                  [leveeStart,0.0,0.0],#8
+                  [leveeStart,0.0,bedHeight],#8
                   [leveeStart+leveeBottomWidth,0.0,leveeHeightDownstream],#9
-                  [leveeStart,L[1],0.0],#10
+                  [leveeStart,L[1],bedHeight],#10
                   [leveeStart+leveeBottomWidth,L[1],leveeHeightDownstream],#11
                   [leveeStart+leveeHeight/leveeSlope,0.0,leveeHeight],#12
                   [leveeStart+leveeBottomWidth-leveeHeight/leveeSlope,0.0,leveeHeight],#13
                   [leveeStart+leveeHeight/leveeSlope,L[1],leveeHeight],#14
                   [leveeStart+leveeBottomWidth-leveeHeight/leveeSlope,L[1],leveeHeight],#15
+                  [0.0,0.0,0.0],#16
+                  [L[0],0.0,0.0],#17
+                  [L[0],L[1],0.0],#18
+                  [0.0,L[1],0.0]#19
                   ]
         vertexFlags=[boundaryTags['left'],
                      boundaryTags['right'],
@@ -167,18 +172,22 @@ else:
                      boundaryTags['right'],
                      boundaryTags['right'],
                      boundaryTags['left'],
-                     boundaryTags['bottom'],
-                     boundaryTags['bottom'],
-                     boundaryTags['bottom'],
-                     boundaryTags['bottom'],
+                     0,#boundaryTags['bottom'],
+                     0,#boundaryTags['bottom'],
+                     0,#boundaryTags['bottom'],
+                     0,#boundaryTags['bottom'],
                      boundaryTags['left'],
                      boundaryTags['left'],
                      boundaryTags['right'],
-                     boundaryTags['right']
+                     boundaryTags['right'],
+                     boundaryTags['bottom'],
+                     boundaryTags['bottom'],
+                     boundaryTags['bottom'],
+                     boundaryTags['bottom']
                      ]
-        facets=[[[0,8,10,3]],#bottom
-                [[8,9,11,10]],#bottom
-                [[9,1,2,11]],#bottom
+        facets=[[[0,8,10,3]],#bed
+                [[8,9,11,10]],#bed
+                [[9,1,2,11]],#bed
                 [[8,9,13,12]],#front levee face
                 [[10,11,15,14]],#back levee face
                 [[8,12,14,10]],#left levee face
@@ -188,10 +197,16 @@ else:
                 [[3,10,14,15,11,2,6,7]], #back facet
                 [[1,2,6,5]],#right
                 [[3,0,4,7]],#left
-                [[4,5,6,7]]]#top
-        facetFlags=[boundaryTags['bottom'],
-                    boundaryTags['bottom'],
-                    boundaryTags['bottom'],
+                [[4,5,6,7]],#top
+                [[16,17,18,19]],#bottom
+                [[16,17,1,9,8,0]],#front 
+                [[19,18,2,11,10,3]],#back
+                [[16,19,3,0]],#left
+                [[17,18,2,1]]#right
+                ]
+        facetFlags=[0,#boundaryTags['bottom'],
+                    0,#boundaryTags['bottom'],
+                    0,#boundaryTags['bottom'],
                     boundaryTags['front'],
                     boundaryTags['back'],
                     0,
@@ -201,14 +216,20 @@ else:
                     boundaryTags['back'],
                     boundaryTags['right'],
                     boundaryTags['left'],
-                    boundaryTags['top']]
-        regions=[[0.001,0.001,0.001],[leveeStart+0.5*leveeBottomWidth,0.5*L[1],0.5*leveeHeight]]
-        regionFlags=[0,1]
-        spongeGrainSize= 0.01
-        spongePorosity = 0.5
+                    boundaryTags['top'],
+                    boundaryTags['bottom'],
+                    boundaryTags['front'],
+                    boundaryTags['back'],
+                    boundaryTags['left'],
+                    boundaryTags['right']
+                    ]
+        regions=[[0.001,0.001,bedHeight+0.001],[leveeStart+0.5*leveeBottomWidth,0.5*L[1],0.5*(bedHeight+leveeHeight)],[0.5*L[0],0.5*L[1],0.5*bedHeight]]
+        regionFlags=[0,1,2]
+        spongeGrainSize= 0.003
+        spongePorosity = 0.2
         killNonlinearDragInSpongeLayer = True
-        porosityTypes      = numpy.array([1.0,spongePorosity])
-        meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize])
+        porosityTypes      = numpy.array([1.0,spongePorosity,spongePorosity])
+        meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize,spongeGrainSize])
     else:
         vertices=[[0.0,0.0,0.0],#0
                   [L[0],0.0,0.0],#1
@@ -255,14 +276,14 @@ else:
 
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.9
-ls_shockCapturingFactor  = 0.9
+ns_shockCapturingFactor  = 0.3
+ls_shockCapturingFactor  = 0.3
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.9
+vof_shockCapturingFactor = 0.3
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.9
+rd_shockCapturingFactor  = 0.3
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5
@@ -288,21 +309,21 @@ sigma_01 = 0.0
 g = [0.0,0.0,-9.8]
 
 #wave/current properties
-windspeed_u = 0.0
+windspeed_u = 1.0
 windspeed_v = 0.0
 windspeed_w = 0.0
 
 outflowHeight = 0.0#0.5*L[2]
 outflowVelocity = (0.0,0.0,0.0)#not used for now
 
-inflowHeightMean = 0.5*L[2]
-inflowVelocityMean = (0.01,0.0,0.0)
+inflowHeightMean = 0.4*L[2]
+inflowVelocityMean = (0.2,0.0,0.0)
 
 waveLength = inflowHeightMean*5 #
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
 omega = 2.0*pi/period
 k=2.0*pi/waveLength
-amplitude = 0.0*inflowHeightMean
+amplitude = 0.1*inflowHeightMean
 
 # Wave Field Object
 #waveField = wm.Linear2D(amplitude,omega,k,L[2],rho_0,rho_1)
@@ -368,13 +389,13 @@ def outflowPressure(x,t):
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 # Time 
-T=6.0#period*100
-runCFL = 0.33
+T=20.0#period*100
+runCFL = 1.0
 print "T",T
-dt_fixed = period/5.0 
+dt_fixed = period/10.0 
 #dt_fixed = period/100.0
-dt_fixed = 6.0/1000.0
-dt_init = 1.0e-4
+#dt_fixed = 6.0/1000.0
+dt_init = 1.0e-3
 nDTout = int(T/dt_fixed)
 tnList = [i*dt_fixed for i in range(0,nDTout+1)] 
 print tnList
