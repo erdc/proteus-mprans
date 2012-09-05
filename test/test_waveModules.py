@@ -45,7 +45,6 @@ def test_Linear2D(showPlots=False):
     waveTest = wm.Linear2D(A,omega,k,h,rho_0,rho_1)
 
     result = waveTest.height(x,t[90])
-    #-->result = np.real( A*np.exp(1j*(k[0]*x[0] - omega*t[1])) )
     #correctResult = np.real( A*np.exp(1j*(np.inner(k,x)- omega*t[1])) )
 
     # Plot result if appropriate

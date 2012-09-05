@@ -6,19 +6,16 @@ import numpy as np
 
 class Linear2D:
     """
-    A class for solutions of
-
-    Long form documentation
-
-    A todo item
+    A class for linearized solutions of 2D flow (1D + surface) for
+    travelling progressive waves ~ exp(kx-wt)
     
     .. todo:: Finish the docs
 
     An equation
     
     .. math:: 
-
-      u_t =  
+        
+        \Phi_t = -g \zeta + ...
 
     More text, inline math :math:`x^3` 
     """
@@ -129,9 +126,9 @@ class WaveGroup:
         # Finite Depth (0 < kh < infty)
         for i in range(self.N):
             diffPos = (1+diff*(i+1))
-            difNeg = (1-diff*(i+1))
+            diffNeg = (1-diff*(i+1))
             u = u + (-g[2]*diffPos*self.k[0]*self.A / (diffPos*self.omega)) * np.cosh(diffPos*self.k[0]*(z+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*diffPos*(self.k[0]*x[0] - self.omega*t)) +\
-                (-g[2]*difNeg*self.k[0]*self.A / (difNeg*self.omega)) * np.cosh(difNeg*self.k[0]*(z+self.h))/np.cosh(difNeg*self.k[0]*self.h) * np.exp(1j*difNeg*(self.k[0]*x[0] - self.omega*t))
+                (-g[2]*diffNeg*self.k[0]*self.A / (diffNeg*self.omega)) * np.cosh(diffNeg*self.k[0]*(z+self.h))/np.cosh(diffNeg*self.k[0]*self.h) * np.exp(1j*diffNeg*(self.k[0]*x[0] - self.omega*t))
         # Deep water (kh >> 1)
         # ... TODO
                  
@@ -148,19 +145,28 @@ class WaveGroup:
 
 
     def velocity_w(self,x,t):
-        w = 0.0
+        for i in range(self.N):
+            diffPos = (1+diff*(i+1))
+            diffNeg = (1-diff*(i+1))        
+            w = w + -1j * (-g[2]*diffPos*self.k[0]*self.A/(diffPos*self.omega)) * np.sinh(diffPos*self.k[0]*(x[2]+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*(diffPos*self.k[0]*x[0] - self.omega*t)) + \
+                -1j * (-g[2]*diffNeg*self.k[0]*self.A/self.omega) * np.sinh(self.k[0]*(x[2]+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
+        
         return w
         # NOTE: you can implement based on linearized ideal flow   
 
     def pressure(self,x,t):
-        p = 0.0    # P_atm
-        return p
+        for i in range(self.N):
+            diffPos = (1+diff*(i+1))
+            diffNeg = (1-diff*(i+1))
+            p = p + self.rho_0*(-g[2])*self.A* np.cosh(diffPos*self.k[0]*(x[2]+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*diffPos*(self.k[0]*x[0] - self.omega*t)) + \
+                self.rho_0*(-g[2])*self.A* np.cosh(diffNeg*self.k[0]*(x[2]+self.h))/np.cosh(diffNeg*self.k[0]*self.h) * np.exp(1j*diffNeg*(self.k[0]*x[0] - self.omega*t))
+        return np.real(p)
         # NOTE: also implement on ideal flow via linearized Bernoulli eqn.
 
 
 class Solitary:
-    """ Class that defines a nearly monochromatic
-        wave train/group of waves of same amplitude.
+    """ Class that defines a solitary wave profile
+        of a constant initial amplitude.
         
         .. todo:: Finish the docs. """
     def __init__(self,amplitude,omega,k,depth,rho_0,rho_1):
@@ -177,11 +183,6 @@ class Solitary:
         # ~ NOTE: x[0] is a vector here!
         return eta
 
-    def pressure(self,x,t):
-        p = 0.0       # P_atm
-        return
-        # NOTE: define via Bernoulli eqn.
-
     def velocity_u(self,x,t):
         u = 0.0
         return u
@@ -196,3 +197,9 @@ class Solitary:
         w = 0.0
         return w
         # NOTE: base it on ideal fluid flow
+
+    def pressure(self,x,t):
+        p = 0.0       # P_atm
+        return
+        # NOTE: define via Bernoulli eqn.
+
