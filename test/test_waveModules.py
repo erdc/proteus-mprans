@@ -37,32 +37,91 @@ def test_Linear2D(showPlots=False):
 
     # Collocation point
     N = 100
-    x = (np.linspace(0,L[0],N),0.0,0.0)
+    x = [np.linspace(0,L[0],N), 0.0, 0.0]
     t = np.linspace(0,period,N)
-    [xx, tt] = np.meshgrid(x[0],t) 
+    [xx, tt] = np.meshgrid(x,t) 
     
     # Wave Field Object
-    # --> waveTest = wm.Linear2D(A,omega,k,h,rho_0,rho_1)
-    waveTest = wm.WaveGroup(A,omega,k,h,rho_0,rho_1)
-    # --> waveTest = wm.Solitary(A,omega,k,h,rho_0,rho_1)
+    waveTest = wm.Linear2D(A,omega,k,h,rho_0,rho_1)
 
-    #result = waveTest.height(x[0][0],t[90])
-    result = np.real( A*np.exp(1j*(np.inner(k,x)- omega*t[1])) )
+    result = waveTest.height(x,t[90])
+    #-->result = np.real( A*np.exp(1j*(k[0]*x[0] - omega*t[1])) )
     #correctResult = np.real( A*np.exp(1j*(np.inner(k,x)- omega*t[1])) )
 
     # Plot result if appropriate
     #assert correctResult.all() == result.all(), "Linear2D.height returned %f should be %f" % (result,correctResult)
 
     try:
-        plot(x, result, 'b', linewidth=2)
+        plot(x[0], result, 'b', linewidth=2)
         if showPlots:
             show()
     except:
         pass
 
 
+def test_WaveGroup(showPlots=False):
+    """ Testing the Linearized 2D interface (phi) propagation. """
+    A = 0.1                # amplitude
+    k = (2*np.pi/waveLength,0.0,0.0)
+    h = L[2]
+    omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*h))
+    period = 2*np.pi/omega
+
+    # Collocation point
+    N = 100
+    x = [np.linspace(0,L[0],N), 0.0, 0.0]
+    t = np.linspace(0,period,N)
+    [xx, tt] = np.meshgrid(x,t) 
+    
+    # Wave Field Object
+    waveTest = wm.WaveGroup(A,omega,k,h,rho_0,rho_1)
+
+    result = waveTest.height(x,t[90])
+    #correctResult = np.real( A*np.exp(1j*(np.inner(k,x)- omega*t[1])) )
+
+    # Plot result if appropriate
+    #assert correctResult.all() == result.all(), "Linear2D.height returned %f should be %f" % (result,correctResult)
+
+    try:
+        plot(x[0], result, 'b', linewidth=2)
+        if showPlots:
+            show()
+    except:
+        pass
+
+
+def test_Solitary(showPlots=False):
+    """ Testing the Linearized 2D interface (phi) propagation. """
+    A = 0.1                # amplitude
+    k = (2*np.pi/waveLength,0.0,0.0)
+    h = L[2]
+    omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*h))
+    period = 2*np.pi/omega
+
+    # Collocation point
+    N = 100
+    x = [np.linspace(0,L[0],N), 0.0, 0.0]
+    t = np.linspace(0,period,N)
+    [xx, tt] = np.meshgrid(x,t) 
+    
+    # Wave Field Object
+    waveTest = wm.Solitary(A,omega,k,h,rho_0,rho_1)
+
+    result = waveTest.height(x,t[90])
+    #correctResult = np.real( A*np.exp(1j*(k[0]*x[0]- omega*t[1])) )
+
+    # Plot result if appropriate
+    #assert correctResult.all() == result.all(), "Linear2D.height returned %f should be %f" % (result,correctResult)
+
+    try:
+        plot(x[0], result, 'b', linewidth=2)
+        if showPlots:
+            show()
+    except:
+        pass
+
 if __name__ == '__main__':
     print "The program name is: ", __name__
-    test_Linear2D(showPlots=True)
-    #-->test_WaveGroup()
-    #-->test_Solitary()
+    #test_Linear2D(showPlots=True)
+    test_WaveGroup(showPlots=True)
+    #test_Solitary(showPlots=True)
