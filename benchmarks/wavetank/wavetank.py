@@ -1,5 +1,6 @@
 from math import *
 import proteus.MeshTools
+import numpy as np
 #import waveModules_Matt as wm
 from proteus import Domain
 from proteus.default_n import *   
@@ -322,7 +323,7 @@ inflowVelocityMean = (0.2,0.0,0.0)
 waveLength = inflowHeightMean*5 #
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
 omega = 2.0*pi/period
-k=2.0*pi/waveLength
+k=(2.0*pi/waveLength,0.0,0.0)
 amplitude = 0.1*inflowHeightMean
 
 # Wave Field Object
@@ -330,18 +331,18 @@ amplitude = 0.1*inflowHeightMean
 #waveField = wm.Solitary(amplitude,omega,k,L[2],rho_0,rho_1)
 
 def waveHeight(x,t):
-    return inflowHeightMean + amplitude*sin(omega*t-k*x[0])
+    return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
 #    return inflowHeightMean + waveField.height(x,t)
 
 def waveVelocity_u(x,t):
-    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k*x[0])/(k*inflowHeightMean)
+    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k[0]*x[0])/(k[0]*inflowHeightMean)
 #    z = x[2] - inflowHeightMean
-#    return inflowVelocityMean[0] + waveField.velocity_u(x,t,z)
+#    return inflowVelocityMean[0] + waveField.velocity_u(x,t)
 
 def waveVelocity_w(x,t):
     z = x[2] - inflowHeightMean
-    return inflowVelocityMean[2] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k*x[0])/inflowHeightMean
-#    return inflowVelocityMean[2] + waveField.velocity_w(x,t,z)
+    return inflowVelocityMean[2] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k[0]*x[0])/inflowHeightMean
+#    return inflowVelocityMean[2] + waveField.velocity_w(x,t)
 ####
 
 def wavePhi(x,t):

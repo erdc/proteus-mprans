@@ -1,7 +1,8 @@
 import numpy as np
 """ Set of wave modules for initializing and
     driving the wavemaker field, that will be
-    fed in and constrasted with field data. """
+    fed in and constrasted with wave flume 
+    experimental data."""
 
 class Linear2D:
     """
@@ -35,23 +36,25 @@ class Linear2D:
     def height(self,x,t):
         """ Gives a linearized solution for the air-water interface to the 
             potential flow model in two dimensions (x,y,z=eta) for finite depth."""
-        eta = self.A*np.exp(1j*(self.k*x - self.omega*t))
+        eta = self.A*np.exp(1j*(np.inner(self.k,x) - self.omega*t))
         return np.real(eta)
 
-    def pressure(self,x,t,z):
+    def pressure(self,x,t):
         """ Gives linearized pressured with P_atm = 0 """
         g = (0.0,0.0,-9.81)
-        p = self.rho_0*(-g[2])*self.A* np.cosh(self.k*(z+self.h))/np.cosh(self.k*self.h) * np.exp(1j*(self.k*x - self.omega*t))
+        p = self.rho_0*(-g[2])*self.A* np.cosh(self.k[0]*(x[2]+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(np.inner(self.k,x) - self.omega*t))
         return np.real(p)
 
-    def velocity_u(self,x,t,z):
+    def velocity_u(self,x,t):
         """ Defines a linearized solution to the potential flow
             model in two dimensions (x,y,z) for finite depth,
-            as well as, deep and shllow water limits."""
+            as well as, deep and shllow water limits.
+
+            .. todo:: implement deep & shallow water limits."""
         g = (0.0,0.0,-9.81)                          # gravity
 
         # Finite Depth (0 < kh < infty)
-        u = (-g[2]*self.k*self.A / self.omega) * np.cosh(self.k*(z+self.h))/np.cosh(self.k*self.h) * np.exp(1j*(self.k*x - self.omega*t))  
+        u = (-g[2]*self.k[0]*self.A / self.omega) * np.cosh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(np.inner(self.k,x) - self.omega*t))  
 
         # Deep water (kh >> 1)
         # ... TODO
@@ -62,18 +65,20 @@ class Linear2D:
         return np.real(u)
 
 
-    def velocity_v(self,x,t,z):
+    def velocity_v(self,x,t):
         v = 0.0
         return v
 
-    def velocity_w(self,x,t,z):
+    def velocity_w(self,x,t):
         """ Gives a linearized solution velocity in x-dir to the potential flow
             model in two dimensions (x,y,z) for finite depth, as well as, deep
-            and shallow water limits."""
+            and shallow water limits.
+
+            .. todo:: implement deep & shallow water limits."""
         g = (0.0,0.0,-9.81)                          # gravity
         
         # Finite Depth (0 < kh < infty)                                                                                                                                      
-        w = -1j * (-g[2]*self.k*self.A/self.omega) * np.sinh(self.k*(z+self.h))/np.cosh(self.k*self.h) * np.exp(1j*(self.k*x - self.omega*t))
+        w = -1j * (-g[2]*self.k[0]*self.A/self.omega) * np.sinh(self.k[0]*(x[2]+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(np.inner(self.k,x) - self.omega*t))
 
         # Deep Water (kh >> 1)
         # ... TODO
@@ -98,7 +103,7 @@ class WaveGroup:
 
     def height(self,x,t):
         N = 2
-        theta =  self.k*x - self.omega*t
+        theta =  np.inner(self.k,x) - self.omega*t
         dtheta = 0.1*theta
         eta = self.A*np.cos(theta)
 
@@ -108,23 +113,23 @@ class WaveGroup:
         return eta
 
 
-    def velocity_u(self,x,t,z):
+    def velocity_u(self,x,t):
         u = 0.0
         return u
         # NOTE: you can implement based on linearized ideal flow
 
-    def velocity_v(self,x,t,z):
+    def velocity_v(self,x,t):
         v = 0.0
         return v
         # NOTE: you can implement based on linearized ideal flow   
 
 
-    def velocity_w(self,x,t,z):
+    def velocity_w(self,x,t):
         w = 0.0
         return w
         # NOTE: you can implement based on linearized ideal flow   
 
-    def pressure(self,x,t,z):
+    def pressure(self,x,t):
         p = 0.0    # P_atm
         return p
         # NOTE: also implement on ideal flow via linearized Bernoulli eqn.
@@ -141,25 +146,25 @@ class Solitary:
         self.sigma = 4.0        # std. dev.
 
     def height(self,x,t):
-        eta = self.A/np.cosh((self.k*x - self.omega*t)**2 / self.sigma**2)
+        eta = self.A/np.cosh((np.inner(self.k,x) - self.omega*t)**2 / self.sigma**2)
         return eta
 
-    def pressure(self,x,t,z):
+    def pressure(self,x,t):
         p = 0.0       # P_atm
         return
         # NOTE: define via Bernoulli eqn.
 
-    def velocity_u(self,x,t,z):
+    def velocity_u(self,x,t):
         u = 0.0
         return u
         # NOTE: base it on linearized ideal fluid flow
 
-    def velocity_v(self,x,t,z):
+    def velocity_v(self,x,t):
         v = 0.0
         return v
         # NOTE: base it on linearized ideal fluid flow
     
-    def velocity_w(self,x,t,z):
+    def velocity_w(self,x,t):
         w = 0.0
         return w
         # NOTE: base it on ideal fluid flow
