@@ -67,7 +67,7 @@ leveeSlope = 1.0/2.0
 bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
 quasi2D = True
-
+veg=True; levee=False; spongeLayer=False
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -230,6 +230,130 @@ else:
         killNonlinearDragInSpongeLayer = True
         porosityTypes      = numpy.array([1.0,spongePorosity,spongePorosity])
         meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize,spongeGrainSize])
+    elif veg:
+        dh = 0.05 #m
+        he = 0.5*dh
+        L = (60*dh,3*dh,L[2])
+        random_height=False
+        if random_height:
+            rg = random.Random()
+        iSkip=30
+        iStop=45
+        nBoxes_xy=[60,3]
+        boxScale=[0.5,0.5,0.5]
+        boundaries=['left','right','bottom','top','front','back','obstacle']
+        boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
+        vertices=[[0.0,0.0,0.0],#0
+                  [L[0],0.0,0.0],#1
+                  [L[0],L[1],0.0],#2
+                  [0.0,L[1],0.0],#3
+                  [0.0,0.0,L[2]],#4
+                  [L[0],0.0,L[2]],#5
+                  [L[0],L[1],L[2]],#6
+                  [0.0,L[1],L[2]]]#7
+#               [box_xy[0],box_xy[1],0.0],#8
+#               [box_xy[0]+box_L[0],box_xy[1],0.0],#9
+#               [box_xy[0]+box_L[0],box_xy[1]+box_L[1],0.0],#10
+#               [box_xy[0],box_xy[1]+box_L[1],0.0],#11
+#               [box_xy[0],box_xy[1],box_L[2]],#12
+#               [box_xy[0]+box_L[0],box_xy[1],box_L[2]],#13
+#               [box_xy[0]+box_L[0],box_xy[1]+box_L[1],box_L[2]],#14
+#               [box_xy[0],box_xy[1]+box_L[1],box_L[2]]]#15
+        vertexFlags=[boundaryTags['left'],
+                     boundaryTags['right'],
+                     boundaryTags['right'],
+                     boundaryTags['left'],
+                     boundaryTags['left'],
+                     boundaryTags['right'],
+                     boundaryTags['right'],
+                     boundaryTags['left']]
+#                  boundaryTags['obstacle'],
+#                  boundaryTags['obstacle'],
+#                  boundaryTags['obstacle'],
+#                  boundaryTags['obstacle'],
+#                  boundaryTags['obstacle'],
+#                  boundaryTags['obstacle'],
+#                  boundaryTags['obstacle'],
+#                  boundaryTags['obstacle']]
+        facets=[[[0,1,2,3]],
+                [[0,1,5,4]],
+                [[1,2,6,5]],
+                [[2,3,7,6]],
+                [[3,0,4,7]],
+                [[4,5,6,7]]]
+        facetHoles=[[],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []]
+#             [[8,9,13,12]],
+#             [[9,10,14,13]],
+#             [[10,11,15,14]],
+#             [[11,8,12,15]],
+#             [[12,13,14,15]]]
+        facetFlags=[boundaryTags['bottom'],
+                    boundaryTags['front'],
+                    boundaryTags['right'],
+                    boundaryTags['back'],
+                    boundaryTags['left'],
+                    boundaryTags['top']]
+#                 boundaryTags['obstacle'],
+#                 boundaryTags['obstacle'],
+#                 boundaryTags['obstacle'],
+#                 boundaryTags['obstacle'],
+#                 boundaryTags['obstacle']]
+        holes=[]
+        dx = L[0]/float(nBoxes_xy[0])
+        dy = L[1]/float(nBoxes_xy[1])
+        hbdx = 0.5*boxScale[0]*dx
+        hbdy = 0.5*boxScale[1]*dy
+        for i in range(nBoxes_xy[0]):
+            for j in range(nBoxes_xy[1]):
+                if (i == nBoxes_xy[0] - 1 and j%2 == 1) or (i < iSkip) or (i >= iStop):
+                    continue
+                center = [i*dx + 0.5*dx+(j%2)*0.5*dx,j*dy+0.5*dy]
+                hz = boxScale[2]*L[2]
+                if random_height:
+                    hz *= rg.gauss(1.0,0.1)
+                #holes.append([center[0],center[1],0.5*hz])
+                n=len(vertices)
+                vertices.append([center[0]-hbdx,center[1]-hbdy,0.0])
+                vertices.append([center[0]-hbdx,center[1]+hbdy,0.0])
+                vertices.append([center[0]+hbdx,center[1]+hbdy,0.0])
+                vertices.append([center[0]+hbdx,center[1]-hbdy,0.0])
+                vertices.append([center[0]-hbdx,center[1]-hbdy,hz])
+                vertices.append([center[0]-hbdx,center[1]+hbdy,hz])
+                vertices.append([center[0]+hbdx,center[1]+hbdy,hz])
+                vertices.append([center[0]+hbdx,center[1]-hbdy,hz])
+                vertexFlags.append(boundaryTags['obstacle'])
+                vertexFlags.append(boundaryTags['obstacle'])
+                vertexFlags.append(boundaryTags['obstacle'])
+                vertexFlags.append(boundaryTags['obstacle'])
+                vertexFlags.append(boundaryTags['obstacle'])
+                vertexFlags.append(boundaryTags['obstacle'])
+                vertexFlags.append(boundaryTags['obstacle'])
+                vertexFlags.append(boundaryTags['obstacle'])
+                facets[0].append([n+0,n+1,n+2,n+3])#bottom
+                fh = (center[0],center[1],0.0)
+                facetHoles[0].append(fh)
+                facets.append([[n+0,n+1,n+5,n+4]])#left
+                facetHoles.append([])
+                facets.append([[n+1,n+2,n+6,n+5]])#back
+                facetHoles.append([])
+                facets.append([[n+2,n+3,n+7,n+6]])#right
+                facetHoles.append([])
+                facets.append([[n+3,n+0,n+4,n+7]])#front
+                facetHoles.append([])
+                facets.append([[n+4,n+5,n+6,n+7]])#top
+                facetHoles.append([])
+                facetFlags.append(boundaryTags['obstacle'])
+                facetFlags.append(boundaryTags['obstacle'])
+                facetFlags.append(boundaryTags['obstacle'])
+                facetFlags.append(boundaryTags['obstacle'])
+                facetFlags.append(boundaryTags['obstacle'])        
+        regions=[[0.001,0.001,0.001]]
+        regionFlags=[1]
     else:
         vertices=[[0.0,0.0,0.0],#0
                   [L[0],0.0,0.0],#1
@@ -264,6 +388,7 @@ else:
     domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
                                                  vertexFlags=vertexFlags,
                                                  facets=facets,
+                                                 facetHoles=facetHoles,
                                                  facetFlags=facetFlags,
                                                  regions=regions,
                                                  regionFlags=regionFlags)
@@ -309,17 +434,17 @@ sigma_01 = 0.0
 g = [0.0,0.0,-9.8]
 
 #wave/current properties
-windspeed_u = 1.0
+windspeed_u = 0.0
 windspeed_v = 0.0
 windspeed_w = 0.0
 
-outflowHeight = 0.0#0.5*L[2]
+outflowHeight = 0.5*L[2]
 outflowVelocity = (0.0,0.0,0.0)#not used for now
 
-inflowHeightMean = 0.4*L[2]
-inflowVelocityMean = (0.2,0.0,0.0)
+inflowHeightMean = 0.5*L[2]
+inflowVelocityMean = (0.0,0.0,0.0)
 
-waveLength = inflowHeightMean*5 #
+waveLength = inflowHeightMean #
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
 omega = 2.0*pi/period
 k=2.0*pi/waveLength
@@ -390,7 +515,7 @@ def outflowPressure(x,t):
 
 # Time 
 T=20.0#period*100
-runCFL = 1.0
+runCFL = 0.33
 print "T",T
 dt_fixed = period/10.0 
 #dt_fixed = period/100.0
