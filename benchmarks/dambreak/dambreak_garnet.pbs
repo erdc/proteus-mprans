@@ -1,10 +1,10 @@
 #PBS -A ERDCV00898ENQ
 #PBS -l walltime=001:00:00
 #PBS -l ncpus=64
-#PBS -q debug
+#PBS -q standard
 #PBS -N dambreak
 #PBS -j oe
 #PBS -l application=proteus
 cd $PBS_O_WORKDIR
-mkdir $(WORKDIR)/dambreak.garnet.$(PBS_JOBID)
-aprun -n 32 -N 8 -S 2 parun dambreak_so.py -l 7 -v -O petsc.options -D $(WORKDIR)/dambreak.garnet.$(PBS_JOBID)
+mkdir ${WORKDIR}/dambreak.garnet.${PBS_JOBID}
+aprun -n 32 -N 8 -S 2 parun dambreak_so.py -l 7 -v -O petsc.options -D ${WORKDIR}/dambreak.garnet.${PBS_JOBID}
