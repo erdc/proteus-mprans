@@ -4,7 +4,11 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options  
+<<<<<<< Updated upstream
 Refinement = 3#15
+=======
+Refinement = 16
+>>>>>>> Stashed changes
 genMesh=True
 useOldPETSc=False
 spaceOrder = 1
@@ -62,7 +66,6 @@ if useHex:
     nnz=2*Refinement
     hex=True    
     domain = Domain.RectangularDomain(L)
-
 else:
     he = L[0]/float(4*Refinement-1)
     boundaries=['left','right','bottom','top','front','back']
@@ -112,7 +115,7 @@ else:
 
 
 # Time stepping
-T=0.40
+T=2.0#0.40
 dt_fixed = 0.04/(Refinement*spaceOrder) 
 nDTout = int(round(T/dt_fixed))
 

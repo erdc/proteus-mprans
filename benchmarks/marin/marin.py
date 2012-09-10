@@ -4,7 +4,7 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options    
-Refinement=10
+Refinement=8
 genMesh=True
 spaceOrder=1
 useHex=False
@@ -144,7 +144,7 @@ else:
     triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
 
 # Time stepping
-T=2.00
+T=20.00
 dt_fixed = 0.1/Refinement
 nDTout = int(round(T/dt_fixed))
 
