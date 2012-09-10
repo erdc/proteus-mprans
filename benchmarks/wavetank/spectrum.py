@@ -1,8 +1,8 @@
-"""
-This module (spectrum.py) is to be included in the main JONSWAP.py module.
-"""
+""" This module (spectrum.py) is to be included in the main JONSWAP.py module.
+    It defines a JONSWAP spectrum and adds a desired degree of directional
+    spreading with a random phase. """
 
-import sys, math, numpy, random
+import sys, math, random#,numpy
 from numpy import *
 
 def sigma(omega, omega_peak):
@@ -76,9 +76,7 @@ def jonswap(spec, Hs, gamma, fp, nspread, thetam, gv, kx, ky):
                              
                 # spreading factor
                 temp_spread = spreading(kx[i], ky[j], nspread, thetam)
-                
-                # print "temp_spread is :", temp_spread
-                
+                                
                 # computing random phase (seed is apparently the system clock)
                 phase = random.random()     #  where:  0 <= phase <= 1
                 
@@ -94,10 +92,10 @@ def jonswap(spec, Hs, gamma, fp, nspread, thetam, gv, kx, ky):
                 temp3 = gamma**( exp(- ( (sqrt(kk)-sqrt(kp))**2 / (2.0*(temp_sigma**2)*kp) ) ) )
                 temp_JONSWAP = temp1 * temp2 * temp3
                 
-                # spec[i,j] ==== F(kk,theta) = S(kx,ky) * D(theta)
+                # spec[i,j] ==> F(kk,theta) = S(kx,ky) * D(theta)
                 spec[i,j] = sqrt(2.0 * temp_JONSWAP * temp_spread * kx_min * ky_min) * exp(2.0j * pi * phase)
                 #  NOTE: we added sqrt(2.0) into the spectrum ******* !!!!!!
-                #        ... in unclear  as to how the line above comes about
+                #        ... if unclear  as to how the line above comes about
                 #            see attached PDF for theory on relation between
                 #            the above spec[i,j] and autocorrelation of the
                 #            surface elevation (Weiner-Khinchin Theorem)
