@@ -122,5 +122,5 @@ def test_Solitary(showPlots=False):
 if __name__ == '__main__':
     print "The program name is: ", __name__
     #test_Linear2D(showPlots=True)
-    test_WaveGroup(showPlots=True)
-    #test_Solitary(showPlots=True)
+    #test_WaveGroup(showPlots=True)
+    test_Solitary(showPlots=True)
