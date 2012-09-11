@@ -1,12 +1,21 @@
 #PBS -A ERDCV00898ENQ
 #PBS -l application=proteus
-#PBS -l walltime=001:00:00
-#PBS -l ncpus=64
-#PBS -q debug
+#PBS -l walltime=03:00:00
+#PBS -l ncpus=512
+#PBS -q standard
 #PBS -N marin
 #PBS -j oe
+#PBS -V
+#PBS -m eba
+#PBS -M cekees@gmail.com
+#PBS -q R1537762
 # nnodes = ncpus/16
 cd $PBS_O_WORKDIR
-mkdir $(WORKDIR)/marin.garnet.$(PBS_JOBID)
-# n = N*nnodes = N*ncpus/16 with S mpi tasks per numa node
-aprun -n 32 -N 8 -S 2 parun marin_so.py -l 5 -v -O petsc.options -D  $(WORKDIR)/marin.garnet.$(PBS_JOBID)
+mkdir $WORKDIR/marin.$PBS_JOBID
+# n = N*nnodes = N*ncpus/16
+#even distribution
+#aprun -n <proc>               when fully using all the (16) cores
+#aprun -N 12 -S 3 -n <procs>   when putting 12 processes on the node
+#aprun -N 8 -S 2 -n <procs>    when putting 8 processes on the node
+#aprun -N 4 -S 1 -n <procs>    when putting 4 processes on the node
+aprun -n 256 -N 8 -S 2 parun marin_so.py -l 7 -v -O petsc.options -D $WORKDIR/marin.$PBS_JOBID

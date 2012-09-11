@@ -4,7 +4,15 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options  
+<<<<<<< HEAD
 Refinement = 7#15
+=======
+<<<<<<< Updated upstream
+Refinement = 3#15
+=======
+Refinement = 16
+>>>>>>> Stashed changes
+>>>>>>> 15c871f051b48489b94437f9d58f6a80b32c0678
 genMesh=True
 useOldPETSc=False
 spaceOrder = 1
@@ -111,7 +119,7 @@ else:
 
 
 # Time stepping
-T=0.40
+T=2.0#0.40
 dt_fixed = 0.04/(Refinement*spaceOrder) 
 dt_init = min(0.1*dt_fixed,0.001)
 runCFL=0.33

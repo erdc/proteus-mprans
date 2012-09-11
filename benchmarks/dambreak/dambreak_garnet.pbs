@@ -1,10 +1,19 @@
+#/bin/csh
 #PBS -A ERDCV00898ENQ
-#PBS -l walltime=001:00:00
-#PBS -l ncpus=64
-#PBS -q debug
+#PBS -l walltime=003:00:00
+#PBS -l ncpus=512
+##PBS -q standard
 #PBS -N dambreak
 #PBS -j oe
 #PBS -l application=proteus
+#PBS -V
+#PBS -m eba
+#PBS -M cekees@gmail.com
+#PBS -q R1537762 
 cd $PBS_O_WORKDIR
-mkdir $(WORKDIR)/dambreak.garnet.$(PBS_JOBID)
-aprun -n 32 -N 8 -S 2 parun dambreak_so.py -l 7 -v -O petsc.options -D $(WORKDIR)/dambreak.garnet.$(PBS_JOBID)
+mkdir $WORKDIR/dambreak.$PBS_JOBID
+#aprun -n <proc>               when fully using all the (16) cores
+#aprun -N 12 -S 3 -n <procs>   when putting 12 processes on the node
+#aprun -N 8 -S 2 -n <procs>    when putting 8 processes on the node
+#aprun -N 4 -S 1 -n <procs>    when putting 4 processes on the node
+aprun -n 512 parun dambreak_so.py -l 7 -v -G -O petsc.options -D $WORKDIR/dambreak.$PBS_JOBID

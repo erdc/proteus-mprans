@@ -33,12 +33,13 @@ fp = 1.7
 # Peak enhancement
 gamma = 3.3
 
-# Type of directional distribution/spreading 
-# (if =1 then thetam in [0,pi/2],  or if =8,16,32,... then keep thetam=pi/2)
-nspread = 1
+# Degree of directional distribution/spreading (nspread~100, then nearly unidirectional)
+nspread = 2
+# (if =1 then thetam in range [0,pi/2],  or if =2,4,8,16,32,... then keep thetam=pi/2)
 
 # Degree of directional spreading  
-thetam = 0.7
+thetam = pi/2.0
 
 # Initial filter (keep it =0 as default, or =1 to set as Trulsent et al. for mNLS)
 filter = 0
+# .... disregard for now and keep it =0
