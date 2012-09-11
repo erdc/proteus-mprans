@@ -4,7 +4,7 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options  
-Refinement = 3#15
+Refinement = 7#15
 genMesh=True
 useOldPETSc=False
 spaceOrder = 1
@@ -52,8 +52,8 @@ elif spaceOrder == 2:
 L = (0.584,0.146,0.350)
 
 nLevels = 1
-#parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
-parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
+parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
+#parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
 
 if useHex:   
@@ -62,7 +62,6 @@ if useHex:
     nnz=2*Refinement
     hex=True    
     domain = Domain.RectangularDomain(L)
-
 else:
     he = L[0]/float(4*Refinement-1)
     boundaries=['left','right','bottom','top','front','back']
@@ -96,7 +95,7 @@ else:
                 boundaryTags['left'],
                 boundaryTags['top']]
     regions=[[0.5*L[0],0.5*L[1],0.5*L[2]]]
-    regionFlags=[1.0]
+    regionFlags=[1]
     domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
                                                  vertexFlags=vertexFlags,
                                                  facets=facets,
@@ -108,23 +107,25 @@ else:
     domain.writePoly("mesh")
     domain.writePLY("mesh")
     domain.writeAsymptote("mesh")
-    triangleOptions="VApq2q10ena%21.16e" % ((he**3)/6.0,)
+    triangleOptions="VApq1.4q12ena%21.16e" % ((he**3)/6.0,)
 
 
 # Time stepping
 T=0.40
 dt_fixed = 0.04/(Refinement*spaceOrder) 
+dt_init = min(0.1*dt_fixed,0.001)
+runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.2
-ls_shockCapturingFactor  = 0.2
+ns_shockCapturingFactor  = 0.3
+ls_shockCapturingFactor  = 0.3
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.2
+vof_shockCapturingFactor = 0.3
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.2
+rd_shockCapturingFactor  = 0.9
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5

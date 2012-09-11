@@ -233,15 +233,15 @@ else:
         meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize,spongeGrainSize])
     elif veg:
         dh = 0.05 #m
-        he = 0.5*dh
-        L = (60*dh,3*dh,L[2])
+        he = 0.75*dh
+        L = (40*dh,3*dh,L[2])
         random_height=False
         if random_height:
             rg = random.Random()
-        iSkip=30
-        iStop=45
-        nBoxes_xy=[60,3]
-        boxScale=[0.5,0.5,0.5]
+        iSkip=20
+        iStop=30
+        nBoxes_xy=[40,3]
+        boxScale=[0.75,0.75,0.25]
         boundaries=['left','right','bottom','top','front','back','obstacle']
         boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
         vertices=[[0.0,0.0,0.0],#0

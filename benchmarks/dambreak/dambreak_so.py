@@ -10,10 +10,10 @@ pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
     
 name = "dambreak_p" 
 
-systemStepControllerType = Sequential_FixedStep
+systemStepControllerType = Sequential_MinAdaptiveModelStep#Sequential_FixedStep
     
 needEBQ_GLOBAL = False
 needEBQ = False
 
-tnList = [i*dambreak.dt_fixed for i in range(0,dambreak.nDTout+1)] 
+tnList = [0.0,dambreak.dt_init]+[i*dambreak.dt_fixed for i in range(1,dambreak.nDTout+1)] 
 

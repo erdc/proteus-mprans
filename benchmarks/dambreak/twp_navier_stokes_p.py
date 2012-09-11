@@ -5,32 +5,34 @@ from proteus.mprans import RANS2P
 
 LevelModelType = RANS2P.LevelModel
 coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
-                                             sigma=0.0,
-                                             rho_0 = rho_0,
-                                             nu_0 = nu_0,
-                                             rho_1 = rho_1,
-                                             nu_1 = nu_1,
-                                             g=g,
-                                             nd=nd,
-                                             LS_model=1,
-                                             epsFact_density=epsFact_density,
-                                             stokes=False,
-                                             useRBLES=useRBLES,
-		                             useMetrics=useMetrics)
-					     
+                                   sigma=0.0,
+                                   rho_0 = rho_0,
+                                   nu_0 = nu_0,
+                                   rho_1 = rho_1,
+                                   nu_1 = nu_1,
+                                   g=g,
+                                   nd=nd,
+                                   LS_model=1,
+                                   epsFact_density=epsFact_density,
+                                   stokes=False,
+                                   useRBLES=useRBLES,
+                                   useMetrics=useMetrics)
 
 def getDBC_p(x,flag):
-    if x[2] > L[2] - 1.0e-8:
+    if flag == boundaryTags['top']:
         return lambda x,t: 0.0
 
 def getDBC_u(x,flag):
-    return None
+    if flag == boundaryTags['top']:
+        return lambda x,t: 0.0
 
 def getDBC_v(x,flag):
-    return None
+    if flag == boundaryTags['top']:
+        return lambda x,t: 0.0
 
 def getDBC_w(x,flag):
-    return None
+    if flag == boundaryTags['top']:
+        return lambda x,t: 0.0
     
 dirichletConditions = {0:getDBC_p,
                        1:getDBC_u,
@@ -38,23 +40,20 @@ dirichletConditions = {0:getDBC_p,
                        3:getDBC_w}
 
 def getAFBC_p(x,flag):
-    if x[2] > L[2] - 1.0e-8:
-        return None
-    else:
+    if flag != boundaryTags['top']:
         return lambda x,t: 0.0
 
 def getAFBC_u(x,flag):
-    if (x[0] <        1.0e-8  or
-        x[0] > L[0] - 1.0e-8 ):
-       return lambda x,t: 0.0
+    if flag != boundaryTags['top']:
+        return lambda x,t: 0.0
 
 def getAFBC_v(x,flag):
-    if (x[1] <        1.0e-8   or
-        x[1] > L[1] - 1.0e-8):
-       return lambda x,t: 0.0
+    if flag != boundaryTags['top']:
+        return lambda x,t: 0.0
 
 def getAFBC_w(x,flag):
-    return None
+    if flag != boundaryTags['top']:
+        return lambda x,t: 0.0
 
 def getDFBC_u(x,flag):
     return lambda x,t: 0.0

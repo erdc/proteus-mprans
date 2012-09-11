@@ -4,6 +4,10 @@ from dambreak import *
 
 timeIntegration = BackwardEuler
 stepController = Osher_PsiTC_controller2	     
+
+timeIntegration = NoIntegration
+stepController  = Newton_controller
+
 femSpaces = {0:basis}
        
 massLumping       = False
@@ -33,8 +37,8 @@ nonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest = 'rits'
 
 runCFL=1.0
-rtol_res[0] = 0.001
-atol_res[0] = 0.0
+rtol_res[0] = 0.0
+atol_res[0] = 0.1*he
 psitc['nStepsForce']=5
 psitc['nStepsMax']=10 
 psitc['reduceRatio']=1.0

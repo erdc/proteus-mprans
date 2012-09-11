@@ -29,10 +29,10 @@ else:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
 linear_solver_options_prefix = 'mcorr_'
-linearSolverConvergenceTest  = 'rits'
+linearSolverConvergenceTest  = 'r-true'
 
 tolFac = 0.0
-nl_atol_res = 1.0e-5
+nl_atol_res = 1.0e-4
 
 maxNonlinearIts = 10
 maxLineSearches = 0

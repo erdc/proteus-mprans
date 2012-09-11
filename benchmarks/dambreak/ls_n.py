@@ -1,7 +1,8 @@
 from proteus import *
 from ls_p import *
 
-timeIntegration = BackwardEuler
+#timeIntegration = BackwardEuler
+timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_controller
 
 femSpaces = {0:basis}
@@ -11,7 +12,7 @@ numericalFluxType = None
 conservativeFlux  = None
 numericalFluxType = DoNothing
 subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=False)
+shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=True)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton
@@ -30,12 +31,12 @@ else:
     levelLinearSolver      = KSP_petsc4py
 
 linear_solver_options_prefix = 'ncls_'
-levelNonlinearSolverConvergenceTest = 'rits'
-linearSolverConvergenceTest         = 'rits'
+levelNonlinearSolverConvergenceTest = 'r'
+linearSolverConvergenceTest         = 'r-true'
 
-tolFac = 1e-3
-nl_atol_res = 0.0
+tolFac = 0.0
+nl_atol_res = 1.0e-5
 
-maxNonlinearIts = 10
+maxNonlinearIts = 2
 maxLineSearches = 0
 

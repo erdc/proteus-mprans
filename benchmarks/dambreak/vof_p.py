@@ -10,25 +10,20 @@ coefficients = VOF.Coefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,
                                 epsFact=epsFact_vof,sc_uref=vof_sc_uref,sc_beta=vof_sc_beta)
  
 def getDBC_vof(x,flag):
-    if x[2] > L[2] - 1.0e-8:
+    if flag == boundaryTags['top']:
         return lambda x,t: 1.0
 
 dirichletConditions = {0:getDBC_vof}
 
 def getAFBC_vof(x,flag):
-    if x[2] > L[2] - 1.0e-8:
-    	return None
-    else:
-    	return lambda x,t: 0.0
+    if flag != boundaryTags['top']:
+        return lambda x,t: 0.0
 
 advectiveFluxBoundaryConditions = {0:getAFBC_vof}
 diffusiveFluxBoundaryConditions = {0:{}}
 
 class PerturbedSurface_H:
     def uOfXT(self,x,t):
-        if signedDistance(x) < 0.0:
-            return 0.0
-	else:
-	    return 1.0  
+        return smoothedHeaviside(epsFact_consrv_heaviside*he,signedDistance(x))
 	    
 initialConditions  = {0:PerturbedSurface_H()}

@@ -4,8 +4,8 @@ from wavetank import *
 
 timeIntegration = BackwardEuler
 stepController = Osher_PsiTC_controller2	     
-timeIntegrator  = ForwardIntegrator
 timeIntegration = NoIntegration
+stepController  = Newton_controller
 femSpaces = {0:basis}
        
 massLumping       = False
