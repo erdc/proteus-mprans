@@ -97,16 +97,16 @@ def JONSWAP():
         y = np.linspace(JS.y1b,JS.y1e, Ny)
         [xx, yy] = np.meshgrid(x, y)
         
-        surf = ax.plot_surface(xx,yy,surface,rstride=2,cstride=2, cmap=cm.jet,
-            linewidth=0.5, antialiased=False)
-        #ax.plot_wireframe(xx,yy,surface, rstride=4, cstride=4)
+        #surf = ax.plot_surface(xx,yy,surface,rstride=2,cstride=2, cmap=cm.jet,
+        #    linewidth=0.5, antialiased=False)
+        ax.plot_wireframe(xx,yy,surface, rstride=4, cstride=4)
         plt.show()
     except:
         pass
 
     # Returning surface elvation along the line of wavemakers [x,y]
     loc = 10
-    return surface[loc,:]
+    return surface #[loc,:]
 
 
 if __name__=='__main__':

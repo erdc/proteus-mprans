@@ -226,12 +226,57 @@ class waveJONSWAP:
         self.kc_x = 2*pi/self.Lx
         self.kc_y = 2*pi/self.Ly                        
         self.kc_x_modes = self.Nx*self.kc_x        
-        self.kc_y_modes = self.Ny*self.kc_y        
+        self.kc_y_modes = self.Ny*self.kc_y
+
+        self.surface = np.zeros((self.Nx,self.Ny))      # free surface
+        self.u = np.zeros((self.Nx,self.Ny))            # u velocity
+        self.v = np.zeros((self.Nx,self.Ny))            # v velocity
+
 
     def height(self,x,t):
-        eta = self.JONSWAP()
+        [self.surface, self.u, self.v] = self.JONSWAP()
         # ~ NOTE: x[0] is a vector here!
-        return eta
+        return self.surface
+
+    def velocity_u(self,x,t):
+        """ Returns the velocity at the free-surface (z=surface)
+            
+            NOTE: to extract velocity at any height z, write down the
+                power series and take fft() of for every z
+                ... little time consuming, might need a bit of Cython here!
+
+            The velocity potential defined at the free-surace :math:`z=\zeta` is
+            given by :math:`\Phi(x,y,t) \equiv \phi(x,y,z=\zeta,t)`
+    
+            .. math:: 
+        
+                \phi(x,y,z,t) = \Phi + (z-\zeta)W + \sum ... + \sum ...
+
+            where :math:`W` is the vertical velocity defined at the free-surface
+            given through a Dirichlet-to-Neumann operator relation.
+        """
+        return self.u
+        # NOTE: base it on linearized ideal fluid flow
+
+    def velocity_v(self,x,t):
+        """ Returns the velocity at the free-surface (z=surface)
+            
+            NOTE: to extract velocity at any height z, write down the
+                power series and take fft() of for every z
+                ... little time consuming, might need a bit of Cython here!
+
+            The velocity potential defined at the free-surace :math:`z=\zeta` is
+            given by :math:`\Phi(x,y,t) \equiv \phi(x,y,z=\zeta,t)`
+    
+            .. math:: 
+        
+                \phi(x,y,z,t) = \Phi + (z-\zeta)W + \sum ... + \sum ...
+
+            where :math:`W` is the vertical velocity defined at the free-surface
+            given through a Dirichlet-to-Neumann operator relation.
+        """        
+        return self.v
+        # NOTE: base it on linearized ideal fluid flow
 
     def JONSWAP(self):
         """Sets a wave field according to JONSWAP ocean wave spectrum."""
@@ -266,5 +311,5 @@ class waveJONSWAP:
 
         # Returning surface elvation along the line of wavemakers [x,y]
         loc = 10
-        return surface#[loc,:]
+        return surface, velocity_u, velocity_v 
 

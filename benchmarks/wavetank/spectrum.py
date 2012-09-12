@@ -19,13 +19,13 @@ def sigma(omega, omega_peak):
 
 def factorial_1(ns):
     fact = 1        # ~ default
-    for factor in range(ns,0,-1):
+    for factor in range(int(ns),0,-1):
         fact = fact * factor
     return fact
 
 def factorial_2(ns):
     fact = 1        # ~ default
-    for factor in range(ns,0,-2):
+    for factor in range(int(ns),0,-2):
         fact = fact * factor
     return fact
 
@@ -34,7 +34,7 @@ def spreading(vkx, vky, ns, max_angle):
     temp2 = factorial_2(ns)      # user defined augmented factorial function
     
     # Normalization Constant
-    D0 = temp1 * 2**(ns-1) / (max_angle * temp2)
+    D0 = temp1 * 2.0**(int(ns)-1) / (max_angle * temp2)
         
     if vkx == 0.0:
         spread = 0.0

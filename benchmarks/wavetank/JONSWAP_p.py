@@ -34,7 +34,7 @@ fp = 1.7
 gamma = 3.3
 
 # Degree of directional distribution/spreading (nspread~1000, then nearly unidirectional)
-nspread = 2
+nspread = 128.0
 # (if =1 then thetam in range [0,pi/2],  or if =2,4,8,16,32,... then keep thetam=pi/2)
 
 # Angular Spread  
