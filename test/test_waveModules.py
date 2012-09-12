@@ -1,10 +1,14 @@
 import waveModules_Matt as wm
+import JONSWAP_p as JS
 import numpy as np
 
 try:
     from matplotlib.pylab import plot,show           # for 2D plots (checking)            
     #from enthought.mayavi import mlab               # for 3D plots 
     import animation # in ~/proteus-mprans/.../wavetank/ as my version of matplotlib doesn't have it
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    import mpl_toolkits.mplot3d.axes3d as p3
 except:
     pass
 
@@ -122,9 +126,18 @@ def test_Solitary(showPlots=False):
 
 def test_waveJONSWAP(showPlots=False):
     """ Testing the initialization via JONWAP wave spectrum."""
-    
     # Wave Field Object
     waveTest = wm.waveJONSWAP()
+
+    # Discretization
+    Nx = 2**JS.npw1                # number of Fourier modes
+    Ny = 2**JS.npw2
+    Lx = abs(JS.x1e - JS.x1b)         # domain length
+    Ly = abs(JS.y1e - JS.y1b)
+    kc_x = 2*np.pi/Lx
+    kc_y = 2*np.pi/Ly              # std. wave factors if modes would be integers
+    kc_x_modes = Nx*kc_x        
+    kc_y_modes = Ny*kc_y        # wave factors for modes obtained from fftfreq()
 
     k = (2*np.pi/waveLength,0.0,0.0)
     h = L[2]
@@ -153,7 +166,7 @@ def test_waveJONSWAP(showPlots=False):
         [xx, yy] = np.meshgrid(x, y)
         
         surf = ax.plot_surface(xx,yy,result,rstride=2,cstride=2, cmap=cm.jet,
-            linewidth=0.5, antialiased=False)
+                linewidth=0.5, antialiased=False)
         #ax.plot_wireframe(xx,yy,surface, rstride=4, cstride=4)
         plt.show()
     except:
