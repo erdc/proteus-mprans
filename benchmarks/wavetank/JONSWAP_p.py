@@ -12,7 +12,7 @@ npw2 = 7
 x1b = 0.0
 x1e = 5.0
 y1b = 0.0
-y1e = 0.25
+y1e = 5.0 #0.25
 
 # Order of nonlinearity
 eqorder = 3
@@ -33,11 +33,11 @@ fp = 1.7
 # Peak enhancement
 gamma = 3.3
 
-# Degree of directional distribution/spreading (nspread~100, then nearly unidirectional)
+# Degree of directional distribution/spreading (nspread~1000, then nearly unidirectional)
 nspread = 2
 # (if =1 then thetam in range [0,pi/2],  or if =2,4,8,16,32,... then keep thetam=pi/2)
 
-# Degree of directional spreading  
+# Angular Spread  
 thetam = pi/2.0
 
 # Initial filter (keep it =0 as default, or =1 to set as Trulsent et al. for mNLS)

@@ -4,6 +4,7 @@ import numpy as np
 try:
     from matplotlib.pylab import plot,show           # for 2D plots (checking)            
     #from enthought.mayavi import mlab               # for 3D plots 
+    import animation # in ~/proteus-mprans/.../wavetank/ as my version of matplotlib doesn't have it
 except:
     pass
 
@@ -119,8 +120,48 @@ def test_Solitary(showPlots=False):
     except:
         pass
 
+def test_waveJONSWAP(showPlots=False):
+    """ Testing the initialization via JONWAP wave spectrum."""
+    
+    # Wave Field Object
+    waveTest = wm.waveJONSWAP()
+
+    k = (2*np.pi/waveLength,0.0,0.0)
+    h = L[2]
+    omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*h))
+    period = 2*np.pi/omega
+
+    # Collocation point
+    N = 100
+    x = [np.linspace(0,L[0],N), np.linspace(0,L[1],N), 0.0]
+    t = np.linspace(0,period,N)
+    [xx, tt] = np.meshgrid(x,t)
+
+    # Get initial wave field for all x,y at t=0
+    result = waveTest.height(x,t[0])
+
+    # Plot result if appropriate
+    #assert correctResult.all() == result.all(), "Linear2D.height returned %f should be %f" % (result,correctResult)
+
+    try:
+        # Attaching 3D axis to the figure
+        fig = plt.figure()
+        ax = p3.Axes3D(fig)
+        
+        x = np.linspace(JS.x1b, JS.x1e, Nx)
+        y = np.linspace(JS.y1b,JS.y1e, Ny)
+        [xx, yy] = np.meshgrid(x, y)
+        
+        surf = ax.plot_surface(xx,yy,result,rstride=2,cstride=2, cmap=cm.jet,
+            linewidth=0.5, antialiased=False)
+        #ax.plot_wireframe(xx,yy,surface, rstride=4, cstride=4)
+        plt.show()
+    except:
+        pass
+    
 if __name__ == '__main__':
     print "The program name is: ", __name__
     #test_Linear2D(showPlots=True)
     #test_WaveGroup(showPlots=True)
-    test_Solitary(showPlots=True)
+    #test_Solitary(showPlots=True)
+    test_waveJONSWAP(showPlots=True)

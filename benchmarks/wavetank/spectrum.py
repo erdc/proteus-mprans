@@ -2,7 +2,7 @@
     It defines a JONSWAP spectrum and adds a desired degree of directional
     spreading with a random phase. """
 
-import sys, math, random#,numpy
+import sys, math, random
 from numpy import *
 
 def sigma(omega, omega_peak):
@@ -48,7 +48,7 @@ def spreading(vkx, vky, ns, max_angle):
     return spread
 
 
-def jonswap(spec, Hs, gamma, fp, nspread, thetam, gv, kx, ky):
+def jonswap(nx, ny, Hs, gamma, fp, nspread, thetam, gv, kx, ky):
     # Constansts
     alpha = 5.0 / 16.0
     beta = 5.0 / 4.0        # *** different from Beta and theta_m !!!
@@ -56,7 +56,7 @@ def jonswap(spec, Hs, gamma, fp, nspread, thetam, gv, kx, ky):
     kx_min = kx[1]
     ky_min = ky[1]
     
-    [nx, ny] = spec.shape
+    spectrum = zeros((nx,ny),complex)
     
     omega_peak = 2.0*pi*fp
     kp = omega_peak**2 / gv      # peak wavenumber (determinied from disper. rel. with h->infty)
@@ -69,7 +69,7 @@ def jonswap(spec, Hs, gamma, fp, nspread, thetam, gv, kx, ky):
         for i in range(0, nx/2+1, 1): # ~ loops over nx/2+1 (from  0^th to nx/2^th) terms
             kk = sqrt(kx[i]**2 + ky[j]**2)
             if kk == 0.0:
-                spec[i,j] = 0.0 + 0.0j
+                spectrum[i,j] = 0.0 + 0.0j
             else:
                 # sigma factor
                 temp_sigma = sigma(gv*kk, gv*kp)  # ~ sending omegas SQUARED !
@@ -92,34 +92,34 @@ def jonswap(spec, Hs, gamma, fp, nspread, thetam, gv, kx, ky):
                 temp3 = gamma**( exp(- ( (sqrt(kk)-sqrt(kp))**2 / (2.0*(temp_sigma**2)*kp) ) ) )
                 temp_JONSWAP = temp1 * temp2 * temp3
                 
-                # spec[i,j] ==> F(kk,theta) = S(kx,ky) * D(theta)
-                spec[i,j] = sqrt(2.0 * temp_JONSWAP * temp_spread * kx_min * ky_min) * exp(2.0j * pi * phase)
+                # spectrum[i,j] ==> F(kk,theta) = S(kx,ky) * D(theta)
+                spectrum[i,j] = sqrt(2.0 * temp_JONSWAP * temp_spread * kx_min * ky_min) * exp(2.0j * pi * phase)
                 #  NOTE: we added sqrt(2.0) into the spectrum ******* !!!!!!
                 #        ... if unclear  as to how the line above comes about
                 #            see attached PDF for theory on relation between
-                #            the above spec[i,j] and autocorrelation of the
+                #            the above spectrum[i,j] and autocorrelation of the
                 #            surface elevation (Weiner-Khinchin Theorem)
  
     # For real transforms the highest and lowest modes  are real!!!
-    spec[0,0] = real(spec[0,0])
-    spec[nx/2,0] = real(spec[nx/2,0])
-    spec[0, ny/2] = real(spec[0, ny/2])
-    spec[nx/2, ny/2] = real(spec[nx/2, ny/2])
+    spectrum[0,0] = real(spectrum[0,0])
+    spectrum[nx/2,0] = real(spectrum[nx/2,0])
+    spectrum[0, ny/2] = real(spectrum[0, ny/2])
+    spectrum[nx/2, ny/2] = real(spectrum[nx/2, ny/2])
         
  
     # Constructing the other half (complex conjugates) ~ linear vectors first
-    spec[nx/2+1:nx-1, 0] = spec[nx/2-1:1:-1, 0].conj()          # along ky = 0
-    spec[0, ny/2+1:ny-1] = spec[0, ny/2-1:1:-1].conj()          # along kx = 0
-    spec[nx/2, ny/2+1:ny-1] = spec[nx/2, ny/2-1:1:-1].conj()    # along kx = Nx/2
-    spec[nx/2+1:nx-1, ny/2] = spec[nx/2-1:1:-1, ny/2].conj()    # along ky = Ny/2
+    spectrum[nx/2+1:nx-1, 0] = spectrum[nx/2-1:1:-1, 0].conj()          # along ky = 0
+    spectrum[0, ny/2+1:ny-1] = spectrum[0, ny/2-1:1:-1].conj()          # along kx = 0
+    spectrum[nx/2, ny/2+1:ny-1] = spectrum[nx/2, ny/2-1:1:-1].conj()    # along kx = Nx/2
+    spectrum[nx/2+1:nx-1, ny/2] = spectrum[nx/2-1:1:-1, ny/2].conj()    # along ky = Ny/2
     
     # Now for the complex conjugates of the quadrants!    
     for j in range (1, ny/2, 1):
         for i in range (nx/2+1, nx, 1):            
-            spec[i,j] = spec[nx-i, ny-j].conj()
+            spectrum[i,j] = spectrum[nx-i, ny-j].conj()
     
     for j in range (ny/2+1, ny, 1):
         for i in range (nx/2+1, nx, 1):
-            spec[i,j] = spec[nx-i, ny-j].conj()
+            spectrum[i,j] = spectrum[nx-i, ny-j].conj()
      
-    return spec
+    return spectrum
