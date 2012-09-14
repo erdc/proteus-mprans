@@ -239,41 +239,43 @@ class waveJONSWAP:
         return self.surface
 
     def velocity_u(self,x,t):
-        """ Returns the velocity at the free-surface (z=surface)
+        """
+        Returns the velocity at the free-surface (z=surface)
             
-            NOTE: to extract velocity at any height z, write down the
-                power series and take fft() of for every z
-                ... little time consuming, might need a bit of Cython here!
+        NOTE: to extract velocity at any height z, write down the
+            power series and take fft() of for every z
+            ... little time consuming, might need a bit of Cython here!
 
-            The velocity potential defined at the free-surace :math:`z=\zeta` is
-            given by :math:`\Phi(x,y,t) \equiv \phi(x,y,z=\zeta,t)`
+        The velocity potential defined at the free-surace :math:`z=\zeta` is
+        given by :math:`\Phi(x,y,t) \equiv \phi(x,y,z=\zeta,t)`
     
-            .. math:: 
+        .. math:: 
         
-                \phi(x,y,z,t) = \Phi + (z-\zeta)W + \sum ... + \sum ...
+            \phi(x,y,z,t) = \Phi + (z-\zeta)W + \sum ... + \sum ...
 
-            where :math:`W` is the vertical velocity defined at the free-surface
-            given through a Dirichlet-to-Neumann operator relation.
+        where :math:`W` is the vertical velocity defined at the free-surface
+        given through a Dirichlet-to-Neumann operator relation.
         """
         return self.u
         # NOTE: base it on linearized ideal fluid flow
 
     def velocity_v(self,x,t):
-        """ Returns the velocity at the free-surface (z=surface)
+        """
+        Returns the velocity at the free-surface (z=surface)
             
-            NOTE: to extract velocity at any height z, write down the
-                power series and take fft() of for every z
-                ... little time consuming, might need a bit of Cython here!
+        NOTE: to extract velocity at any height z, write down the
+            power series and take fft() of for every z
+            ... little time consuming, might need a bit of Cython here!
 
-            The velocity potential defined at the free-surace :math:`z=\zeta` is
-            given by :math:`\Phi(x,y,t) \equiv \phi(x,y,z=\zeta,t)`
+        The velocity potential defined at the free-surace :math:`z=\zeta` is
+        given by :math:`\Phi(x,y,t) \equiv \phi(x,y,z=\zeta,t)`
     
-            .. math:: 
+        .. math:: 
         
-                \phi(x,y,z,t) = \Phi + (z-\zeta)W + \sum ... + \sum ...
+            \phi(x,y,z,t) = \Phi + (z-\zeta)W + \sum ... + \sum ...
 
-            where :math:`W` is the vertical velocity defined at the free-surface
-            given through a Dirichlet-to-Neumann operator relation.
+        where :math:`W` is the vertical velocity defined at the free-surface
+        given through a Dirichlet-to-Neumann operator relation.
         """        
         return self.v
         # NOTE: base it on linearized ideal fluid flow
@@ -304,10 +306,10 @@ class waveJONSWAP:
 
         # Compute the surface elvation via iFFT2D of the spectrum  --> take REAL part
         # just in case we have some left over (nonzero) imaginary part of 'spectrum'
-        surface = np.real(np.fft.ifft2(spectrum) )
+        surface = np.real(np.fft.ifft2(spectrum))
 
         # Compute the velocity potential from linear theory and horizontal velocity
-        velPotential, velocity_u, velocity_v = velocityPotential(spectrum, JS.gv, kx, ky)
+        [velPotential, velocity_u, velocity_v] = velocityPotential(spectrum, JS.gv, kx, ky)
 
         # Returning surface elvation along the line of wavemakers [x,y]
         loc = 10

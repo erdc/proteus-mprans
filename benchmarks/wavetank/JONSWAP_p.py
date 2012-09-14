@@ -25,6 +25,7 @@ gv = 9.81
 depth = 5.0
 
 # Significant wave height
+# ... todo: add integral formulations for slope
 Hs = 0.0326
 
 # Peak frequency
@@ -34,7 +35,7 @@ fp = 1.7
 gamma = 3.3
 
 # Degree of directional distribution/spreading (nspread~1000, then nearly unidirectional)
-nspread = 128.0
+nspread = 2.0
 # (if =1 then thetam in range [0,pi/2],  or if =2,4,8,16,32,... then keep thetam=pi/2)
 
 # Angular Spread  
