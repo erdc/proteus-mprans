@@ -8,7 +8,7 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 4#4#15
+Refinement = 3#4#15
 genMesh=True
 useOldPETSc=False
 useSuperlu = True
@@ -68,7 +68,8 @@ leveeSlope = 1.0/2.0
 bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
 quasi2D = True
-veg=True; levee=False; spongeLayer=False
+#veg=True; levee=False; spongeLayer=False
+veg=False; levee=False; spongeLayer=False
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -85,7 +86,7 @@ else:
     he = L[2]/float(4*Refinement-1)
     if quasi2D:
         L = (L[0],he,L[2])
-    boundaries=['left','right','bottom','top','front','back']
+    boundaries=['left','right','bottom','top','front','back','obstacle']
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
     if spongeLayer:
         vertices=[[0.0,0.0,0.0],#0
@@ -378,6 +379,12 @@ else:
                 [[2,3,7,6]],
                 [[3,0,4,7]],
                 [[4,5,6,7]]]
+        facetHoles=[[],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []]
         facetFlags=[boundaryTags['bottom'],
                     boundaryTags['front'],
                     boundaryTags['right'],
@@ -521,7 +528,7 @@ print "T",T
 dt_fixed = period/10.0 
 #dt_fixed = period/100.0
 #dt_fixed = 6.0/1000.0
-dt_init = 1.0e-3
+dt_init = 1.0e-4
 nDTout = int(T/dt_fixed)
 tnList = [i*dt_fixed for i in range(0,nDTout+1)] 
 print tnList

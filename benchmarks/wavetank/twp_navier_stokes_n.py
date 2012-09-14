@@ -4,6 +4,7 @@ from wavetank import *
 
 timeIntegration = BackwardEuler
 stepController  = Min_dt_controller
+
 timeIntegration = BackwardEuler_cfl
 stepController = Min_dt_controller
 
@@ -46,7 +47,7 @@ levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest         = 'r'
 
 tolFac = 0.0
-nl_atol_res = 1.0e-8
+nl_atol_res = 1.0e-6
 
-maxNonlinearIts = 15
+maxNonlinearIts = 20
 maxLineSearches = 0

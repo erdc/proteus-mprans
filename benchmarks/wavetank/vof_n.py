@@ -38,7 +38,7 @@ levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest         = 'r'
 
 tolFac      = 0.0
-nl_atol_res = 1.0e-6
+nl_atol_res = 1.0e-5
 
 maxNonlinearIts = 10
 maxLineSearches = 0
