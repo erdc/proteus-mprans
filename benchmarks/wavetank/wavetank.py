@@ -460,6 +460,7 @@ amplitude = 0.1*inflowHeightMean
 
 # Wave Field Object
 #waveField = wm.Linear2D(amplitude,omega,k,L[2],rho_0,rho_1)
+#waveField = wm.WaveGroup(amplitude,omega,k,L[2],rho_0,rho_1)
 #waveField = wm.Solitary(amplitude,omega,k,L[2],rho_0,rho_1)
 
 def waveHeight(x,t):
