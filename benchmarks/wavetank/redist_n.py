@@ -37,7 +37,7 @@ if useSuperlu:
 
 linear_solver_options_prefix = 'rdls_'
 nonlinearSolverConvergenceTest = 'rits'
-linearSolverConvergenceTest = 'rits'
+linearSolverConvergenceTest = 'r-true'
 
 runCFL=1.0
 rtol_res[0] = 0.0

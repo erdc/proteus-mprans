@@ -8,7 +8,7 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 3#4#15
+Refinement = 1#4#15
 genMesh=True
 useOldPETSc=False
 useSuperlu = True
@@ -54,11 +54,11 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (5.0,
-     10.0,
+L = (20.0,
+     0.25,
      1.0)
 spongeLayer = True
-xSponge = 8.0#0.8*L[0]
+xSponge = L[0] - 1.25
 levee=True; spongeLayer=False;
 leveeStart = 1.9
 leveeBottomWidth = 3.0
@@ -69,7 +69,7 @@ bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
 quasi2D = True
 #veg=True; levee=False; spongeLayer=False
-veg=False; levee=False; spongeLayer=False
+veg=False; levee=False; spongeLayer=True
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -126,6 +126,17 @@ else:
                 [[2,6,11,9]],#back
                 [[5,6,11,10]],#top
                 ]
+        facetHoles=[[],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []]
         facetFlags=[boundaryTags['bottom'],
                     boundaryTags['front'],
                     0,#boundaryTags['right'],
@@ -139,8 +150,8 @@ else:
                     boundaryTags['top']]
         regions=[[0.5*xSponge,0.5*L[1],0.5*L[2]],[0.5*(xSponge+L[0]),0.5*L[1],0.5*L[2]]]
         regionFlags=[0,1]
-        spongeGrainSize= 0.05
-        spongePorosity = 0.9
+        spongeGrainSize= 0.025
+        spongePorosity = 0.75
         killNonlinearDragInSpongeLayer = True#True
         porosityTypes      = numpy.array([1.0,spongePorosity])
         meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize])
@@ -409,7 +420,7 @@ else:
 
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.3
+ns_shockCapturingFactor  = 0.9
 ls_shockCapturingFactor  = 0.3
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
@@ -452,7 +463,7 @@ outflowVelocity = (0.0,0.0,0.0)#not used for now
 inflowHeightMean = 0.5*L[2]
 inflowVelocityMean = (0.0,0.0,0.0)
 
-waveLength = inflowHeightMean #
+waveLength = 5*inflowHeightMean #
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
 omega = 2.0*pi/period
 k=(2.0*pi/waveLength,0.0,0.0)
@@ -523,13 +534,13 @@ def outflowPressure(x,t):
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 # Time 
-T=20.0#period*100
-runCFL = 0.33
+T=period*20
+runCFL = 0.1
 print "T",T
-dt_fixed = period/10.0 
+dt_fixed = period/25.0 
 #dt_fixed = period/100.0
 #dt_fixed = 6.0/1000.0
-dt_init = 1.0e-4
+dt_init = 1.0e-3
 nDTout = int(T/dt_fixed)
 tnList = [i*dt_fixed for i in range(0,nDTout+1)] 
 print tnList

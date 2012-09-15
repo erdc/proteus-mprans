@@ -44,10 +44,10 @@ if useSuperlu:
     
 linear_solver_options_prefix = 'rans2p_'
 levelNonlinearSolverConvergenceTest = 'r'
-linearSolverConvergenceTest         = 'r'
+linearSolverConvergenceTest         = 'r-true'
 
 tolFac = 0.0
-nl_atol_res = 1.0e-6
+nl_atol_res = 1.0e-5
 
 maxNonlinearIts = 20
 maxLineSearches = 0

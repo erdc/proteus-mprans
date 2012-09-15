@@ -3,6 +3,7 @@ from wavetank import *
 from vof_p import *
 
 timeIntegration = BackwardEuler
+timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_controller
 
 femSpaces = {0:basis}
@@ -33,9 +34,9 @@ if useSuperlu:
     multilevelLinearSolver = LU
     levelLinearSolver      = LU
 
-    linear_solver_options_prefix = 'vof_'
+linear_solver_options_prefix = 'vof_'
 levelNonlinearSolverConvergenceTest = 'r'
-linearSolverConvergenceTest         = 'r'
+linearSolverConvergenceTest         = 'r-true'
 
 tolFac      = 0.0
 nl_atol_res = 1.0e-5
