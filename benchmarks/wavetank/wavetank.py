@@ -420,14 +420,14 @@ else:
 
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.9
-ls_shockCapturingFactor  = 0.9
+ns_shockCapturingFactor  = 0.1
+ls_shockCapturingFactor  = 0.1
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.9
+vof_shockCapturingFactor = 0.1
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.9
+rd_shockCapturingFactor  = 0.1
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5
@@ -535,7 +535,7 @@ def outflowPressure(x,t):
 
 # Time 
 T=period*20
-runCFL = 0.1
+runCFL = 0.33
 print "T",T
 dt_fixed = period/25.0 
 #dt_fixed = period/100.0
