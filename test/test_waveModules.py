@@ -16,7 +16,7 @@ except:
 
 
 g = (0.0,0.0,-9.81)        # gravity
-L = (5.0,5.0,0.25)         # tank dimensions
+L = (20.0,0.25,1.0)         # tank dimensions
 
 # Water                                                                  
 rho_0 = 998.2
@@ -27,14 +27,15 @@ rho_1 = 1.205
 nu_1  = 1.500e-5
  
 inflowHeightMean = 0.5*L[2]
-inflowVelocityMean = (0.2,0.0,0.0)
+inflowVelocityMean = (0.0,0.0,0.0)
 waveLength = 5*inflowHeightMean
+amplitude = 0.1*inflowHeightMean
 
 #see nose docs for more complex testing
 
 def test_Linear2D(showPlots=False):
     """ Testing the Linearized 2D interface (phi) propagation. """
-    A = 0.1                # amplitude
+    A = amplitude                # amplitude
     k = (2*np.pi/waveLength,0.0,0.0)
     h = L[2]
     omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*h))
@@ -65,7 +66,7 @@ def test_Linear2D(showPlots=False):
 
 def test_WaveGroup(showPlots=False):
     """ Testing the Linearized 2D interface (phi) propagation. """
-    A = 0.1                # amplitude
+    A = amplitude                # amplitude
     k = (2*np.pi/waveLength,0.0,0.0)
     h = L[2]
     omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*h))
@@ -96,7 +97,7 @@ def test_WaveGroup(showPlots=False):
 
 def test_Solitary(showPlots=False):
     """ Testing the Linearized 2D interface (phi) propagation. """
-    A = 0.1                # amplitude
+    A = amplitude                # amplitude
     k = (2*np.pi/waveLength,0.0,0.0)
     h = L[2]
     omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*h))
@@ -175,6 +176,6 @@ def test_waveJONSWAP(showPlots=False):
 if __name__ == '__main__':
     print "The program name is: ", __name__
     #test_Linear2D(showPlots=True)
-    #test_WaveGroup(showPlots=True)
+    test_WaveGroup(showPlots=True)
     #test_Solitary(showPlots=True)
-    test_waveJONSWAP(showPlots=True)
+    #test_waveJONSWAP(showPlots=True)

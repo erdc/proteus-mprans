@@ -1,7 +1,7 @@
 from math import *
 import proteus.MeshTools
 import numpy as np
-#import waveModules_Matt as wm
+import waveModules_Matt as wm
 from proteus import Domain
 from proteus.default_n import *   
 from proteus.ctransportCoefficients import smoothedHeaviside
@@ -470,23 +470,23 @@ k=(2.0*pi/waveLength,0.0,0.0)
 amplitude = 0.1*inflowHeightMean
 
 # Wave Field Object
-#waveField = wm.Linear2D(amplitude,omega,k,L[2],rho_0,rho_1)
+waveField = wm.Linear2D(amplitude,omega,k,L[2],rho_0,rho_1)
 #waveField = wm.WaveGroup(amplitude,omega,k,L[2],rho_0,rho_1)
 #waveField = wm.Solitary(amplitude,omega,k,L[2],rho_0,rho_1)
 
 def waveHeight(x,t):
-    return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
-#    return inflowHeightMean + waveField.height(x,t)
+#    return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
+    return inflowHeightMean + waveField.height(x,t)
 
 def waveVelocity_u(x,t):
-    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k[0]*x[0])/(k[0]*inflowHeightMean)
+#    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k[0]*x[0])/(k[0]*inflowHeightMean)
 #    z = x[2] - inflowHeightMean
-#    return inflowVelocityMean[0] + waveField.velocity_u(x,t)
+    return inflowVelocityMean[0] + waveField.velocity_u(x,t)
 
 def waveVelocity_w(x,t):
-    z = x[2] - inflowHeightMean
-    return inflowVelocityMean[2] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k[0]*x[0])/inflowHeightMean
-#    return inflowVelocityMean[2] + waveField.velocity_w(x,t)
+#    z = x[2] - inflowHeightMean
+#    return inflowVelocityMean[2] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k[0]*x[0])/inflowHeightMean
+    return inflowVelocityMean[2] + waveField.velocity_w(x,t)
 ####
 
 def wavePhi(x,t):

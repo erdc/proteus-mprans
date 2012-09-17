@@ -54,7 +54,7 @@ class Linear2D:
         g = (0.0,0.0,-9.81)                          # gravity
 
         # Finite Depth (0 < kh < infty)
-        u = (-g[2]*self.k[0]*self.A / self.omega) * np.cosh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t))  
+        u = (-g[2]*self.k[0]*self.A / self.omega) * np.cosh(self.k[0]*(x[2]+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t))  
 
         # Deep water (kh >> 1)
         # ... TODO
@@ -102,17 +102,19 @@ class WaveGroup:
         self.h = depth
         self.rho_0 = rho_0      # density of water                                      
         self.rho_1 = rho_1      # density of air
-        self.N = 2              # number of 
+        self.N = 1              # number of monochromatic pairs
+        self.diff = 0.04
+        self.g = (0.0,0.0,-9.81)                          # gravity
+
 
     def height(self,x,t):
         theta =  self.k[0]*x[0] - self.omega*t # ~ NOTE: x[0] is a vector here!
-        diff = 0.05
-        dtheta = diff*theta
-        eta = self.A*np.cos(theta)
+        dtheta = self.diff*theta
+        eta = np.zeros(x[0].shape) #self.A*np.sin(theta)
 
         for i in range(self.N):
             eta = eta + self.A*np.sin(theta+(i+1)*dtheta) + self.A*np.sin(theta-(i+1)*dtheta)
-
+            # NOTE: variationis on order of dtheta^2 are truncated (only up to group velocity kept)
         return eta
 
 
@@ -123,14 +125,14 @@ class WaveGroup:
             varying regular wavetrains.
 
             .. todo:: implement deep & shallow water limits. """
-        g = (0.0,0.0,-9.81)                          # gravity
+        u = np.zeros(x[0].shape)
 
         # Finite Depth (0 < kh < infty)
         for i in range(self.N):
-            diffPos = (1+diff*(i+1))
-            diffNeg = (1-diff*(i+1))
-            u = u + (-g[2]*diffPos*self.k[0]*self.A / (diffPos*self.omega)) * np.cosh(diffPos*self.k[0]*(z+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*diffPos*(self.k[0]*x[0] - self.omega*t)) +\
-                (-g[2]*diffNeg*self.k[0]*self.A / (diffNeg*self.omega)) * np.cosh(diffNeg*self.k[0]*(z+self.h))/np.cosh(diffNeg*self.k[0]*self.h) * np.exp(1j*diffNeg*(self.k[0]*x[0] - self.omega*t))
+            diffPos = (1+self.diff*(i+1))
+            diffNeg = (1-self.diff*(i+1))
+            u = u + (-self.g[2]*diffPos*self.k[0]*self.A / (diffPos*self.omega)) * np.cosh(diffPos*self.k[0]*(x[2]+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*diffPos*(self.k[0]*x[0] - self.omega*t)) + \
+                (-self.g[2]*diffNeg*self.k[0]*self.A / (diffNeg*self.omega)) * np.cosh(diffNeg*self.k[0]*(x[2]+self.h))/np.cosh(diffNeg*self.k[0]*self.h) * np.exp(1j*diffNeg*(self.k[0]*x[0] - self.omega*t))
         # Deep water (kh >> 1)
         # ... TODO
                  
@@ -147,20 +149,24 @@ class WaveGroup:
 
 
     def velocity_w(self,x,t):
+        w = np.zeros(x[0].shape)
+        
         for i in range(self.N):
-            diffPos = (1+diff*(i+1))
-            diffNeg = (1-diff*(i+1))        
-            w = w + -1j * (-g[2]*diffPos*self.k[0]*self.A/(diffPos*self.omega)) * np.sinh(diffPos*self.k[0]*(x[2]+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*(diffPos*self.k[0]*x[0] - self.omega*t)) + \
-                -1j * (-g[2]*diffNeg*self.k[0]*self.A/self.omega) * np.sinh(self.k[0]*(x[2]+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
+            diffPos = (1+self.diff*(i+1))
+            diffNeg = (1-self.diff*(i+1))        
+            w = w + -1j * (-self.g[2]*diffPos*self.k[0]*self.A/(diffPos*self.omega)) * np.sinh(diffPos*self.k[0]*(x[2]+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*(diffPos*self.k[0]*x[0] - self.omega*t)) + \
+                -1j * (-self.g[2]*diffNeg*self.k[0]*self.A/self.omega) * np.sinh(self.k[0]*(x[2]+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
         
         return w
 
     def pressure(self,x,t):
+        p = np.zeros(x[0].shape)
+
         for i in range(self.N):
-            diffPos = (1+diff*(i+1))
-            diffNeg = (1-diff*(i+1))
-            p = p + self.rho_0*(-g[2])*self.A* np.cosh(diffPos*self.k[0]*(x[2]+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*diffPos*(self.k[0]*x[0] - self.omega*t)) + \
-                self.rho_0*(-g[2])*self.A* np.cosh(diffNeg*self.k[0]*(x[2]+self.h))/np.cosh(diffNeg*self.k[0]*self.h) * np.exp(1j*diffNeg*(self.k[0]*x[0] - self.omega*t))
+            diffPos = (1+self.diff*(i+1))
+            diffNeg = (1-self.diff*(i+1))
+            p = p + self.rho_0*(-self.g[2])*self.A* np.cosh(diffPos*self.k[0]*(x[2]+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*diffPos*(self.k[0]*x[0] - self.omega*t)) + \
+                self.rho_0*(-self.g[2])*self.A* np.cosh(diffNeg*self.k[0]*(x[2]+self.h))/np.cosh(diffNeg*self.k[0]*self.h) * np.exp(1j*diffNeg*(self.k[0]*x[0] - self.omega*t))
         return np.real(p)
         # NOTE: also implemented on ideal flow via linearized Bernoulli eqn.
 
