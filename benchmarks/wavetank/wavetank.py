@@ -8,7 +8,7 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 1#4#15
+Refinement = 2#4#15
 genMesh=True
 useOldPETSc=False
 useSuperlu = True
@@ -67,7 +67,7 @@ leveeHeightDownstream = 0.0#0.25
 leveeSlope = 1.0/2.0
 bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
-quasi2D = True
+quasi2D = True#True
 #veg=True; levee=False; spongeLayer=False
 veg=False; levee=False; spongeLayer=True
 nLevels = 1
@@ -421,13 +421,13 @@ else:
 
 # Numerical parameters
 ns_shockCapturingFactor  = 0.9
-ls_shockCapturingFactor  = 0.3
+ls_shockCapturingFactor  = 0.9
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.3
+vof_shockCapturingFactor = 0.9
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.3
+rd_shockCapturingFactor  = 0.9
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5
