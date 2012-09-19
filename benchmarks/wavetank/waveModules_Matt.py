@@ -116,7 +116,8 @@ class WaveGroup:
         eta = np.zeros(x[0].shape) #self.A*np.sin(theta)
 
         for i in range(self.N):
-            eta = eta + self.A*np.sin(theta+(i+1)*dtheta) + self.A*np.sin(theta-(i+1)*dtheta)
+            #eta = eta + self.A*np.sin(theta+(i+1)*dtheta) + self.A*np.sin(theta-(i+1)*dtheta)
+            eta = eta + self.A*np.cos(theta+(i+1)*dtheta) + self.A*np.cos(theta-(i+1)*dtheta)
             # NOTE: variationis on order of dtheta^2 are truncated (only up to group velocity kept)
         return eta
 
@@ -163,7 +164,7 @@ class WaveGroup:
             w = w + -1j * (-self.g[2]*diffPos*self.k[0]*self.A/(diffPos*self.omega)) * np.sinh(diffPos*self.k[0]*(z+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*(diffPos*self.k[0]*x[0] - self.omega*t)) + \
                 -1j * (-self.g[2]*diffNeg*self.k[0]*self.A/self.omega) * np.sinh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
         
-        return w
+        return np.real(w)
 
     def pressure(self,x,t):
         z = x[2] - self.h
@@ -174,6 +175,7 @@ class WaveGroup:
             diffNeg = (1-self.diff*(i+1))
             p = p + self.rho_0*(-self.g[2])*self.A* np.cosh(diffPos*self.k[0]*(z+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*diffPos*(self.k[0]*x[0] - self.omega*t)) + \
                 self.rho_0*(-self.g[2])*self.A* np.cosh(diffNeg*self.k[0]*(z+self.h))/np.cosh(diffNeg*self.k[0]*self.h) * np.exp(1j*diffNeg*(self.k[0]*x[0] - self.omega*t))
+        
         return np.real(p)
         # NOTE: also implemented on ideal flow via linearized Bernoulli eqn.
 
