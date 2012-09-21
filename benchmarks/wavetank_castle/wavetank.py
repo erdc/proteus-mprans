@@ -6,12 +6,12 @@ from proteus import Domain
 from proteus.default_n import *   
 from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
-   
+import castle
 #  Discretization -- input options  
-Refinement = 2#4#15
+Refinement = 5#4#15
 genMesh=True
 useOldPETSc=False
-useSuperlu = True
+useSuperlu = True#False
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -69,7 +69,7 @@ bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
 quasi2D = True#True
 #veg=True; levee=False; spongeLayer=False
-veg=False; levee=False; spongeLayer=True
+veg=False; levee=False; spongeLayer=False
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -411,14 +411,43 @@ else:
                                                  facetFlags=facetFlags,
                                                  regions=regions,
                                                  regionFlags=regionFlags)
+    domain = castle.domain
+    #rescale it to match
+    vertices_old = domain.vertices
+    facetHoles_old = domain.facetHoles
+    holes_old = domain.holes
+    scale_z = L[2]/domain.L[2]
+    scale_y = 3.0*he/domain.L[1]
+    scale_x = scale_z #use vertical length scale
+    domain.vertices=[]
+    domain.holes=[]
+    domain.facetHoles=[]
+    for v in vertices_old:
+        domain.vertices.append([(v[0]-domain.x[0])*scale_x,
+                                (v[1]-domain.x[1])*scale_y,
+                                (v[2]-domain.x[2])*scale_z])
+    for v in holes_old:
+        domain.holes.append([(v[0]-domain.x[0])*scale_x,
+                             (v[1]-domain.x[1])*scale_y,
+                             (v[2]-domain.x[2])*scale_z])
+    for v in facetHoles_old:
+        if len(v)==3:
+            domain.facetHoles.append([(v[0]-domain.x[0])*scale_x,
+                                      (v[1]-domain.x[1])*scale_y,
+                                      (v[2]-domain.x[2])*scale_z])
+        else:
+            domain.facetHoles.append([])
+    domain.getBoundingBox()
+    L = domain.L
+    print "domain scales",L,domain.L, domain.x
     #go ahead and add a boundary tags member 
     domain.boundaryTags = boundaryTags
-    domain.writePoly("mesh")
-    domain.writePLY("mesh")
-    domain.writeAsymptote("mesh")
+    domain.writePoly("castle")
+    domain.writePLY("castle")
+    domain.writeAsymptote("castle")
     triangleOptions="VApq2q10ena%21.16e" % ((he**3)/6.0,)
-
-
+    print triangleOptions
+    
 # Numerical parameters
 ns_shockCapturingFactor  = 0.1
 ls_shockCapturingFactor  = 0.1
@@ -453,25 +482,25 @@ sigma_01 = 0.0
 g = [0.0,0.0,-9.8]
 
 #wave/current properties
-windspeed_u = 0.0
+windspeed_u = 1.0
 windspeed_v = 0.0
 windspeed_w = 0.0
 
-outflowHeight = 0.5*L[2]
+outflowHeight = 0.3*L[2]
 outflowVelocity = (0.0,0.0,0.0)#not used for now
 
-inflowHeightMean = 0.5*L[2]
+inflowHeightMean = 0.3*L[2]
 inflowVelocityMean = (0.0,0.0,0.0)
 
-waveLength = 5*inflowHeightMean #
+waveLength = 2*inflowHeightMean #
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
 omega = 2.0*pi/period
 k=(2.0*pi/waveLength,0.0,0.0)
 amplitude = 0.1*inflowHeightMean
 
 # Wave Field Object
-#waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
-waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+#waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 
 def waveHeight(x,t):
@@ -535,7 +564,7 @@ def outflowPressure(x,t):
 
 # Time 
 T=period*20
-runCFL = 0.1
+runCFL = 0.3
 print "T",T
 dt_fixed = period/25.0 
 #dt_fixed = period/100.0
