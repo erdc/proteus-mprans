@@ -59,7 +59,9 @@ L = (20.0,
      1.0)
 spongeLayer = True
 xSponge = L[0] - 1.25
-levee=True; spongeLayer=False;
+ySponge = L[2] - L[2]/2.0
+
+levee=True; spongeLayer=False; 
 leveeStart = 1.9
 leveeBottomWidth = 3.0
 leveeHeight =L[2]*3.0/5.0
@@ -69,7 +71,7 @@ bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
 quasi2D = True#True
 #veg=True; levee=False; spongeLayer=False
-veg=False; levee=False; spongeLayer=True
+veg=False; levee=False; spongeLayer=False; slopingSpongeLayer=True;
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -155,6 +157,73 @@ else:
         killNonlinearDragInSpongeLayer = True#True
         porosityTypes      = numpy.array([1.0,spongePorosity])
         meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize])
+    elif slopingSpongeLayer:
+        vertices=[[0.0,0.0,0.0],#0
+                  [xSponge,0.0,0.0],#1
+                  [xSponge,L[1],0.0],#2
+                  [0.0,L[1],0.0],#3
+                  [0.0,0.0,L[2]],#4
+                  [xSponge,0.0,L[2]],#5
+                  [xSponge,L[1],L[2]],#6
+                  [0.0,L[1],L[2]],#7
+                  [L[0],0.0,ySponge],#8
+                  [L[0],L[1],ySponge],#9
+                  [L[0],0.0,L[2]],#10
+                  [L[0],L[1],L[2]]#11
+                  ]
+        vertexFlags=[boundaryTags['left'],
+                     boundaryTags['front'],
+                     boundaryTags['back'],
+                     boundaryTags['left'],
+                     boundaryTags['left'],
+                     boundaryTags['front'],
+                     boundaryTags['back'],
+                     boundaryTags['left'],
+                     boundaryTags['right'],
+                     boundaryTags['right'],
+                     boundaryTags['right'],
+                     boundaryTags['right']]
+        facets=[[[0,1,2,3]],#bottom
+                [[0,1,5,4]],#front
+                [[1,2,6,5]],#internal
+                [[2,3,7,6]],#back
+                [[3,0,4,7]],#left
+                [[4,5,6,7]],#top
+                [[1,8,9,2]],#bottom #start sponge
+                [[1,8,10,5]],#front
+                [[8,9,11,10]],#right
+                [[2,6,11,9]],#back
+                [[5,6,11,10]],#top
+                ]
+        facetHoles=[[],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []]
+        facetFlags=[boundaryTags['bottom'],
+                    boundaryTags['front'],
+                    0,#boundaryTags['right'],
+                    boundaryTags['back'],
+                    boundaryTags['left'],
+                    boundaryTags['top'],
+                    boundaryTags['bottom'],#sponge
+                    boundaryTags['front'],
+                    boundaryTags['right'],
+                    boundaryTags['back'],
+                    boundaryTags['top']]
+        regions=[[0.5*xSponge,0.5*L[1],0.5*L[2]],[0.5*(xSponge+L[0]),0.5*L[1],0.75*L[2]]]
+        regionFlags=[0,1]
+        spongeGrainSize= 0.015
+        spongePorosity = 0.75
+        killNonlinearDragInSpongeLayer = True#True
+        porosityTypes      = numpy.array([1.0,spongePorosity])
+        meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize])    
     elif levee:
         vertices=[[0.0,0.0,bedHeight],#0
                   [L[0],0.0,leveeHeightDownstream],#1

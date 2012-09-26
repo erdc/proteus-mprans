@@ -249,7 +249,7 @@ class waveJONSWAP:
 
 
     def height(self,x,t):
-        [self.surface, self.u, self.v] = self.JONSWAP()
+        [self.surface, self.u, self.v] = self.JONSWAP(x,t)
         # ~ NOTE: x[0] is a vector here!
         return self.surface
 
