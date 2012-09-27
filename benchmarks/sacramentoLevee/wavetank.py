@@ -6,12 +6,12 @@ from proteus import Domain
 from proteus.default_n import *   
 from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
-   
+
 #  Discretization -- input options  
-Refinement = 2#4#15
+Refinement = 3#4#15
 genMesh=True
 useOldPETSc=False
-useSuperlu = True
+useSuperlu = True#False
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -54,14 +54,11 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (20.0,
-     0.25,
-     1.0)
+domain = Domain.PiecewiseLinearComplexDomain("sacsw3d")
+L=domain.L
 spongeLayer = True
-xSponge = L[0] - 2.25
-ySponge = L[2] - L[2]/2.0
-
-levee=True; spongeLayer=False; 
+xSponge = L[0] - 1.25
+levee=True; spongeLayer=False;
 leveeStart = 1.9
 leveeBottomWidth = 3.0
 leveeHeight =L[2]*3.0/5.0
@@ -69,9 +66,9 @@ leveeHeightDownstream = 0.0#0.25
 leveeSlope = 1.0/2.0
 bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
-quasi2D = True#True
+quasi2D = False##True
 #veg=True; levee=False; spongeLayer=False
-veg=False; levee=False; spongeLayer=False; slopingSpongeLayer=True;
+veg=False; levee=False; spongeLayer=False
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -152,76 +149,11 @@ else:
                     boundaryTags['top']]
         regions=[[0.5*xSponge,0.5*L[1],0.5*L[2]],[0.5*(xSponge+L[0]),0.5*L[1],0.5*L[2]]]
         regionFlags=[0,1]
-        spongeGrainSize= 0.001
-        spongePorosity = 0.3
+        spongeGrainSize= 0.015
+        spongePorosity = 0.75
         killNonlinearDragInSpongeLayer = True#True
         porosityTypes      = numpy.array([1.0,spongePorosity])
         meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize])
-    elif slopingSpongeLayer:
-        vertices=[[0.0,0.0,0.0],#0
-                  [xSponge,0.0,0.0],#1
-                  [xSponge,L[1],0.0],#2
-                  [0.0,L[1],0.0],#3
-                  [0.0,0.0,L[2]],#4
-                  [xSponge,0.0,L[2]],#5
-                  [xSponge,L[1],L[2]],#6
-                  [0.0,L[1],L[2]],#7
-                  [L[0],0.0,ySponge],#8
-                  [L[0],L[1],ySponge],#9
-                  [L[0],0.0,L[2]],#10
-                  [L[0],L[1],L[2]]#11
-                  ]
-        vertexFlags=[boundaryTags['left'],
-                     boundaryTags['front'],
-                     boundaryTags['back'],
-                     boundaryTags['left'],
-                     boundaryTags['left'],
-                     boundaryTags['front'],
-                     boundaryTags['back'],
-                     boundaryTags['left'],
-                     boundaryTags['right'],
-                     boundaryTags['right'],
-                     boundaryTags['right'],
-                     boundaryTags['right']]
-        facets=[[[0,1,2,3]],#bottom
-                [[0,1,5,4]],#front
-                [[1,2,6,5]],#internal
-                [[2,3,7,6]],#back
-                [[3,0,4,7]],#left
-                [[4,5,6,7]],#top
-                [[1,8,9,2]],#bottom #start sponge
-                [[1,8,10,5]],#front
-                [[8,9,11,10]],#right
-                [[2,6,11,9]],#back
-                [[5,6,11,10]],#top
-                ]
-        facetHoles=[[],
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    []]
-        facetFlags=[boundaryTags['bottom'],
-                    boundaryTags['front'],
-                    0,#boundaryTags['right'],
-                    boundaryTags['back'],
-                    boundaryTags['left'],
-                    boundaryTags['top'],
-                    boundaryTags['bottom'],#sponge
-                    boundaryTags['front'],
-                    boundaryTags['right'],
-                    boundaryTags['back'],
-                    boundaryTags['top']]
-        regions=[[0.5*xSponge,0.5*L[1],0.5*L[2]],[0.5*(xSponge+L[0]),0.5*L[1],0.75*L[2]]]
-        regionFlags=[0,1]
-        porosityTypes      = numpy.array([1.0,1.0])
-        dragAlphaTypes = numpy.array([0.0,10000.0])    
-        dragBetaTypes = numpy.array([0.0,1000.0])    
     elif levee:
         vertices=[[0.0,0.0,bedHeight],#0
                   [L[0],0.0,leveeHeightDownstream],#1
@@ -435,56 +367,10 @@ else:
         regions=[[0.001,0.001,0.001]]
         regionFlags=[1]
     else:
-        vertices=[[0.0,0.0,0.0],#0
-                  [L[0],0.0,0.0],#1
-                  [L[0],L[1],0.0],#2
-                  [0.0,L[1],0.0],#3
-                  [0.0,0.0,L[2]],#4
-                  [L[0],0.0,L[2]],#5
-                  [L[0],L[1],L[2]],#6
-                  [0.0,L[1],L[2]]]#7
-        vertexFlags=[boundaryTags['left'],
-                     boundaryTags['right'],
-                     boundaryTags['right'],
-                     boundaryTags['left'],
-                     boundaryTags['left'],
-                     boundaryTags['right'],
-                     boundaryTags['right'],
-                     boundaryTags['left']]
-        facets=[[[0,1,2,3]],
-                [[0,1,5,4]],
-                [[1,2,6,5]],
-                [[2,3,7,6]],
-                [[3,0,4,7]],
-                [[4,5,6,7]]]
-        facetHoles=[[],
-                    [],
-                    [],
-                    [],
-                    [],
-                    []]
-        facetFlags=[boundaryTags['bottom'],
-                    boundaryTags['front'],
-                    boundaryTags['right'],
-                    boundaryTags['back'],
-                    boundaryTags['left'],
-                    boundaryTags['top']]
-        regions=[[0.5*L[0],0.5*L[1],0.5*L[2]]]
-        regionFlags=[1.0]
-    domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
-                                                 vertexFlags=vertexFlags,
-                                                 facets=facets,
-                                                 facetHoles=facetHoles,
-                                                 facetFlags=facetFlags,
-                                                 regions=regions,
-                                                 regionFlags=regionFlags)
-    #go ahead and add a boundary tags member 
-    domain.boundaryTags = boundaryTags
-    domain.writePoly("mesh")
-    domain.writePLY("mesh")
-    domain.writeAsymptote("mesh")
+        domain.boundaryTags = boundaryTags
+        domain.writePLY("sacsw")
     triangleOptions="VApq2q10ena%21.16e" % ((he**3)/6.0,)
-
+    print triangleOptions
 
 # Numerical parameters
 ns_shockCapturingFactor  = 0.1
@@ -520,25 +406,25 @@ sigma_01 = 0.0
 g = [0.0,0.0,-9.8]
 
 #wave/current properties
-windspeed_u = 0.0
+windspeed_u = 1.0
 windspeed_v = 0.0
 windspeed_w = 0.0
 
-outflowHeight = 0.5*L[2]
+outflowHeight = 0.0#5*L[2]
 outflowVelocity = (0.0,0.0,0.0)#not used for now
 
-inflowHeightMean = 0.5*L[2]
+inflowHeightMean = 0.75*L[2]
 inflowVelocityMean = (0.0,0.0,0.0)
 
-waveLength = 5*inflowHeightMean #
+waveLength = 2*inflowHeightMean #
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
 omega = 2.0*pi/period
 k=(2.0*pi/waveLength,0.0,0.0)
 amplitude = 0.1*inflowHeightMean
 
 # Wave Field Object
-#waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
-waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+#waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 
 def waveHeight(x,t):
@@ -602,7 +488,7 @@ def outflowPressure(x,t):
 
 # Time 
 T=period*20
-runCFL = 0.1
+runCFL = 0.3
 print "T",T
 dt_fixed = period/25.0 
 #dt_fixed = period/100.0

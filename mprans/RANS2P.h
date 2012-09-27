@@ -59,10 +59,9 @@ namespace proteus
 				   double Cd_sge,
 				   double C_dc,
 				   //VRANS
-				   double linearDragFactor,
-				   double nonlinearDragFactor,
 				   const double* q_porosity,
-				   const double* q_meanGrain,
+				   const double* q_dragAlpha,
+				   const double* q_dragBeta,
 				   const double* q_mass_source,
 				   int* p_l2g, 
 				   int* vel_l2g, 
@@ -179,10 +178,9 @@ namespace proteus
 				   double Cd_sge,
 				   double C_dg,
 				   //VRANS
-				   double linearDragFactor,
-				   double nonlinearDragFactor,
 				   const double* q_porosity,
-				   const double* q_meanGrain,
+				   const double* q_dragAlpha,
+				   const double* q_dragBeta,
 				   const double* q_mass_source,
 				   int* p_l2g, 
 				   int* vel_l2g,
@@ -818,17 +816,19 @@ namespace proteus
     }
     //VRANS specific
     inline
-    void updateDarcyForchheimerTerms_Ergun(const double linearDragFactor,
-					   const double nonlinearDragFactor,
-					   const double porosity,
-					   const double meanGrainSize,
+      void updateDarcyForchheimerTerms_Ergun(/* const double linearDragFactor, */
+					   /* const double nonlinearDragFactor, */
+					   /* const double porosity, */
+					   /* const double meanGrainSize, */
+					   const double alpha,
+					   const double beta,
 					   const double eps_rho,
 					   const double eps_mu,
 					   const double rho_0,
 					   const double nu_0,
 					   const double rho_1,
 					   const double nu_1,
-					   const double& phi,
+					   const double phi,
 					   const double u,
 					   const double v,
 					   const double w,
@@ -839,9 +839,9 @@ namespace proteus
 					   double dmom_v_source[nSpace],
 					   double dmom_w_source[nSpace])
     {
-      const double epsZero=1.0e-6;
-      double mu,nu,H_mu,uc,Ftilde=0.0,Kinv=0.0,voidFrac=1.0-porosity;
-      double viscosity;
+      //const double epsZero=1.0e-6;
+      double mu,nu,H_mu,uc,duc_du,duc_dv,duc_dw,viscosity;//,Ftilde=0.0,Kinv=0.0,voidFrac=1.0-porosity;
+      //double viscosity;
       H_mu = smoothedHeaviside(eps_mu,phi);
       nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
       mu  = rho_0*nu_0*(1.0-H_mu)+rho_1*nu_1*H_mu;
@@ -853,31 +853,68 @@ namespace proteus
       //end up with extra porosity term in final expression because multiply whole momentum 
       //equation through by porosity
       uc = sqrt(u*u+v*v*+w*w); 
-      if (voidFrac > epsZero)
-	Ftilde = porosity*meanGrainSize*1.0e-2/(voidFrac*viscosity); //viscosity term cancels below 
-      Ftilde *= nonlinearDragFactor;
+      duc_du = u/(uc+1.0e-12);
+      duc_dv = v/(uc+1.0e-12);
+      duc_dw = w/(uc+1.0e-12);
+      /* if (voidFrac > epsZero) */
+      /* 	Ftilde = porosity*meanGrainSize*1.0e-2/(voidFrac*viscosity); //viscosity term cancels below  */
+      /* Ftilde *= nonlinearDragFactor; */
 
-      if (porosity > epsZero && meanGrainSize > epsZero)
-	Kinv = 180.0*voidFrac*voidFrac/(meanGrainSize*meanGrainSize*porosity*porosity*porosity);
+      /* if (porosity > epsZero && meanGrainSize > epsZero) */
+      /* 	Kinv = 180.0*voidFrac*voidFrac/(meanGrainSize*meanGrainSize*porosity*porosity*porosity); */
 	
-      Kinv *= linearDragFactor;
+      /* Kinv *= linearDragFactor; */
 
-      mom_u_source += porosity*porosity*viscosity*Kinv*(1.0+Ftilde*uc)*u;
-      mom_v_source += porosity*porosity*viscosity*Kinv*(1.0+Ftilde*uc)*v;
-      mom_w_source += porosity*porosity*viscosity*Kinv*(1.0+Ftilde*uc)*w;
+      /* mom_u_source += porosity*porosity*viscosity*Kinv*(1.0+Ftilde*uc)*u; */
+      /* mom_v_source += porosity*porosity*viscosity*Kinv*(1.0+Ftilde*uc)*v; */
+      /* mom_w_source += porosity*porosity*viscosity*Kinv*(1.0+Ftilde*uc)*w; */
 
-      dmom_u_source[0] = porosity*porosity*viscosity*Kinv*(1.0 + Ftilde*(uc + u*u/(uc+1.0e-12)));
-      dmom_u_source[1] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(u*v/(uc+1.0e-12)));
-      dmom_u_source[2] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(u*w/(uc+1.0e-12)));
+      /* dmom_u_source[0] = porosity*porosity*viscosity*Kinv*(1.0 + Ftilde*(uc + u*u/(uc+1.0e-12))); */
+      /* dmom_u_source[1] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(u*v/(uc+1.0e-12))); */
+      /* dmom_u_source[2] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(u*w/(uc+1.0e-12))); */
     
-      dmom_v_source[0] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(u*v/(uc+1.0e-12)));
-      dmom_v_source[1] = porosity*porosity*viscosity*Kinv*(1.0 + Ftilde*(uc + v*v/(uc+1.0e-12)));
-      dmom_v_source[2] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(w*v/(uc+1.0e-12)));
+      /* dmom_v_source[0] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(u*v/(uc+1.0e-12))); */
+      /* dmom_v_source[1] = porosity*porosity*viscosity*Kinv*(1.0 + Ftilde*(uc + v*v/(uc+1.0e-12))); */
+      /* dmom_v_source[2] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(w*v/(uc+1.0e-12))); */
 
-      dmom_w_source[0] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(w*u/(uc+1.0e-12)));
-      dmom_w_source[1] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(w*v/(uc+1.0e-12)));
-      dmom_w_source[2] = porosity*porosity*viscosity*Kinv*(1.0 + Ftilde*(uc + w*w/(uc+1.0e-12)));
+      /* dmom_w_source[0] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(w*u/(uc+1.0e-12))); */
+      /* dmom_w_source[1] = porosity*porosity*viscosity*Kinv*(0.0 + Ftilde*(w*v/(uc+1.0e-12))); */
+      /* dmom_w_source[2] = porosity*porosity*viscosity*Kinv*(1.0 + Ftilde*(uc + w*w/(uc+1.0e-12))); */
 
+      //cek new
+
+      mom_u_source += viscosity*(alpha + beta*uc)*u;
+      mom_v_source += viscosity*(alpha + beta*uc)*v;
+      mom_w_source += viscosity*(alpha + beta*uc)*w;
+
+      dmom_u_source[0] = viscosity*(alpha + beta*(uc + u*duc_du));
+      dmom_u_source[1] = viscosity*beta*u*duc_dv;
+      dmom_u_source[2] = viscosity*beta*u*duc_dw;
+    
+      dmom_v_source[0] = viscosity*beta*v*duc_du;
+      dmom_v_source[1] = viscosity*(alpha + beta*(uc + v*duc_dv));
+      dmom_v_source[2] = viscosity*beta*w*duc_dw;
+
+      dmom_w_source[0] = viscosity*beta*w*duc_du;
+      dmom_w_source[1] = viscosity*beta*w*duc_dv;
+      dmom_w_source[2] = viscosity*(alpha + beta*(uc + w*duc_dw));
+
+      /* cek debug */
+      /* mom_u_source += porosity*porosity*viscosity*Kinv*u; */
+      /* mom_v_source += porosity*porosity*viscosity*Kinv*v; */
+      /* mom_w_source += porosity*porosity*viscosity*Kinv*w; */
+
+      /* dmom_u_source[0] = porosity*porosity*viscosity*Kinv; */
+      /* dmom_u_source[1] = 0.0; */
+      /* dmom_u_source[2] = 0.0; */
+    
+      /* dmom_v_source[0] = 0.0; */
+      /* dmom_v_source[1] = porosity*porosity*viscosity*Kinv; */
+      /* dmom_v_source[2] = 0.0; */
+
+      /* dmom_w_source[0] = 0.0; */
+      /* dmom_w_source[1] = 0.0; */
+      /* dmom_w_source[2] = porosity*porosity*viscosity*Kinv; */
     }
     inline
     void calculateSubgridError_tau(const double&  hFactor,
@@ -1532,10 +1569,9 @@ namespace proteus
 			   double Cd_sge,
 			   double C_dc,
 			   //VRANS
-			   double linearDragFactor,
-			   double nonlinearDragFactor,
 			   const double* q_porosity,
-			   const double* q_meanGrain,
+			   const double* q_dragAlpha,
+			   const double* q_dragBeta,
 			   const double* q_mass_source,
 			   //
 			   int* p_l2g, 
@@ -1714,7 +1750,7 @@ namespace proteus
 		dV,x,y,z,xt,yt,zt,
 		//
 		porosity,
-		meanGrainSize,
+		//meanGrainSize,
 		mass_source,
 		dmom_u_source[nSpace],
 		dmom_v_source[nSpace],
@@ -1774,7 +1810,7 @@ namespace proteus
 		}
 	      //VRANS
 	      porosity      = q_porosity[eN_k];
-	      meanGrainSize = q_meanGrain[eN_k]; 
+	      //meanGrainSize = q_meanGrain[eN_k]; 
 	      //
 	      //save velocity at quadrature points for other models to use
 	      q_velocity[eN_k_nSpace+0]=u;
@@ -1848,10 +1884,12 @@ namespace proteus
 	      //VRANS
 	      mass_source = q_mass_source[eN_k];
 	      //todo: decide if these should be lagged or not?
-	      updateDarcyForchheimerTerms_Ergun(linearDragFactor,
-						nonlinearDragFactor,
-						porosity,
-						meanGrainSize,
+	      updateDarcyForchheimerTerms_Ergun(/* linearDragFactor, */
+						/* nonlinearDragFactor, */
+						/* porosity, */
+						/* meanGrainSize, */
+						q_dragAlpha[eN_k],
+						q_dragBeta[eN_k],
 						eps_rho,
 						eps_mu,
 						rho_0,
@@ -1859,9 +1897,9 @@ namespace proteus
 						rho_1,
 						nu_1,
 						phi[eN_k],
-						q_velocity_sge[eN_k_nSpace+0],//u
-						q_velocity_sge[eN_k_nSpace+1],//v
-						q_velocity_sge[eN_k_nSpace+2],//w
+						u,//q_velocity_sge[eN_k_nSpace+0],//u
+						v,//q_velocity_sge[eN_k_nSpace+1],//v
+						w,//q_velocity_sge[eN_k_nSpace+2],//w
 						mom_u_source,
 						mom_v_source,
 						mom_w_source,
@@ -1959,9 +1997,11 @@ namespace proteus
 		ck.Reaction_strong(mom_w_source);
 	
 	      //calculate tau and tau*Res
+	      //cek debug
+	      double tmpR=dmom_u_acc_u_t + dmom_u_source[0];
 	      calculateSubgridError_tau(hFactor,
 					elementDiameter[eN],
-					dmom_u_acc_u_t,
+					tmpR,//dmom_u_acc_u_t,
 					dmom_u_acc_u,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],
@@ -2753,10 +2793,9 @@ namespace proteus
 			   double Cd_sge,
 			   double C_dg,
 			   //VRANS
-			   double linearDragFactor,
-			   double nonlinearDragFactor,
 			   const double* q_porosity,
-			   const double* q_meanGrain,
+			   const double* q_dragAlpha,
+			   const double* q_dragBeta,
 			   const double* q_mass_source,
 			   //
 			   int* p_l2g, 
@@ -2986,7 +3025,7 @@ namespace proteus
 		x,y,z,xt,yt,zt,
 		//VRANS
 		porosity,
-		meanGrainSize,
+		//meanGrainSize,
 		dmom_u_source[nSpace],
 		dmom_v_source[nSpace],
 		dmom_w_source[nSpace],
@@ -3078,7 +3117,7 @@ namespace proteus
 	      //
 	      //VRANS
 	      porosity = q_porosity[eN_k];
-	      meanGrainSize = q_meanGrain[eN_k]; 
+	      //meanGrainSize = q_meanGrain[eN_k]; 
 	      //
 	      //
 	      //calculate pde coefficients and derivatives at quadrature points
@@ -3148,10 +3187,12 @@ namespace proteus
 	      //VRANS
 	      mass_source = q_mass_source[eN_k];
 	      //todo: decide if these should be lagged or not
-	      updateDarcyForchheimerTerms_Ergun(linearDragFactor,
-						nonlinearDragFactor,
-						porosity,
-						meanGrainSize,
+	      updateDarcyForchheimerTerms_Ergun(/* linearDragFactor, */
+						/* nonlinearDragFactor, */
+						/* porosity, */
+						/* meanGrainSize, */
+						q_dragAlpha[eN_k],
+						q_dragBeta[eN_k],
 						eps_rho,
 						eps_mu,
 						rho_0,
@@ -3159,9 +3200,9 @@ namespace proteus
 						rho_1,
 						nu_1,
 						phi[eN_k],
-						q_velocity_sge[eN_k_nSpace+0],//u
-						q_velocity_sge[eN_k_nSpace+1],//v
-						q_velocity_sge[eN_k_nSpace+2],//w
+						u,//q_velocity_sge[eN_k_nSpace+0],//u
+						v,//q_velocity_sge[eN_k_nSpace+1],//v
+						w,//q_velocity_sge[eN_k_nSpace+2],//w
 						mom_u_source,
 						mom_v_source,
 						mom_w_source,
@@ -3274,9 +3315,11 @@ namespace proteus
 		  //
 		}
 	      //calculate tau and tau*Res
+	      //cek debug
+	      double tmpR=dmom_u_acc_u_t + dmom_u_source[0];
 	      calculateSubgridError_tau(hFactor,
 					elementDiameter[eN],
-					dmom_u_acc_u_t,
+					tmpR,//dmom_u_acc_u_t,
 					dmom_u_acc_u,
 					dmom_adv_sge,
 					mom_u_diff_ten[1],

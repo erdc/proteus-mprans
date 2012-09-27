@@ -26,9 +26,11 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  useRBLES=0.0,
 		 useMetrics=0.0,
                  useConstantH=False,
-                 meanGrainSize=0.01,
+                 dragAlpha=0.01,
+                 dragBeta =0.0,
                  setParamsFunc=None,      #uses setParamsFunc if given
-                 meanGrainSizeTypes=None, #otherwise can use element constant values
+                 dragAlphaTypes=None, #otherwise can use element constant values
+                 dragBetaTypes=None, #otherwise can use element constant values
                  porosityTypes=None,
                  killNonlinearDrag=False,
                  waveFlag=None,
@@ -63,9 +65,11 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.g = numpy.array(g)
         self.nd=nd
         #
-        self.meanGrainSize     = meanGrainSize
+        self.dragAlpha = dragAlpha
+        self.dragBeta = dragBeta
         self.setParamsFunc=setParamsFunc
-        self.meanGrainSizeTypes = meanGrainSizeTypes
+        self.dragAlphaTypes = dragAlphaTypes
+        self.dragBetaTypes = dragBetaTypes
         self.porosityTypes      = porosityTypes
         self.killNonlinearDrag  = int(killNonlinearDrag)
         self.waveFlag=waveFlag
@@ -228,18 +232,23 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             self.q_kappa = -numpy.zeros(cq[('u',1)].shape,'d')
         #VRANS
         self.q_porosity = numpy.ones(cq[('u',1)].shape,'d')
-        self.q_meanGrain= numpy.ones(cq[('u',1)].shape,'d')            
-        self.q_meanGrain.fill(self.meanGrainSize)
+        self.q_dragAlpha= numpy.ones(cq[('u',1)].shape,'d')            
+        self.q_dragAlpha.fill(self.dragAlpha)
+        self.q_dragBeta= numpy.ones(cq[('u',1)].shape,'d')            
+        self.q_dragBeta.fill(self.dragBeta)
         if self.setParamsFunc != None:
-            self.setParamsFunc(cq['x'],self.q_porosity,self.q_meanGrain)
+            self.setParamsFunc(cq['x'],self.q_porosity,self.q_dragAlpha,self.q_dragBeta)
         else:
             #TODO make loops faster
             if self.porosityTypes != None:
                 for eN in range(self.q_porosity.shape[0]):
                     self.q_porosity[eN,:] = self.porosityTypes[self.elementMaterialTypes[eN]]
-            if self.meanGrainSizeTypes != None:
-                for eN in range(self.q_meanGrain.shape[0]):
-                    self.q_meanGrain[eN,:] = self.meanGrainSizeTypes[self.elementMaterialTypes[eN]]
+            if self.dragAlphaTypes != None:
+                for eN in range(self.q_dragAlpha.shape[0]):
+                    self.q_dragAlpha[eN,:] = self.dragAlphaTypes[self.elementMaterialTypes[eN]]
+            if self.dragBetaTypes != None:
+                for eN in range(self.q_dragBeta.shape[0]):
+                    self.q_dragBeta[eN,:] = self.dragBetaTypes[self.elementMaterialTypes[eN]]
         #
     def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
         if self.LS_model == None:
@@ -249,10 +258,12 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             self.ebq_kappa = -numpy.zeros(cebq[('u',1)].shape,'d')
         #VRANS
         self.ebq_porosity = numpy.ones(cebq[('u',1)].shape,'d')
-        self.ebq_meanGrain= numpy.ones(cebq[('u',1)].shape,'d')
-        self.ebq_meanGrain.fill(self.meanGrainSize)
+        self.ebq_dragAlpha= numpy.ones(cebq[('u',1)].shape,'d')
+        self.ebq_dragAlpha.fill(self.dragAlpha)
+        self.ebq_dragBeta= numpy.ones(cebq[('u',1)].shape,'d')
+        self.ebq_dragBeta.fill(self.dragBeta)
         if self.setParamsFunc != None:
-            self.setParamsFunc(cebq['x'],self.ebq_porosity,self.ebq_meanGrain)
+            self.setParamsFunc(cebq['x'],self.ebq_porosity,self.ebq_dragAlpha,self.ebq_dragBeta)
         #TODO which mean to use or leave discontinuous
         #TODO make loops faster
         if self.porosityTypes != None:
@@ -271,22 +282,38 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                 eN  = self.mesh.elementBoundaryElementsArray[ebN,0]
                 ebN_element = self.mesh.elementBoundaryLocalElementBoundariesArray[ebN,0]
                 self.ebq_porosity[eN,ebN_element,:] = self.porosityTypes[self.elementMaterialTypes[eN]]
-        if self.meanGrainSizeTypes != None:
+        if self.dragAlphaTypes != None:
             for ebNI in range(self.mesh.nInteriorElementBoundaries_global):
                 ebN = self.mesh.interiorElementBoundariesArray[ebNI]
                 eN_left  = self.mesh.elementBoundaryElementsArray[ebN,0]
                 eN_right = self.mesh.elementBoundaryElementsArray[ebN,1]
             ebN_element_left = self.mesh.elementBoundaryLocalElementBoundariesArray[ebN,0]
             ebN_element_right = self.mesh.elementBoundaryLocalElementBoundariesArray[ebN,1]
-            avg = 0.5*(self.meanGrainSizeTypes[self.elementMaterialTypes[eN_left]]+
-                       self.meanGrainSizeTypes[self.elementMaterialTypes[eN_right]])
-            self.ebq_meanGrain[eN_left,ebN_element_left,:] = self.meanGrainSizeTypes[self.elementMaterialTypes[eN_left]]
-            self.ebq_meanGrain[eN_right,ebN_element_right,:] = self.meanGrainSizeTypes[self.elementMaterialTypes[eN_right]]
+            avg = 0.5*(self.dragAlphaTypes[self.elementMaterialTypes[eN_left]]+
+                       self.dragAlphaTypes[self.elementMaterialTypes[eN_right]])
+            self.ebq_dragAlpha[eN_left,ebN_element_left,:] = self.dragAlphaTypes[self.elementMaterialTypes[eN_left]]
+            self.ebq_dragAlpha[eN_right,ebN_element_right,:] = self.dragAlphaTypes[self.elementMaterialTypes[eN_right]]
             for ebNE in range(self.mesh.nExteriorElementBoundaries_global):
                 ebN = self.mesh.exteriorElementBoundariesArray[ebNE]
                 eN  = self.mesh.elementBoundaryElementsArray[ebN,0]
                 ebN_element = self.mesh.elementBoundaryLocalElementBoundariesArray[ebN,0]
-                self.ebq_meanGrain[eN,ebN_element,:] = self.meanGrainSizeTypes[self.elementMaterialTypes[eN]]
+                self.ebq_dragAlpha[eN,ebN_element,:] = self.dragAlphaTypes[self.elementMaterialTypes[eN]]
+        if self.dragBetaTypes != None:
+            for ebNI in range(self.mesh.nInteriorElementBoundaries_global):
+                ebN = self.mesh.interiorElementBoundariesArray[ebNI]
+                eN_left  = self.mesh.elementBoundaryElementsArray[ebN,0]
+                eN_right = self.mesh.elementBoundaryElementsArray[ebN,1]
+            ebN_element_left = self.mesh.elementBoundaryLocalElementBoundariesArray[ebN,0]
+            ebN_element_right = self.mesh.elementBoundaryLocalElementBoundariesArray[ebN,1]
+            avg = 0.5*(self.dragBetaTypes[self.elementMaterialTypes[eN_left]]+
+                       self.dragBetaTypes[self.elementMaterialTypes[eN_right]])
+            self.ebq_dragBeta[eN_left,ebN_element_left,:] = self.dragBetaTypes[self.elementMaterialTypes[eN_left]]
+            self.ebq_dragBeta[eN_right,ebN_element_right,:] = self.dragBetaTypes[self.elementMaterialTypes[eN_right]]
+            for ebNE in range(self.mesh.nExteriorElementBoundaries_global):
+                ebN = self.mesh.exteriorElementBoundariesArray[ebNE]
+                eN  = self.mesh.elementBoundaryElementsArray[ebN,0]
+                ebN_element = self.mesh.elementBoundaryLocalElementBoundariesArray[ebN,0]
+                self.ebq_dragBeta[eN,ebN_element,:] = self.dragBetaTypes[self.elementMaterialTypes[eN]]
          #
     def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
         if self.LS_model == None:
@@ -296,22 +323,29 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             self.ebqe_kappa = -numpy.zeros(cebqe[('u',1)].shape,'d')
         #VRANS
         self.ebqe_porosity = numpy.ones(cebqe[('u',1)].shape,'d')
-        self.ebqe_meanGrain = numpy.ones(cebqe[('u',1)].shape,'d')
-        self.ebqe_meanGrain.fill(self.meanGrainSize)
+        self.ebqe_dragAlpha = numpy.ones(cebqe[('u',1)].shape,'d')
+        self.ebqe_dragAlpha.fill(self.dragAlpha)
+        self.ebqe_dragBeta = numpy.ones(cebqe[('u',1)].shape,'d')
+        self.ebqe_dragBeta.fill(self.dragBeta)
         #TODO make loops faster
         if self.setParamsFunc != None:
-            self.setParamsFunc(cebqe['x'],self.ebqe_porosity,self.ebqe_meanGrain)
+            self.setParamsFunc(cebqe['x'],self.ebqe_porosity,self.ebqe_dragAlpha,self.ebqe_dragBeta)
         else:
             if self.porosityTypes != None:
                 for ebNE in range(self.mesh.nExteriorElementBoundaries_global):
                     ebN = self.mesh.exteriorElementBoundariesArray[ebNE]
                     eN  = self.mesh.elementBoundaryElementsArray[ebN,0]
                     self.ebqe_porosity[ebNE,:] = self.porosityTypes[self.elementMaterialTypes[eN]]
-            if self.meanGrainSizeTypes != None:
+            if self.dragAlphaTypes != None:
                 for ebNE in range(self.mesh.nExteriorElementBoundaries_global):
                     ebN = self.mesh.exteriorElementBoundariesArray[ebNE]
                     eN  = self.mesh.elementBoundaryElementsArray[ebN,0]
-                    self.ebqe_meanGrain[ebNE,:] = self.meanGrainSizeTypes[self.elementMaterialTypes[eN]]
+                    self.ebqe_dragAlpha[ebNE,:] = self.dragAlphaTypes[self.elementMaterialTypes[eN]]
+            if self.dragBetaTypes != None:
+                for ebNE in range(self.mesh.nExteriorElementBoundaries_global):
+                    ebN = self.mesh.exteriorElementBoundariesArray[ebNE]
+                    eN  = self.mesh.elementBoundaryElementsArray[ebN,0]
+                    self.ebqe_dragBeta[ebNE,:] = self.dragBetaTypes[self.elementMaterialTypes[eN]]
         #
     def updateToMovingDomain(self,t,c):
         pass
@@ -456,393 +490,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         #                                     self.waterDepth,
         #                                     c[('r',0)])
     def evaluate(self,t,c):
-        import pdb
-        phi = None; n = None; kappa = None; porosity = None; meanGrain = None
- 
-        if c[('u',0)].shape == self.q_phi.shape:
-            phi = self.q_phi
-            n   = self.q_n
-            kappa = self.q_kappa
-            porosity = self.q_porosity
-            meanGrain= self.q_meanGrain
-        elif c[('u',0)].shape == self.ebqe_phi.shape:
-            phi   = self.ebqe_phi
-            n     = self.ebqe_n
-            kappa = self.ebqe_kappa
-            porosity = self.ebqe_porosity
-            meanGrain= self.ebqe_meanGrain
-        else:
-            phi   = self.ebq_phi
-            n     = self.ebq_n
-            kappa = self.ebq_kappa
-            porosity = self.ebq_porosity
-            meanGrain= self.ebq_meanGrain
-        #
-        #mwf debug
-        #waterLevelBase = 0.529
-        #for i in range(len(phi.flat)):
-            #if abs(phi.flat[i]) > 0.0:
-            #    assert abs(phi.flat[i] - (c['x'].flat[3*i+1] - waterLevelBase)) <= 1.0e-5, "Problem with phi t=%s phi.shape=%s i=%s phi=%s y=%s wl=%s " % (t,phi.shape,i,phi.flat[i],c['x'].flat[3*i+1],waterLevelBase)
-            #phi.flat[i] = c['x'].flat[3*i+1] - waterLevelBase#self.waterLevel
-        #self.sd=False
-        if self.nd==2:
-            if self.sd:
-                self.VolumeAveragedTwophaseNavierStokes_ST_LS_SO_2D_Evaluate_sd(self.killNonlinearDrag,
-                                                                                self.eps_density,
-                                                                                self.eps_viscosity,
-                                                                                self.sigma,
-                                                                                self.rho_0,
-                                                                                self.nu_0,
-                                                                                self.rho_1,
-                                                                                self.nu_1,
-                                                                                meanGrain,
-                                                                                self.g,
-                                                                                phi,
-                                                                                n,
-                                                                                kappa,
-                                                                                c[('u',0)],
-                                                                                c[('grad(u)',0)],
-                                                                                c[('u',1)],
-                                                                                c[('u',2)],
-                                                                                porosity,
-                                                                                c[('m',1)],
-                                                                                c[('dm',1,1)],
-                                                                                c[('m',2)],
-                                                                                c[('dm',2,2)],
-                                                                                c[('f',0)],
-                                                                                c[('df',0,1)],
-                                                                                c[('df',0,2)],
-                                                                                c[('f',1)],
-                                                                                c[('df',1,1)],
-                                                                                c[('df',1,2)],
-                                                                                c[('f',2)],
-                                                                                c[('df',2,1)],
-                                                                                c[('df',2,2)],
-                                                                                c[('a',1,1)],
-                                                                                c[('a',2,2)],
-                                                                                c[('a',1,2)],
-                                                                                c[('a',2,1)],
-                                                                                c[('r',1)],
-                                                                                c[('r',2)],
-                                                                                c[('dr',1,1)],
-                                                                                c[('dr',1,2)],
-                                                                                c[('dr',2,1)],
-                                                                                c[('dr',2,2)],
-                                                                                c[('H',1)],
-                                                                                c[('dH',1,0)],
-                                                                                c[('H',2)],
-                                                                                c[('dH',2,0)])
-            else:
-                self.VolumeAveragedTwophaseNavierStokes_ST_LS_SO_2D_Evaluate(self.killNonlinearDrag,
-                                                                             self.eps_density,
-                                                                             self.eps_viscosity,
-                                                                             self.sigma,
-                                                                             self.rho_0,
-                                                                             self.nu_0,
-                                                                             self.rho_1,
-                                                                             self.nu_1,
-                                                                             meanGrain,
-                                                                             self.g,
-                                                                             phi,
-                                                                             n,
-                                                                             kappa,
-                                                                             c[('u',0)],
-                                                                             c[('grad(u)',0)],
-                                                                             c[('u',1)],
-                                                                             c[('u',2)],
-                                                                             porosity,
-                                                                             c[('m',1)],
-                                                                             c[('dm',1,1)],
-                                                                             c[('m',2)],
-                                                                             c[('dm',2,2)],
-                                                                             c[('f',0)],
-                                                                             c[('df',0,1)],
-                                                                             c[('df',0,2)],
-                                                                             c[('f',1)],
-                                                                             c[('df',1,1)],
-                                                                             c[('df',1,2)],
-                                                                             c[('f',2)],
-                                                                             c[('df',2,1)],
-                                                                             c[('df',2,2)],
-                                                                             c[('a',1,1)],
-                                                                             c[('a',2,2)],
-                                                                             c[('a',1,2)],
-                                                                             c[('a',2,1)],
-                                                                             c[('r',1)],
-                                                                             c[('r',2)],
-                                                                             c[('dr',1,1)],
-                                                                             c[('dr',1,2)],
-                                                                             c[('dr',2,1)],
-                                                                             c[('dr',2,2)],
-                                                                             c[('H',1)],
-                                                                             c[('dH',1,0)],
-                                                                             c[('H',2)],
-                                                                             c[('dH',2,0)])
-            
-            #
-            if self.stokes:
-                c[('f',1)].flat[:] = 0.0
-                c[('df',1,1)].flat[:] = 0.0
-                c[('df',1,2)].flat[:] = 0.0
-                c[('f',2)].flat[:] = 0.0
-                c[('df',2,1)].flat[:] = 0.0
-                c[('df',2,2)].flat[:] = 0.0
-        elif  self.nd==3:
-            if self.sd:
-                self.VolumeAveragedTwophaseNavierStokes_ST_LS_SO_3D_Evaluate_sd(self.killNonlinearDrag,
-                                                                                self.eps_density,
-                                                                                self.eps_viscosity,
-                                                                                self.sigma,
-                                                                                self.rho_0,
-                                                                                self.nu_0,
-                                                                                self.rho_1,
-                                                                                self.nu_1,
-                                                                                meanGrain,
-                                                                                self.g,
-                                                                                phi,
-                                                                                n,
-                                                                                kappa,
-                                                                                c[('u',0)],
-                                                                                c[('grad(u)',0)],
-                                                                                c[('u',1)],
-                                                                                c[('u',2)],
-                                                                                c[('u',3)],
-                                                                                porosity,
-                                                                                c[('m',1)],
-                                                                                c[('dm',1,1)],
-                                                                                c[('m',2)],
-                                                                                c[('dm',2,2)],
-                                                                                c[('m',3)],
-                                                                                c[('dm',3,3)],
-                                                                                c[('f',0)],
-                                                                                c[('df',0,1)],
-                                                                                c[('df',0,2)],
-                                                                                c[('df',0,3)],
-                                                                                c[('f',1)],
-                                                                                c[('df',1,1)],
-                                                                                c[('df',1,2)],
-                                                                                c[('df',1,3)],
-                                                                                c[('f',2)],
-                                                                                c[('df',2,1)],
-                                                                                c[('df',2,2)],
-                                                                                c[('df',2,3)],
-                                                                                c[('f',3)],
-                                                                                c[('df',3,1)],
-                                                                                c[('df',3,2)],
-                                                                                c[('df',3,3)],
-                                                                                c[('a',1,1)],
-                                                                                c[('a',2,2)],
-                                                                                c[('a',3,3)],
-                                                                                c[('a',1,2)],
-                                                                                c[('a',1,3)],
-                                                                                c[('a',2,1)],
-                                                                                c[('a',2,3)],
-                                                                                c[('a',3,1)],
-                                                                                c[('a',3,2)],
-                                                                                c[('r',1)],
-                                                                                c[('r',2)],
-                                                                                c[('r',3)],
-                                                                                c[('dr',1,1)],
-                                                                                c[('dr',1,2)],
-                                                                                c[('dr',1,3)],
-                                                                                c[('dr',2,1)],
-                                                                                c[('dr',2,2)],
-                                                                                c[('dr',2,3)],
-                                                                                c[('dr',3,1)],
-                                                                                c[('dr',3,2)],
-                                                                                c[('dr',3,3)],
-                                                                                c[('H',1)],
-                                                                                c[('dH',1,0)],
-                                                                                c[('H',2)],
-                                                                                c[('dH',2,0)],
-                                                                                c[('H',3)],
-                                                                                c[('dH',3,0)])
-            else:
-                self.VolumeAveragedTwophaseNavierStokes_ST_LS_SO_3D_Evaluate(self.killNonlinearDrag,
-                                                                             self.eps_density,
-                                                                             self.eps_viscosity,
-                                                                             self.sigma,
-                                                                             self.rho_0,
-                                                                             self.nu_0,
-                                                                             self.rho_1,
-                                                                             self.nu_1,
-                                                                             meanGrain,
-                                                                             self.g,
-                                                                             phi,
-                                                                             n,
-                                                                             kappa,
-                                                                             c[('u',0)],
-                                                                             c[('grad(u)',0)],
-                                                                             c[('u',1)],
-                                                                             c[('u',2)],
-                                                                             c[('u',3)],
-                                                                             porosity,
-                                                                             c[('m',1)],
-                                                                             c[('dm',1,1)],
-                                                                             c[('m',2)],
-                                                                             c[('dm',2,2)],
-                                                                             c[('m',3)],
-                                                                             c[('dm',3,3)],
-                                                                             c[('f',0)],
-                                                                             c[('df',0,1)],
-                                                                             c[('df',0,2)],
-                                                                             c[('df',0,3)],
-                                                                             c[('f',1)],
-                                                                             c[('df',1,1)],
-                                                                             c[('df',1,2)],
-                                                                             c[('df',1,3)],
-                                                                             c[('f',2)],
-                                                                             c[('df',2,1)],
-                                                                             c[('df',2,2)],
-                                                                             c[('df',2,3)],
-                                                                             c[('f',3)],
-                                                                             c[('df',3,1)],
-                                                                             c[('df',3,2)],
-                                                                             c[('df',3,3)],
-                                                                             c[('a',1,1)],
-                                                                             c[('a',2,2)],
-                                                                             c[('a',3,3)],
-                                                                             c[('a',1,2)],
-                                                                             c[('a',1,3)],
-                                                                             c[('a',2,1)],
-                                                                             c[('a',2,3)],
-                                                                             c[('a',3,1)],
-                                                                             c[('a',3,2)],
-                                                                             c[('r',1)],
-                                                                             c[('r',2)],
-                                                                             c[('r',3)],
-                                                                             c[('dr',1,1)],
-                                                                             c[('dr',1,2)],
-                                                                             c[('dr',1,3)],
-                                                                             c[('dr',2,1)],
-                                                                             c[('dr',2,2)],
-                                                                             c[('dr',2,3)],
-                                                                             c[('dr',3,1)],
-                                                                             c[('dr',3,2)],
-                                                                             c[('dr',3,3)],
-                                                                             c[('H',1)],
-                                                                             c[('dH',1,0)],
-                                                                             c[('H',2)],
-                                                                             c[('dH',2,0)],
-                                                                             c[('H',3)],
-                                                                             c[('dH',3,0)])
-
-        if c.has_key('x') and len(c['x'].shape) == 3:
-            if self.nd == 2:
-                #mwf debug
-                #import pdb
-                #pdb.set_trace()
-                c[('r',0)].fill(0.0)
-                eps_source=self.eps_source
-                if self.waveFlag == 1:#secondOrderStokes:
-                    waveFunctions.secondOrderStokesWave(c[('r',0)].shape[0],
-                                                        c[('r',0)].shape[1],
-                                                        self.waveHeight,
-                                                        self.waveCelerity,
-                                                        self.waveFrequency,
-                                                        self.waveNumber,
-                                                        self.waterDepth,
-                                                        self.Omega_s[0][0],
-                                                        self.Omega_s[0][1],
-                                                        self.Omega_s[1][0],
-                                                        self.Omega_s[1][1],
-                                                        eps_source,
-                                                        c['x'],
-                                                        c[('r',0)],
-                                                        t)
-                elif self.waveFlag == 2:#solitary wave
-                    waveFunctions.solitaryWave(c[('r',0)].shape[0],
-                                               c[('r',0)].shape[1],
-                                               self.waveHeight,
-                                               self.waveCelerity,
-                                               self.waveFrequency,
-                                               self.waterDepth,
-                                               self.Omega_s[0][0],
-                                               self.Omega_s[0][1],
-                                               self.Omega_s[1][0],
-                                               self.Omega_s[1][1],
-                                               eps_source,
-                                               c['x'],
-                                               c[('r',0)],
-                                               t)
-
-                elif self.waveFlag == 0:
-                    waveFunctions.monochromaticWave(c[('r',0)].shape[0],
-                                                    c[('r',0)].shape[1],
-                                                    self.waveHeight,
-                                                    self.waveCelerity,
-                                                    self.waveFrequency,
-                                                    self.Omega_s[0][0],
-                                                    self.Omega_s[0][1],
-                                                    self.Omega_s[1][0],
-                                                    self.Omega_s[1][1],
-                                                    eps_source,
-                                                    c['x'],
-                                                    c[('r',0)],
-                                                    t)
-
-                #mwf debug
-                if numpy.isnan(c[('r',0)].any()):
-                    import pdb
-                    pdb.set_trace()
-            else:
-                #mwf debug
-                #import pdb
-                #pdb.set_trace()
-                c[('r',0)].fill(0.0)
-                eps_source=self.eps_source
-                if self.waveFlag == 1:#secondOrderStokes:
-                    waveFunctions.secondOrderStokesWave3d(c[('r',0)].shape[0],
-                                                          c[('r',0)].shape[1],
-                                                          self.waveHeight,
-                                                          self.waveCelerity,
-                                                          self.waveFrequency,
-                                                          self.waveNumber,
-                                                          self.waterDepth,
-                                                          self.Omega_s[0][0],
-                                                          self.Omega_s[0][1],
-                                                          self.Omega_s[1][0],
-                                                          self.Omega_s[1][1],
-                                                          self.Omega_s[2][0],
-                                                          self.Omega_s[2][1],
-                                                          eps_source,
-                                                          c['x'],
-                                                          c[('r',0)],
-                                                          t)
-                elif self.waveFlag == 2:#solitary wave
-                    waveFunctions.solitaryWave3d(c[('r',0)].shape[0],
-                                                 c[('r',0)].shape[1],
-                                                 self.waveHeight,
-                                                 self.waveCelerity,
-                                                 self.waveFrequency,
-                                                 self.waterDepth,
-                                                 self.Omega_s[0][0],
-                                                 self.Omega_s[0][1],
-                                                 self.Omega_s[1][0],
-                                                 self.Omega_s[1][1],
-                                                 self.Omega_s[2][0],
-                                                 self.Omega_s[2][1],
-                                                 eps_source,
-                                                 c['x'],
-                                                 c[('r',0)],
-                                                 t)
-
-                elif self.waveFlag == 0:
-                    waveFunctions.monochromaticWave3d(c[('r',0)].shape[0],
-                                                      c[('r',0)].shape[1],
-                                                      self.waveHeight,
-                                                      self.waveCelerity,
-                                                      self.waveFrequency,
-                                                      self.Omega_s[0][0],
-                                                      self.Omega_s[0][1],
-                                                      self.Omega_s[1][0],
-                                                      self.Omega_s[1][1],
-                                                      self.Omega_s[2][0],
-                                                      self.Omega_s[2][1],
-                                                      eps_source,
-                                                      c['x'],
-                                                      c[('r',0)],
-                                                      t)
+        pass
 
 class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
@@ -1406,10 +1054,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
             #VRANS start
-            self.coefficients.linearDragFactor,
-            self.coefficients.nonlinearDragFactor,
             self.coefficients.q_porosity,
-            self.coefficients.q_meanGrain,
+            self.coefficients.q_dragAlpha,
+            self.coefficients.q_dragBeta,
             self.q[('r',0)],
             #VRANS end
             self.u[0].femSpace.dofMap.l2g,
@@ -1553,10 +1200,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
             #VRANS start
-            self.coefficients.linearDragFactor,
-            self.coefficients.nonlinearDragFactor,
             self.coefficients.q_porosity,
-            self.coefficients.q_meanGrain,
+            self.coefficients.q_dragAlpha,
+            self.coefficients.q_dragBeta,
             self.q[('r',0)],
             #VRANS end
             self.u[0].femSpace.dofMap.l2g,
@@ -1957,3 +1603,13 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 	##comm.Barrier()
         #import time
         #time.sleep(1)
+
+def getErgunDrag(porosity, meanGrainSize,viscosity):
+    #cek hack, this doesn't seem right
+    #cek todo look up correct Ergun model for alpha and beta
+    voidFrac=1.0-porosity
+    if voidFrac > 1.0e-6:
+        dragBeta = porosity*porosity*porosity*meanGrainSize*1.0e-2/voidFrac
+    if (porosity > epsZero and meanGrainSize > epsZero):
+       	dragAlpha = viscosity*180.0*voidFrac*voidFrac/(meanGrainSize*meanGrainSize*porosity)
+

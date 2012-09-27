@@ -51,10 +51,9 @@ cdef extern from "RANS2P.h" namespace "proteus":
 				   double Cd_sge,
 				   double C_dc,
 # VRANS start
-				   double linearDragFactor,
-				   double nonlinearDragFactor,
 				   double* q_porosity,
-				   double* q_meanGrain,
+				   double* q_dragAlpha,
+				   double* q_dragBeta,
 				   double* q_mass_source,
 # VRANS end
 				   int* p_l2g, 
@@ -171,10 +170,9 @@ cdef extern from "RANS2P.h" namespace "proteus":
 				   double Cd_sge,
 				   double C_dg,
 # VRANS start
-				   double linearDragFactor,
-				   double nonlinearDragFactor,
 				   double* q_porosity,
-				   double* q_meanGrain,
+				   double* q_dragAlpha,
+				   double* q_dragBeta,
 				   double* q_mass_source,
 # VRANS end
 				   int* p_l2g, 
@@ -465,10 +463,9 @@ cdef class cRANS2P_base:
                          double Cd_sge,
                          double C_dc,
 # VRANS start
-                         double linearDragFactor,
-                         double nonlinearDragFactor,
                          numpy.ndarray q_porosity,
-                         numpy.ndarray q_meanGrain,
+                         numpy.ndarray q_dragAlpha,
+                         numpy.ndarray q_dragBeta,
                          numpy.ndarray q_mass_source,
 # VRANS end
                          numpy.ndarray p_l2g, 
@@ -585,10 +582,9 @@ cdef class cRANS2P_base:
                                        Cd_sge,
                                        C_dc,
 # VRANS start
-                                       linearDragFactor,
-                                       nonlinearDragFactor,
                                        <double*> q_porosity.data,
-                                       <double*> q_meanGrain.data,
+                                       <double*> q_dragAlpha.data,
+                                       <double*> q_dragBeta.data,
                                        <double*> q_mass_source.data,
 # VRANS end
                                        <int*> p_l2g.data, 
@@ -707,10 +703,9 @@ cdef class cRANS2P_base:
                          double Cd_sge,
                          double C_dg,
 # VRANS start
-                         double linearDragFactor,
-                         double nonlinearDragFactor,
                          numpy.ndarray q_porosity,
-                         numpy.ndarray q_meanGrain,
+                         numpy.ndarray q_dragAlpha,
+                         numpy.ndarray q_dragBeta,
                          numpy.ndarray q_mass_source,
 # VRANS end
                          numpy.ndarray p_l2g, 
@@ -846,10 +841,9 @@ cdef class cRANS2P_base:
                                       Cd_sge,
                                       C_dg,
 # VRANS start
-                                      linearDragFactor,
-                                      nonlinearDragFactor,
                                       <double*> q_porosity.data,
-                                      <double*> q_meanGrain.data,
+                                      <double*> q_dragAlpha.data,
+                                      <double*> q_dragBeta.data,
                                       <double*> q_mass_source.data,
 # VRANS end
                                       <int*> p_l2g.data, 
