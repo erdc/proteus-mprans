@@ -1,49 +1,71 @@
 <!DOCTYPE html>
 <html>
-
   <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Proteus-mprans : Module for solving 3D, non-hydrostatic, turbulent, incompressible air/water flow (multi-phase RANS)" />
-
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
-    <title>Proteus-mprans</title>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Proteus-mprans by erdc-cm</title>
   </head>
 
   <body>
+    <div id="container">
+      <div class="inner">
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/erdc-cm/proteus-mprans">View on GitHub</a>
-
-          <h1 id="project_title">Proteus-mprans</h1>
-          <h2 id="project_tagline">Module for solving 3D, non-hydrostatic, turbulent, incompressible air/water flow (multi-phase RANS)</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/erdc-cm/proteus-mprans/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/erdc-cm/proteus-mprans/tarball/master">Download this project as a tar.gz file</a>
-            </section>
+        <header>
+          <h1>Proteus-mprans</h1>
+          <h2>Module for solving 3D, non-hydrostatic, turbulent, incompressible air/water flow (multi-phase RANS)</h2>
         </header>
-    </div>
 
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <h3>Computational Wave Flume status</h3>
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/erdc-cm/proteus-mprans/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/erdc-cm/proteus-mprans/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/erdc-cm/proteus-mprans" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h3>Computational Wave Flume status</h3>
 
 <p>I'll try putting a few things here to support discussion about where to focus with the numerical wavetank</p>
 
 <h1>Flume Geometries</h1>
 
 <ul>
+<li><a href="WavetankSimple/domain.html">Tank</a></li>
 <li><a href="BeachBakhtyar/domain.html">Beach -- Bakhtyar papers</a></li>
 <li><a href="BeachErosionBoard/domain.html">Beach -- Beach Erosion Board</a></li>
 <li><a href="LeveeSimple/domain.html">Levee -- Simple Tapezoidal</a></li>
 <li><a href="LeveeSacramento/domain.html">Levee -- Sacramento Pocket Area</a></li>
 <li><a href="CorpsCastle/domain.html">Structure -- Corps Castle</a></li>
-</ul><h1>Wave functions (initial conditions and forcing via boundary conditions)</h1>
+</ul><p>Questions
+1. Should we give the input a switch to make the "structure" porous instead of solid or use separate examples for porous structures
+2. What are the top four or five cases where we should try to recreate lab flumes exactly (probably shouldn't try really long flumes yet)?
+3. What are the top three cases where lab flumes may not exist but the computational results are interesting enough to be worth trying? (e.g. the corps castle for PR, high-res breaking infragravity waves, 
+mach stem problem for oblique waves overtopping levee)</p>
+
+<h1>Wave functions</h1>
+
+<ul>
+<li>Boundary and Initial Conditions</li>
+<li>* 1D Monochromatic waves based on linear wave theory (general finite depth solution)</li>
+<li>* 1D Nearly monochromatic wave groups based on linear wave theory</li>
+<li>Initial Conditions Only</li>
+<li>* JONSWAP spectrum</li>
+<li>* Solitary wave (does not appear to be implemented correctly)</li>
+</ul><ol>
+<li>How important are directional waves in "wide" tanks as opposed to using a narrow tank and changing the angle of the structure? (i.e. do we need to push for completion of the 2D wave functions or do I need to prioritize other classes of waves)</li>
+<li>The correct implementation of KDV solution for solitons is critical, yes?</li>
+<li>Is there a very detailed presentation of the stokes and cnoidal quasi-analytical solutions I can use for implementing them?</li>
+</ol><h1>Simulations</h1>
+
+
 
 <h3>Welcome to GitHub Pages.</h3>
 
@@ -71,18 +93,15 @@ $ git checkout gh-pages
 <h3>Support or Contact</h3>
 
 <p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
-      </section>
+        </section>
+
+        <footer>
+          Proteus-mprans is maintained by <a href="https://github.com/erdc-cm">erdc-cm</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
     </div>
-
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Proteus-mprans maintained by <a href="https://github.com/erdc-cm">erdc-cm</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
-
-    
-
   </body>
 </html>
