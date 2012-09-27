@@ -44,11 +44,12 @@
 <li><a href="LeveeSimple/domain.html">Levee -- Simple Tapezoidal</a></li>
 <li><a href="LeveeSacramento/domain.html">Levee -- Sacramento Pocket Area</a></li>
 <li><a href="CorpsCastle/domain.html">Structure -- Corps Castle</a></li>
-</ul><p>Questions
-1. Should we give the input a switch to make the "structure" porous instead of solid or use separate examples for porous structures
-2. What are the top four or five cases where we should try to recreate lab flumes exactly (probably shouldn't try really long flumes yet)?
-3. What are the top three cases where lab flumes may not exist but the computational results are interesting enough to be worth trying? (e.g. the corps castle for PR, high-res breaking infragravity waves, 
-mach stem problem for oblique waves overtopping levee)</p>
+
+<!-- </ul><p>Questions -->
+<!-- 1. Should we give the input a switch to make the "structure" porous instead of solid or use separate examples for porous structures -->
+<!-- 2. What are the top four or five cases where we should try to recreate lab flumes exactly (probably shouldn't try really long flumes yet)? -->
+<!-- 3. What are the top three cases where lab flumes may not exist but the computational results are interesting enough to be worth trying? (e.g. the corps castle for PR, high-res breaking infragravity waves,  -->
+<!-- mach stem problem for oblique waves overtopping levee)</p> -->
 
 <h1>Wave functions</h1>
 
@@ -59,26 +60,48 @@ mach stem problem for oblique waves overtopping levee)</p>
 <li>Initial Conditions Only</li>
 <li>* JONSWAP spectrum</li>
 <li>* Solitary wave (does not appear to be implemented correctly)</li>
-</ul><ol>
-<li>How important are directional waves in "wide" tanks as opposed to using a narrow tank and changing the angle of the structure? (i.e. do we need to push for completion of the 2D wave functions or do I need to prioritize other classes of waves)</li>
-<li>The correct implementation of KDV solution for solitons is critical, yes?</li>
-<li>Is there a very detailed presentation of the stokes and cnoidal quasi-analytical solutions I can use for implementing them?</li>
-</ol><h1>Simulations</h1>
+</ul>
+<!-- <ol> -->
+
+<!-- <li>How important are directional waves in "wide" tanks as opposed to using a narrow tank and changing the angle of the structure? (i.e. do we need to push for completion of the 2D wave functions or do I need to prioritize other classes of waves)</li> -->
+<!-- <li>The correct implementation of KDV solution for solitons is critical, yes?</li> -->
+<!-- <li>Is there a very detailed presentation of the stokes and cnoidal quasi-analytical solutions I can use for implementing them?</li> -->
+
+<!-- </ol> -->
+<h1>Simulations</h1>
 
 <ul>
-<li><video width="320" height="240" controls="controls">
-  <source src="vM.mp4" type="video/mp4" />
+
+<li> High resolution rectangular flume with partial absorption
+<video width="500"  controls="controls">
+  <source src="animations/vfM.mp4" type="video/mp4" />
+  <source src="animations/vfM.ogg" type="video/ogg" />
   Your browser does not support the video tag.
 </video></li>
-<li><a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=hYDALO6n7b4">Porous Levee</a></li>
-<li><a href="http://www.youtube.com/watch?list=UL0P8AmstaoTg&amp;v=0P8AmstaoTg&amp;feature=player_detailpage">Wavetank (fulll 3D, wide) </a></li>
-<li><a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=6dISOFhANT4&amp;list=UL6dISOFhANT4">MARIN Tank Experiment</a></li>
-<li><a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=EfThw_Q4jaY">Wavetank with new absorber</a></li>
-</ul><ol>
-<li>What is the most useful visualization approach?</li>
-<li>Should I try direction waves with periodic boundary conditions at along shore boundaries?</li>
-<li>Should I try some with large wind velocities?</li>
-</ol><h3>Welcome to GitHub Pages.</h3>
+
+<li> Porous levee
+<video width="500"  controls="controls">
+  <source src="animations/levee.mp4" type="video/mp4" />
+  <source src="animations/levee.ogg" type="video/ogg" />
+  Your browser does not support the video tag.
+</video></li>
+
+<li> Low resolution rectangular flume with "full" absorption 
+<video width="500"  controls="controls">
+  <source src="animations/vfStrGreen.mp4" type="video/mp4" />
+  <source src="animations/vfStrGreen.ogg" type="video/ogg" />
+  Your browser does not support the video tag.
+</video></li>
+
+
+</ul>
+<!-- <ol> -->
+<!-- <li>What is the most useful visualization approach?</li> -->
+<!-- <li>Should I try direction waves with periodic boundary conditions at along shore boundaries?</li> -->
+<!-- <li>Should I try some with large wind velocities?</li> -->
+<!-- </ol> -->
+
+<h3>Welcome to GitHub Pages.</h3>
 
 <p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
 
