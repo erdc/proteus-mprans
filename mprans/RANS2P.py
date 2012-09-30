@@ -40,7 +40,9 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  waveNumber=2.0,
                  waterDepth=0.5,
                  Omega_s=[[0.45,0.55],[0.2,0.4],[0.0,1.0]],
-                 epsFact_source=1.):
+                 epsFact_source=1.,
+                 epsFact_solid=1.0):
+        self.epsFact_solid = epsFact_solid
         self.useConstantH = useConstantH
         self.useRBLES=useRBLES
         self.useMetrics=useMetrics
@@ -231,6 +233,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         if self.KN_model == None:
             self.q_kappa = -numpy.zeros(cq[('u',1)].shape,'d')
         #VRANS
+        self.q_phi_solid = numpy.ones(cq[('u',1)].shape,'d')
+        self.q_velocity_solid = numpy.zeros(cq[('velocity',0)].shape,'d')
         self.q_porosity = numpy.ones(cq[('u',1)].shape,'d')
         self.q_dragAlpha= numpy.ones(cq[('u',1)].shape,'d')            
         self.q_dragAlpha.fill(self.dragAlpha)
@@ -758,6 +762,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.q[('m_tmp',3)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('f',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
         self.q[('velocity',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
+        self.q['x'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
         self.q[('cfl',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('numDiff',1,1)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('numDiff',2,2)] =  numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
@@ -997,7 +1002,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         r.fill(0.0)
         self.Ct_sge = 4.0
         self.Cd_sge = 144.0
- 
         #TODO how to request problem specific evaluations from coefficient class
         if 'evaluateForcingTerms' in dir(self.coefficients):
             self.coefficients.evaluateForcingTerms(self.timeIntegration.t,self.q,self.mesh,
@@ -1054,6 +1058,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
             #VRANS start
+            self.coefficients.epsFact_solid,
+            self.coefficients.q_phi_solid,
+            self.coefficients.q_velocity_solid,
             self.coefficients.q_porosity,
             self.coefficients.q_dragAlpha,
             self.coefficients.q_dragBeta,
@@ -1130,6 +1137,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('diffusiveFlux_bc',2,2)],
             self.numericalFlux.ebqe[('u',3)],
             self.ebqe[('diffusiveFlux_bc',3,3)],
+            self.q['x'],
             self.q[('velocity',0)],
             self.ebqe[('velocity',0)],
             self.ebq_global[('totalFlux',0)],
@@ -1200,6 +1208,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
             #VRANS start
+            self.coefficients.epsFact_solid,
+            self.coefficients.q_phi_solid,
+            self.coefficients.q_velocity_solid,
             self.coefficients.q_porosity,
             self.coefficients.q_dragAlpha,
             self.coefficients.q_dragBeta,
@@ -1572,6 +1583,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('diffusiveFlux_bc',2,2)],
             self.numericalFlux.ebqe[('u',3)],
             self.ebqe[('diffusiveFlux_bc',3,3)],
+            self.q['x'],
             self.q[('velocity',0)],
             self.ebqe[('velocity',0)],
             self.ebq_global[('totalFlux',0)],

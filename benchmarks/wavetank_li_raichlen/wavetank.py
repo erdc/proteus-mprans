@@ -8,7 +8,7 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 1#4#15
+Refinement = 8#6#4#15
 genMesh=True
 useOldPETSc=False
 useSuperlu = True
@@ -54,13 +54,14 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (20.0,
+L = (8.0,
      0.25,
-     1.0)
+     0.61)
 spongeLayer = True
-xSponge = L[0] - 2.25
-ySponge = L[2] - L[2]/2.0
-epsFact_solid = 0.5
+xSponge = 2.0#
+xRelaxCenter = xSponge/2.0
+ySponge = 0.0#L[2] - L[2]/2.0
+epsFact_solid = xSponge/2.0
 levee=True; spongeLayer=False; 
 leveeStart = 1.9
 leveeBottomWidth = 3.0
@@ -71,7 +72,7 @@ bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
 quasi2D = True#True
 #veg=True; levee=False; spongeLayer=False
-veg=False; levee=False; spongeLayer=False; slopingSpongeLayer=True;
+veg=False; levee=False; spongeLayer=True; slopingSpongeLayer=False;
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -99,8 +100,8 @@ else:
                   [xSponge,0.0,L[2]],#5
                   [xSponge,L[1],L[2]],#6
                   [0.0,L[1],L[2]],#7
-                  [L[0],0.0,0.0],#8
-                  [L[0],L[1],0.0],#9
+                  [L[0],0.0,6.0/15.0],#8
+                  [L[0],L[1],6.0/15.0],#9
                   [L[0],0.0,L[2]],#10
                   [L[0],L[1],L[2]]#11
                   ]
@@ -152,11 +153,9 @@ else:
                     boundaryTags['top']]
         regions=[[0.5*xSponge,0.5*L[1],0.5*L[2]],[0.5*(xSponge+L[0]),0.5*L[1],0.5*L[2]]]
         regionFlags=[0,1]
-        spongeGrainSize= 0.001
-        spongePorosity = 0.3
-        killNonlinearDragInSpongeLayer = True#True
-        porosityTypes      = numpy.array([1.0,spongePorosity])
-        meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize])
+        porosityTypes      = numpy.array([1.0,1.0])
+        dragAlphaTypes = numpy.array([0.0,0.0])
+        dragBetaTypes = numpy.array([0.0,0.0])
     elif slopingSpongeLayer:
         vertices=[[0.0,0.0,0.0],#0
                   [xSponge,0.0,0.0],#1
@@ -487,14 +486,14 @@ else:
 
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.1
+ns_shockCapturingFactor  = 0.3
 ls_shockCapturingFactor  = 0.1
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
 vof_shockCapturingFactor = 0.1
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.1
+rd_shockCapturingFactor  = 0.3
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5
@@ -530,45 +529,55 @@ outflowVelocity = (0.0,0.0,0.0)#not used for now
 inflowHeightMean = 0.5*L[2]
 inflowVelocityMean = (0.0,0.0,0.0)
 
-waveLength = 5*inflowHeightMean #
+waveLength = xSponge #
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
 omega = 2.0*pi/period
 k=(2.0*pi/waveLength,0.0,0.0)
-amplitude = 0.1*inflowHeightMean
+amplitude = 0.3*inflowHeightMean
 
 # Wave Field Object
 #waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
-waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+#waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 
+c_soliton = sqrt(fabs(g[2])*(inflowHeightMean+amplitude))
 def waveHeight(x,t):
-    return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
+    T = min(t,100) - 2.0
+    return inflowHeightMean + amplitude/cosh(sqrt(3.0*amplitude/(4.0*inflowHeightMean**3)) * (x[0] - c_soliton*T))**2
+    #return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
 #    return inflowHeightMean + waveField.height(x,t)
 
 def waveVelocity_u(x,t):
-    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k[0]*x[0])/(k[0]*inflowHeightMean)
+    return c_soliton*(waveHeight(x,t)-inflowHeightMean)/waveHeight(x,t)
+#z = x[2] - inflowHeightMean
+#return inflowVelocityMean[0] + omega*amplitude*cosh(k[0]*(z + inflowHeightMean))*sin(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
 #    z = x[2] - inflowHeightMean
 #    return inflowVelocityMean[0] + waveField.velocity_u(x,t)
 
 def waveVelocity_w(x,t):
-    z = x[2] - inflowHeightMean
-    return inflowVelocityMean[2] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k[0]*x[0])/inflowHeightMean
+    return 0.0
+    #z = x[2] - inflowHeightMean
+    #return inflowVelocityMean[2] + omega*amplitude*sinh(k[0]*(z + inflowHeightMean))*cos(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
 #    return inflowVelocityMean[2] + waveField.velocity_w(x,t)
 ####
 
 def wavePhi(x,t):
     return x[2] - waveHeight(x,t)
 
+def wavePhi_init(x,t):
+    return x[2] - inflowHeightMean
+
 def waveVF(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t))
+
+def waveVF_init(x,t):
+    return smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi_init(x,t))
 
 
 def twpflowVelocity_u(x,t):
     waterspeed = waveVelocity_u(x,t)
     H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    u = H*windspeed_u + (1.0-H)*waterspeed#
-    print x[2],u
-    return u
+    return H*windspeed_u + (1.0-H)*waterspeed
 
 def twpflowVelocity_v(x,t):
     waterspeed = 0.0
@@ -578,9 +587,15 @@ def twpflowVelocity_v(x,t):
 def twpflowVelocity_w(x,t):
     waterspeed = waveVelocity_w(x,t)
     H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    w = H*windspeed_w+(1.0-H)*waterspeed
-    print x[2],w
-    return w
+    return H*windspeed_w+(1.0-H)*waterspeed
+
+#twpflowVelocity_u_init = twpflowVelocity_u
+def twpflowVelocity_u_init(x,t):
+    return 0.0
+def twpflowVelocity_v_init(x,t):
+    return 0.0
+def twpflowVelocity_w_init(x,t):
+    return 0.0
 
 def twpflowFlux(x,t):
     return -twpflowVelocity_u(x,t)
@@ -594,6 +609,12 @@ def twpflowPressure(x,t):
     phi = wavePhi(x,t)
     return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
+def twpflowPressure_init(x,t):
+    p_L = L[2]*rho_1*g[2]
+    phi_L = L[2] - inflowHeightMean
+    phi = x[2] - inflowHeightMean
+    return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
+                                                          -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 #    z = x[2] - inflowHeightMean
 #    return waveField.pressure(x,t,z)
 
@@ -605,13 +626,29 @@ def outflowPressure(x,t):
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 # Time 
-T=period*20
-runCFL = 0.1
+T=10.0
+runCFL = 0.33
 print "T",T
-dt_fixed = period/25.0 
+dt_fixed = period/10.0 
 #dt_fixed = period/100.0
 #dt_fixed = 6.0/1000.0
 dt_init = 1.0e-3
 nDTout = int(T/dt_fixed)
 tnList = [i*dt_fixed for i in range(0,nDTout+1)] 
 print tnList
+
+class RelaxationZoneWaveGenerator(AV_base):
+    def __init__(self,usol,vsol,wsol,zoneCenter_x):
+        self.u=usol;self.v=vsol;self.w=wsol;self.zoneCenter_x=zoneCenter_x
+    def calculate(self):
+        #        print "updating velocity in relaxation zone-----------------------------------"
+        for l,m in enumerate(self.model.levelModelList):
+            for eN in range(m.coefficients.q_phi.shape[0]):
+                for k in range(m.coefficients.q_phi.shape[1]):
+                    t = m.timeIntegration.t
+                    x = m.q['x'][eN,k]
+                    m.coefficients.q_phi_solid[eN,k] = self.zoneCenter_x - x[0]
+                    m.coefficients.q_velocity_solid[eN,k,0] = self.u(x,t)
+                    m.coefficients.q_velocity_solid[eN,k,1] = self.v(x,t)
+                    m.coefficients.q_velocity_solid[eN,k,2] = self.w(x,t)
+                    #print "x,phi,u",x[0],m.coefficients.q_phi_solid[eN,k],m.coefficients.q_velocity_solid[eN,k,0]

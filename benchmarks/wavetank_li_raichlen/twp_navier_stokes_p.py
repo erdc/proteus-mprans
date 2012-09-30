@@ -64,6 +64,8 @@ def getDBC_u(x,flag):
         return lambda x,t: windspeed_u
     elif flag == boundaryTags['obstacle']:#x[2] > L[2] - 1.0e-8:
         return lambda x,t: 0.0
+    elif flag == boundaryTags['bottom']:#x[2] > L[2] - 1.0e-8:
+        return lambda x,t: 0.0
 
 def getDBC_v(x,flag):
     # if x[0] < 1.0e-8:
@@ -80,6 +82,8 @@ def getDBC_v(x,flag):
         return lambda x,t: windspeed_v
     elif flag == boundaryTags['obstacle']:#x[2] > L[2] - 1.0e-8:
         return lambda x,t: 0.0
+    elif flag == boundaryTags['bottom']:#x[2] > L[2] - 1.0e-8:
+        return lambda x,t: 0.0
 
 def getDBC_w(x,flag):
     # if x[0] < 1.0e-8:
@@ -91,6 +95,8 @@ def getDBC_w(x,flag):
     elif (not rightEndClosed) and flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right velocity, only inforced on inflow
         return lambda x,t: outflowVelocity[2]
     elif flag == boundaryTags['obstacle']:#x[2] > L[2] - 1.0e-8:
+        return lambda x,t: 0.0
+    elif flag == boundaryTags['bottom']:#x[2] > L[2] - 1.0e-8:
         return lambda x,t: 0.0
 
 dirichletConditions = {0:getDBC_p,
@@ -118,6 +124,8 @@ def getAFBC_p(x,flag):
         return None
     elif flag == boundaryTags['obstacle']:#x[2] > L[2] - 1.0e-8:
         return lambda x,t: 0.0
+    elif flag == boundaryTags['bottom']:#x[2] > L[2] - 1.0e-8:
+        return lambda x,t: 0.0
     else:  #wall
         return lambda x,t: 0.0
 
@@ -140,6 +148,8 @@ def getAFBC_u(x,flag):
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8: #top Dirichlet on x-component
         return None
     elif flag == boundaryTags['obstacle']:#x[2] > L[2] - 1.0e-8:
+        return None
+    elif flag == boundaryTags['bottom']:#x[2] > L[2] - 1.0e-8:
         return None
     else:
         return lambda x,t: 0.0
@@ -164,6 +174,8 @@ def getAFBC_v(x,flag):
         return None
     elif flag == boundaryTags['obstacle']:#x[2] > L[2] - 1.0e-8:
         return None
+    elif flag == boundaryTags['bottom']:#x[2] > L[2] - 1.0e-8:
+        return None
     else:
         return lambda x,t: 0.0
 
@@ -186,6 +198,8 @@ def getAFBC_w(x,flag):
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8: #top open
         return None
     elif flag == boundaryTags['obstacle']:#x[2] > L[2] - 1.0e-8:
+        return None
+    elif flag == boundaryTags['bottom']:#x[2] > L[2] - 1.0e-8:
         return None
     else:
         return lambda x,t: 0.0
@@ -212,6 +226,8 @@ def getDFBC_u(x,flag):
         return None
     elif flag == boundaryTags['obstacle']:#x[2] > L[2] - 1.0e-8:
         return None
+    elif flag == boundaryTags['bottom']:#x[2] > L[2] - 1.0e-8:
+        return None
     else:  #no flux everywhere else
         return lambda x,t: 0.0
 
@@ -236,6 +252,8 @@ def getDFBC_v(x,flag):
     elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8: #top Dirichlet on y-component
         return None
     elif flag == boundaryTags['obstacle']:#x[2] > L[2] - 1.0e-8:
+        return None
+    elif flag == boundaryTags['bottom']:#x[2] > L[2] - 1.0e-8:
         return None
     else:  #no flux everywhere else
         return lambda x,t: 0.0
@@ -262,6 +280,8 @@ def getDFBC_w(x,flag):
     #return lambda x,t: 0.0
     elif flag == boundaryTags['obstacle']:#x[2] > L[2] - 1.0e-8:
         return None
+    elif flag == boundaryTags['bottom']:#x[2] > L[2] - 1.0e-8:
+        return None
     else: #no diffusive flux everywhere else
         return lambda x,t: 0.0
 
@@ -277,21 +297,22 @@ diffusiveFluxBoundaryConditions = {0:{},
 
 class P_IC:
     def uOfXT(self,x,t):
-        return twpflowPressure(x,t)
+        return twpflowPressure_init(x,t)
 
 class U_IC:
     def uOfXT(self,x,t):
-        return twpflowVelocity_u(x,t)
+        return twpflowVelocity_u_init(x,t)
 
 class V_IC:
     def uOfXT(self,x,t):
-        return twpflowVelocity_v(x,t)
+        return twpflowVelocity_v_init(x,t)
 
 class W_IC:
     def uOfXT(self,x,t):
-        return twpflowVelocity_w(x,t)
+        return twpflowVelocity_w_init(x,t)
 
 initialConditions = {0:P_IC(),
                      1:U_IC(),
                      2:V_IC(),
                      3:W_IC()}
+

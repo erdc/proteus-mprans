@@ -2,15 +2,15 @@ import waveModules_Matt as wm
 import JONSWAP_p as JS
 import numpy as np
 
-try:
+if True:#try:
     from matplotlib.pylab import plot,show           # for 2D plots (checking)            
     #from enthought.mayavi import mlab               # for 3D plots 
     import animation # in ~/proteus-mprans/.../wavetank/ as my version of matplotlib doesn't have it
     import matplotlib.pyplot as plt
     from matplotlib import cm
     import mpl_toolkits.mplot3d.axes3d as p3
-except:
-    pass
+    #except:
+    #pass
 
 """ Testing different analytic solution for wavetank benchmark case."""
 
@@ -56,12 +56,12 @@ def test_Linear2D(showPlots=False):
     # Plot result if appropriate
     #assert correctResult.all() == result.all(), "Linear2D.height returned %f should be %f" % (result,correctResult)
 
-    try:
+    if True:#try:
         plot(x[0], result, 'b', linewidth=2)
         if showPlots:
             show()
-    except:
-        pass
+            #except:
+            #pass
 
 
 def test_WaveGroup(showPlots=False):
@@ -175,7 +175,7 @@ def test_waveJONSWAP(showPlots=False):
     
 if __name__ == '__main__':
     print "The program name is: ", __name__
-    #test_Linear2D(showPlots=True)
+    test_Linear2D(showPlots=True)
     test_WaveGroup(showPlots=True)
-    #test_Solitary(showPlots=True)
-    #test_waveJONSWAP(showPlots=True)
+    test_Solitary(showPlots=True)
+    test_waveJONSWAP(showPlots=True)

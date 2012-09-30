@@ -277,21 +277,22 @@ diffusiveFluxBoundaryConditions = {0:{},
 
 class P_IC:
     def uOfXT(self,x,t):
-        return twpflowPressure(x,t)
+        return twpflowPressure_init(x,t)
 
 class U_IC:
     def uOfXT(self,x,t):
-        return twpflowVelocity_u(x,t)
+        return twpflowVelocity_u_init(x,t)
 
 class V_IC:
     def uOfXT(self,x,t):
-        return twpflowVelocity_v(x,t)
+        return twpflowVelocity_v_init(x,t)
 
 class W_IC:
     def uOfXT(self,x,t):
-        return twpflowVelocity_w(x,t)
+        return twpflowVelocity_w_init(x,t)
 
 initialConditions = {0:P_IC(),
                      1:U_IC(),
                      2:V_IC(),
                      3:W_IC()}
+
