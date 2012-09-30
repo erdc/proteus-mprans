@@ -26,7 +26,7 @@ depth = 1.0#5.0
 
 # Significant wave height
 # ... todo: add integral formulations for slope
-Hs = 0.0326
+Hs = 5.05
 
 # Peak frequency
 fp = 1.7

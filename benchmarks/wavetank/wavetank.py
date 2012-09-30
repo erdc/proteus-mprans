@@ -532,14 +532,15 @@ inflowVelocityMean = (0.0,0.0,0.0)
 
 waveLength = 5*inflowHeightMean #
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
-omega = 2.0*pi/period
-k=(2.0*pi/waveLength,0.0,0.0)
+k=(2.0*pi/waveLength,0.0,0.0)	# add non-zero ky
+omega = np.sqrt(-g[2]*k*np.tanh(k*inflowHeightMean)) # define for kh=O(1)
 amplitude = 0.1*inflowHeightMean
 
 # Wave Field Object
 #waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+#waveField = wm.StokesWave(g,amplitude,omega,k,inflowHeightMean)
 
 def waveHeight(x,t):
 #    return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])

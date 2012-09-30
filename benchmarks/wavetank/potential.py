@@ -51,16 +51,19 @@ def velocityPotential(spec, gv, kx, ky):
 
     # Create a 2D meshgrid of wavenumbers
     [kxx, kyy] = np.meshgrid(kx,ky)
+    kappa = np.sqrt(kxx**2+kyy**2)
 
     # Horizontal velocityties (term-wise multiplication)
     uVelocity = 1.0j*kxx*potentialFourier
     vVelocity = 1.0j*kyy*potentialFourier
+    wVelocity = kappa*potentialFourier
     
     # ~ Inverting back to physical space --> take REAL part just in case we have
-    #   some left over (nonzero) imaginary part of 'potentialFourier' and u,v
+    #   some left over (nonzero) imaginary part of 'potentialFourier' and u,v,w
     potential = np.real( np.fft.ifft2(potentialFourier) )
     u = np.real( np.fft.ifft2(uVelocity) )
     v = np.real( np.fft.ifft2(vVelocity) )
+    w = np.real( np.fft.ifft2(wVelocity) )
     
-    return potential, u, v
+    return potential, u, v, w
 
