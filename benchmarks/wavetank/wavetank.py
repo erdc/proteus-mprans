@@ -1,7 +1,7 @@
 from math import *
 import proteus.MeshTools
 import numpy as np
-#import waveModules_Matt as wm
+import waveModules_Matt as wm
 from proteus import Domain
 from proteus.default_n import *   
 from proteus.ctransportCoefficients import smoothedHeaviside
@@ -58,8 +58,10 @@ L = (20.0,
      0.25,
      1.0)
 spongeLayer = True
-xSponge = L[0] - 1.25
-levee=True; spongeLayer=False;
+xSponge = L[0] - 2.25
+ySponge = L[2] - L[2]/2.0
+epsFact_solid = 0.5
+levee=True; spongeLayer=False; 
 leveeStart = 1.9
 leveeBottomWidth = 3.0
 leveeHeight =L[2]*3.0/5.0
@@ -67,9 +69,9 @@ leveeHeightDownstream = 0.0#0.25
 leveeSlope = 1.0/2.0
 bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
-quasi2D = True
+quasi2D = True#True
 #veg=True; levee=False; spongeLayer=False
-veg=False; levee=False; spongeLayer=True
+veg=False; levee=False; spongeLayer=False; slopingSpongeLayer=True;
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -150,11 +152,76 @@ else:
                     boundaryTags['top']]
         regions=[[0.5*xSponge,0.5*L[1],0.5*L[2]],[0.5*(xSponge+L[0]),0.5*L[1],0.5*L[2]]]
         regionFlags=[0,1]
-        spongeGrainSize= 0.025
-        spongePorosity = 0.75
+        spongeGrainSize= 0.001
+        spongePorosity = 0.3
         killNonlinearDragInSpongeLayer = True#True
         porosityTypes      = numpy.array([1.0,spongePorosity])
         meanGrainSizeTypes = numpy.array([1.0,spongeGrainSize])
+    elif slopingSpongeLayer:
+        vertices=[[0.0,0.0,0.0],#0
+                  [xSponge,0.0,0.0],#1
+                  [xSponge,L[1],0.0],#2
+                  [0.0,L[1],0.0],#3
+                  [0.0,0.0,L[2]],#4
+                  [xSponge,0.0,L[2]],#5
+                  [xSponge,L[1],L[2]],#6
+                  [0.0,L[1],L[2]],#7
+                  [L[0],0.0,ySponge],#8
+                  [L[0],L[1],ySponge],#9
+                  [L[0],0.0,L[2]],#10
+                  [L[0],L[1],L[2]]#11
+                  ]
+        vertexFlags=[boundaryTags['left'],
+                     boundaryTags['front'],
+                     boundaryTags['back'],
+                     boundaryTags['left'],
+                     boundaryTags['left'],
+                     boundaryTags['front'],
+                     boundaryTags['back'],
+                     boundaryTags['left'],
+                     boundaryTags['right'],
+                     boundaryTags['right'],
+                     boundaryTags['right'],
+                     boundaryTags['right']]
+        facets=[[[0,1,2,3]],#bottom
+                [[0,1,5,4]],#front
+                [[1,2,6,5]],#internal
+                [[2,3,7,6]],#back
+                [[3,0,4,7]],#left
+                [[4,5,6,7]],#top
+                [[1,8,9,2]],#bottom #start sponge
+                [[1,8,10,5]],#front
+                [[8,9,11,10]],#right
+                [[2,6,11,9]],#back
+                [[5,6,11,10]],#top
+                ]
+        facetHoles=[[],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []]
+        facetFlags=[boundaryTags['bottom'],
+                    boundaryTags['front'],
+                    0,#boundaryTags['right'],
+                    boundaryTags['back'],
+                    boundaryTags['left'],
+                    boundaryTags['top'],
+                    boundaryTags['bottom'],#sponge
+                    boundaryTags['front'],
+                    boundaryTags['right'],
+                    boundaryTags['back'],
+                    boundaryTags['top']]
+        regions=[[0.5*xSponge,0.5*L[1],0.5*L[2]],[0.5*(xSponge+L[0]),0.5*L[1],0.75*L[2]]]
+        regionFlags=[0,1]
+        porosityTypes      = numpy.array([1.0,1.0])
+        dragAlphaTypes = numpy.array([0.0,10000.0])    
+        dragBetaTypes = numpy.array([0.0,1000.0])    
     elif levee:
         vertices=[[0.0,0.0,bedHeight],#0
                   [L[0],0.0,leveeHeightDownstream],#1
@@ -465,14 +532,15 @@ inflowVelocityMean = (0.0,0.0,0.0)
 
 waveLength = 5*inflowHeightMean #
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
-omega = 2.0*pi/period
-k=(2.0*pi/waveLength,0.0,0.0)
+k=(2.0*pi/waveLength,0.0,0.0)	# add non-zero ky
+omega = np.sqrt(-g[2]*k*np.tanh(k*inflowHeightMean)) # define for kh=O(1)
 amplitude = 0.1*inflowHeightMean
 
 # Wave Field Object
-#waveField = wm.Linear2D(amplitude,omega,k,L[2],rho_0,rho_1)
-#waveField = wm.WaveGroup(amplitude,omega,k,L[2],rho_0,rho_1)
-#waveField = wm.Solitary(amplitude,omega,k,L[2],rho_0,rho_1)
+#waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+#waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+#waveField = wm.StokesWave(g,amplitude,omega,k,inflowHeightMean)
 
 def waveHeight(x,t):
     return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
@@ -499,7 +567,9 @@ def waveVF(x,t):
 def twpflowVelocity_u(x,t):
     waterspeed = waveVelocity_u(x,t)
     H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    return H*windspeed_u + (1.0-H)*waterspeed
+    u = H*windspeed_u + (1.0-H)*waterspeed#
+    print x[2],u
+    return u
 
 def twpflowVelocity_v(x,t):
     waterspeed = 0.0
@@ -509,7 +579,9 @@ def twpflowVelocity_v(x,t):
 def twpflowVelocity_w(x,t):
     waterspeed = waveVelocity_w(x,t)
     H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    return H*windspeed_w+(1.0-H)*waterspeed
+    w = H*windspeed_w+(1.0-H)*waterspeed
+    print x[2],w
+    return w
 
 def twpflowFlux(x,t):
     return -twpflowVelocity_u(x,t)

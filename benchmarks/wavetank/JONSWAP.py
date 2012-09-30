@@ -108,6 +108,5 @@ def JONSWAP():
     loc = 10
     return surface #[loc,:]
 
-
 if __name__=='__main__':
     JONSWAP()

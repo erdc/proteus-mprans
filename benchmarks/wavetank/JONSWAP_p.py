@@ -10,9 +10,9 @@ npw2 = 7
 
 # Field dimensions (b=beginning, e=end)
 x1b = 0.0
-x1e = 5.0
+x1e = 20.0
 y1b = 0.0
-y1e = 5.0 #0.25
+y1e = 0.25
 
 # Order of nonlinearity
 eqorder = 3
@@ -22,11 +22,11 @@ eqorder = 3
 gv = 9.81
 
 # Water depth
-depth = 5.0
+depth = 1.0#5.0
 
 # Significant wave height
 # ... todo: add integral formulations for slope
-Hs = 0.0326
+Hs = 5.05
 
 # Peak frequency
 fp = 1.7

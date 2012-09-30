@@ -5,7 +5,7 @@ from proteus.mprans import RANS2P
 
 LevelModelType = RANS2P.LevelModel
 
-if spongeLayer or levee:
+if spongeLayer or levee or slopingSpongeLayer:
 	coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
 					   sigma=0.0,
 					   rho_0 = rho_0,
@@ -20,8 +20,9 @@ if spongeLayer or levee:
 					   useRBLES=useRBLES,
 					   useMetrics=useMetrics,
 					   porosityTypes=porosityTypes,
-					   meanGrainSizeTypes=meanGrainSizeTypes,
-					   killNonlinearDrag = killNonlinearDragInSpongeLayer)
+					   dragAlphaTypes=dragAlphaTypes,
+					   dragBetaTypes=dragBetaTypes,
+	                                   epsFact_solid = epsFact_solid)
 else:
 	coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
 					   sigma=0.0,
