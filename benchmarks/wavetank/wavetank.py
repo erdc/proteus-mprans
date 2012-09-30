@@ -8,10 +8,10 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 1#4#15
-genMesh=True
+Refinement = 4#4#15
+genMesh=False#True
 useOldPETSc=False
-useSuperlu = True
+useSuperlu = False#True
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -420,14 +420,14 @@ else:
 
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.9
-ls_shockCapturingFactor  = 0.3
+ns_shockCapturingFactor  = 0.1
+ls_shockCapturingFactor  = 0.1
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.3
+vof_shockCapturingFactor = 0.1
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.3
+rd_shockCapturingFactor  = 0.1
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5
@@ -535,7 +535,7 @@ def outflowPressure(x,t):
 
 # Time 
 T=period*20
-runCFL = 0.1
+runCFL = 0.25
 print "T",T
 dt_fixed = period/25.0 
 #dt_fixed = period/100.0
