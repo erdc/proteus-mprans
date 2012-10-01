@@ -190,32 +190,41 @@ class Solitary:
         
         .. todo:: Finish the docs. """
     def __init__(self,amplitude,omega,k,depth,rho_0,rho_1):
-        self.A = amplitude
+        self.g = (0.0,0.0,-9.8)
+        self.amp = amplitude        # ~ disregarded for now
         self.omega = omega
         self.k = k
+        self.C = self.omega/self.k[0]   # phase speed
         self.h = depth
-        self.rho_0 = rho_0      # density of water
-        self.rho_1 = rho_1      # density of air         
-        self.sigma = 2.0        # std. dev.
-
+        self.rho_0 = rho_0              # density of water
+        self.rho_1 = rho_1              # density of air         
+        self.alpha = -0.390             # from Nwogu '93 (Boussineqs alpha ~ -1/3)
+        
+        self.A = np.abs(self.C**2 - (-self.g[2]*self.h)) / self.C
+        self.B = np.sqrt( np.abs(self.C**2-(-self.g[2]*self.h)) / (4.0* ((self.alpha+1.0/3)*(-self.g[2]*self.h**3) - \
+                                                             self.alpha*self.h**2*self.C**2)**2 ) )
+        self.A1 = np.abs(self.C**2 - (-self.g[2]*self.h)) / ( 3.0* ((self.alpha+1.0/3)*(-self.g[2]*self.h) - \
+            self.alpha*self.C**2) ) * self.h
+        self.A2 = - np.abs(self.C**2 - (-self.g[2]*self.h))/(2.0*(-self.g[2])*self.h*self.C**2) * \
+            ((self.alpha+1.0/3)*(-self.g[2]*self.h)+2.0*self.alpha*self.C**2)/ \
+            ((self.alpha+1.0/3)*(-self.g[2]*self.h)-self.alpha*self.C**2) * self.h
     def height(self,x,t):
-        theta = self.k[0]*x[0] - self.omega*t
-        eta = self.h + self.A/np.cosh(theta**2 / self.sigma**2)
+        xi = x[0] - self.C*t
+        eta = self.h + self.A1/(np.cosh(self.B*xi))**2 + self.A2/(np.cosh(self.B*xi))**2
         # ~ NOTE: x[0] is a vector here for verification only!
         return eta
 
     def velocity_u(self,x,t):
-        u = 0.0
+        xi = x[0] - self.C*t
+        u = self.A/(np.cosh(self.B*xi))**2
         return u
-        # NOTE: base it on linearized ideal fluid flow
 
     def velocity_v(self,x,t):
-        v = 0.0
+        v = 0.0        # no trasverse dependece 1D
         return v
-        # NOTE: base it on linearized ideal fluid flow
     
     def velocity_w(self,x,t):
-        w = 0.0
+        w = 0.0         # negligable for small amplitude (of order eps**2 ==> (ka)**2)
         return w
         # NOTE: base it on ideal fluid flow
 
@@ -424,7 +433,12 @@ class waveJONSWAP:
         """        
         return self.w
         # NOTE: base it on linearized ideal fluid flow
-
+        
+    def pressure(self,x,t):
+        """ Pressure was defined via linearized theory (Bernoulli Eqn.) """
+        p = self.rho_0 * self.omega/self.k[0] * self.velPotential      # P_atm=0 
+        return p
+    
     def JONSWAP(self,x,t):
         """Sets a wave field according to JONSWAP ocean wave spectrum."""
         from spectrum import jonswap
