@@ -35,16 +35,9 @@ class Linear2D:
     def height(self,x,t):
         """ Gives a linearized solution for the air-water interface to the 
             potential flow model in two dimensions (x,y,z=eta) for finite depth."""
-        eta = self.h + self.A*np.exp(1j*(self.k[0]*x[0] - self.omega*t))
+        eta = self.A*np.exp(1j*(self.k[0]*x[0] - self.omega*t))
         # ~ NOTE: x[0] is a vector here!
         return np.real(eta)
-
-    def pressure(self,x,t):
-        """ Gives linearized pressured with P_atm = 0 """
-        g = (0.0,0.0,-9.81)
-        z = x[2] - self.h        
-        p = self.rho_0*(-g[2])*self.A* np.cosh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
-        return np.real(p)
 
     def velocity_u(self,x,t):
         """ Defines a linearized solution to the potential flow
@@ -52,8 +45,8 @@ class Linear2D:
             as well as, deep and shllow water limits.
 
             .. todo:: implement deep & shallow water limits."""
-        g = (0.0,0.0,-9.81)                          # gravity
-        z = x[2] - self.h
+        g = (0.0,0.0,-9.81)         # gravity
+        z = x[2] - self.h           # mean height would now =0
 
         # Finite Depth (0 < kh < infty)
         u = (-g[2]*self.k[0]*self.A / self.omega) * np.cosh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * \
@@ -91,8 +84,14 @@ class Linear2D:
         # Shallow Water
         # ... TODO
 
-        return np.real(w)
+        return np.imag(w)
 
+    def pressure(self,x,t):
+        """ Gives linearized pressured with P_atm = 0 """
+        g = (0.0,0.0,-9.81)
+        z = x[2] - self.h        
+        p = self.rho_0*(-g[2])*self.A* np.cosh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
+        return np.real(p)
 
 class WaveGroup:
     """ Class that defines a nearly monochromatic
@@ -118,12 +117,11 @@ class WaveGroup:
         eta = np.zeros(x[0].shape) #self.A*np.sin(theta)
 
         for i in range(self.N):
-            #eta = eta + self.A*np.sin(theta+(i+1)*dtheta) + self.A*np.sin(theta-(i+1)*dtheta)
-            eta = eta + self.A*np.cos((i+1)*(theta+(i+1)*dtheta)) + self.A*np.cos((i+1)*(theta-(i+1)*dtheta))
+            eta = eta + self.A*np.exp(1j*(i+1)*(theta+(i+1)*dtheta)) + self.A*np.exp(1j*(i+1)*(theta-(i+1)*dtheta))
             # NOTE: variations on the order of dtheta^2 are truncated (only up to group velocity kept)
+            #       and inflowHeightMean already added in wavetank.py
         
-        eta = eta + self.h
-        return eta
+        return np.real(eta)
 
 
     def velocity_u(self,x,t):
@@ -133,7 +131,8 @@ class WaveGroup:
             varying regular wavetrains.
 
             .. todo:: implement deep & shallow water limits. """
-        
+        theta =  self.k[0]*x[0] - self.omega*t # ~ NOTE: x[0] is a vector here!
+        dtheta = self.diff*theta
         z = x[2] - self.h
         u = np.zeros(x[0].shape)
 
@@ -141,8 +140,12 @@ class WaveGroup:
         for i in range(self.N):
             diffPos = (1+self.diff*(i+1))
             diffNeg = (1-self.diff*(i+1))
-            u = u + (-self.g[2]*diffPos*self.k[0]*self.A / (diffPos*self.omega)) * np.cosh(diffPos*self.k[0]*(z+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*diffPos*(self.k[0]*x[0] - self.omega*t)) + \
-                (-self.g[2]*diffNeg*self.k[0]*self.A / (diffNeg*self.omega)) * np.cosh(diffNeg*self.k[0]*(z+self.h))/np.cosh(diffNeg*self.k[0]*self.h) * np.exp(1j*diffNeg*(self.k[0]*x[0] - self.omega*t))
+            u = u + (-self.g[2]*diffPos*self.k[0]*self.A / (diffPos*self.omega)) * \
+                np.cosh(diffPos*self.k[0]*(z+self.h))/np.cosh(diffPos*self.k[0]*self.h) * \
+                np.exp(1j*(i+1)*(theta+(i+1)*dtheta)) + \
+                (-self.g[2]*diffNeg*self.k[0]*self.A / (diffNeg*self.omega)) * \
+                np.cosh(diffNeg*self.k[0]*(z+self.h))/np.cosh(diffNeg*self.k[0]*self.h) * \
+                np.exp(1j*(i+1)*(theta-(i+1)*dtheta))
         # Deep water (kh >> 1)
         # ... TODO
                  
@@ -159,27 +162,38 @@ class WaveGroup:
 
 
     def velocity_w(self,x,t):
+        theta =  self.k[0]*x[0] - self.omega*t # ~ NOTE: x[0] is a vector here!
+        dtheta = self.diff*theta        
         z = x[2] - self.h        
         w = np.zeros(x[0].shape)
         
         for i in range(self.N):
             diffPos = (1+self.diff*(i+1))
             diffNeg = (1-self.diff*(i+1))        
-            w = w + -1j * (-self.g[2]*diffPos*self.k[0]*self.A/(diffPos*self.omega)) * np.sinh(diffPos*self.k[0]*(z+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*(diffPos*self.k[0]*x[0] - self.omega*t)) + \
-                -1j * (-self.g[2]*diffNeg*self.k[0]*self.A/self.omega) * np.sinh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
+            w = w + -1j * (-self.g[2]*diffPos*self.k[0]*self.A/(diffPos*self.omega)) * \
+                np.sinh(diffPos*self.k[0]*(z+self.h))/np.cosh(diffPos*self.k[0]*self.h) * \
+                np.exp(1j*(i+1)*(theta+(i+1)*dtheta)) + \
+                -1j * (-self.g[2]*diffNeg*self.k[0]*self.A/self.omega) * \
+                np.sinh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * \
+                np.exp(1j*(i+1)*(theta-(i+1)*dtheta))
         
-        return np.real(w)
+        return np.imag(w)
 
     def pressure(self,x,t):
+        theta =  self.k[0]*x[0] - self.omega*t # ~ NOTE: x[0] is a vector here!
+        dtheta = self.diff*theta          
         z = x[2] - self.h
         p = np.zeros(x[0].shape)
 
         for i in range(self.N):
             diffPos = (1+self.diff*(i+1))
             diffNeg = (1-self.diff*(i+1))
-            p = p + self.rho_0*(-self.g[2])*self.A* np.cosh(diffPos*self.k[0]*(z+self.h))/np.cosh(diffPos*self.k[0]*self.h) * np.exp(1j*diffPos*(self.k[0]*x[0] - self.omega*t)) + \
-                self.rho_0*(-self.g[2])*self.A* np.cosh(diffNeg*self.k[0]*(z+self.h))/np.cosh(diffNeg*self.k[0]*self.h) * np.exp(1j*diffNeg*(self.k[0]*x[0] - self.omega*t))
-        
+            p = p + self.rho_0*(-self.g[2])*self.A* \
+                np.cosh(diffPos*self.k[0]*(z+self.h))/np.cosh(diffPos*self.k[0]*self.h) * \
+                np.exp(1j*(i+1)*(theta+(i+1)*dtheta)) + \
+                self.rho_0*(-self.g[2])*self.A* np.cosh(diffNeg*self.k[0]*(z+self.h))/np.cosh(diffNeg*self.k[0]*self.h) * \
+                np.exp(1j*(i+1)*(theta-(i+1)*dtheta))
+                
         return np.real(p)
         # NOTE: also implemented on ideal flow via linearized Bernoulli eqn.
 
@@ -210,8 +224,10 @@ class Solitary:
             ((self.alpha+1.0/3)*(-self.g[2]*self.h)-self.alpha*self.C**2) * self.h
     def height(self,x,t):
         xi = x[0] - self.C*t
-        eta = self.h + self.A1/(np.cosh(self.B*xi))**2 + self.A2/(np.cosh(self.B*xi))**2
-        # ~ NOTE: x[0] is a vector here for verification only!
+        eta = self.A1/(np.cosh(self.B*xi))**2 + self.A2/(np.cosh(self.B*xi))**4
+        # inflowHeightMean already added in wavetank.py
+        #        
+        # NOTE: x[0] is a vector here for verification only!
         return eta
 
     def velocity_u(self,x,t):
@@ -268,7 +284,9 @@ class StokesWave:
         eta_1 = self.alpha/4.0 * (3.0*self.alpha**2+1)*self.A**2*self.k[0] * np.cos(2.0*theta)
         eta_2 = -3.0/8 * (self.alpha**4-3*self.alpha**2+3)*(self.A**3*self.k[0]**2)*np.cos(theta) + \
             3.0/64*(8*self.alpha**6+(self.alpha**2-1)**2)*(self.A**3*self.k[0]**2)*np.cos(3.0*theta)
-        eta = self.depth + eta_0 + eta_1 + eta_2
+        eta = eta_0 + eta_1 + eta_2
+        # inflowHeightMean already added in wavetank.py
+        #
         # NOTE: x[0] is a vector here! ===> change if you want to pass both x,t as scalars!
         return eta
 

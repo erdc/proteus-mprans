@@ -86,14 +86,13 @@ def test_WaveGroup(showPlots=False):
     # Wave Field Object
     waveTest = wm.WaveGroup(A,omega,k,h,rho_0,rho_1)
 
-
     # Plot result if appropriate
     #assert correctResult.all() == result.all(), "Linear2D.height returned %f should be %f" % (result,correctResult)
 
     fig = plt.figure()
     y = waveTest.height(x,t[0])
     line, = plt.plot(x[0],y)
-    plt.axis((0.0, L[0], 0, L[2]))
+    plt.axis((0.0, L[0], 0.0, L[2]))
 
     def animate(i):
         line.set_ydata(waveTest.height(x,t[i]))  # update the data
