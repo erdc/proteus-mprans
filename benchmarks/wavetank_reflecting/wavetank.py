@@ -54,7 +54,7 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (10.0,
+L = (3.0,
      0.25,
      0.61)
 spongeLayer = True
@@ -154,7 +154,7 @@ else:
         regions=[[0.5*xSponge,0.5*L[1],0.5*L[2]],[0.5*(xSponge+L[0]),0.5*L[1],0.5*L[2]]]
         regionFlags=[0,1]
         porosityTypes      = numpy.array([1.0,1.0])
-        dragAlphaTypes = numpy.array([0.0,0.0])
+        dragAlphaTypes = numpy.array([5.0e6,0.0])
         dragBetaTypes = numpy.array([0.0,0.0])
     elif slopingSpongeLayer:
         vertices=[[0.0,0.0,0.0],#0
@@ -577,17 +577,17 @@ def waveVF_init(x,t):
 def twpflowVelocity_u(x,t):
     waterspeed = waveVelocity_u(x,t)
     H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    return H*windspeed_u + (1.0-H)*waterspeed
+    return waterspeed#H*windspeed_u + (1.0-H)*waterspeed
 
 def twpflowVelocity_v(x,t):
     waterspeed = 0.0
     H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    return H*windspeed_v+(1.0-H)*waterspeed
+    return waterspeed#H*windspeed_v+(1.0-H)*waterspeed
 
 def twpflowVelocity_w(x,t):
     waterspeed = waveVelocity_w(x,t)
     H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    return H*windspeed_w+(1.0-H)*waterspeed
+    return waterspeed#H*windspeed_w+(1.0-H)*waterspeed
 
 #twpflowVelocity_u_init = twpflowVelocity_u
 def twpflowVelocity_u_init(x,t):
@@ -626,7 +626,7 @@ def outflowPressure(x,t):
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 # Time 
-T=period*20
+T=10.0
 runCFL = 0.1
 print "T",T
 dt_fixed = period/10.0 

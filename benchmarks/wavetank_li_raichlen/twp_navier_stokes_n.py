@@ -36,7 +36,6 @@ multilevelNonlinearSolver = Newton
 levelNonlinearSolver      = Newton
 
 nonlinearSmoother = None
-linearSmoother    = None
 
 matrix = SparseMatrix
 
@@ -46,7 +45,7 @@ if useOldPETSc:
 else:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
-
+    linearSmoother    = SimpleNavierStokes3D
 if useSuperlu:
     multilevelLinearSolver = LU
     levelLinearSolver      = LU
@@ -56,7 +55,8 @@ levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest         = 'r-true'
 
 tolFac = 0.0
-nl_atol_res = 1.0e-3
+nl_atol_res = 5.0e-4
+nl_rtol_res = 5.0e-4
 
 maxNonlinearIts = 20
 maxLineSearches = 0

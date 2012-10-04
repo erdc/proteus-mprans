@@ -217,8 +217,8 @@ def test_waveJONSWAP(showPlots=False):
     
 if __name__ == '__main__':
     print "The program name is: ", __name__
-    #test_Linear2D(showPlots=True)
-    #test_WaveGroup(showPlots=True)
+    test_Linear2D(showPlots=True)
+    test_WaveGroup(showPlots=True)
     test_Solitary(showPlots=True)
-    #test_StokesWave(showPlots=True)
-    #test_waveJONSWAP(showPlots=True)
+    test_StokesWave(showPlots=True)
+    test_waveJONSWAP(showPlots=True)
