@@ -537,9 +537,9 @@ omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*inflowHeightMean)) # define for kh=O(1)
 amplitude = 0.1*inflowHeightMean
 
 # Wave Field Object
-waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+#waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
-#waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.StokesWave(g,amplitude,omega,k,inflowHeightMean)
 
 def waveHeight(x,t):

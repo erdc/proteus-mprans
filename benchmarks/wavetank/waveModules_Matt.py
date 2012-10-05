@@ -93,6 +93,99 @@ class Linear2D:
         p = self.rho_0*(-g[2])*self.A* np.cosh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
         return np.real(p)
 
+
+class true_Linear2D:
+    """
+    A class for linearized solutions of 2D flow (1D + surface) for
+    travelling progressive waves ~ exp(kx-wt)
+    
+    .. todo:: Finish the docs
+
+    An equation
+    
+    .. math:: 
+        
+        \Phi_t = -g \zeta + ...
+
+    More text, inline math :math:`x^3` 
+    """
+    #see this url for some useful restructured text directives
+    #
+    #http://matplotlib.sourceforge.net/devel/documenting_mpl.html#formatting-mpl-docs
+    def __init__(self,amplitude,omega,k,depth,rho_0,rho_1):
+        self.A = amplitude
+        self.omega = omega
+        self.k = k
+        self.kappa = np.sqrt(k[0]**2+k[1]**2)
+        self.h = depth
+        self.rho_0 = rho_0      # density of water
+        self.rho_1 = rho_1      # density of air
+
+    def height(self,x,t):
+        """ Gives a linearized solution for the air-water interface to the 
+            potential flow model in two dimensions (x,y,z=eta) for finite depth."""
+        eta = self.A*np.exp(1j*(self.k[0]*x[0] + self.k[1]*x[1] - self.omega*t))
+        # ~ NOTE: x[0] is a vector here!
+        return np.real(eta)
+
+    def velocity_u(self,x,t):
+        """ Defines a linearized solution to the potential flow
+            model in two dimensions (x,y,z) for finite depth,
+            as well as, deep and shllow water limits.
+
+            .. todo:: implement deep & shallow water limits."""
+        g = (0.0,0.0,-9.81)         # gravity
+        z = x[2] - self.h           # mean height would now =0
+
+        # Finite Depth (0 < kh < infty)
+        u = (-g[2]*self.k[0]*self.A / self.omega) * np.cosh(self.kappa*(z+self.h))/np.cosh(self.kappa*self.h) * \
+            np.exp(1j*(self.k[0]*x[0] + self.k[1]*x[1]- self.omega*t))  
+
+        # Deep water (kh >> 1)
+        # ... TODO
+                 
+        # Shallow water (kh << 1)
+        # ... TODO
+
+        return np.real(u)
+
+
+    def velocity_v(self,x,t):
+
+        v = (-g[2]*self.k[1]*self.A / self.omega) * np.cosh(self.kappa*(z+self.h))/np.cosh(self.kappa*self.h) * \
+            np.exp(1j*(self.k[0]*x[0] + self.k[1]*x[1]- self.omega*t))
+        return v
+
+    def velocity_w(self,x,t):
+        """ Gives a linearized solution velocity in x-dir to the potential flow
+            model in two dimensions (x,y,z) for finite depth, as well as, deep
+            and shallow water limits.
+
+            .. todo:: implement deep & shallow water limits."""
+        g = (0.0,0.0,-9.81)                          # gravity
+        z = x[2] - self.h
+
+        # Finite Depth (0 < kh < infty)                                                                                                                                      
+        w = -1j * (-g[2]*self.k[0]*self.A/self.omega) * np.sinh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) \
+                * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
+
+        # Deep Water (kh >> 1)
+        # ... TODO
+
+        # Shallow Water
+        # ... TODO
+
+        return np.imag(w)
+
+    def pressure(self,x,t):
+        """ Gives linearized pressured with P_atm = 0 """
+        g = (0.0,0.0,-9.81)
+        z = x[2] - self.h        
+        p = self.rho_0*(-g[2])*self.A* np.cosh(self.kappa*(z+self.h))/np.cosh(self.kappa*self.h) * \
+            np.exp(1j*(self.k[0]*x[0]+self.k[1]*x[1] - self.omega*t))
+        return np.real(p)
+
+
 class WaveGroup:
     """ Class that defines a nearly monochromatic
         wave train/group of waves of same amplitude.
@@ -118,7 +211,7 @@ class WaveGroup:
 
         for i in range(self.N):
             eta = eta + self.A*np.exp(1j*(i+1)*(theta+(i+1)*dtheta)) + self.A*np.exp(1j*(i+1)*(theta-(i+1)*dtheta))
-            # NOTE: variations on the order of dtheta^2 are truncated (only up to group velocity kept)
+            # NOTE: variations on the order of dtheta^2 are truncated (only up to order of group velocity kept)
             #       and inflowHeightMean already added in wavetank.py
         
         return np.real(eta)
@@ -232,7 +325,7 @@ class Solitary:
 
     def velocity_u(self,x,t):
         xi = x[0] - self.C*t
-        u = self.A/(np.cosh(self.B*xi))**2
+        u = self.A/(np.cosh(self.B*xi))**2 * (1.0-np.exp(-self.k[0]*x[2]))
         return u
 
     def velocity_v(self,x,t):
