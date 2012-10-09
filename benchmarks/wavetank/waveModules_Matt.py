@@ -420,6 +420,8 @@ class StokesWave:
     
     def velocity_w(self,x,t):
         """ Defined via potential flow: w = d/dz{potential}. """
+        theta = self.k[0]*x[0] - self.omega_NL*t
+        
         w0 = self.k[0] * self.scaled_A * np.sinh(self.k[0]*x[2])/np.cosh(self.k[0]*self.depth) \
             * np.cos(theta)
         w1 = 2.0*self.k[0] * 3.0/8 * self.A*self.k[0]*self.scaled_A/self.alpha* \
