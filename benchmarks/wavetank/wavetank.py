@@ -539,8 +539,8 @@ amplitude = 0.1*inflowHeightMean
 # Wave Field Object
 #waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
-#waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
-waveField = wm.StokesWave(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+#waveField = wm.StokesWave(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 
 def waveHeight(x,t):
 #    return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
@@ -606,7 +606,7 @@ def outflowPressure(x,t):
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 # Time 
-T=period*4#20
+T=period*10#4#20
 runCFL = 0.1
 print "T",T
 dt_fixed = period/25.0 

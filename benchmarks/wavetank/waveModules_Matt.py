@@ -316,7 +316,7 @@ class Solitary:
             ((self.alpha+1.0/3)*(-self.g[2]*self.h)+2.0*self.alpha*self.C**2)/ \
             ((self.alpha+1.0/3)*(-self.g[2]*self.h)-self.alpha*self.C**2) * self.h
     def height(self,x,t):
-        xi = x[0] - self.C*t
+        xi = x[0] - self.C*(t-1.0) #offsetting start time
         eta = self.A1/(np.cosh(self.B*xi))**2 + self.A2/(np.cosh(self.B*xi))**4
         # inflowHeightMean already added in wavetank.py
         #        
@@ -324,8 +324,9 @@ class Solitary:
         return eta
 
     def velocity_u(self,x,t):
-        xi = x[0] - self.C*t
-        u = self.A/(np.cosh(self.B*xi))**2 * (1.0-np.exp(-self.k[0]*x[2]))
+        xi = x[0] - self.C*(t-1.0) # offsetting start time
+        eta = self.height(x,t)
+        u = self.C * eta / (eta+self.h)        
         return u
 
     def velocity_v(self,x,t):
