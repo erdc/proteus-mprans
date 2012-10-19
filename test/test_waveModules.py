@@ -14,7 +14,7 @@ except:
 """ Testing different analytic solution for wavetank benchmark case."""
 
 g = (0.0,0.0,-9.81)        # gravity
-L = (20.0,0.25,1.0)         # L[0]=20.0 ...tank dimensions
+L = (10.0,0.25,0.61)#(20.0,0.25,1.0)         # L[0]=20.0 ...tank dimensions
 
 # Water                                                                  
 rho_0 = 998.2
