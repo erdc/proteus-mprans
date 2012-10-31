@@ -1,5 +1,6 @@
 import numpy as np
 from math import pi
+import random
 import JONSWAP_p as JS
 """ Set of wave modules for initializing and
     driving the wavemaker field, that will be
@@ -24,18 +25,24 @@ class Linear2D:
     #see this url for some useful restructured text directives
     #
     #http://matplotlib.sourceforge.net/devel/documenting_mpl.html#formatting-mpl-docs
-    def __init__(self,amplitude,omega,k,depth,rho_0,rho_1):
+    def __init__(self,amplitude,omega,k,depth,rho_0,rho_1,randomPhase):
         self.A = amplitude
         self.omega = omega
         self.k = k
         self.h = depth
         self.rho_0 = rho_0      # density of water
         self.rho_1 = rho_1      # density of air
-
+        self.randomPhase = randomPhase
+        if randomPhase:
+                # computing random phase (random seed is the system clock)
+                self.phase = 2*np.pi*random.random()     #  where:  0 <= random.random() <= 1
+        else:
+                self.phase = 0.0    
+        
     def height(self,x,t):
         """ Gives a linearized solution for the air-water interface to the 
             potential flow model in two dimensions (x,y,z=eta) for finite depth."""
-        eta = self.A*np.exp(1j*(self.k[0]*x[0] - self.omega*t))
+        eta = self.A*np.exp(1j*(self.k[0]*x[0] - self.omega*t + self.phase))
         # ~ NOTE: x[0] is a vector here!
         return np.real(eta)
 
@@ -50,7 +57,7 @@ class Linear2D:
 
         # Finite Depth (0 < kh < infty)
         u = (-g[2]*self.k[0]*self.A / self.omega) * np.cosh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * \
-            np.exp(1j*(self.k[0]*x[0] - self.omega*t))  
+            np.exp(1j*(self.k[0]*x[0] - self.omega*t + self.phase))  
 
         # Deep water (kh >> 1)
         # ... TODO
@@ -76,7 +83,7 @@ class Linear2D:
 
         # Finite Depth (0 < kh < infty)                                                                                                                                      
         w = -1j * (-g[2]*self.k[0]*self.A/self.omega) * np.sinh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) \
-                * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
+                * np.exp(1j*(self.k[0]*x[0] - self.omega*t + self.phase))
 
         # Deep Water (kh >> 1)
         # ... TODO
@@ -90,7 +97,7 @@ class Linear2D:
         """ Gives linearized pressured with P_atm = 0 """
         g = (0.0,0.0,-9.81)
         z = x[2] - self.h        
-        p = self.rho_0*(-g[2])*self.A* np.cosh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
+        p = self.rho_0*(-g[2])*self.A* np.cosh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * np.exp(1j*(self.k[0]*x[0] - self.omega*t + self.phase))
         return np.real(p)
 
 
@@ -112,7 +119,7 @@ class true_Linear2D:
     #see this url for some useful restructured text directives
     #
     #http://matplotlib.sourceforge.net/devel/documenting_mpl.html#formatting-mpl-docs
-    def __init__(self,amplitude,omega,k,depth,rho_0,rho_1):
+    def __init__(self,amplitude,omega,k,depth,rho_0,rho_1,randomPhase):
         self.A = amplitude
         self.omega = omega
         self.k = k
@@ -120,11 +127,18 @@ class true_Linear2D:
         self.h = depth
         self.rho_0 = rho_0      # density of water
         self.rho_1 = rho_1      # density of air
+        self.randomPhase = randomPhase
+        if randomPhase:
+                # computing random phase (random seed is the system clock)
+                self.phase = 2*np.pi*random.random()     #  where:  0 <= random.random() <= 1
+        else:
+                self.phase = 0.0    
+
 
     def height(self,x,t):
         """ Gives a linearized solution for the air-water interface to the 
             potential flow model in two dimensions (x,y,z=eta) for finite depth."""
-        eta = self.A*np.exp(1j*(self.k[0]*x[0] + self.k[1]*x[1] - self.omega*t))
+        eta = self.A*np.exp(1j*(self.k[0]*x[0] + self.k[1]*x[1] - self.omega*t + self.phase))
         # ~ NOTE: x[0] is a vector here!
         return np.real(eta)
 
@@ -139,7 +153,7 @@ class true_Linear2D:
 
         # Finite Depth (0 < kh < infty)
         u = (-g[2]*self.k[0]*self.A / self.omega) * np.cosh(self.kappa*(z+self.h))/np.cosh(self.kappa*self.h) * \
-            np.exp(1j*(self.k[0]*x[0] + self.k[1]*x[1]- self.omega*t))  
+            np.exp(1j*(self.k[0]*x[0] + self.k[1]*x[1]- self.omega*t + self.phase))  
 
         # Deep water (kh >> 1)
         # ... TODO
@@ -153,7 +167,7 @@ class true_Linear2D:
     def velocity_v(self,x,t):
 
         v = (-g[2]*self.k[1]*self.A / self.omega) * np.cosh(self.kappa*(z+self.h))/np.cosh(self.kappa*self.h) * \
-            np.exp(1j*(self.k[0]*x[0] + self.k[1]*x[1]- self.omega*t))
+            np.exp(1j*(self.k[0]*x[0] + self.k[1]*x[1]- self.omega*t + self.phase))
         return v
 
     def velocity_w(self,x,t):
@@ -167,7 +181,7 @@ class true_Linear2D:
 
         # Finite Depth (0 < kh < infty)                                                                                                                                      
         w = -1j * (-g[2]*self.k[0]*self.A/self.omega) * np.sinh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) \
-                * np.exp(1j*(self.k[0]*x[0] - self.omega*t))
+                * np.exp(1j*(self.k[0]*x[0] - self.omega*t + self.phase))
 
         # Deep Water (kh >> 1)
         # ... TODO
@@ -182,7 +196,7 @@ class true_Linear2D:
         g = (0.0,0.0,-9.81)
         z = x[2] - self.h        
         p = self.rho_0*(-g[2])*self.A* np.cosh(self.kappa*(z+self.h))/np.cosh(self.kappa*self.h) * \
-            np.exp(1j*(self.k[0]*x[0]+self.k[1]*x[1] - self.omega*t))
+            np.exp(1j*(self.k[0]*x[0]+self.k[1]*x[1] - self.omega*t + self.phase))
         return np.real(p)
 
 
@@ -192,7 +206,7 @@ class WaveGroup:
         
         .. todo:: Finish the docs. """
 
-    def __init__(self,amplitude,omega,k,depth,rho_0,rho_1):
+    def __init__(self,amplitude,omega,k,depth,rho_0,rho_1,randomPhase):
         self.A = amplitude
         self.omega = omega
         self.k = k
@@ -202,10 +216,15 @@ class WaveGroup:
         self.N = 1              # number of nearly-monochromatic pairs
         self.diff = 0.05
         self.g = (0.0,0.0,-9.81)                          # gravity
-
+        self.randomPhase = randomPhase
+        if randomPhase:
+                # computing random phase (random seed is the system clock)
+                self.phase = 2*np.pi*random.random()     #  where:  0 <= random.random() <= 1
+        else:
+                self.phase = 0.0   
 
     def height(self,x,t):
-        theta =  self.k[0]*x[0] - self.omega*t # ~ NOTE: x[0] is a vector here!
+        theta =  self.k[0]*x[0] - self.omega*t + self.phase# ~ NOTE: x[0] is a vector here!
         dtheta = self.diff*theta
         eta = np.zeros(x[0].shape) #self.A*np.sin(theta)
 
@@ -224,7 +243,7 @@ class WaveGroup:
             varying regular wavetrains.
 
             .. todo:: implement deep & shallow water limits. """
-        theta =  self.k[0]*x[0] - self.omega*t # ~ NOTE: x[0] is a vector here!
+        theta =  self.k[0]*x[0] - self.omega*t + self.phase # ~ NOTE: x[0] is a vector here!
         dtheta = self.diff*theta
         z = x[2] - self.h
         u = np.zeros(x[0].shape)
@@ -255,7 +274,7 @@ class WaveGroup:
 
 
     def velocity_w(self,x,t):
-        theta =  self.k[0]*x[0] - self.omega*t # ~ NOTE: x[0] is a vector here!
+        theta =  self.k[0]*x[0] - self.omega*t + self.phase # ~ NOTE: x[0] is a vector here!
         dtheta = self.diff*theta        
         z = x[2] - self.h        
         w = np.zeros(x[0].shape)
@@ -273,7 +292,7 @@ class WaveGroup:
         return np.imag(w)
 
     def pressure(self,x,t):
-        theta =  self.k[0]*x[0] - self.omega*t # ~ NOTE: x[0] is a vector here!
+        theta =  self.k[0]*x[0] - self.omega*t + self.phase # ~ NOTE: x[0] is a vector here!
         dtheta = self.diff*theta          
         z = x[2] - self.h
         p = np.zeros(x[0].shape)
@@ -581,7 +600,7 @@ class waveJONSWAP:
 
         # Compute the surface elvation via iFFT2D of the spectrum  --> take REAL part
         # just in case we have some left over (nonzero) imaginary part of 'spectrum'
-        self.surface = self.h + np.real(np.fft.ifft2(spectrum))
+        self.surface = np.real(np.fft.ifft2(spectrum))
 
         # Compute the velocity potential from linear theory and horizontal velocity
         [self.velPotential, self.u, self.v, self.w] = velocityPotential(spectrum, JS.gv, kx, ky)

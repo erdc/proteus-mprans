@@ -543,15 +543,20 @@ elif inflowHeightMean > (waveLength*4.0):
 else:
     omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*inflowHeightMean))
     df_dk = -g[2]*( np.tanh(k[0]*inflowHeightMean) + k[0]*inflowHeightMean/np.cosh(k[0]*inflowHeightMean)**2 )
+
 period = 2.0*pi/omega
 amplitude = inflowHeightMean*0.15 #0.3
 
 # Group Velocity ==> d/dk{omega} = f'(k)/(2*omega), where f'(k)=d/dk{omega(k)^2}
 groupVelocity = df_dk / (2.0*omega)
 
+# Add random phase
+randomPhase = False
+
 # Wave Field Object
-#waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
-waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+#waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
+#waveField = wm.true_Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
+waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
 #waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.StokesWave(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 
