@@ -52,4 +52,4 @@ nl_atol_res = 1.0e-3
 maxNonlinearIts = 20
 maxLineSearches = 0
 
-auxiliaryVariables = [RelaxationZoneWaveGenerator(twpflowVelocity_w,twpflowVelocity_w,twpflowVelocity_w,xRelaxCenter)]
+#auxiliaryVariables = [RelaxationZoneWaveGenerator(twpflowVelocity_w,twpflowVelocity_w,twpflowVelocity_w,xRelaxCenter)]

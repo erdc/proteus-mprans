@@ -11,7 +11,7 @@ from proteus.ctransportCoefficients import smoothedHeaviside_integral
 Refinement = 1#4#15
 genMesh=True
 useOldPETSc=False
-useSuperlu = False # set to False if running in parallel with petsc.options
+useSuperlu = True # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
