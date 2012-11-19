@@ -4,9 +4,6 @@ from wavetank import *
 
 timeIntegration = BackwardEuler
 stepController = Osher_PsiTC_controller2	     
-
-timeIntegration = NoIntegration
-stepController  = Newton_controller
 femSpaces = {0:basis}
        
 massLumping       = False
@@ -40,15 +37,15 @@ nonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest = 'r-true'
 
 runCFL=1.0
-rtol_res[0] = 0.0
-atol_res[0] = 0.1*he
-psitc['nStepsForce']=3
+rtol_res[0] = 0.001
+atol_res[0] = 0.0
+psitc['nStepsForce']=5
 psitc['nStepsMax']=10 
-psitc['reduceRatio']=0.5
+psitc['reduceRatio']=1.0
 psitc['startRatio']=1.0 
 
-tolFac = 0.0
-nl_atol_res = 0.1*he
+tolFac = 10.0
+nl_atol_res = 0.0
 
 maxNonlinearIts = 1
 maxLineSearches = 0

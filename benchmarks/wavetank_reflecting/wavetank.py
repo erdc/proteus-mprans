@@ -8,10 +8,10 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 2#4#15
+Refinement = 1#4#15
 genMesh=True
 useOldPETSc=False
-useSuperlu = False # True # set to False if running in parallel with petsc.options
+useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -54,9 +54,9 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (3.0,
+L = (20.0,
      0.25,
-     0.61)
+     0.25)
 spongeLayer = True
 xSponge = L[0]/3.0#L[0] - 2.25
 xRelaxCenter = xSponge/2.0
@@ -70,7 +70,7 @@ leveeHeightDownstream = 0.0#0.25
 leveeSlope = 1.0/2.0
 bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
-quasi2D = True#True
+quasi2D = True#False # set it to false if you want to run full 3D
 #veg=True; levee=False; spongeLayer=False
 veg=False; levee=False; spongeLayer=True; slopingSpongeLayer=False;
 nLevels = 1
@@ -154,7 +154,7 @@ else:
         regions=[[0.5*xSponge,0.5*L[1],0.5*L[2]],[0.5*(xSponge+L[0]),0.5*L[1],0.5*L[2]]]
         regionFlags=[0,1]
         porosityTypes      = numpy.array([1.0,1.0])
-        dragAlphaTypes = numpy.array([5.0e6,0.0])
+        dragAlphaTypes = numpy.array([0.0,0.0])
         dragBetaTypes = numpy.array([0.0,0.0])
     elif slopingSpongeLayer:
         vertices=[[0.0,0.0,0.0],#0
@@ -493,7 +493,7 @@ ls_sc_beta  = 1.0
 vof_shockCapturingFactor = 0.1
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.3
+rd_shockCapturingFactor  = 0.9
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5
@@ -529,7 +529,8 @@ outflowVelocity = (0.0,0.0,0.0)#not used for now
 inflowHeightMean = 0.5*L[2]
 inflowVelocityMean = (0.0,0.0,0.0)
 
-waveLength = 5.0*inflowHeightMean # xSponge
+regime = 25.0 # regime > 25 ==> shallow water, < 4 ==> deep water, between ==> finite depth
+waveLength = 25.0*inflowHeightMean # xSponge
 k=(2.0*pi/waveLength,0.0,0.0)
 # NOTE: For Shallow Water Limit:  h < waveLength/25 ==> omega ~ sqrt(g*k^2*h) ~ 2*pi/period (no dispersion)
 #       For Deep Water Limit:     h > waveLength/4  ==> omega ~ sqrt(g*k)
@@ -544,8 +545,11 @@ else:
     omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*inflowHeightMean))
     df_dk = -g[2]*( np.tanh(k[0]*inflowHeightMean) + k[0]*inflowHeightMean/np.cosh(k[0]*inflowHeightMean)**2 )
 
+# Setting desired level on nonlinearity: epsilon ~ 0.1 ==> weakly nonlinear
+epsilon = 0.01 # 0.02,0.05,0.1,0.15,0.2 # wave steepness
+factor = epsilon * regime/(2*np.pi) 
+amplitude = inflowHeightMean*factor
 period = 2.0*pi/omega
-amplitude = inflowHeightMean*0.15 #0.3
 
 # Group Velocity ==> d/dk{omega} = f'(k)/(2*omega), where f'(k)=d/dk{omega(k)^2}
 groupVelocity = df_dk / (2.0*omega)
@@ -602,17 +606,17 @@ def waveVF_init(x,t):
 def twpflowVelocity_u(x,t):
     waterspeed = waveVelocity_u(x,t)
     H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    return waterspeed#H*windspeed_u + (1.0-H)*waterspeed
+    return H*windspeed_u + (1.0-H)*waterspeed
 
 def twpflowVelocity_v(x,t):
     waterspeed = 0.0
     H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    return waterspeed#H*windspeed_v+(1.0-H)*waterspeed
+    return H*windspeed_v+(1.0-H)*waterspeed
 
 def twpflowVelocity_w(x,t):
     waterspeed = waveVelocity_w(x,t)
     H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    return waterspeed#H*windspeed_w+(1.0-H)*waterspeed
+    return H*windspeed_w+(1.0-H)*waterspeed
 
 #twpflowVelocity_u_init = twpflowVelocity_u
 def twpflowVelocity_u_init(x,t):
@@ -651,7 +655,7 @@ def outflowPressure(x,t):
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 # Computation Time for Wave(s) to return to wave maker (based on groupVelocity) 
-T=2.0*L[0]/groupVelocity #period*33
+T=2.0*L[0]/groupVelocity # mult. by 0.25 to have about 3 sec for profiling
 runCFL = 0.1
 print "Total Time of Computation is: ",T
 dt_fixed = period/10.0 
@@ -659,7 +663,8 @@ dt_fixed = period/10.0
 #dt_fixed = 6.0/1000.0
 dt_init = 1.0e-3
 nDTout = int(T/dt_fixed)
-tnList = [i*dt_fixed for i in range(0,nDTout+1)] 
+dt_init = min(dt_init,0.5*dt_fixed)
+tnList = [0.0,dt_init]+[i*dt_fixed for i in range(1,nDTout+1)] 
 print tnList
 
 class RelaxationZoneWaveGenerator(AV_base):
