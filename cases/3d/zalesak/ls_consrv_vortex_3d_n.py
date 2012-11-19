@@ -23,7 +23,7 @@ if cDegree_ls==0:
             femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}        
         elementQuadrature = SimplexGaussQuadrature(nd,vortex_quad_order)
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,vortex_quad_order)
-    if parallel or LevelModelType in [MCorr.LevelModel,MCorrElement.LevelModel]:
+    if parallel or LevelModelType in [MCorr.LevelModel]:#,MCorrElement.LevelModel]:
         numericalFluxType = DoNothing#Diffusion_IIPG_exterior
 elif cDegree_ls==-1:
     if pDegree_ls==0:

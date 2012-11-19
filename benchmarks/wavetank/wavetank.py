@@ -8,10 +8,10 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 2#4#15
+Refinement = 1#4#15
 genMesh=True
 useOldPETSc=False
-useSuperlu = True
+useSuperlu = True # Set to False for parallel and use petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -54,9 +54,9 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (20.0,
+L = (10.0,
      0.25,
-     1.0)
+     0.61)
 spongeLayer = True
 xSponge = L[0] - 2.25
 ySponge = L[2] - L[2]/2.0
@@ -540,7 +540,7 @@ amplitude = 0.1*inflowHeightMean
 waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
-#waveField = wm.StokesWave(g,amplitude,omega,k,inflowHeightMean)
+#waveField = wm.StokesWave(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 
 def waveHeight(x,t):
 #    return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
@@ -606,7 +606,7 @@ def outflowPressure(x,t):
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 # Time 
-T=period*4#20
+T=period*2#10
 runCFL = 0.1
 print "T",T
 dt_fixed = period/25.0 

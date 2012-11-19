@@ -10,7 +10,7 @@ npw2 = 7
 
 # Field dimensions (b=beginning, e=end)
 x1b = 0.0
-x1e = 20.0
+x1e = 10.0#20.0
 y1b = 0.0
 y1e = 0.25
 
@@ -22,7 +22,7 @@ eqorder = 3
 gv = 9.81
 
 # Water depth
-depth = 1.0#5.0
+depth = 0.61#1.0#5.0
 
 # Significant wave height
 # ... todo: add integral formulations for slope

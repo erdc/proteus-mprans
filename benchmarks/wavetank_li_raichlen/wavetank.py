@@ -8,7 +8,7 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 3#6#4#15
+Refinement = 2#6#4#15
 genMesh=True
 useOldPETSc=False
 useSuperlu = False#True
@@ -626,14 +626,14 @@ def outflowPressure(x,t):
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 # Time 
-T=10.0
+T=0.001#10.0
 runCFL = 0.1
 print "T",T
 dt_fixed = period/10.0 
 #dt_fixed = period/100.0
 #dt_fixed = 6.0/1000.0
 dt_init = 1.0e-3
-nDTout = 1000#int(T/dt_fixed)
+nDTout = 1#int(T/dt_fixed)
 tnList = [i*dt_fixed for i in range(0,nDTout+1)] 
 print tnList
 
