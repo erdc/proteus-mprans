@@ -10,8 +10,8 @@ pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
     
 name = "dambreak_p" 
 
-systemStepControllerType = Sequential_MinAdaptiveModelStep#Sequential_FixedStep
-    
+systemStepControllerType = Sequential_MinAdaptiveModelStep
+
 needEBQ_GLOBAL = False
 needEBQ = False
 
