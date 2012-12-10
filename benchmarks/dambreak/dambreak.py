@@ -4,9 +4,11 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options  
-Refinement = 3#15
+Refinement = 5#45min on a single core for spaceOrder=1, useHex=False
+#Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
+useSuperlu=True
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -50,6 +52,11 @@ elif spaceOrder == 2:
     
 # Domain and mesh
 L = (0.584,0.146,0.350)
+he = L[0]/float(4*Refinement-1)
+quasi2D = True
+
+if quasi2D:
+    L = (L[0],he,L[2])
 
 nLevels = 1
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
@@ -60,10 +67,12 @@ if useHex:
     nnx=4*Refinement
     nny=1*Refinement
     nnz=2*Refinement
+    if quas2D:
+        nny=2
     hex=True    
     domain = Domain.RectangularDomain(L)
 else:
-    he = L[0]/float(4*Refinement-1)
+
     boundaries=['left','right','bottom','top','front','back']
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
     vertices=[[0.0,0.0,0.0],#0
@@ -111,8 +120,8 @@ else:
 
 
 # Time stepping
-T=0.40
-dt_fixed = 0.04/(Refinement*spaceOrder) 
+T=1.0
+dt_fixed = 0.01
 dt_init = min(0.1*dt_fixed,0.001)
 runCFL=0.33
 nDTout = int(round(T/dt_fixed))
