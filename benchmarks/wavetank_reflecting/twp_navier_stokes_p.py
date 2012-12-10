@@ -296,3 +296,27 @@ initialConditions = {0:P_IC(),
                      2:V_IC(),
                      3:W_IC()}
 
+# Analytical Velocity Components
+class velEx_u:
+    def uOfXT(self,x,t):
+        return waveVelocity_u(x,t) # defined in wavetank.py
+
+class velEx_v:
+    def uOfXT(self,x,t):
+        return waveVelocity_v(x,t)
+
+class velEx_w:
+    def uOfXT(self,x,t):
+        return waveVelocity_w(x,t)
+
+class pEx:
+    def __init__(self):
+        pass
+    def uOfXT(self,x,t):
+        return twpflowPressure(x,t)
+
+# Load analytical solutions
+analyticalSolution = {0:pEx(),
+		      1:velEx_u(),
+		      2:velEx_v(),
+		      3:velEx_w()}
