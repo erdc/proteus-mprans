@@ -50,5 +50,5 @@ psitc['startRatio']=1.0
 tolFac = 0.0
 nl_atol_res = 0.1*he
 
-maxNonlinearIts = 1
+maxNonlinearIts = 10
 maxLineSearches = 0

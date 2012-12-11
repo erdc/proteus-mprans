@@ -626,8 +626,8 @@ def outflowPressure(x,t):
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 # Time 
-T=0.001#10.0
-runCFL = 0.1
+T=10.0
+runCFL = 0.33
 print "T",T
 dt_fixed = period/10.0 
 #dt_fixed = period/100.0
