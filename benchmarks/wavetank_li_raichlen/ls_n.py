@@ -1,14 +1,8 @@
 from proteus import *
 from ls_p import *
 
-timeIntegration = BackwardEuler
-stepController  = Min_dt_controller
-timeIntegration = FLCBDF#BackwardEuler_cfl
-stepController = FLCBDF_controller#Min_dt_controller
-rtol_u[0] = 1.0e-2
-atol_u[0] = 1.0e-2
 timeIntegration = BackwardEuler_cfl
-stepController = Min_dt_controller
+stepController  = Min_dt_controller
 
 femSpaces = {0:basis}
 
@@ -44,8 +38,8 @@ levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest         = 'r-true'
 
 tolFac = 0.0
-nl_atol_res = 1.0e-3
+nl_atol_res = 1.0e-5
 
-maxNonlinearIts = 10
+maxNonlinearIts = 2
 maxLineSearches = 0
 

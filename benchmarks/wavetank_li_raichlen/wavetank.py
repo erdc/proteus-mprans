@@ -12,7 +12,7 @@ Refinement = 2#6#4#15
 genMesh=True
 useOldPETSc=False
 useSuperlu = False#True
-spaceOrder = 1
+spaceOrder = 2
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 0.0
@@ -629,12 +629,12 @@ def outflowPressure(x,t):
 T=10.0
 runCFL = 0.33
 print "T",T
-dt_fixed = period/10.0 
 #dt_fixed = period/100.0
 #dt_fixed = 6.0/1000.0
 dt_init = 1.0e-3
-nDTout = 1#int(T/dt_fixed)
-tnList = [i*dt_fixed for i in range(0,nDTout+1)] 
+nDTout = 200#int(T/dt_fixed)
+dt_fixed = T/float(nDTout-1) 
+tnList = [i*dt_fixed for i in range(nDTout)] 
 print tnList
 
 class RelaxationZoneWaveGenerator(AV_base):
