@@ -8,11 +8,11 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 8#6#4#15
+Refinement = 2#6#4#15
 genMesh=True
 useOldPETSc=False
-useSuperlu = True
-spaceOrder = 1
+useSuperlu = False#True
+spaceOrder = 2
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 0.0
@@ -493,7 +493,7 @@ ls_sc_beta  = 1.0
 vof_shockCapturingFactor = 0.1
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.3
+rd_shockCapturingFactor  = 0.1
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5
@@ -629,12 +629,12 @@ def outflowPressure(x,t):
 T=10.0
 runCFL = 0.33
 print "T",T
-dt_fixed = period/10.0 
 #dt_fixed = period/100.0
 #dt_fixed = 6.0/1000.0
 dt_init = 1.0e-3
-nDTout = int(T/dt_fixed)
-tnList = [i*dt_fixed for i in range(0,nDTout+1)] 
+nDTout = 200#int(T/dt_fixed)
+dt_fixed = T/float(nDTout-1) 
+tnList = [i*dt_fixed for i in range(nDTout)] 
 print tnList
 
 class RelaxationZoneWaveGenerator(AV_base):

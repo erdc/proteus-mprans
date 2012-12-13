@@ -11,7 +11,7 @@ from proteus.ctransportCoefficients import smoothedHeaviside_integral
 Refinement = 4#4#15
 genMesh=False#True
 useOldPETSc=False
-useSuperlu = False#True
+useSuperlu = False # Set to False for parallel and use petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -54,9 +54,9 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (20.0,
+L = (10.0,
      0.25,
-     1.0)
+     0.61)
 spongeLayer = True
 xSponge = L[0] - 2.25
 ySponge = L[2] - L[2]/2.0
@@ -533,28 +533,28 @@ inflowVelocityMean = (0.0,0.0,0.0)
 waveLength = 5*inflowHeightMean #
 period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
 k=(2.0*pi/waveLength,0.0,0.0)	# add non-zero ky
-omega = np.sqrt(-g[2]*k*np.tanh(k*inflowHeightMean)) # define for kh=O(1)
+omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*inflowHeightMean)) # define for kh=O(1)
 amplitude = 0.1*inflowHeightMean
 
 # Wave Field Object
-#waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
-waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+#waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
-#waveField = wm.StokesWave(g,amplitude,omega,k,inflowHeightMean)
+#waveField = wm.StokesWave(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 
 def waveHeight(x,t):
-    return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
-#    return inflowHeightMean + waveField.height(x,t)
+#    return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
+    return inflowHeightMean + waveField.height(x,t)
 
 def waveVelocity_u(x,t):
-    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k[0]*x[0])/(k[0]*inflowHeightMean)
+#    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k[0]*x[0])/(k[0]*inflowHeightMean)
 #    z = x[2] - inflowHeightMean
-#    return inflowVelocityMean[0] + waveField.velocity_u(x,t)
+    return inflowVelocityMean[0] + waveField.velocity_u(x,t)
 
 def waveVelocity_w(x,t):
-    z = x[2] - inflowHeightMean
-    return inflowVelocityMean[2] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k[0]*x[0])/inflowHeightMean
-#    return inflowVelocityMean[2] + waveField.velocity_w(x,t)
+#    z = x[2] - inflowHeightMean
+#    return inflowVelocityMean[2] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k[0]*x[0])/inflowHeightMean
+    return inflowVelocityMean[2] + waveField.velocity_w(x,t)
 ####
 
 def wavePhi(x,t):
@@ -606,8 +606,8 @@ def outflowPressure(x,t):
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 # Time 
-T=period*20
-runCFL = 0.25
+T=period*2#10
+runCFL = 0.1
 print "T",T
 dt_fixed = period/25.0 
 #dt_fixed = period/100.0

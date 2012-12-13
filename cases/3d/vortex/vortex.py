@@ -2,7 +2,7 @@
 parallel = True#False
 linearSmoother = None
 #compute mass balance statistics or not
-checkMass=True
+checkMass=False#True
 #number of space dimensions
 nd=3
 #time integration, not relevant if using BDF with cfl timestepping

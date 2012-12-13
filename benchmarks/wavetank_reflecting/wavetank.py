@@ -8,10 +8,10 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 4#4#15
+Refinement = 1#4#15
 genMesh=True
-useOldPETSc=False
-useSuperlu = True
+useOldPETSc= False
+useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -54,9 +54,10 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (10.0,
+depthFactor=1.0#16.0  # ...TODO: remove depthFactor after debugging
+L = (40.0,
      0.25,
-     0.61)
+     depthFactor*0.61)
 spongeLayer = True
 xSponge = L[0]/3.0#L[0] - 2.25
 xRelaxCenter = xSponge/2.0
@@ -70,10 +71,11 @@ leveeHeightDownstream = 0.0#0.25
 leveeSlope = 1.0/2.0
 bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
-quasi2D = True#True
+quasi2D = True#False # set it to false if you want to run full 3D
 #veg=True; levee=False; spongeLayer=False
 veg=False; levee=False; spongeLayer=True; slopingSpongeLayer=False;
-nLevels = 1
+nLevels = 1 # cannot support now nLevel>1 when running in parallel
+
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
@@ -493,7 +495,7 @@ ls_sc_beta  = 1.0
 vof_shockCapturingFactor = 0.1
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.3
+rd_shockCapturingFactor  = 0.9
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5
@@ -529,50 +531,80 @@ outflowVelocity = (0.0,0.0,0.0)#not used for now
 inflowHeightMean = 0.5*L[2]
 inflowVelocityMean = (0.0,0.0,0.0)
 
-waveLength = xSponge #
-period = waveLength/sqrt((-g[2])*inflowHeightMean) #meters
-omega = 2.0*pi/period
+regime = 30.0 # if regime > 25 ==> shallow water, < 4 ==> deep water, between ==> finite depth
+waveLength = regime*inflowHeightMean/depthFactor # xSponge
 k=(2.0*pi/waveLength,0.0,0.0)
-amplitude = 0.3*inflowHeightMean
+# NOTE: For Shallow Water Limit:  h < waveLength/25 ==> omega ~ sqrt(g*k^2*h) ~ 2*pi/period (no dispersion)
+#       For Deep Water Limit:     h > waveLength/4  ==> omega ~ sqrt(g*k)
+#       For Finite Depth: waveLength/25 < h < waveLength/4 ==> omega = sqrt(g*k*tanh(k*h))
+if inflowHeightMean < (waveLength*25.0):
+    omega = np.sqrt(-g[2]*inflowHeightMean)*k[0]
+    df_dk = -g[2]*2.0*k[0]*inflowHeightMean
+elif inflowHeightMean > (waveLength*4.0):
+    omega = np.sqrt(-g[2]*k[0])
+    df_dk = -g[2]
+else:
+    omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*inflowHeightMean))
+    df_dk = -g[2]*( np.tanh(k[0]*inflowHeightMean) + k[0]*inflowHeightMean/np.cosh(k[0]*inflowHeightMean)**2 )
+
+# Setting desired level on nonlinearity: 
+# ... epsilon ~ 0.1 ==> weakly nonlinear, epsilon ~ 0.5 ==> highly nonlinear
+epsilon = 0.05 # 0.01,0.02,0.05,0.1,0.15,0.2,0.4 # wave steepness
+factor = epsilon * regime/(2*np.pi) # factor == amplitude/depth 
+amplitude = inflowHeightMean*factor
+period = 2.0*pi/omega
+
+# Group Velocity ==> d/dk{omega} = f'(k)/(2*omega), where f'(k)=d/dk{omega(k)^2}
+groupVelocity = df_dk / (2.0*omega)
+
+# Add random phase
+randomPhase = False
 
 # Wave Field Object
-#waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
-#waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
+#waveField = wm.true_Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
+#waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
 #waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
+#waveField = wm.StokesWave(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 
-c_soliton = sqrt(fabs(g[2])*(inflowHeightMean+amplitude))
+#c_soliton = sqrt(fabs(g[2])*(inflowHeightMean+amplitude))
 def waveHeight(x,t):
-    T = min(t,100) - 4.0
-    return inflowHeightMean + amplitude/cosh(sqrt(3.0*amplitude/(4.0*inflowHeightMean**3)) * (x[0] - c_soliton*T))**2
+    #T = min(t,100) - 4.0
+    #return inflowHeightMean + amplitude/cosh(sqrt(3.0*amplitude/(4.0*inflowHeightMean**3)) * (x[0] - c_soliton*T))**2
     #return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
-#    return inflowHeightMean + waveField.height(x,t)
+    return inflowHeightMean + waveField.height(x,t)
 
 def waveVelocity_u(x,t):
-    return c_soliton*(waveHeight(x,t)-inflowHeightMean)/waveHeight(x,t)
-#z = x[2] - inflowHeightMean
-#return inflowVelocityMean[0] + omega*amplitude*cosh(k[0]*(z + inflowHeightMean))*sin(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
-#    z = x[2] - inflowHeightMean
-#    return inflowVelocityMean[0] + waveField.velocity_u(x,t)
+    #return c_soliton*(waveHeight(x,t)-inflowHeightMean)/waveHeight(x,t)
+    #z = x[2] - inflowHeightMean
+    #return inflowVelocityMean[0] + omega*amplitude*cosh(k[0]*(z + inflowHeightMean))*sin(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
+    return inflowVelocityMean[0] + waveField.velocity_u(x,t)
 
-def waveVelocity_w(x,t):
+def waveVelocity_v(x,t):
     return 0.0
     #z = x[2] - inflowHeightMean
+    #return inflowVelocityMean[2] + waveField.velocity_v(x,t)
+
+def waveVelocity_w(x,t):
+    #return 0.0
+    #z = x[2] - inflowHeightMean
     #return inflowVelocityMean[2] + omega*amplitude*sinh(k[0]*(z + inflowHeightMean))*cos(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
-#    return inflowVelocityMean[2] + waveField.velocity_w(x,t)
+    return inflowVelocityMean[2] + waveField.velocity_w(x,t)
+
 ####
 
 def wavePhi(x,t):
     return x[2] - waveHeight(x,t)
 
 def wavePhi_init(x,t):
-    return x[2] - inflowHeightMean
+    return wavePhi(x,t) # interface is initialized at t=0 (not flat) 
+    #return x[2] - inflowHeightMean # mean/flat initial surface profile
 
 def waveVF(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t))
 
 def waveVF_init(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi_init(x,t))
-
 
 def twpflowVelocity_u(x,t):
     waterspeed = waveVelocity_u(x,t)
@@ -591,11 +623,19 @@ def twpflowVelocity_w(x,t):
 
 #twpflowVelocity_u_init = twpflowVelocity_u
 def twpflowVelocity_u_init(x,t):
-    return 0.0
+    #return 0.0 # for flat initial mean water surface
+    return twpflowVelocity_u(x,t)
+    #return inflowVelocityMean[0] + waveField.velocity_u(x,t)
+
 def twpflowVelocity_v_init(x,t):
-    return 0.0
+    #return 0.0 # for flat initial surface
+    return twpflowVelocity_v(x,t)
+    #return inflowVelocityMean[0] + waveField.velocity_v(x,t)
+
 def twpflowVelocity_w_init(x,t):
-    return 0.0
+    #return 0.0 # for flat initial surface
+    return twpflowVelocity_w(x,t)
+    #return inflowVelocityMean[0] + waveField.velocity_w(x,t)
 
 def twpflowFlux(x,t):
     return -twpflowVelocity_u(x,t)
@@ -611,8 +651,8 @@ def twpflowPressure(x,t):
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 def twpflowPressure_init(x,t):
     p_L = L[2]*rho_1*g[2]
-    phi_L = L[2] - inflowHeightMean
-    phi = x[2] - inflowHeightMean
+    phi_L = L[2] - waveHeight(x,t)#inflowHeightMean
+    phi = x[2] - waveHeight(x,t)#inflowHeightMean
     return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 #    z = x[2] - inflowHeightMean
@@ -620,21 +660,22 @@ def twpflowPressure_init(x,t):
 
 def outflowPressure(x,t):
     p_L = L[2]*rho_1*g[2]
-    phi_L = L[2] - outflowHeight
-    phi = x[2] - outflowHeight
+    phi_L = L[2] - waveHeight(x,t)#outflowHeight
+    phi = x[2] - waveHeight(x,t)#outflowHeight
     return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
-# Time 
-T=period*20
+# Computation Time for Wave(s) to return to wave maker (based on groupVelocity)
+# ...TODO: remove debugFactor when done debugging 
+debugFactor=0.1
+T=3.21# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
 runCFL = 0.1
-print "T",T
-dt_fixed = period/10.0 
-#dt_fixed = period/100.0
-#dt_fixed = 6.0/1000.0
+print "Total Time of Computation is: ",T
+dt_fixed = period/100.0
 dt_init = 1.0e-3
 nDTout = int(T/dt_fixed)
-tnList = [i*dt_fixed for i in range(0,nDTout+1)] 
+dt_init = min(dt_init,0.5*dt_fixed)
+tnList = [0.0,dt_init]+[i*dt_fixed for i in range(1,nDTout+1)] 
 print tnList
 
 class RelaxationZoneWaveGenerator(AV_base):

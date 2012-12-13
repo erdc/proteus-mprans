@@ -139,8 +139,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             #self.vofModel.q[('u',0)] += self.massCorrModel.q[('r',0)]
             #####print "********************max VOF************************",max(self.vofModel.q[('u',0)].flat[:])
         copyInstructions = {}
-	
-	self.lsModel.computeWaterline(t)
+	#cek hack
+	#self.lsModel.computeWaterline(t)
 	
 	
 	

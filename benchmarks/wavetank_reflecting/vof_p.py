@@ -54,3 +54,10 @@ class VF_IC:
         return waveVF_init(x,t)
 
 initialConditions  = {0:VF_IC()}
+
+class VF_Ex:
+    def uOfXT(self,x,t):
+        return waveVF(x,t) # defined in wavetank.py
+   
+analyticalSolution = {0:VF_Ex()}
+#AnaylyticSolutions = {0:VF_Ex()}

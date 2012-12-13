@@ -2,7 +2,6 @@ from proteus import *
 from twp_navier_stokes_p import *
 from dambreak import *
 
-#timeIntegration = BackwardEuler
 timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_controller
 
@@ -34,9 +33,13 @@ else:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
 
+if useSuperlu:
+    multilevelLinearSolver = LU
+    levelLinearSolver      = LU
+
 linear_solver_options_prefix = 'rans2p_'
 levelNonlinearSolverConvergenceTest = 'r'
-#linearSolverConvergenceTest         = 'r-true'
+linearSolverConvergenceTest         = 'r-true'
 
 tolFac = 0.0
 nl_atol_res = 1.0e-6
