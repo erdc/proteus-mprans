@@ -8,10 +8,10 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 2#4#15
+Refinement = 5#4#15
 genMesh=True
 useOldPETSc= False
-useSuperlu = True # set to False if running in parallel with petsc.options
+useSuperlu = False#True # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -54,7 +54,7 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-depthFactor=1.0#16.0  # ...TODO: remove depthFactor after debugging
+depthFactor=32.0#16.0  # ...TODO: remove depthFactor after debugging
 L = (40.0,
      0.25,
      depthFactor*0.61)
@@ -583,7 +583,7 @@ def waveVelocity_u(x,t):
 def waveVelocity_v(x,t):
     return 0.0
     #z = x[2] - inflowHeightMean
-    #return inflowVelocityMean[2] + waveField.velocity_v(x,t)
+    #return inflowVelocityMean[1] + waveField.velocity_v(x,t)
 
 def waveVelocity_w(x,t):
     #return 0.0
@@ -668,7 +668,7 @@ def outflowPressure(x,t):
 # Computation Time for Wave(s) to return to wave maker (based on groupVelocity)
 # ...TODO: remove debugFactor when done debugging 
 debugFactor=0.1
-T=3.21# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
+T=1.00# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
 runCFL = 0.1
 print "Total Time of Computation is: ",T
 dt_fixed = period/100.0
