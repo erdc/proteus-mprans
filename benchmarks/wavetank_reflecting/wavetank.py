@@ -1,17 +1,21 @@
 from math import *
+import sys
+sys.path.append('/Users/mattmalej/proteus-mprans/benchmarks/wavetak_reflecting')
+import waveModules_Matt as wm
+
 import proteus.MeshTools
 import numpy as np
-import waveModules_Matt as wm
 from proteus import Domain
 from proteus.default_n import *   
 from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
+
    
 #  Discretization -- input options  
-Refinement = 5#4#15
+Refinement = 1#4#15
 genMesh=True
 useOldPETSc= False
-useSuperlu = False#True # set to False if running in parallel with petsc.options
+useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -54,7 +58,7 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-depthFactor=32.0#16.0  # ...TODO: remove depthFactor after debugging
+depthFactor=16.0#16.0  # ...TODO: remove depthFactor after debugging
 L = (40.0,
      0.25,
      depthFactor*0.61)
@@ -550,7 +554,7 @@ else:
 # Setting desired level on nonlinearity: 
 # ... epsilon ~ 0.1 ==> weakly nonlinear, epsilon ~ 0.5 ==> highly nonlinear
 epsilon = 0.05 # 0.01,0.02,0.05,0.1,0.15,0.2,0.4 # wave steepness
-factor = epsilon * regime/(2*np.pi) # factor == amplitude/depth 
+factor = epsilon*regime/(2*np.pi*depthFactor) # factor == amplitude/depth 
 amplitude = inflowHeightMean*factor
 period = 2.0*pi/omega
 
