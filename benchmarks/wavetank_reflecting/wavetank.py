@@ -1,11 +1,15 @@
 from math import *
+import sys
+sys.path.append('/Users/mattmalej/proteus-mprans/benchmarks/wavetak_reflecting')
+import waveModules_Matt as wm
+
 import proteus.MeshTools
 import numpy as np
-import waveModules_Matt as wm
 from proteus import Domain
 from proteus.default_n import *   
 from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
+
    
 #  Discretization -- input options  
 Refinement = 1#4#15
@@ -54,7 +58,7 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-depthFactor=1.0#16.0  # ...TODO: remove depthFactor after debugging
+depthFactor=16.0#16.0  # ...TODO: remove depthFactor after debugging
 L = (40.0,
      0.25,
      depthFactor*0.61)
@@ -550,7 +554,7 @@ else:
 # Setting desired level on nonlinearity: 
 # ... epsilon ~ 0.1 ==> weakly nonlinear, epsilon ~ 0.5 ==> highly nonlinear
 epsilon = 0.05 # 0.01,0.02,0.05,0.1,0.15,0.2,0.4 # wave steepness
-factor = epsilon * regime/(2*np.pi) # factor == amplitude/depth 
+factor = epsilon*regime/(2*np.pi*depthFactor) # factor == amplitude/depth 
 amplitude = inflowHeightMean*factor
 period = 2.0*pi/omega
 
@@ -583,7 +587,7 @@ def waveVelocity_u(x,t):
 def waveVelocity_v(x,t):
     return 0.0
     #z = x[2] - inflowHeightMean
-    #return inflowVelocityMean[2] + waveField.velocity_v(x,t)
+    #return inflowVelocityMean[1] + waveField.velocity_v(x,t)
 
 def waveVelocity_w(x,t):
     #return 0.0
@@ -668,7 +672,7 @@ def outflowPressure(x,t):
 # Computation Time for Wave(s) to return to wave maker (based on groupVelocity)
 # ...TODO: remove debugFactor when done debugging 
 debugFactor=0.1
-T=3.21# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
+T=1.00# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
 runCFL = 0.1
 print "Total Time of Computation is: ",T
 dt_fixed = period/100.0

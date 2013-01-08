@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/Users/mattmalej/proteus-mprans/benchmarks/wavetank_reflecting')
+from test_waveModules_p import *
 import waveModules_Matt as wm
 import JONSWAP_p as JS
 import numpy as np
@@ -13,28 +16,6 @@ except:
 
 """ Testing different analytic solution for wavetank benchmark case."""
 
-g = (0.0,0.0,-9.81)        # gravity
-L = (10.0,0.25,0.61)#(20.0,0.25,1.0)         # L[0]=20.0 ...tank dimensions
-
-# Water                                                                  
-rho_0 = 998.2
-nu_0  = 1.004e-6
-
-# Air                                                                    
-rho_1 = 1.205
-nu_1  = 1.500e-5
- 
-inflowHeightMean = 0.5*L[2]
-inflowVelocityMean = (0.0,0.0,0.0)
-waveLength = 5*inflowHeightMean
-amplitude = 0.1*inflowHeightMean
-
-A = amplitude                # amplitude
-k = (2*np.pi/waveLength,0.0,0.0)
-h = 0.5*L[2]
-omega = np.sqrt(-g[2]*k[0]*np.tanh(k[0]*h))
-period = 2*np.pi/omega
-
 #see nose docs for more complex testing
 
 def test_Linear2D(showPlots=False):
@@ -47,7 +28,7 @@ def test_Linear2D(showPlots=False):
     #[xx, tt] = np.meshgrid(x,t) 
     
     # Wave Field Object
-    waveTest = wm.Linear2D(A,omega,k,h,rho_0,rho_1)
+    waveTest = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
 
     # Plot result if appropriate
     #assert correctResult.all() == result.all(), "Linear2D.height returned %f should be %f" % (result,correctResult)
@@ -55,7 +36,7 @@ def test_Linear2D(showPlots=False):
     fig = plt.figure()
     y = waveTest.height(x,t[0]) 
     line, = plt.plot(x[0],y)
-    plt.axis((0.0, L[0], 0, L[2]))
+    plt.axis((0.0, L[0], -1.0, 1.0))
 
     def animate(i):
         line.set_ydata(waveTest.height(x,t[i]))  # update the data
@@ -68,7 +49,6 @@ def test_Linear2D(showPlots=False):
     try:
         anim = animation.FuncAnimation(fig, animate, np.arange(1, 200), init_func=init,
             interval=25, blit=True)    
-
         #anim.save('monochromatic_wave_BC_animation.mov', fps=20)
         plt.show()
     except:
@@ -278,9 +258,9 @@ def test_waveJONSWAP(showPlots=False):
     
 if __name__ == '__main__':
     print "The program name is: ", __name__
-    #test_Linear2D(showPlots=True)
+    test_Linear2D(showPlots=True)
     #test_true_Linear2D(showPlots=True)
     #test_WaveGroup(showPlots=True)
-    test_Solitary(showPlots=True)
-    test_StokesWave(showPlots=True)
-    test_waveJONSWAP(showPlots=True)
+    #test_Solitary(showPlots=True)
+    #test_StokesWave(showPlots=True)
+    #test_waveJONSWAP(showPlots=True)
