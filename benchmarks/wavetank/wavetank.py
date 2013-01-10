@@ -8,8 +8,8 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 1#4#15
-genMesh=True
+Refinement = 4#4#15
+genMesh=False#True
 useOldPETSc=False
 useSuperlu = False # Set to False for parallel and use petsc.options
 spaceOrder = 1
