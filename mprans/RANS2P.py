@@ -954,13 +954,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             for cj in range(self.nc):
                 self.dirichletConditionsForceDOF[cj] = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False)
 
-        for cj in range(self.nc):
-	    tmp = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False)
-            print "RANS2P init ",cj, len(tmp.DOFBoundaryConditionsDict)
-	    tmp = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False,allowNodalMaterialBoundaryTypes=False)		
-	    print "RANS2P init ",cj, len(tmp.DOFBoundaryConditionsDict)
- 
-
         compKernelFlag = 0
         if self.coefficients.useConstantH:
             self.elementDiameter = self.mesh.elementDiametersArray.copy()
@@ -1459,7 +1452,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 
 
 	
-	print "RANS2P Force Faces",len(forceExtractionFaces)
+	#print "RANS2P Force Faces",len(forceExtractionFaces)
 
 	#force  = numpy.zeros(3,'d') 
 	#moment = numpy.zeros(3,'d')

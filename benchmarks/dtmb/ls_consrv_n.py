@@ -1,18 +1,17 @@
 from proteus import *
-from DTMB import *
-from vof_p import *
+from dtmb import *
+from ls_consrv_p import *
 
-timeIntegration = BackwardEuler
-timeIntegration = BackwardEuler_cfl
-stepController  = Min_dt_controller
+timeIntegrator  = ForwardIntegrator
+timeIntegration = NoIntegration
 
 femSpaces = {0:basis}
 
+subgridError      = None
 massLumping       = False
-numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
+numericalFluxType = DoNothing
 conservativeFlux  = None
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)
-subgridError      = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)
+shockCapturing    = None
 
 fullNewtonFlag = True
 multilevelNonlinearSolver = Newton
@@ -34,12 +33,11 @@ if useSuperlu:
     multilevelLinearSolver = LU
     levelLinearSolver      = LU
 
-linear_solver_options_prefix = 'vof_'
-levelNonlinearSolverConvergenceTest = 'r'
-linearSolverConvergenceTest         = 'r-true'
+linear_solver_options_prefix = 'mcorr_'
+linearSolverConvergenceTest  = 'r-true'
 
-tolFac      = 0.0
-nl_atol_res = 1.0e-3
+tolFac = 0.0
+nl_atol_res = 1.0e-2
 
 maxNonlinearIts = 10
 maxLineSearches = 0

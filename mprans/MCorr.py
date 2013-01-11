@@ -383,7 +383,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                                         self.mesh.nElementBoundaries_element*
                                                         self.nElementBoundaryQuadraturePoints_elementBoundary)
         if type(self.u[0].femSpace) == C0_AffineLinearOnSimplexWithNodalBasis:
-            print self.nQuadraturePoints_element
+            #print self.nQuadraturePoints_element
             if self.nSpace_global == 3:
                 assert(self.nQuadraturePoints_element == 5)
             elif self.nSpace_global == 2:
@@ -391,7 +391,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             elif self.nSpace_global == 1:
                 assert(self.nQuadraturePoints_element == 3)
 
-            print self.nElementBoundaryQuadraturePoints_elementBoundary
+            #print self.nElementBoundaryQuadraturePoints_elementBoundary
             if self.nSpace_global == 3:
                 assert(self.nElementBoundaryQuadraturePoints_elementBoundary == 4)
             elif self.nSpace_global == 2:
