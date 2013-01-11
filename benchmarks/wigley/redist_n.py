@@ -40,8 +40,12 @@ linearSmoother = None
 
 matrix = SparseMatrix
 
-multilevelLinearSolver = PETSc
-levelLinearSolver = PETSc
+if not use_petsc4py:
+    multilevelLinearSolver = PETSc
+    levelLinearSolver      = PETSc
+else:
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver      = KSP_petsc4py
 
 linear_solver_options_prefix = 'rdls_'
 

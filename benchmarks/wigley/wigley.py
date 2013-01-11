@@ -113,6 +113,7 @@ domainBottom = -2.5
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.element
 nLayersOfOverlapForParallel = 0
+use_petsc4py=True#Original PETSc solvers do not appear to be working: 01/10/13 
 
 quad_order = 2
 

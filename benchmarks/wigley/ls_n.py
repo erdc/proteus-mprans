@@ -33,8 +33,12 @@ maxLineSearches = 0
 
 matrix = SparseMatrix
 
-multilevelLinearSolver = PETSc
-levelLinearSolver = PETSc
+if not use_petsc4py:
+    multilevelLinearSolver = PETSc
+    levelLinearSolver      = PETSc
+else:
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver      = KSP_petsc4py
 
 
 nonlinearSolverConvergenceTest = 'rits'
