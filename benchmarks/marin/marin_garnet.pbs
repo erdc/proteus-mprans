@@ -1,20 +1,17 @@
 #!/bin/bash
 #PBS -A ERDCV00898ENQ
 #PBS -l application=proteus
-#PBS -l walltime=01:00:00
+#PBS -l walltime=024:00:00
 #PBS -l ncpus=128
-#PBS -q debug
+#PBS -q standard
 #PBS -N marin
 #PBS -j oe
-#PBS -V
 #PBS -m eba
 #PBS -M cekees@gmail.com
-##PBS -l ccm=1 #does not work
-##PBS -q R1537762
 # nnodes = ncpus/32
 source /opt/modules/default/etc/modules.sh
 source ${PROTEUS}/envConfig/garnet.gnu.bash
-export MPICH_RANK_REORDER_METHOD=2
+export MPICH_RANK_REORDER_METHOD=0
 cd $PBS_O_WORKDIR
 mkdir $WORKDIR/marin.$PBS_JOBID
 # n = N*nnodes = N*ncpus/32

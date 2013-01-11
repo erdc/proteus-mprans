@@ -1,6 +1,6 @@
 from proteus import *
 from redist_p import *
-from DTMB import *
+from dtmb import *
 
 timeIntegration = BackwardEuler
 stepController = Osher_PsiTC_controller2	     

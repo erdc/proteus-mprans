@@ -1,6 +1,6 @@
 from proteus import *
 from twp_navier_stokes_p import *
-from DTMB import *
+from dtmb import *
 
 timeIntegration = BackwardEuler
 stepController  = Min_dt_controller
