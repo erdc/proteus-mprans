@@ -1,14 +1,10 @@
 """
-A helper module for doing air/water flow around a moving rigid cylinder in 2D
+A helper module for doing air/water flow around the DTMB 5414 hull form
 """
 from math import *
 from proteus import *
 import numpy
-#----wavetank info-----
-from math import *
 import proteus.MeshTools
-import numpy as np
-import waveModules_Matt as wm
 from proteus import Domain
 from proteus.Profiling import logEvent
 from proteus.default_n import *   
@@ -43,14 +39,147 @@ RBR_linCons  = [1,1,0]
 RBR_angCons  = [1,0,1]  
 
 
+L = (20.0,15.0,5.75)
+x_ll = (-5.0,-7.5,-3.25)
 waterLevel   = 0.241984 
 
 nLevels = 1
-domain = Domain.MeshTetgenDomain(fileprefix="mesh")
-boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
 
-domainBottom = -2.5
-L = ()
+he = L[2]/11 #16 cores
+he *=0.5 #128 
+#he *=0.5 #1024
+#vessel = 5414
+#genMesh=False
+vessel = 'wigley'
+genMesh=True
+#vessel = None
+#genMesh=True
+
+boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
+if vessel is 5414:
+    domain = Domain.MeshTetgenDomain(fileprefix="mesh")
+    domain.boundaryTags = boundaryTags
+else:
+    vertices=[[x_ll[0],x_ll[1],x_ll[2]],#0
+              [x_ll[0]+L[0],x_ll[1],x_ll[2]],#1
+              [x_ll[0]+L[0],x_ll[1]+L[1],x_ll[2]],#2
+              [x_ll[0],x_ll[1]+L[1],x_ll[2]],#3
+              [x_ll[0],x_ll[1],x_ll[2]+L[2]],#4
+              [x_ll[0]+L[0],x_ll[1],x_ll[2]+L[2]],#5
+              [x_ll[0]+L[0],x_ll[1]+L[1],x_ll[2]+L[2]],#6
+              [x_ll[0],x_ll[1]+L[1],x_ll[2]+L[2]]]#7
+    vertexFlags=[boundaryTags['left'],
+                 boundaryTags['right'],
+                 boundaryTags['right'],
+                 boundaryTags['left'],
+                 boundaryTags['left'],
+                 boundaryTags['right'],
+                 boundaryTags['right'],
+                 boundaryTags['left']]
+    facets=[[[0,1,2,3]],
+            [[0,1,5,4]],
+            [[1,2,6,5]],
+            [[2,3,7,6]],
+            [[3,0,4,7]],
+            [[4,5,6,7]]]
+    facetFlags=[boundaryTags['bottom'],
+                boundaryTags['front'],
+                boundaryTags['right'],
+                boundaryTags['back'],
+                boundaryTags['left'],
+                boundaryTags['top']]
+    regions=[[x_ll[0]+0.5*L[0],x_ll[1]+0.5*L[1],x_ll[2]+0.5*L[2]]]
+    regionFlags=[1.0]
+    holes=[]
+    if vessel is 'wigley':
+        hull_length = 5.8 - (-0.5)
+        hull_beam = 0.5 - (-0.5)
+        hull_draft = 0.7 - (-0.1)
+        hull_center = (-0.5+0.5*hull_length,
+                       -0.5+0.5*hull_beam,
+                       -0.1+0.5*hull_draft)
+        n_points_length = int(ceil(hull_length/he))
+        n_points_draft = int(ceil(hull_draft/he))
+        dx = hull_length/float(n_points_length-1)
+        dz = hull_draft/float(n_points_draft-1)
+        #grid on right half of hull
+        for i in range(n_points_length):
+            for j in range(n_points_draft):
+                x = i*dx 
+                z = j*dz
+                y = 0.5*hull_beam*(1.0 - (2.0*(x-0.5*hull_length)/hull_length)**2) * (1.0 - ((hull_draft-z)/hull_draft)**2)
+                vertices.append([x+hull_center[0]-0.5*hull_length,
+                                 y+hull_center[1],
+                                 z+hull_center[2]-0.5*hull_draft])
+                vertexFlags.append(boundaryTags['obstacle'])
+        def vN_right(i,j):
+            return 8 + i*n_points_draft+j
+        for i in range(n_points_length-1):
+            for j in range(n_points_draft-1):
+                if i < n_points_length/2:
+                    facets.append([[vN_right(i,j),vN_right(i+1,j+1),vN_right(i+1,j)]])
+                    facetFlags.append(boundaryTags['obstacle'])
+                    facets.append([[vN_right(i,j),vN_right(i,j+1),vN_right(i+1,j+1)]])
+                    facetFlags.append(boundaryTags['obstacle'])
+                else:
+                    facets.append([[vN_right(i,j),vN_right(i,j+1),vN_right(i+1,j)]])
+                    facetFlags.append(boundaryTags['obstacle'])
+                    facets.append([[vN_right(i,j+1),vN_right(i+1,j+1),vN_right(i+1,j)]])
+                    facetFlags.append(boundaryTags['obstacle'])                
+        #grid on left half of hull
+        for i in range(1,n_points_length-1):
+            for j in range(1,n_points_draft):
+                x = i*dx
+                z = j*dz
+                y = 0.5*hull_beam*(1.0 - (2.0*(x-0.5*hull_length)/hull_length)**2)*(1.0 - ((hull_draft-z)/hull_draft)**2)
+                vertices.append([x+hull_center[0]-0.5*hull_length,
+                                 hull_center[1]-y,
+                                 z+hull_center[2]-0.5*hull_draft])
+                vertexFlags.append(boundaryTags['obstacle'])
+        def vN_left(i,j):
+            if i== 0 or j==0:
+                return vN_right(i,j)
+            if i == (n_points_length-1):# or j==(n_points_draft-1):
+                return vN_right(i,j)
+            else:
+                return 8 + n_points_length*n_points_draft+(i-1)*(n_points_draft-1)+j-1
+        for i in range(n_points_length-1):
+            for j in range(n_points_draft-1):
+                if i < n_points_length/2:
+                    facets.append([[vN_left(i,j),vN_left(i+1,j+1),vN_left(i+1,j)]])
+                    facetFlags.append(boundaryTags['obstacle'])
+                    facets.append([[vN_left(i,j),vN_left(i,j+1),vN_left(i+1,j+1)]])
+                    facetFlags.append(boundaryTags['obstacle'])
+                else:
+                    facets.append([[vN_left(i,j),vN_left(i,j+1),vN_left(i+1,j)]])
+                    facetFlags.append(boundaryTags['obstacle'])
+                    facets.append([[vN_left(i,j+1),vN_left(i+1,j+1),vN_left(i+1,j)]])
+                    facetFlags.append(boundaryTags['obstacle'])                
+        topFacet=[]
+        for i in range(n_points_length):
+            topFacet.append(vN_right(i,n_points_draft-1))
+        for i in range(n_points_length-1,0,-1):
+            topFacet.append(vN_left(i,n_points_draft-1))
+        facets.append([topFacet])
+        facetFlags.append(boundaryTags['obstacle'])
+        #for v in vertices: print v
+        #for f in facets: print f
+        holes.append(hull_center)
+    domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
+                                                 vertexFlags=vertexFlags,
+                                                 facets=facets,
+                                                 facetFlags=facetFlags,
+                                                 regions=regions,
+                                                 regionFlags=regionFlags,
+                                                 holes=holes)
+    #go ahead and add a boundary tags member 
+    domain.boundaryTags = boundaryTags
+    if vessel:
+        domain.writePoly("mesh_"+vessel)
+    else:
+        domain.writePoly("meshNoVessel")
+    triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
+
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
@@ -61,13 +190,11 @@ quad_order = 2
 # Boundary conditions and other flags
 #----------------------------------------------------
 openTop = True
-openSides = True
+openSides = False
 smoothBottom = False
 smoothObstacle = False
 rampInitialConditions = False
-
 movingDomain=False
-
 checkMass=False
 applyCorrection=True
 applyRedistancing=True
@@ -81,12 +208,11 @@ Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um*rho_0/nu_0
 
 residence_time = hull_length/Um
-dt_init=0.000025
+dt_init=0.001
 T = 5.0*residence_time
-nDTout=500
+nDTout=100
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
-he = 5.0
 
 #----------------------------------------------------
 # Numerical parameters
@@ -94,19 +220,17 @@ he = 5.0
 
 useRBLES   = 0.0
 useMetrics = 0.0
-ns_shockCapturingFactor=0.9
+ns_shockCapturingFactor=0.3
 
-ls_shockCapturingFactor=0.9
+ls_shockCapturingFactor=0.3
 ls_sc_uref = 1.0
 ls_sc_beta = 1.5
 
-vof_shockCapturingFactor=0.9
+vof_shockCapturingFactor=0.3
 vof_sc_uref = 1.0
 vof_sc_beta = 1.5
 
-rd_shockCapturingFactor=0.9
-
-epsFact_consrv_diffusion=10.0
+rd_shockCapturingFactor=0.3
 
 
 #----------------------------------------------------
@@ -122,6 +246,7 @@ epsFact_redistance       = epsFact
 epsFact_curvature        = epsFact 
 epsFact_consrv_heaviside = epsFact 
 epsFact_consrv_dirac     = epsFact 
+epsFact_consrv_diffusion=10.0
 epsFact_vof              = epsFact 
 
 #----------------------------------------------------
@@ -132,14 +257,14 @@ wave_height = 0.002   * wave_length
 wave_angle  = 0.0     * pi/180.0
 
 #----------------------------------------------------
-water_depth  = waterLevel-domainBottom
+water_depth  = waterLevel-x_ll[2]
 wave_length  = 2.0*pi/wave_length      
 wave_periode = sqrt(-g[2]*wave_length*tanh(wave_length/waterLevel))   
 wave_vel_amp = wave_periode*(wave_height/sinh(wave_length*water_depth))       
 
 xy   = lambda x:   cos(wave_angle)*x[0] + sin(wave_angle)*x[1]
 kxwt = lambda x,t: wave_length*(xy(x) - Um*t) - wave_periode*t
-kzh  = lambda x:   wave_length*min(x[2]-domainBottom,water_depth)
+kzh  = lambda x:   wave_length*min(x[2]-x_ll[2],water_depth)
 
 #================================================
 #  Boundary conditon  lambdas
@@ -148,7 +273,6 @@ u_wave   = lambda x,t: wave_vel_amp * cosh(kzh(x)) * cos(kxwt(x,t)) * cos(wave_a
 v_wave   = lambda x,t: wave_vel_amp * cosh(kzh(x)) * cos(kxwt(x,t)) * sin(wave_angle)  
 w_wave   = lambda x,t: wave_vel_amp * sinh(kzh(x)) * sin(kxwt(x,t))      
 noslip   = lambda x,t: 0.0
-
 ls_wave  = lambda x,t: -(wave_height * cos(kxwt(x,t)) + waterLevel - x[2])
 vof_wave = lambda x,t: 1.0 if ls_wave(x,t) > 0.0 else 0.0
 
@@ -182,7 +306,6 @@ nDTout             = %i
 
 #  Discretization -- input options  
 Refinement = 1#4#15
-genMesh=False
 useOldPETSc=False
 useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
@@ -233,12 +356,10 @@ windspeed_v = 0.0
 windspeed_w = 0.0
 
 outflowHeight = waterLevel
-outflowVelocity = (0.0,0.0,0.0)#not used for now
+outflowVelocity = (Um,0.0,0.0)
 
-inflowHeightMean = waterLevel#0.5*L[2]
-inflowVelocityMean = (0.0,0.0,0.0)
-
-rightEndClosed=False
+inflowHeightMean = waterLevel
+inflowVelocityMean = (Um,0.0,0.0)
 
 def waveHeight(x,t):
     return waterLevel
@@ -280,15 +401,12 @@ def twpflowVelocity_w(x,t):
     return H*windspeed_w+(1.0-H)*waterspeed
 
 def twpflowVelocity_u_init(x,t):
-    #return 0.0 # for flat initial mean water surface
     return twpflowVelocity_u(x,t)
 
 def twpflowVelocity_v_init(x,t):
-    #return 0.0 # for flat initial surface
     return twpflowVelocity_v(x,t)
 
 def twpflowVelocity_w_init(x,t):
-    #return 0.0 # for flat initial surface
     return twpflowVelocity_w(x,t)
 
 def twpflowFlux(x,t):
@@ -297,24 +415,23 @@ def twpflowFlux(x,t):
 def outflowVF(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,x[2] - outflowHeight)
 
-Lz = 2.5 - (-3.25)
 
 def twpflowPressure(x,t):
-    p_L = Lz*rho_1*g[2]
-    phi_L = wavePhi((x[0],x[1],Lz),t) 
+    p_L = L[2]*rho_1*g[2]
+    phi_L = wavePhi((x[0],x[1],L[2]),t) 
     phi = wavePhi(x,t)
     return p_L - g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 def twpflowPressure_init(x,t):
-    p_L = Lz*rho_1*g[2]
-    phi_L = Lz - inflowHeightMean
+    p_L = L[2]*rho_1*g[2]
+    phi_L = L[2] - inflowHeightMean
     phi = x[2] - inflowHeightMean
     return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 def outflowPressure(x,t):
-    p_L = Lz*rho_1*g[2]
-    phi_L = Lz - outflowHeight
+    p_L = L[2]*rho_1*g[2]
+    phi_L = L[2] - outflowHeight
     phi = x[2] - outflowHeight
     return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))

@@ -21,7 +21,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
 
 def getDBC_p(x,flag):
     if flag == boundaryTags['top']:
-        return lambda x,t: rho_1*x[2]*g[2]
+        return lambda x,t: twpflowPressure(x,0.0)
     elif flag == boundaryTags['right']:
         return outflowPressure
 
@@ -29,7 +29,7 @@ def getDBC_u(x,flag):
     if flag == boundaryTags['left']:
         return twpflowVelocity_u
     elif flag == boundaryTags['right']:
-        return lambda x,t: outflowVelocity[0]
+        return twpflowVelocity_u
     elif flag == boundaryTags['top']:
         return twpflowVelocity_u
     elif flag == boundaryTags['obstacle']:
@@ -39,9 +39,9 @@ def getDBC_v(x,flag):
     if flag == boundaryTags['left']:
         return twpflowVelocity_v
     elif flag == boundaryTags['right']:
-       return lambda x,t: outflowVelocity[1]
+       return twpflowVelocity_v
     elif flag == boundaryTags['top']:
-        return lambda x,t: windspeed_v
+        return twpflowVelocity_v
     elif flag == boundaryTags['obstacle']:
         return lambda x,t: 0.0
 
@@ -49,7 +49,7 @@ def getDBC_w(x,flag):
     if flag == boundaryTags['left']:
         return twpflowVelocity_w
     elif flag == boundaryTags['right']:
-        return lambda x,t: outflowVelocity[2]
+        return twpflowVelocity_w
     elif flag == boundaryTags['obstacle']:
         return lambda x,t: 0.0
 
@@ -108,23 +108,23 @@ def getAFBC_w(x,flag):
 
 def getDFBC_u(x,flag):
     if flag == boundaryTags['left']:
-        return None
+        return None#weak Dirichlet
     elif flag == boundaryTags['right']:
-        return None
+        return lambda x,t: 0.0#outflow
     elif flag == boundaryTags['top']:
-        return None
+        return lambda x,t: 0.0#outflow
     elif flag == boundaryTags['obstacle']:
         return None
-    else:  #no flux everywhere else
+    else:
         return lambda x,t: 0.0
 
 def getDFBC_v(x,flag):
     if flag == boundaryTags['left']:
         return None
     elif flag == boundaryTags['right']:
-        return None
+        return lambda x,t: 0.0
     elif flag == boundaryTags['top']:
-        return None
+        return lambda x,t: 0.0
     elif flag == boundaryTags['obstacle']:
         return None
     else:  #no flux everywhere else
@@ -136,7 +136,7 @@ def getDFBC_w(x,flag):
     elif flag == boundaryTags['top']:
         return lambda x,t: 0.0
     elif flag == boundaryTags['right']:
-        return None
+        return lambda x,t: 0.0
     elif flag == boundaryTags['obstacle']:
         return None
     else: #no diffusive flux everywhere else

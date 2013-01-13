@@ -425,19 +425,19 @@ namespace proteus
     RANS2P():
       nDOF_test_X_trial_element(nDOF_test_element*nDOF_trial_element),
       ck()
-    {	     std::cout<<"Constructing RANS2P<CompKernelTemplate<"
+	{/*	     std::cout<<"Constructing RANS2P<CompKernelTemplate<"
 		      <<0<<","
 		      <<0<<","
 		      <<0<<","
-		      <<0<<">,"
+		      <<0<<">,"*/
 		    /*  <<nSpaceIn<<","
 		      <<nQuadraturePoints_elementIn<<","
 		      <<nDOF_mesh_trial_elementIn<<","
 		      <<nDOF_trial_elementIn<<","
 		      <<nDOF_test_elementIn<<","
 		      <<nQuadraturePoints_elementBoundaryIn<<">());"*/
-		      <<std::endl<<std::flush;
-    }
+	  /*  <<std::endl<<std::flush; */
+	}
 
     inline double smoothedHeaviside(double eps, double phi)
     {
