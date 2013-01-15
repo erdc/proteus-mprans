@@ -16,7 +16,7 @@ useRBLES   = 0.0
 useMetrics = 0.0
 use_petsc4py=True
 quasi2D = True
-
+use_PlanePoiseuille = False
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -76,7 +76,7 @@ else:
     width = 0.3*upstream_height
     downstream_height=1.0
     upstream_length = 1.0
-    downstream_length = 1.0
+    downstream_length = 5.0
     length = upstream_length+downstream_length
     polyfile = "step3d"
     he = length/float(6.5*Refinement)
@@ -110,10 +110,13 @@ nLayersOfOverlapForParallel = 0
 #----------------------------------------------------
 # Physical coefficients
 #----------------------------------------------------
+Re = 3025.0
+inflow = 1.0
+nu = inflow*(downstream_height-upstream_height)/Re
 
 # Water
 rho_0 = 998.2
-nu_0  = 1.004e-6
+nu_0  = nu
 mu_0 = rho_0*nu_0
 
 # Air
@@ -126,17 +129,15 @@ sigma_01 = 0.0
 # Gravity
 g = [0.0,0.0,0.0]
 
-Re = 10.0
 
 #----------------------------------------------------
 # Time stepping 
 #----------------------------------------------------
 
-inflow = Re*nu_0/upstream_height
 residence_time = length/inflow
-T=10.0*length/inflow
-tnList = [0.0,0.1*residence_time,T]
-tnList = [i*T for i in range(100)]#[0.0,0.5*T,T]
+T=1.0e2#10.0*length/inflow
+#tnList = [0.0,0.1*residence_time,T]
+tnList = [i*T/100. for i in range(101)]#[0.0,0.5*T,T]
 
 
 #----------------------------------------------------
@@ -145,14 +146,26 @@ tnList = [i*T for i in range(100)]#[0.0,0.5*T,T]
 grad_p = -inflow/(upstream_height**2/(8.0*mu_0))
 upstream_start_z = downstream_height - upstream_height
 
-uProfile = AnalyticalSolutions.PlanePoiseuilleFlow_u2(plane_theta=0.0,
-                                                      plane_phi=0.0,
-                                                      v_theta=0.0,
-                                                      v_phi=math.pi/2.0,
-                                                      v_norm=0.0,
-                                                      mu=mu_0,
-                                                      grad_p=grad_p,
-                                                      L=[1.0,1.0,upstream_height])
+class u_flat:
+    def __init__(self,val=inflow,ztop=upstream_height,zbot=0.0,delta_z=0.1):
+        self.val= val; self.ztop = ztop; self.zbot=zbot
+        self.delta_z = delta_z
+    def uOfX(self,x):
+        fact = exp(-(x[2]-self.zbot)*(self.ztop-x[2])/self.delta_z)
+        return self.val*(1.0-fact)
+
+if use_PlanePoiseuille:
+    uProfile = AnalyticalSolutions.PlanePoiseuilleFlow_u2(plane_theta=0.0,
+                                                          plane_phi=0.0,
+                                                          v_theta=0.0,
+                                                          v_phi=math.pi/2.0,
+                                                          v_norm=0.0,
+                                                          mu=mu_0,
+                                                          grad_p=grad_p,
+                                                          L=[1.0,1.0,upstream_height])
+
+else:
+    uProfile = u_flat(val=inflow)
 
 def velRamp(t):
     if t < residence_time:

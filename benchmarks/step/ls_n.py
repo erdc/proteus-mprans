@@ -34,6 +34,6 @@ linearSolverConvergenceTest         = 'rits'
 tolFac = 1e-3
 nl_atol_res = 0.0
 
-maxNonlinearIts = 10
+maxNonlinearIts = 1
 maxLineSearches = 0
 

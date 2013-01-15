@@ -9,7 +9,7 @@ The redistancing equation in the sloshbox test problem.
 
 LevelModelType = RDLS.LevelModel
 
-coefficients = RDLS.Coefficients(applyRedistancing=True,
+coefficients = RDLS.Coefficients(applyRedistancing=False,
                                  epsFact=epsFact_redistance,
                                  nModelId=1,
                                  rdModelId=2,
