@@ -184,7 +184,7 @@ restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
 
-quad_order = 2
+quad_order = 3
 
 #----------------------------------------------------
 # Boundary conditions and other flags
@@ -220,33 +220,34 @@ runCFL = 0.33
 
 useRBLES   = 0.0
 useMetrics = 0.0
-ns_shockCapturingFactor=0.3
+ns_shockCapturingFactor=0.9
 
-ls_shockCapturingFactor=0.3
+ls_shockCapturingFactor=0.9
 ls_sc_uref = 1.0
 ls_sc_beta = 1.5
 
-vof_shockCapturingFactor=0.3
+vof_shockCapturingFactor=0.9
 vof_sc_uref = 1.0
 vof_sc_beta = 1.5
 
-rd_shockCapturingFactor=0.3
+rd_shockCapturingFactor=0.9
 
 
 #----------------------------------------------------
 # Interface width
 #----------------------------------------------------
-epsFact = 1.5
-
-epsFact_redistance = 0.33
+epsFact = 3.0
 
 epsFact_density          = epsFact 
 epsFact_viscosity        = epsFact 
-epsFact_redistance       = epsFact 
 epsFact_curvature        = epsFact 
+
+epsFact_redistance = 0.33
+
 epsFact_consrv_heaviside = epsFact 
 epsFact_consrv_dirac     = epsFact 
 epsFact_consrv_diffusion=10.0
+
 epsFact_vof              = epsFact 
 
 #----------------------------------------------------
@@ -305,7 +306,6 @@ nDTout             = %i
        nDTout))
 
 #  Discretization -- input options  
-Refinement = 1#4#15
 useOldPETSc=False
 useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
@@ -332,12 +332,12 @@ if spaceOrder == 1:
     hFactor=1.0
     if useHex:
 	 basis=C0_AffineLinearOnCubeWithNodalBasis
-         elementQuadrature = CubeGaussQuadrature(nd,2)
-         elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,2)     	 
+         elementQuadrature = CubeGaussQuadrature(nd,3)
+         elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,3)     	 
     else:
     	 basis=C0_AffineLinearOnSimplexWithNodalBasis
-         elementQuadrature = SimplexGaussQuadrature(nd,2)
-         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,2) 	    
+         elementQuadrature = SimplexGaussQuadrature(nd,3)
+         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,3) 	    
 elif spaceOrder == 2:
     hFactor=0.5
     if useHex:    
@@ -386,19 +386,22 @@ def waveVF_init(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi_init(x,t))
 
 def twpflowVelocity_u(x,t):
-    waterspeed = waveVelocity_u(x,t)
-    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    return H*windspeed_u + (1.0-H)*waterspeed
+#    waterspeed = waveVelocity_u(x,t)
+#    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
+#    return H*windspeed_u + (1.0-H)*waterspeed
+    return Um
 
 def twpflowVelocity_v(x,t):
-    waterspeed = waveVelocity_v(x,t)
-    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    return H*windspeed_v+(1.0-H)*waterspeed
+#    waterspeed = waveVelocity_v(x,t)
+#    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
+#    return H*windspeed_v+(1.0-H)*waterspeed
+    return 0.0
 
 def twpflowVelocity_w(x,t):
-    waterspeed = waveVelocity_w(x,t)
-    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
-    return H*windspeed_w+(1.0-H)*waterspeed
+#    waterspeed = waveVelocity_w(x,t)
+#    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
+#    return H*windspeed_w+(1.0-H)*waterspeed
+    return 0.0
 
 def twpflowVelocity_u_init(x,t):
     return twpflowVelocity_u(x,t)
