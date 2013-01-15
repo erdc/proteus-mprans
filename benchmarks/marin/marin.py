@@ -4,11 +4,7 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options    
-<<<<<<< Updated upstream
 Refinement=4
-=======
-Refinement=2
->>>>>>> Stashed changes
 genMesh=True
 spaceOrder=1
 useHex=False

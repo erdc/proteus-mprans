@@ -49,7 +49,17 @@ domain = Domain.MeshTetgenDomain(fileprefix="mesh")
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
 L=(2.75,2.0, 0.8)
 Refinement = 4
-if False:
+runHull = True
+#mwf debug
+#import pdb
+#pdb.set_trace()
+#domain = Domain.MeshTetgenDomain(fileprefix="mesh")
+#boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':11}
+if runHull:
+  domain = Domain.MeshTetgenDomain(fileprefix="mesh")
+  boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':11}
+  genMesh = False
+elif False: 
   nnx=16
   nny=8
   nnz=16

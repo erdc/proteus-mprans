@@ -425,19 +425,19 @@ namespace proteus
     RANS2P():
       nDOF_test_X_trial_element(nDOF_test_element*nDOF_trial_element),
       ck()
-    {	     std::cout<<"Constructing RANS2P<CompKernelTemplate<"
+	{/*	     std::cout<<"Constructing RANS2P<CompKernelTemplate<"
 		      <<0<<","
 		      <<0<<","
 		      <<0<<","
-		      <<0<<">,"
+		      <<0<<">,"*/
 		    /*  <<nSpaceIn<<","
 		      <<nQuadraturePoints_elementIn<<","
 		      <<nDOF_mesh_trial_elementIn<<","
 		      <<nDOF_trial_elementIn<<","
 		      <<nDOF_test_elementIn<<","
 		      <<nQuadraturePoints_elementBoundaryIn<<">());"*/
-		      <<std::endl<<std::flush;
-    }
+	  /*  <<std::endl<<std::flush; */
+	}
 
     inline double smoothedHeaviside(double eps, double phi)
     {
@@ -2583,7 +2583,7 @@ namespace proteus
 	      ck.calculateGScale(G,normal,h_penalty);
 	      h_penalty = 10.0/h_penalty;
 	      //cek debug, do it the old way
-	      h_penalty = 10.0/elementDiameter[eN];
+	      h_penalty = 1000.0/elementDiameter[eN];
 	      exteriorNumericalAdvectiveFlux(isDOFBoundary_p[ebNE_kb],
 					     isDOFBoundary_u[ebNE_kb],
 					     isDOFBoundary_v[ebNE_kb],
@@ -4022,7 +4022,7 @@ namespace proteus
 	      ck.calculateGScale(G,normal,h_penalty);
 	      h_penalty = 10.0/h_penalty;
 	      //cek debug, do it the old way
-	      h_penalty = 10.0/elementDiameter[eN];
+	      h_penalty = 1000.0/elementDiameter[eN];
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
 		  register int j_nSpace = j*nSpace,ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
