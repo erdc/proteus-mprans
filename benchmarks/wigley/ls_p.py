@@ -5,32 +5,30 @@ from proteus.mprans import NCLS
 
 LevelModelType = NCLS.LevelModel
 
-coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=1,checkMass=checkMass,useMetrics=useMetrics,
-				  sc_uref=ls_sc_uref,
-				  sc_beta=ls_sc_beta)
-#coefficients = NCLevelSetCoefficients(V_model=0,ME_model=1)
-
-class Flat_phi:
-    def __init__(self):
-        pass
-    def uOfXT(self,x,t):
-        return ls_wave(x,t)
-
-analyticalSolutions = None
-
+coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=1,
+                                 checkMass=False, useMetrics=useMetrics,
+                                 epsFact=epsFact_consrv_heaviside,sc_uref=ls_sc_uref,sc_beta=ls_sc_beta)
+ 
 def getDBC_ls(x,flag):
-    if flag == boundaryTags['left']:
-        return ls_wave
-	    
+    # if x[0] < 1.0e-8:
+    #     return wavePhi
+    # if x[0] > L[0] - 1.0e-8:
+    #     return lambda x,t: x[2] - outflowHeight
+    if flag == boundaryTags['left']:#x[0] < 1.0e-8:
+        return wavePhi
+    elif (not rightEndClosed) and flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8:
+        return lambda x,t: x[2] - outflowHeight
+    elif flag == boundaryTags['top']:#x[0] > L[0] - 1.0e-8:
+        return lambda x,t: x[2] - outflowHeight
+
+
 dirichletConditions = {0:getDBC_ls}
 
-initialConditions  = {0:Flat_phi()}
-    
-fluxBoundaryConditions = {0:'mixedFlow'}
-
-def getAFBC_ls(x,flag):
-    return lambda x,t: 0.0
-    
-advectiveFluxBoundaryConditions =  {0:getAFBC_ls}
-
+advectiveFluxBoundaryConditions =  {}
 diffusiveFluxBoundaryConditions = {0:{}}
+
+class PHI_IC:       
+    def uOfXT(self,x,t):
+        return wavePhi_init(x,t)
+    
+initialConditions  = {0:PHI_IC()}

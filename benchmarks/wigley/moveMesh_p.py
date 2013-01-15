@@ -1,6 +1,6 @@
 from proteus import *
 from proteus.default_p import *
-from wigley  import *
+from wigley import *
 from proteus.mprans import MoveMesh
 
 initialConditions = None

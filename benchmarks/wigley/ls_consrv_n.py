@@ -1,42 +1,28 @@
 from proteus import *
-from proteus.default_n import *
+from wigley import *
 from ls_consrv_p import *
 
-
+timeIntegrator  = ForwardIntegrator
 timeIntegration = NoIntegration
 
-femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
+femSpaces = {0:basis}
 
-elementQuadrature = SimplexGaussQuadrature(nd,quad_order)
-
-elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,quad_order)
-
-subgridError = None
-
-massLumping = False
-
+subgridError      = None
+massLumping       = False
 numericalFluxType = DoNothing
-
-shockCapturing = None
-
-multilevelNonlinearSolver  = Newton
-
-levelNonlinearSolver = Newton
-
-nonlinearSmoother = None
+conservativeFlux  = None
+shockCapturing    = None
 
 fullNewtonFlag = True
+multilevelNonlinearSolver = Newton
+levelNonlinearSolver      = Newton
 
-tolFac = 1e-4
-
-nl_atol_res = 0.0
-
-maxNonlinearIts = 10
-maxLineSearches = 0
+nonlinearSmoother = None
+linearSmoother    = None
 
 matrix = SparseMatrix
 
-if not use_petsc4py:
+if useOldPETSc:
     multilevelLinearSolver = PETSc
     levelLinearSolver      = PETSc
 else:
@@ -47,10 +33,15 @@ linearSmoother = None
 linear_solver_options_prefix = 'mcorr_'
 linearSmoother = None
 
-nonlinearSolverConvergenceTest = 'rits'
-levelNonlinearSolverConvergenceTest = 'rits'
+if useSuperlu:
+    multilevelLinearSolver = LU
+    levelLinearSolver      = LU
 
+linear_solver_options_prefix = 'mcorr_'
+linearSolverConvergenceTest  = 'r-true'
 
-linTolFac = 1.0e-6
+tolFac = 0.0
+nl_atol_res = 1.0e-2
 
-conservativeFlux = None
+maxNonlinearIts = 10
+maxLineSearches = 0

@@ -1,50 +1,45 @@
 from proteus import *
-from proteus.default_n import *
 from ls_p import *
 
 timeIntegration = BackwardEuler
-stepController = FixedStep
+stepController  = Min_dt_controller
 
-femSpaces = {0:C0_AffineLinearOnSimplexWithNodalBasis}
-elementQuadrature = SimplexGaussQuadrature(nd,quad_order)
-elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,quad_order)
+femSpaces = {0:basis}
 
-subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)
+massLumping       = False
+numericalFluxType = None
+conservativeFlux  = None
+numericalFluxType = DoNothing
+subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)
+shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=True)
 
-massLumping = False
-
-numericalFluxType =  Advection_DiagonalUpwind_IIPG_exterior
-
-shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=False)
-
-multilevelNonlinearSolver  = Newton
-levelNonlinearSolver = Newton
+fullNewtonFlag  = True
+multilevelNonlinearSolver = Newton
+levelNonlinearSolver      = Newton
 
 nonlinearSmoother = None
-linearSmoother = None
-
-fullNewtonFlag = True
-
-tolFac = 1e-3
-nl_atol_res = 0.0
-
-maxNonlinearIts = 10
-maxLineSearches = 0
+linearSmoother    = None
 
 matrix = SparseMatrix
 
-if not use_petsc4py:
+if useOldPETSc:
     multilevelLinearSolver = PETSc
     levelLinearSolver      = PETSc
 else:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
 
+if useSuperlu:
+    multilevelLinearSolver = LU
+    levelLinearSolver      = LU
 
-nonlinearSolverConvergenceTest = 'rits'
-levelNonlinearSolverConvergenceTest = 'rits'
 linear_solver_options_prefix = 'ncls_'
+levelNonlinearSolverConvergenceTest = 'r'
+linearSolverConvergenceTest         = 'r-true'
 
-linTolFac = 0.001
+tolFac = 0.0
+nl_atol_res = 1.0e-3
 
-conservativeFlux = None
+maxNonlinearIts = 10
+maxLineSearches = 0
+

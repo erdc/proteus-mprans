@@ -12,10 +12,10 @@ from proteus.ctransportCoefficients import smoothedHeaviside_integral
 
    
 #  Discretization -- input options  
-Refinement = 1#4#15
+Refinement = 2#4#15
 genMesh=True
 useOldPETSc= False
-useSuperlu = False # set to False if running in parallel with petsc.options
+useSuperlu = True # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -493,13 +493,13 @@ else:
 
 # Numerical parameters
 ns_shockCapturingFactor  = 0.3
-ls_shockCapturingFactor  = 0.1
+ls_shockCapturingFactor  = 0.3
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.1
+vof_shockCapturingFactor = 0.3
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.9
+rd_shockCapturingFactor  = 0.3
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5
@@ -601,8 +601,8 @@ def wavePhi(x,t):
     return x[2] - waveHeight(x,t)
 
 def wavePhi_init(x,t):
-    return wavePhi(x,t) # interface is initialized at t=0 (not flat) 
-    #return x[2] - inflowHeightMean # mean/flat initial surface profile
+    #return wavePhi(x,t) # interface is initialized at t=0 (not flat) 
+    return x[2] - inflowHeightMean # mean/flat initial surface profile
 
 def waveVF(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t))
@@ -673,10 +673,10 @@ def outflowPressure(x,t):
 # ...TODO: remove debugFactor when done debugging 
 debugFactor=0.1
 T=1.00# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
-runCFL = 0.1
+runCFL = 0.33
 print "Total Time of Computation is: ",T
 dt_fixed = period/100.0
-dt_init = 1.0e-3
+dt_init = 1.0e-4
 nDTout = int(T/dt_fixed)
 dt_init = min(dt_init,0.5*dt_fixed)
 tnList = [0.0,dt_init]+[i*dt_fixed for i in range(1,nDTout+1)] 

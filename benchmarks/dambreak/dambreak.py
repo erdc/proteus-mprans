@@ -4,12 +4,12 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options  
-Refinement = 5#45min on a single core for spaceOrder=1, useHex=False
+Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
 #Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
-useSuperlu=True
-spaceOrder = 1
+useSuperlu=False
+spaceOrder = 2
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 0.0
