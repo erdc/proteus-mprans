@@ -15,4 +15,4 @@ export MPICH_RANK_REORDER_METHOD=0
 cd $PBS_O_WORKDIR
 mkdir $WORKDIR/marin.$PBS_JOBID
 # n = N*nnodes = N*ncpus/32
-aprun -n 256 parun marin_so.py -l 7 -v -O petsc.options --profile -D $WORKDIR/marin.$PBS_JOBID
+aprun -n 256 parun marin_so.py -l 7 -v --cacheArchive -O petsc.options --profile -D $WORKDIR/marin.$PBS_JOBID

@@ -537,8 +537,7 @@ class LevelModel(OneLevelTransport):
                                 self.nElementBoundaryQuadraturePoints_elementBoundary,
                                 compKernelFlag)
 
-        self.forceStrongConditions=False#False
-        #self.dirichletConditionsForceDOF = {}
+        self.forceStrongConditions=True#False
         if self.forceStrongConditions:
             self.dirichletConditionsForceDOF = DOFBoundaryConditions(self.u[0].femSpace,dofBoundaryConditionsSetterDict[0],weakDirichletConditions=False)
 
