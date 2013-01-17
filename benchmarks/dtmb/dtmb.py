@@ -47,11 +47,11 @@ nLevels = 1
 
 he = L[2]/11 #16 cores
 he *=0.5 #128 
-#he *=0.5 #1024
+he *=0.5 #1024
 #vessel = 5414
 #genMesh=False
 vessel = 'wigley'
-genMesh=True
+genMesh=False
 #vessel = None
 #genMesh=True
 
@@ -179,7 +179,6 @@ else:
     else:
         domain.writePoly("meshNoVessel")
     triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
-
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0

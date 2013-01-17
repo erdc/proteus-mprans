@@ -4,7 +4,7 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options    
-Refinement=4
+Refinement=8#17
 genMesh=True
 spaceOrder=1
 useHex=False

@@ -1,9 +1,9 @@
 #!/bin/bash
 #PBS -A ERDCV00898ENQ
 #PBS -l application=proteus
-#PBS -l walltime=024:00:00
-#PBS -l ncpus=256
-#PBS -q standard
+#PBS -l walltime=001:00:00
+#PBS -l ncpus=512
+#PBS -q debug
 #PBS -N marin
 #PBS -j oe
 #PBS -m eba
@@ -15,4 +15,4 @@ export MPICH_RANK_REORDER_METHOD=0
 cd $PBS_O_WORKDIR
 mkdir $WORKDIR/marin.$PBS_JOBID
 # n = N*nnodes = N*ncpus/32
-aprun -n 256 parun marin_so.py -l 7 -v --cacheArchive -O petsc.options --profile -D $WORKDIR/marin.$PBS_JOBID
+aprun -n 512 parun marin_so.py -l 7 -v --cacheArchive -O petsc.options --profile -D $WORKDIR/marin.$PBS_JOBID
