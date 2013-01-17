@@ -41,8 +41,6 @@ def getDBC_hz(x,flag):
         return lambda x,t: 0.0
     elif flag == boundaryTags['obstacle']:
         return lambda x,t: 0.0
-	print "obstacle ",flag
-
 
 dirichletConditions = {0:getDBC_hx,
                        1:getDBC_hy,

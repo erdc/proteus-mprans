@@ -34,20 +34,8 @@ if useSuperlu:
     multilevelLinearSolver = LU
     levelLinearSolver      = LU
 
-maxNonlinearIts = 10
-maxLineSearches = 0
-
-matrix = SparseMatrix
-
-if useOldPETSc:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver      = PETSc
-else:
-    multilevelLinearSolver = KSP_petsc4py
-    levelLinearSolver      = KSP_petsc4py
-
 linear_solver_options_prefix = 'vof_'
-levelNonlinearSolverConvergenceTest = 'r'
+levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest         = 'r-true'
 
 tolFac      = 0.0
