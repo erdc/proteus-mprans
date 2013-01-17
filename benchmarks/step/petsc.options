@@ -1,0 +1,3 @@
+-rans2p_ksp_type bcgsl -rans2p_pc_type asm -rans2p_pc_asm_type basic -rans2p_ksp_atol 1.0e-8 -rans2p_ksp_rtol 1.0e-8
+-ncls_ksp_type   bcgsl -ncls_pc_type   none -ncls_ksp_atol   1.0 -ncls_ksp_rtol   1.0 -ncls_ksp_maxit 0
+-rdls_ksp_type   bcgsl -rdls_pc_type   none -rdls_ksp_atol   1.0 -rdls_ksp_rtol   1.0 -rdls_ksp_maxit 0
