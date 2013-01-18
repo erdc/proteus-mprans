@@ -125,6 +125,11 @@ setup(name='proteus_mprans',
 			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/include',os.getenv('PROTEUS')+'/proteusModule/src'],
                              extra_compile_args=PROTEUS_EXTRA_COMPILE_ARGS+['-g'],
                              extra_link_args=PROTEUS_EXTRA_LINK_ARGS+['-g']),
+                   Extension("cKappa",["mprans/cKappa.pyx"],
+		             depends=["mprans/Kappa.h",os.getenv('PROTEUS')+'/proteusModule/include/ModelFactory.h',os.getenv('PROTEUS')+'/proteusModule/src/CompKernel.h'], 
+		             language="c++",
+			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/include',os.getenv('PROTEUS')+'/proteusModule/src']),
+
                    ],
       requires=['numpy']
       )

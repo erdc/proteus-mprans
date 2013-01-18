@@ -145,6 +145,7 @@ tnList = [i*T/100. for i in range(101)]#[0.0,0.5*T,T]
 #----------------------------------------------------
 grad_p = -inflow/(upstream_height**2/(8.0*mu_0))
 upstream_start_z = downstream_height - upstream_height
+kInflow = 0.003*inflow*inflow
 
 class u_flat:
     def __init__(self,val=inflow,ztop=upstream_height,zbot=0.0,delta_z=0.1):

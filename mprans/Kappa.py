@@ -2,19 +2,98 @@ import proteus
 from proteus.mprans.cKappa import *
 
 class Coefficients(proteus.TransportCoefficients.TC_base):
-    from proteus.ctransportCoefficients import KappaCoefficientsEvaluate
-    from proteus.UnstructuredFMMandFSWsolvers import FMMEikonalSolver,FSWEikonalSolver
-    from proteus.NonlinearSolvers import EikonalSolver
-    def __init__(self,LS_model=-1,V_model=0,RD_model=-1,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0):
+    """
+Basic k-epsilon model for incompressible flow from Hutter etal Chaper 11
+ but solves for just k assuming epsilon computed independently and lagged in time
+
+\bar{\vec v} = <\vec v> Reynolds-averaged (mean) velocity
+\vec v^{'}   = turbulent fluctuation 
+assume \vec v = <\vec v> + \vec v^{'}, with <\vec v^{'}> = 0
+
+Reynolds averaged NS equations
+
+\deld \bar{\vec v} = 0
+
+\pd{\bar{\vec v}}{t} + \deld \left(\bar{\vec v} \outer \bar{\vec v}\right) 
+               -\nu \deld \ten \bar{D} + \frac{1}{\rho}\grad \bar p  
+               - \frac{1}{rho}\deld \ten{R} = 0
+
+Reynolds stress term
+
+\ten R = -\rho <\vec v^{'}\outer \vec v^{'}>
+\frac{1}{\rho}\ten{R} = 2 \nu_t \bar{D} - \frac{2}{3}k\ten{I}
+
+D_{ij}(\vec v) = \frac{1}{2} \left( \pd{v_i}{x_j} + \pd{v_j}{x_i})
+\ten D \bar{\ten D} = D(<\vec v>), \ten D^{'} = \ten D(\vec v^{'})
+
+
+
+k-epsilon tranport equations
+
+\pd{k}{t} + \deld (k\bar{\vec v}) 
+          - \deld\left[\left(\frac{\nu_t}{\sigma_k} + \nu\right)\grad k \right]
+          - 4\nu_t \Pi_{D} + \epsilon = 0
+
+\pd{\varepsilon}{t} + \deld (\varepsilon \bar{\vec v}) 
+          - \deld\left[\left(\frac{\nu_t}{\sigma_\varepsilon} + \nu\right)\grad \varepsilon \right]
+          - 4c_1 k \Pi_{D} + c_2 \frac{\epsilon^2}{k} = 0
+
+
+k              -- turbulent kinetic energy = <\vec v^{'}\dot \vec v^{'}>
+\varepsilon    -- turbulent dissipation rate = 4 \nu <\Pi_{D^{'}}>
+
+\nu            -- kinematic viscosity (\mu/\rho)
+\nu_t          -- turbulent viscosity = c_mu \frac{k^2}{\varepsilon}
+
+
+\Pi_{\ten A} = \frac{1}{2}tr(\ten A^2) = 1/2 \ten A\cdot \ten A
+\ten D \cdot \ten D = \frac{1}{4}\left[ (4 u_x^2 + 4 v_y^2 + 
+                                        1/2 (u_y + v_x)^2 \right]
+   
+4 \Pi_{D} = 2 \frac{1}{4}\left[ (4 u_x^2 + 4 v_y^2 + 
+                                1/2 (u_y + v_x)^2 \right]
+          = \left[ (2 u_x^2 + 2 v_y^2 + (u_y + v_x)^2 \right]
+
+\sigma_k -- Prandtl number \approx 1
+\sigma_e -- c_{\mu}/c_e
+
+c_{\mu} = 0.09, c_1 = 0.126, c_2 = 1.92, c_{\varepsilon} = 0.07
+
+
+NOTE: assumes 3d for now
+    """
+
+    #from proteus.ctransportCoefficients import KappaCoefficientsEvaluate
+    def __init__(self,LS_model=-1,V_model=0,RD_model=-1,epsilon_model=5,ME_model=6,
+                 c_mu   =0.09,    
+                 sigma_k=1.0,#Prandtl Number
+                 rho_0=998.2,nu_0=1.004e-6,
+                 rho_1=1.205,nu_1=1.500e-5,
+                 g=[0.0,-9.8],
+                 nd=3,
+                 epsFact=0.0,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0):
         self.useMetrics = useMetrics
-        self.variableNames=['vof']
+        self.variableNames=['kappa']
         nc=1
+        self.nd = nd
+        assert self.nd == 3, "Kappa only implements 3d for now" #assume 3d for now
+        self.rho_0 = rho_0; self.nu_0 = nu_0
+        self.rho_1 = rho_1; self.nu_1 = nu_1
+        self.c_mu = c_mu; self.sigma_k = sigma_k
+        self.g = g
+        #
         mass={0:{0:'linear'}}
         advection={0:{0:'linear'}}
         hamiltonian={}
-        diffusion={}
-        potential={}
-        reaction={}
+        potential = {0:{0:'u'}}
+        diffusion = {0:{0:{0:'nonlinear',}}}
+        reaction = {0:{0:'nonlinear'}}
+        if self.nd == 2:
+            sdInfo    = {(0,0):(numpy.array([0,1,2],dtype='i'),
+                                numpy.array([0,1],dtype='i'))}
+        else:
+            sdInfo    = {(0,0):(numpy.array([0,1,2,3],dtype='i'),
+                                numpy.array([0,1,2],dtype='i'))}
         TC_base.__init__(self,
                          nc,
                          mass,
@@ -23,25 +102,23 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                          potential,
                          reaction,
                          hamiltonian,
-                         self.variableNames)
+                         self.variableNames,
+                         sparseDiffusionTensors=sdInfo)
         self.epsFact=epsFact
         self.flowModelIndex=V_model
         self.modelIndex=ME_model
         self.RD_modelIndex=RD_model
         self.LS_modelIndex=LS_model
+        self.epsilon_modelIndex = epsilon_model
 	
 	self.sc_uref=sc_uref
-	self.sc_beta=sc_beta
-	
-        #mwf added
-        self.eikonalSolverFlag = EikonalSolverFlag
-        if self.eikonalSolverFlag >= 1: #FMM
-            assert self.RD_modelIndex < 0, "no redistance with eikonal solver too"
-        self.checkMass = checkMass
+	self.sc_beta=sc_beta	
+        
 	
     def initializeMesh(self,mesh):
         self.eps = self.epsFact*mesh.h
     def attachModels(self,modelList):
+        assert self.modelIndex >= 0 and self.modelIndex < len(modelList), "Kappa: invalid index for self model allowed range: [0,%s]" % len(modelList)
         #self
         self.model = modelList[self.modelIndex]
 	
@@ -52,16 +129,18 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         if self.RD_modelIndex >= 0:
             self.rdModel = modelList[self.RD_modelIndex]
         #level set
-        self.lsModel = modelList[self.LS_modelIndex]
-        self.q_phi = modelList[self.LS_modelIndex].q[('u',0)]
-        self.ebqe_phi = modelList[self.LS_modelIndex].ebqe[('u',0)]
-        if modelList[self.LS_modelIndex].ebq.has_key(('u',0)):
-            self.ebq_phi = modelList[self.LS_modelIndex].ebq[('u',0)]
-        else:
-            self.ebq_phi = None
+        if self.LS_modelIndex >= 0:
+            self.lsModel = modelList[self.LS_modelIndex]
+            self.q_phi = modelList[self.LS_modelIndex].q[('u',0)]
+            self.ebqe_phi = modelList[self.LS_modelIndex].ebqe[('u',0)]
+            if modelList[self.LS_modelIndex].ebq.has_key(('u',0)):
+                self.ebq_phi = modelList[self.LS_modelIndex].ebq[('u',0)]
+            else:
+                self.ebq_phi = None
         #flow model
+        assert self.flowModelIndex >= 0, "Kappa: invalid index for flow model allowed range: [0,%s]" % len(modelList)
         #print "flow model index------------",self.flowModelIndex,modelList[self.flowModelIndex].q.has_key(('velocity',0))
-        if self.flowModelIndex >= 0:
+        if self.flowModelIndex >= 0: #keep for debugging for now
             if modelList[self.flowModelIndex].q.has_key(('velocity',0)):
                 self.q_v = modelList[self.flowModelIndex].q[('velocity',0)]
                 self.ebqe_v = modelList[self.flowModelIndex].ebqe[('velocity',0)]
@@ -73,77 +152,58 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             else:
                 if modelList[self.flowModelIndex].ebq.has_key(('f',0)):
                     self.ebq_v = modelList[self.flowModelIndex].ebq[('f',0)]
+            #assume 3d for now
+            self.q_grad_u = modelList[self.flowModelIndex].q[('grad(u)',1)]
+            self.q_grad_v = modelList[self.flowModelIndex].q[('grad(u)',2)]
+            self.q_grad_w = modelList[self.flowModelIndex].q[('grad(u)',3)]
+            #
+            self.ebqe_grad_u = modelList[self.flowModelIndex].ebqe[('grad(u)',1)]
+            self.ebqe_grad_v = modelList[self.flowModelIndex].ebqe[('grad(u)',2)]
+            self.ebqe_grad_w = modelList[self.flowModelIndex].ebqe[('grad(u)',3)]
+            if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',1)):
+                self.ebq_grad_u = modelList[self.flowModelIndex].ebq[('grad(u)',1)]
+            if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',2)):
+                self.ebq_grad_v = modelList[self.flowModelIndex].ebq[('grad(u)',2)]
+            if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',3)):
+                self.ebq_grad_w = modelList[self.flowModelIndex].ebq[('grad(u)',3)]
         #
-        if self.eikonalSolverFlag == 2: #FSW
-            self.resDummy = numpy.zeros(self.model.u[0].dof.shape,'d')
-            eikonalSolverType = self.FSWEikonalSolver
-            self.eikonalSolver = self.EikonalSolver(eikonalSolverType,
-                                                    self.model,
-                                                    relativeTolerance=0.0,absoluteTolerance=1.0e-12,
-                                                    frontTolerance=1.0e-4,#default 1.0e-4
-                                                    frontInitType='frontIntersection',#'frontIntersection',#or 'magnitudeOnly'
-                                                    useLocalPWLreconstruction = False)
-        elif self.eikonalSolverFlag == 1: #FMM 
-            self.resDummy = numpy.zeros(self.model.u[0].dof.shape,'d')
-            eikonalSolverType = self.FMMEikonalSolver
-            self.eikonalSolver = self.EikonalSolver(eikonalSolverType,
-                                                    self.model,
-                                                    frontTolerance=1.0e-4,#default 1.0e-4
-                                                    frontInitType='frontIntersection',#'frontIntersection',#or 'magnitudeOnly'
-                                                    useLocalPWLreconstruction = False)
-        # if self.checkMass:
-        #     self.m_pre = Norms.scalarDomainIntegral(self.model.q['dV'],
-        #                                              self.model.q[('m',0)],
-        #                                              self.model.mesh.nElements_owned)
-        #     log("Attach Models Kappa: Phase  0 mass after Kappa step = %12.5e" % (self.m_pre,),level=2)
-        #     self.m_post = Norms.scalarDomainIntegral(self.model.q['dV'],
-        #                                              self.model.q[('m',0)],
-        #                                              self.model.mesh.nElements_owned)
-        #     log("Attach Models Kappa: Phase  0 mass after Kappa step = %12.5e" % (self.m_post,),level=2)
-        #     if self.model.ebqe.has_key(('advectiveFlux',0)):
-        #         self.fluxIntegral = Norms.fluxDomainBoundaryIntegral(self.model.ebqe['dS'],
-        #                                                              self.model.ebqe[('advectiveFlux',0)],
-        #                                                              self.model.mesh)
-        #         log("Attach Models Kappa: Phase  0 mass conservation after Kappa step = %12.5e" % (self.m_post - self.m_pre + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
-            
+        #assert self.epsilon_modelIndex >= 0 and self.epsilon_modelIndex < len(modelList), "Kappa: invalid index for epsilon model allowed range: [0,%s]" % len(modelList) 
+        if self.epsilon_modelIndex >= 0: #keep for debugging for now
+            #assume have q,ebqe always
+            self.q_epsilon = modelList[self.epsilon_modelIndex].q[('u',0)]
+            self.ebqe_epsilon = modelList[self.epsilon_modelIndex].ebqe[('u',0)]
+            if modelList[self.epsilon_modelIndex].ebq.has_key(('u',0)):
+                self.ebq_epsilon = modelList[self.epsilon_modelIndex].ebq[('u',0)]
+        #
     def initializeElementQuadrature(self,t,cq):
         if self.flowModelIndex == None:
             self.q_v = numpy.ones(cq[('f',0)].shape,'d')
+            self.q_grad_u = numpy.ones(cq[('grad(u)',0)].shape,'d')
+            self.q_grad_v = numpy.ones(cq[('grad(u)',0)].shape,'d')
+            self.q_grad_w = numpy.ones(cq[('grad(u)',0)].shape,'d')
+        if self.epsilon_modelIndex == None:
+            self.q_epsilon = numpy.ones(cq[('u',0)].shape,'d')
     def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
         if self.flowModelIndex == None:
             self.ebq_v = numpy.ones(cebq[('f',0)].shape,'d')
+            self.ebq_grad_u = numpy.ones(cebq[('grad(u)',0)].shape,'d')
+            self.ebq_grad_v = numpy.ones(cebq[('grad(u)',0)].shape,'d')
+            self.ebq_grad_w = numpy.ones(cebq[('grad(u)',0)].shape,'d')
+        if self.epsilon_modelIndex == None:
+            self.ebq_epsilon = numpy.ones(cebq[('u',0)].shape,'d')
     def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
         if self.flowModelIndex == None:
             self.ebqe_v = numpy.ones(cebqe[('f',0)].shape,'d')
+            self.ebqe_grad_u = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
+            self.ebqe_grad_v = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
+            self.ebqe_grad_w = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
+        if self.epsilon_modelIndex == None:
+            self.ebqe_epsilon = numpy.ones(cebqe[('u',0)].shape,'d')
     def preStep(self,t,firstStep=False):
-        # if self.checkMass:
-        #     self.m_pre = Norms.scalarDomainIntegral(self.model.q['dV'],
-        #                                             self.model.q[('m',0)],
-        #                                             self.model.mesh.nElements_owned)
-        #     log("Phase  0 mass before Kappa step = %12.5e" % (self.m_pre,),level=2)
-        #     self.m_last = Norms.scalarDomainIntegral(self.model.q['dV'],
-        #                                              self.model.timeIntegration.m_last[0],
-        #                                              self.model.mesh.nElements_owned)
-        #     log("Phase  0 mass before Kappa (m_last) step = %12.5e" % (self.m_last,),level=2)
         copyInstructions = {}
         return copyInstructions
     def postStep(self,t,firstStep=False):    
 	self.u_old_dof = numpy.copy(self.model.u[0].dof)	 
-        # if self.checkMass:
-        #     self.m_post = Norms.scalarDomainIntegral(self.model.q['dV'],
-        #                                              self.model.q[('m',0)],
-        #                                              self.model.mesh.nElements_owned)
-        #     log("Phase  0 mass after Kappa step = %12.5e" % (self.m_post,),level=2)
-        #     self.fluxIntegral = Norms.fluxDomainBoundaryIntegral(self.model.ebqe['dS'],
-        #                                                          self.model.ebqe[('advectiveFlux',0)],
-        #                                                          self.model.mesh)
-        #     log("Phase  0 mass flux boundary integral after Kappa step = %12.5e" % (self.fluxIntegral,),level=2)
-        #     log("Phase  0 mass conservation after Kappa step = %12.5e" % (self.m_post - self.m_last + self.model.timeIntegration.dt*self.fluxIntegral,),level=2)
-        #     divergence = Norms.fluxDomainBoundaryIntegralFromVector(self.model.ebqe['dS'],
-        #                                                             self.ebqe_v,
-        #                                                             self.model.ebqe['n'],
-        #                                                             self.model.mesh)
-        #     log("Divergence = %12.5e" % (divergence,),level=2)
         copyInstructions = {}
         return copyInstructions
     def updateToMovingDomain(self,t,c):
@@ -155,28 +215,39 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         if c[('f',0)].shape == self.q_v.shape:
             v = self.q_v
             phi = self.q_phi
+            grad_u = self.q_grad_u
+            grad_v = self.q_grad_v
+            grad_w = self.q_grad_w
+            epsilon = self.q_epsilon
         elif c[('f',0)].shape == self.ebqe_v.shape:
             v = self.ebqe_v
             phi = self.ebqe_phi
-        elif ((self.ebq_v != None and self.ebq_phi != None) and c[('f',0)].shape == self.ebq_v.shape):
+            grad_u = self.ebqe_grad_u
+            grad_v = self.ebqe_grad_v
+            grad_w = self.ebqe_grad_w
+            epsilon = self.ebqe_epsilon
+        elif ((self.ebq_v != None and self.ebq_phi != None and self.ebq_grad_u != None and self.ebq_grad_v != None and self.ebq_grad_w != None and self.ebq_epsilon != None) and c[('f',0)].shape == self.ebq_v.shape):
             v = self.ebq_v
             phi = self.ebq_phi
+            grad_u = self.ebq_grad_u
+            grad_v = self.ebq_grad_v
+            grad_w = self.ebqe_grad_w
+            epsilon = self.ebq_epsilon
         else:
             v=None
             phi=None
+            grad_u = None
+            grad_v = None
+            grad_w = None
         if v != None:
             self.KappaCoefficientsEvaluate(self.eps,
-                                         v,
-                                         phi,
-                                         c[('u',0)],
-                                         c[('m',0)],
-                                         c[('dm',0,0)],
-                                         c[('f',0)],
-                                         c[('df',0,0)])
-        # if self.checkMass:
-        #     log("Phase  0 mass in eavl = %12.5e" % (Norms.scalarDomainIntegral(self.model.q['dV'],
-        #                                                                        self.model.q[('m',0)],
-        #                                                                        self.model.mesh.nElements_owned),),level=2)
+                                           v,
+                                           phi,
+                                           c[('u',0)],
+                                           c[('m',0)],
+                                           c[('dm',0,0)],
+                                           c[('f',0)],
+                                           c[('df',0,0)])
 
 class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
@@ -225,7 +296,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.phi  = phiDict
         self.dphi={}
         self.matType = matType
-        #mwf try to reuse test and trial information across components if spaces are the same
+        #try to reuse test and trial information across components if spaces are the same
         self.reuse_test_trial_quadrature = reuse_trial_and_test_quadrature#True#False
         if self.reuse_test_trial_quadrature:
             for ci in range(1,coefficients.nc):
@@ -401,6 +472,12 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.ebqe['x'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,3),'d')
         self.q[('u',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('grad(u)',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
+        #diffusion, isotropic
+        self.q[('a',0,0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
+        self.q[('da',0,0,0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
+        self.q[('grad(phi)',0)] = self.q[('grad(u)',0)]
+        self.q[('dphi',0,0)] = numpy.ones((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        #mass 
         self.q[('m',0)] = self.q[('u',0)]
         self.q[('m_last',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('m_tmp',0)] = self.q[('u',0)]
