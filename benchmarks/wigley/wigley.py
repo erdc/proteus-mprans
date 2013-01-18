@@ -1,5 +1,5 @@
 """
-A helper module for doing air/water flow around the Wigley hull form
+A helper module for doing air/water flow around the Wigley hull form comparing to Sakamoto et al. 2007
 """
 from math import *
 from proteus import *
@@ -40,19 +40,30 @@ RBR_linCons  = [1,1,0]
 RBR_angCons  = [1,0,1]  
 
 
-L=(2.75,2.0, 0.8)
-x_ll = (-1.25,-1,0.0)
+hull_length = 1.0
+hull_beam = hull_length/10.0
+hull_draft = hull_length/16.0
+hull_center = (-0.5+0.5*hull_length,
+                -0.5+0.5*hull_beam,
+                -0.1+0.5*hull_draft)
+
+L=(4.0*hull_length,
+   2.0, 
+   1.5*hull_draft)
+x_ll = (-1.5,
+         -1,
+         -hull_draft)
 waterLevel   = 0.5
 
 nLevels = 1
 
 he = L[2]/11 #16 cores
-he *=0.5 #128 
-he *=0.5 #1024
+#he *=0.5 #128 
+#he *=0.5 #1024
 #vessel = 'wigley-gmsh'
 #genMesh=False
 vessel = 'wigley'
-genMesh=False
+genMesh=True
 #vessel = None
 #genMesh=True
 
@@ -93,12 +104,6 @@ else:
     regionFlags=[1.0]
     holes=[]
     if vessel is 'wigley':
-        hull_length = 5.8 - (-0.5)
-        hull_beam = 0.5 - (-0.5)
-        hull_draft = 0.7 - (-0.1)
-        hull_center = (-0.5+0.5*hull_length,
-                       -0.5+0.5*hull_beam,
-                       -0.1+0.5*hull_draft)
         n_points_length = int(ceil(hull_length/he))
         n_points_draft = int(ceil(hull_draft/he))
         dx = hull_length/float(n_points_length-1)
