@@ -28,7 +28,39 @@ g=[0.0,0.0,-9.81]
 # Domain - mesh - quadrature
 #----------------------------------------------------
 nd = 3
-hull_length  = 1.0
+
+
+hull_length = 1.0
+hull_beam   = hull_length/10.0
+hull_draft  = hull_length/16.0
+
+L=(4.0*hull_length,
+   2.05*hull_length, 
+   0.75*hull_length)
+x_ll = (-1.5*hull_length,
+         -L[1]/2.0,
+         0.0)
+
+waterLevel   = 0.5*hull_length
+
+hull_center = (0.0,
+               0.0,
+               0.5*hull_length)#cek todo, still not sure about where the waterline is
+
+#debug
+L=(3.0*hull_length,
+   3.0*hull_length,
+   4.0*hull_draft)
+x_ll = (-1.5*hull_length,
+         -L[1]/2.0,
+         0.0)
+
+waterLevel   = 2.0*hull_draft
+
+hull_center = (0.0,
+               0.0,
+               2.0*hull_draft)#cek todo, still not sure about where the waterline is
+
 #cek todo these are the same as the 5414, somethings not right
 hull_mass    = 532.277
 hull_cg      = [2.7618104935392300,  0.0 ,0.27953462008339180  ]
@@ -40,24 +72,9 @@ RBR_linCons  = [1,1,0]
 RBR_angCons  = [1,0,1]  
 
 
-hull_length = 1.0
-hull_beam = hull_length/10.0
-hull_draft = hull_length/16.0
-hull_center = (-0.5+0.5*hull_length,
-                -0.5+0.5*hull_beam,
-                -0.1+0.5*hull_draft)
-
-L=(4.0*hull_length,
-   2.0, 
-   1.5*hull_draft)
-x_ll = (-1.5,
-         -1,
-         -hull_draft)
-waterLevel   = 0.5
-
 nLevels = 1
 
-he = L[2]/11 #16 cores
+he = hull_draft/1.0 #16 cores
 #he *=0.5 #128 
 #he *=0.5 #1024
 #vessel = 'wigley-gmsh'
@@ -105,18 +122,19 @@ else:
     holes=[]
     if vessel is 'wigley':
         n_points_length = int(ceil(hull_length/he))
-        n_points_draft = int(ceil(hull_draft/he))
+        n_points_draft  = 2*int(ceil(hull_draft/he))+1
         dx = hull_length/float(n_points_length-1)
-        dz = hull_draft/float(n_points_draft-1)
+        dz = 2.0*hull_draft/float(n_points_draft-1)
         #grid on right half of hull
         for i in range(n_points_length):
             for j in range(n_points_draft):
-                x = i*dx 
-                z = j*dz
-                y = 0.5*hull_beam*(1.0 - (2.0*(x-0.5*hull_length)/hull_length)**2) * (1.0 - ((hull_draft-z)/hull_draft)**2)
-                vertices.append([x+hull_center[0]-0.5*hull_length,
+                x = i*dx - 0.5*hull_length
+                z = j*dz - hull_draft
+                zStar = min(0.0,z)
+                y = 0.5*hull_beam*(1.0 - 4.0*(x/hull_length)**2) * (1.0 - (zStar/hull_draft)**2)
+                vertices.append([x+hull_center[0],
                                  y+hull_center[1],
-                                 z+hull_center[2]-0.5*hull_draft])
+                                 z+hull_center[2]])
                 vertexFlags.append(boundaryTags['obstacle'])
         def vN_right(i,j):
             return 8 + i*n_points_draft+j
@@ -135,12 +153,13 @@ else:
         #grid on left half of hull
         for i in range(1,n_points_length-1):
             for j in range(1,n_points_draft):
-                x = i*dx
-                z = j*dz
-                y = 0.5*hull_beam*(1.0 - (2.0*(x-0.5*hull_length)/hull_length)**2)*(1.0 - ((hull_draft-z)/hull_draft)**2)
-                vertices.append([x+hull_center[0]-0.5*hull_length,
-                                 hull_center[1]-y,
-                                 z+hull_center[2]-0.5*hull_draft])
+                x = i*dx - 0.5*hull_length
+                z = j*dz - hull_draft
+                zStar = min(0.0,z)
+                y = 0.5*hull_beam*(1.0 - 4.0*(x/hull_length)**2) * (1.0 - (zStar/hull_draft)**2)
+                vertices.append([x+hull_center[0],
+                                 hull_center[1] - y,
+                                 z+hull_center[2]])
                 vertexFlags.append(boundaryTags['obstacle'])
         def vN_left(i,j):
             if i== 0 or j==0:
@@ -160,7 +179,7 @@ else:
                     facets.append([[vN_left(i,j),vN_left(i,j+1),vN_left(i+1,j)]])
                     facetFlags.append(boundaryTags['obstacle'])
                     facets.append([[vN_left(i,j+1),vN_left(i+1,j+1),vN_left(i+1,j)]])
-                    facetFlags.append(boundaryTags['obstacle'])                
+                    facetFlags.append(boundaryTags['obstacle'])
         topFacet=[]
         for i in range(n_points_length):
             topFacet.append(vN_right(i,n_points_draft-1))
@@ -208,14 +227,14 @@ freezeLevelSet=True
 #----------------------------------------------------
 # Time stepping and velocity
 #----------------------------------------------------
-Fr = 0.28
+Fr = 0.25
 Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um*rho_0/nu_0
 
 residence_time = hull_length/Um
 dt_init=0.001
-T = 5.0*residence_time
-nDTout=100
+T = 20.0*residence_time
+nDTout=200
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
 
@@ -265,7 +284,7 @@ wave_angle  = 0.0     * pi/180.0
 #----------------------------------------------------
 water_depth  = waterLevel-x_ll[2]
 wave_length  = 2.0*pi/wave_length      
-wave_periode = sqrt(-g[2]*wave_length*tanh(wave_length/waterLevel))   
+wave_periode = sqrt(-g[2]*wave_length*tanh(wave_length/water_depth))   
 wave_vel_amp = wave_periode*(wave_height/sinh(wave_length*water_depth))       
 
 xy   = lambda x:   cos(wave_angle)*x[0] + sin(wave_angle)*x[1]
