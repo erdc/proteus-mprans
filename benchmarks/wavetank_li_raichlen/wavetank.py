@@ -8,11 +8,11 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
-Refinement = 5#6#4#15
+Refinement = 4#6#4#15
 genMesh=True
 useOldPETSc=False
 useSuperlu = False#True
-spaceOrder = 2
+spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 0.0
@@ -632,7 +632,7 @@ print "T",T
 #dt_fixed = period/100.0
 #dt_fixed = 6.0/1000.0
 dt_init = 1.0e-3
-nDTout = 200#int(T/dt_fixed)
+nDTout = 100#int(T/dt_fixed)
 dt_fixed = T/float(nDTout-1) 
 tnList = [i*dt_fixed for i in range(nDTout)] 
 print tnList

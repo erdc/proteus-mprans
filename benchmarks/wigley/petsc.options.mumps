@@ -3,4 +3,3 @@
 -vof_ksp_type preonly -vof_pc_type lu -vof_pc_factor_mat_solver_package mumps
 -rdls_ksp_type preonly -rdls_pc_type lu -rdls_pc_factor_mat_solver_package mumps
 -mcorr_ksp_type preonly -mcorr_pc_type lu -mcorr_pc_factor_mat_solver_package mumps
--log_summary

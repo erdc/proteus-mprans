@@ -3,9 +3,13 @@ from proteus.default_p import *
 from math import *
 from wigley import *
 from proteus.mprans import RDLS
+"""
+The redistancing equation in the sloshbox test problem.
+"""
 
 LevelModelType = RDLS.LevelModel
-coefficients = RDLS.Coefficients(applyRedistancing=applyRedistancing,
+
+coefficients = RDLS.Coefficients(applyRedistancing=True,
                                  epsFact=epsFact_redistance,
                                  nModelId=1,
                                  rdModelId=3,
@@ -14,24 +18,14 @@ coefficients = RDLS.Coefficients(applyRedistancing=applyRedistancing,
 def getDBC_rd(x,flag):
     pass
     
-dirichletConditions = {0:getDBC_rd}
-
-if freezeLevelSet:
-    if LevelModelType == RDLS.LevelModel:
-        weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCs}
-    else:
-        weakDirichletConditions = {0:coefficients.setZeroLSweakDirichletBCs}
-
-class Flat_phi:
-    def __init__(self):
-        pass
-    def uOfXT(self,x,t):
-        return  ls_wave(x,t)
-
-initialConditions  = {0:Flat_phi()}
-
-fluxBoundaryConditions = {0:'noFlow'}
+dirichletConditions     = {0:getDBC_rd}
+weakDirichletConditions = {0:RDLS.setZeroLSweakDirichletBCsSimple}
 
 advectiveFluxBoundaryConditions =  {}
-
 diffusiveFluxBoundaryConditions = {0:{}}
+
+class PHI_IC:       
+    def uOfXT(self,x,t):
+        return wavePhi(x,t)
+
+initialConditions  = {0:PHI_IC()}

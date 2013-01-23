@@ -38,6 +38,7 @@ if useSuperlu:
 
 linear_solver_options_prefix = 'rdls_'
 nonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest = 'r-true'
 
 runCFL=1.0
@@ -51,5 +52,5 @@ psitc['startRatio']=1.0
 tolFac = 0.0
 nl_atol_res = 0.1*he
 
-maxNonlinearIts = 5
+maxNonlinearIts = 10
 maxLineSearches = 0

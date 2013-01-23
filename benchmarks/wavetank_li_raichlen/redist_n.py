@@ -43,16 +43,16 @@ linear_solver_options_prefix = 'rdls_'
 nonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest = 'r-true'
 
-runCFL=1.0
-rtol_res[0] = 0.0
-atol_res[0] = 0.1*he
-psitc['nStepsForce']=3
-psitc['nStepsMax']=5
-psitc['reduceRatio']=1.0
-psitc['startRatio']=1.0 
+#runCFL=1.0
+#rtol_res[0] = 0.0
+#atol_res[0] = 0.1*he
+#psitc['nStepsForce']=5
+#psitc['nStepsMax']=10
+#psitc['reduceRatio']=1.0
+#psitc['startRatio']=1.0 
 
 tolFac = 0.0
 nl_atol_res = 0.1*he
 
-maxNonlinearIts = 5
+maxNonlinearIts = 10
 maxLineSearches = 0
