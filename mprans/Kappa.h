@@ -36,6 +36,10 @@ namespace proteus
 				   double* boundaryJac_ref,
 				   //physics
 				   int nElements_global,
+				   //diffusion terms
+				   double nu_0,
+				   double nu_1,
+				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
 				   int lag_shockCapturing,
@@ -45,6 +49,7 @@ namespace proteus
 				   double* elementDiameter,
 				   double* u_dof,double* u_dof_old,	
 				   double* velocity,
+				   double* phi_ls, //level set variable
 				   double* q_m,
 				   double* q_u,
 				   double* q_m_betaBDF,
@@ -89,6 +94,10 @@ namespace proteus
 				   double* boundaryJac_ref,
 				   //physics
 				   int nElements_global,
+				   //diffusion
+				   double nu_0,
+				   double nu_1,
+				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
 				   int lag_shockCapturing,/*mwf not used yet*/
@@ -97,6 +106,7 @@ namespace proteus
 				   double* elementDiameter,
 				   double* u_dof, 
 				   double* velocity,
+				   double* phi_ls, //level set variable
 				   double* q_m_betaBDF, 
 				   double* cfl,
 				   double* q_numDiff_u_last, 
@@ -111,7 +121,8 @@ namespace proteus
 				   double* ebqe_bc_u_ext,
 				   int* isFluxBoundary_u,
 				   double* ebqe_bc_flux_u_ext,
-				   int* csrColumnOffsets_eb_u_u)=0;
+				   int* csrColumnOffsets_eb_u_u,
+				   double* ebqe_phi,double epsFact)=0;
   };
 
   template<class CompKernelType,
@@ -132,11 +143,16 @@ namespace proteus
     {}
     inline
     void evaluateCoefficients(const double v[nSpace],
+			      const double eps_mu,
+			      const double phi,
+			      const double nu_0,
+			      const double nu_1,
 			      const double& u,
 			      double& m,
 			      double& dm,
 			      double f[nSpace],
-			      double df[nSpace])
+			      double df[nSpace],
+			      double& nu)
     {
       m = u;
       dm = 1.0;
@@ -145,6 +161,9 @@ namespace proteus
 	  f[I] = v[I]*u;
 	  df[I] = v[I];
 	}
+      double H_mu = smoothedHeaviside(eps_mu,phi);
+      nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
+
     }
 
     inline
@@ -256,6 +275,19 @@ namespace proteus
       //std::cout<<"flux error "<<flux-flow<<std::endl;
       //std::cout<<"flux in computationa"<<flux<<std::endl;
     }
+    inline double smoothedHeaviside(double eps, double phi)
+    {
+      double H;
+      if (phi > eps)
+	H=1.0;
+      else if (phi < -eps)
+	H=0.0;
+      else if (phi==0.0)
+	H=0.5;
+      else
+	H = 0.5*(1.0 + phi/eps + sin(M_PI*phi/eps)/M_PI);
+      return H;
+    }
 
     inline
     void exteriorNumericalAdvectiveFluxDerivative(const int& isDOFBoundary_u,
@@ -310,6 +342,10 @@ namespace proteus
 			   double* boundaryJac_ref,
 			   //physics
 			   int nElements_global,
+			   //diffusion terms
+			   double nu_0,
+			   double nu_1,
+			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
 			   int lag_shockCapturing, /*mwf not used yet*/
@@ -317,8 +353,9 @@ namespace proteus
 			   double sc_uref, double sc_alpha,
 			   int* u_l2g, 
 			   double* elementDiameter,
-			   double* u_dof,double* u_dof_old,			   
+			   double* u_dof,double* u_dof_old,
 			   double* velocity,
+			   double* phi_ls, //level set variable
 			   double* q_m,
 			   double* q_u,
 			   double* q_m_betaBDF,
@@ -371,6 +408,7 @@ namespace proteus
 		m=0.0,dm=0.0,
 		f[nSpace],df[nSpace],
 		m_t=0.0,dm_t=0.0,
+		nu=0.0,
 		pdeResidual_u=0.0,
 		Lstar_u[nDOF_test_element],
 		subgridError_u=0.0,
@@ -442,11 +480,16 @@ namespace proteus
 	      //calculate pde coefficients at quadrature points
 	      //
 	      evaluateCoefficients(&velocity[eN_k_nSpace],
+				   epsFact,
+				   phi_ls[eN_k],
+				   nu_0,
+				   nu_1,
 				   u,
 				   m,
 				   dm,
 				   f,
-				   df);
+				   df,
+				   nu);
 	      //
 	      //moving mesh
 	      //
@@ -562,6 +605,7 @@ namespace proteus
 		dm_ext=0.0,
 		f_ext[nSpace],
 		df_ext[nSpace],
+		nu_ext=0.0,
 		flux_ext=0.0,
 		bc_u_ext=0.0,
 		bc_grad_u_ext[nSpace],
@@ -637,17 +681,27 @@ namespace proteus
 	      //calculate the pde coefficients using the solution and the boundary values for the solution 
 	      // 
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
+				   epsFact,
+				   ebqe_phi[ebNE_kb],
+				   nu_0,
+				   nu_1,
 				   u_ext,
 				   m_ext,
 				   dm_ext,
 				   f_ext,
-				   df_ext);
+				   df_ext,
+				   nu_ext);
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
+				   epsFact,
+				   ebqe_phi[ebNE_kb],
+				   nu_0,
+				   nu_1,
 				   bc_u_ext,
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
-				   bc_df_ext);    
+				   bc_df_ext,
+				   nu_ext);    
 	      //
 	      //moving mesh
 	      //
@@ -718,6 +772,10 @@ namespace proteus
 			   double* boundaryJac_ref,
 			   //physics
 			   int nElements_global,
+			   //diffusion terms
+			   double nu_0,
+			   double nu_1,
+			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
 			   int lag_shockCapturing,/*mwf not used yet*/
@@ -726,6 +784,7 @@ namespace proteus
 			   double* elementDiameter,
 			   double* u_dof, 
 			   double* velocity,
+			   double* phi_ls, //level set variable
 			   double* q_m_betaBDF, 
 			   double* cfl,
 			   double* q_numDiff_u_last, 
@@ -740,7 +799,8 @@ namespace proteus
 			   double* ebqe_bc_u_ext,
 			   int* isFluxBoundary_u,
 			   double* ebqe_bc_flux_u_ext,
-			   int* csrColumnOffsets_eb_u_u)
+			   int* csrColumnOffsets_eb_u_u,
+			   double* ebqe_phi,double epsFact)
     {
       double Ct_sge = 4.0;
     
@@ -764,7 +824,7 @@ namespace proteus
 	      //declare local storage
 	      register double u=0.0,
 		grad_u[nSpace],
-		m=0.0,dm=0.0,
+		m=0.0,dm=0.0,nu=0.0,
 		f[nSpace],df[nSpace],
 		m_t=0.0,dm_t=0.0,
 		dpdeResidual_u_u[nDOF_trial_element],
@@ -839,11 +899,16 @@ namespace proteus
 	      //calculate pde coefficients and derivatives at quadrature points
 	      //
 	      evaluateCoefficients(&velocity[eN_k_nSpace],
+				   epsFact,
+				   phi_ls[eN_k],
+				   nu_0,
+				   nu_1,
 				   u,
 				   m,
 				   dm,
 				   f,
-				   df);
+				   df,
+				   nu);
 	      //
 	      //moving mesh
 	      //
@@ -952,6 +1017,7 @@ namespace proteus
 		f_ext[nSpace],
 		df_ext[nSpace],
 		dflux_u_u_ext=0.0,
+		nu_ext=0.0,
 		bc_u_ext=0.0,
 		//bc_grad_u_ext[nSpace],
 		bc_m_ext=0.0,
@@ -1043,17 +1109,27 @@ namespace proteus
 	      //calculate the internal and external trace of the pde coefficients 
 	      // 
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
+				   epsFact,
+				   ebqe_phi[ebNE_kb],
+				   nu_0,
+				   nu_1,
 				   u_ext,
 				   m_ext,
 				   dm_ext,
 				   f_ext,
-				   df_ext);
+				   df_ext,
+				   nu_ext);
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
+				   epsFact,
+				   ebqe_phi[ebNE_kb],
+				   nu_0,
+				   nu_1,
 				   bc_u_ext,
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
-				   bc_df_ext);
+				   bc_df_ext,
+				   nu_ext);
 	      //
 	      //moving domain
 	      //

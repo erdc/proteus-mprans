@@ -1,6 +1,11 @@
 import proteus
 from proteus.mprans.cKappa import *
 
+"""
+TODO:
+  just skip evaluate routine in Coefficients?
+  grab TWP velocity dofs and calculate gradients locally in getResidual routine 
+"""
 class Coefficients(proteus.TransportCoefficients.TC_base):
     """
 Basic k-epsilon model for incompressible flow from Hutter etal Chaper 11
@@ -63,7 +68,7 @@ c_{\mu} = 0.09, c_1 = 0.126, c_2 = 1.92, c_{\varepsilon} = 0.07
 NOTE: assumes 3d for now
     """
 
-    #from proteus.ctransportCoefficients import KappaCoefficientsEvaluate
+    from proteus.ctransportCoefficients import kEpsilon_k_3D_Evaluate_sd
     def __init__(self,LS_model=-1,V_model=0,RD_model=-1,epsilon_model=5,ME_model=6,
                  c_mu   =0.09,    
                  sigma_k=1.0,#Prandtl Number
@@ -71,7 +76,7 @@ NOTE: assumes 3d for now
                  rho_1=1.205,nu_1=1.500e-5,
                  g=[0.0,-9.8],
                  nd=3,
-                 epsFact=0.0,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0):
+                 epsFact=0.01,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0):
         self.useMetrics = useMetrics
         self.variableNames=['kappa']
         nc=1
@@ -240,15 +245,23 @@ NOTE: assumes 3d for now
             grad_v = None
             grad_w = None
         if v != None:
-            self.KappaCoefficientsEvaluate(self.eps,
-                                           v,
-                                           phi,
+            self.kEpsilon_k_3D_Evaluate_sd(self.sigma_k,
+                                           self.c_mu,
+                                           self.nu,
+                                           velocity,
+                                           gradu,
+                                           gradv,
+                                           gradw,
                                            c[('u',0)],
+                                           epsilon,
                                            c[('m',0)],
                                            c[('dm',0,0)],
                                            c[('f',0)],
-                                           c[('df',0,0)])
-
+                                           c[('df',0,0)],
+                                           c[('a',0,0)],
+                                           c[('da',0,0,0)],
+                                           c[('r',0)],
+                                           c[('dr',0,0)])
 class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
     def __init__(self,
@@ -475,6 +488,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #diffusion, isotropic
         self.q[('a',0,0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
         self.q[('da',0,0,0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
+        #linear potential
+        self.q[('phi',0)] = self.q[('u',0)]
         self.q[('grad(phi)',0)] = self.q[('grad(u)',0)]
         self.q[('dphi',0,0)] = numpy.ones((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         #mass 
@@ -603,7 +618,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #TODO how to handle redistancing calls for calculateCoefficients,calculateElementResidual etc
         self.globalResidualDummy = None
         compKernelFlag=0
-        self.vof = cKappa_base(self.nSpace_global,
+        self.kappa = cKappa_base(self.nSpace_global,
                              self.nQuadraturePoints_element,
                              self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
                              self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
@@ -659,7 +674,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.forceStrongConditions:
               for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():
                   self.u[0].dof[dofN] = g(self.dirichletConditionsForceDOF.DOFBoundaryPointDict[dofN],self.timeIntegration.t)
-        self.vof.calculateResidual(#element
+        self.kappa.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
@@ -683,6 +698,10 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.nElements_global,
+            #diffusion
+            self.coefficients.nu_0,
+            self.coefficients.nu_1,
+            #end diffusion
 	    self.coefficients.useMetrics, 
             self.timeIntegration.alpha_bdf,
             self.shockCapturing.lag,
@@ -694,6 +713,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].dof,
 	    self.coefficients.u_old_dof,
             self.coefficients.q_v,
+            self.coefficients.q_phi, #level set variable goes here
             self.timeIntegration.m_tmp[0],
             self.q[('u',0)],
             self.timeIntegration.beta_bdf[0],
@@ -731,7 +751,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def getJacobian(self,jacobian):
 	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
 				       jacobian)
-        self.vof.calculateJacobian(#element
+        self.kappa.calculateJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
@@ -754,29 +774,35 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             self.mesh.nElements_global,
+            #diffusion
+            self.coefficients.nu_0,
+            self.coefficients.nu_1,
+            #end diffusion
 	    self.coefficients.useMetrics, 
-                  self.timeIntegration.alpha_bdf,
-                  self.shockCapturing.lag,
-                  self.shockCapturing.shockCapturingFactor,
-                  self.u[0].femSpace.dofMap.l2g,
-                  self.mesh.elementDiametersArray,
-                  self.u[0].dof,
-                  self.coefficients.q_v,
-                  self.timeIntegration.beta_bdf[0],
-                  self.q[('cfl',0)],
-                  self.shockCapturing.numDiff_last[0],
-                  self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
-                  jacobian,
-                  self.mesh.nExteriorElementBoundaries_global,
-                  self.mesh.exteriorElementBoundariesArray,
-                  self.mesh.elementBoundaryElementsArray,
-                  self.mesh.elementBoundaryLocalElementBoundariesArray,
-                  self.coefficients.ebqe_v,
-                  self.numericalFlux.isDOFBoundary[0],
-                  self.numericalFlux.ebqe[('u',0)],
-                  self.ebqe[('advectiveFlux_bc_flag',0)],
-                  self.ebqe[('advectiveFlux_bc',0)],
-                  self.csrColumnOffsets_eb[(0,0)])
+            self.timeIntegration.alpha_bdf,
+            self.shockCapturing.lag,
+            self.shockCapturing.shockCapturingFactor,
+            self.u[0].femSpace.dofMap.l2g,
+            self.mesh.elementDiametersArray,
+            self.u[0].dof,
+            self.coefficients.q_v,
+            self.coefficients.q_phi,
+            self.timeIntegration.beta_bdf[0],
+            self.q[('cfl',0)],
+            self.shockCapturing.numDiff_last[0],
+            self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
+            jacobian,
+            self.mesh.nExteriorElementBoundaries_global,
+            self.mesh.exteriorElementBoundariesArray,
+            self.mesh.elementBoundaryElementsArray,
+            self.mesh.elementBoundaryLocalElementBoundariesArray,
+            self.coefficients.ebqe_v,
+            self.numericalFlux.isDOFBoundary[0],
+            self.numericalFlux.ebqe[('u',0)],
+            self.ebqe[('advectiveFlux_bc_flag',0)],
+            self.ebqe[('advectiveFlux_bc',0)],
+            self.csrColumnOffsets_eb[(0,0)],
+            self.coefficients.ebqe_phi,self.coefficients.epsFact)
 
 
 
