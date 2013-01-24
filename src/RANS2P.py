@@ -18,14 +18,16 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  g=[0.0,-9.8],
                  nd=2,
                  LS_model=None,
+                 VF_model=None,
                  KN_model=None,
                  epsFact_density=None,
                  stokes=False,
                  sd=True,
                  movingDomain=False,
+                 useVF=0.0,
                  useRBLES=0.0,
 		 useMetrics=0.0,
-                 useConstantH=False,
+                 useConstant_he=False,
                  dragAlpha=0.01,
                  dragBeta =0.0,
                  setParamsFunc=None,      #uses setParamsFunc if given
@@ -43,7 +45,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  epsFact_source=1.,
                  epsFact_solid=1.0):
         self.epsFact_solid = epsFact_solid
-        self.useConstantH = useConstantH
+        self.useConstant_he = useConstant_he
+        self.useVF=useVF
         self.useRBLES=useRBLES
         self.useMetrics=useMetrics
         self.sd=sd
@@ -53,6 +56,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             self.epsFact_density = epsFact
         self.stokes=stokes
         self.LS_model=LS_model
+        self.VF_model=VF_model
         self.KN_model=KN_model
         self.epsFact=epsFact
         self.eps=None
@@ -210,6 +214,24 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             else:
                 self.ebq_n   = None
             self.ebqe_n    = modelList[self.LS_model].ebqe[('grad(u)',0)]
+        else:
+            self.q_phi = 10.0*numpy.ones(self.model.q[('u',1)].shape,'d')
+            self.ebqe_phi = 10.0*numpy.ones(self.model.ebqe[('u',1)].shape,'d')
+            self.bc_ebqe_phi = 10.0*numpy.ones(self.model.ebqe[('u',1)].shape,'d')
+            self.q_n = numpy.ones(self.model.q[('velocity',0)].shape,'d')
+            self.ebqe_n    = numpy.ones(self.model.ebqe[('velocity',0)].shape,'d')
+        if self.VF_model != None:
+            self.q_vf = modelList[self.VF_model].q[('u',0)]
+            if modelList[self.VF_model].ebq.has_key(('u',0)):
+                self.ebq_vf = modelList[self.VF_model].ebq[('u',0)]
+            else:
+                self.ebq_vf = None
+            self.ebqe_vf   = modelList[self.VF_model].ebqe[('u',0)]
+            self.bc_ebqe_vf = modelList[self.VF_model].numericalFlux.ebqe[('u',0)]
+        else:
+            self.q_vf = numpy.zeros(self.model.q[('u',0)].shape,'d')
+            self.ebqe_vf = numpy.zeros(self.model.ebqe[('u',0)].shape,'d')
+            self.bc_ebqe_vf = numpy.zeros(self.model.ebqe[('u',0)].shape,'d')            
         #curvature
         if self.KN_model != None:
             self.q_kappa    = modelList[self.KN_model].q[('u',0)]
@@ -218,6 +240,9 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                 self.ebq_kappa = modelList[self.KN_model].ebq[('u',0)]
             else:
                 self.ebq_kappa = None
+        else:
+            self.q_kappa = -numpy.ones(self.model.q[('u',1)].shape,'d')
+            self.ebqe_kappa = -numpy.ones(self.model.ebqe[('u',1)].shape,'d')
     def initializeMesh(self,mesh):
         #cek we eventually need to use the local element diameter
         self.eps_density = self.epsFact_density*mesh.h
@@ -227,11 +252,6 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.eps_source=self.epsFact_source*mesh.h
     #initialize so it can run as single phase
     def initializeElementQuadrature(self,t,cq):
-        if self.LS_model == None:
-            self.q_phi = -numpy.ones(cq[('u',1)].shape,'d')
-            self.q_n = -numpy.ones(cq[('velocity',0)].shape,'d')
-        if self.KN_model == None:
-            self.q_kappa = -numpy.zeros(cq[('u',1)].shape,'d')
         #VRANS
         self.q_phi_solid = numpy.ones(cq[('u',1)].shape,'d')
         self.q_velocity_solid = numpy.zeros(cq[('velocity',0)].shape,'d')
@@ -255,11 +275,6 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                     self.q_dragBeta[eN,:] = self.dragBetaTypes[self.elementMaterialTypes[eN]]
         #
     def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
-        if self.LS_model == None:
-            self.ebq_phi = -numpy.ones(cebq[('u',1)].shape,'d')
-            self.ebq_n = -numpy.ones(cebq[('velocity',0)].shape,'d')
-        if self.KN_model == None:
-            self.ebq_kappa = -numpy.zeros(cebq[('u',1)].shape,'d')
         #VRANS
         self.ebq_porosity = numpy.ones(cebq[('u',1)].shape,'d')
         self.ebq_dragAlpha= numpy.ones(cebq[('u',1)].shape,'d')
@@ -320,11 +335,6 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                 self.ebq_dragBeta[eN,ebN_element,:] = self.dragBetaTypes[self.elementMaterialTypes[eN]]
          #
     def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
-        if self.LS_model == None:
-            self.ebqe_phi = -numpy.ones(cebqe[('u',1)].shape,'d')
-            self.ebqe_n = -numpy.ones(cebqe[('velocity',0)].shape,'d')
-        if self.KN_model == None:
-            self.ebqe_kappa = -numpy.zeros(cebqe[('u',1)].shape,'d')
         #VRANS
         self.ebqe_porosity = numpy.ones(cebqe[('u',1)].shape,'d')
         self.ebqe_dragAlpha = numpy.ones(cebqe[('u',1)].shape,'d')
@@ -524,7 +534,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  reuse_trial_and_test_quadrature=True,
                  sd = True,
                  movingDomain=False):
-        useConstantH=coefficients.useConstantH#this is a hack to test the effect of using a constant smoothing width
+        useConstant_he=coefficients.useConstant_he#this is a hack to test the effect of using a constant smoothing width
         self.postProcessing = False#this is a hack to test the effect of post-processing
         if self.postProcessing:
             from proteus import RANS2P as oldRANS2P
@@ -948,14 +958,14 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.mesh.nodeVelocityArray==None:
             self.mesh.nodeVelocityArray = numpy.zeros(self.mesh.nodeArray.shape,'d')
         #cek/ido todo replace python loops in modules with optimized code if possible/necessary
-        self.forceStrongConditions=True
+        self.forceStrongConditions=False#True
         self.dirichletConditionsForceDOF = {}
         if self.forceStrongConditions:
             for cj in range(self.nc):
                 self.dirichletConditionsForceDOF[cj] = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False)
 
         compKernelFlag = 0
-        if self.coefficients.useConstantH:
+        if self.coefficients.useConstant_he:
             self.elementDiameter = self.mesh.elementDiametersArray.copy()
             self.elementDiameter[:] = max(self.mesh.elementDiametersArray)
         else:
@@ -1066,6 +1076,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[2].dof,
             self.u[3].dof,
             self.coefficients.g,
+            self.coefficients.useVF,
+            self.coefficients.q_vf,
             self.coefficients.q_phi,
             self.coefficients.q_n,
             self.coefficients.q_kappa,
@@ -1100,6 +1112,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.exteriorElementBoundariesArray,
             self.mesh.elementBoundaryElementsArray,
             self.mesh.elementBoundaryLocalElementBoundariesArray,
+            self.coefficients.ebqe_vf,
+            self.coefficients.bc_ebqe_vf,
             self.coefficients.ebqe_phi,
             self.coefficients.bc_ebqe_phi,
             self.coefficients.ebqe_n,
@@ -1216,6 +1230,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[2].dof,
             self.u[3].dof,
             self.coefficients.g,
+            self.coefficients.useVF,
+            self.coefficients.q_vf,
             self.coefficients.q_phi,
             self.coefficients.q_n,
             self.coefficients.q_kappa,
@@ -1257,6 +1273,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.exteriorElementBoundariesArray,
             self.mesh.elementBoundaryElementsArray,
             self.mesh.elementBoundaryLocalElementBoundariesArray,
+            self.coefficients.ebqe_vf,
             self.coefficients.ebqe_phi,
             self.coefficients.ebqe_n,
             self.coefficients.ebqe_kappa,
@@ -1515,6 +1532,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[3].dof,
             self.coefficients.g,
 	     self.q[('cfl',0)],   # ULTRA UGLY HACK self.q[('rho_0')],
+            self.coefficients.useVF,
+            self.coefficients.q_vf,
             self.coefficients.q_phi,
             self.coefficients.q_n,
             self.coefficients.q_kappa,
@@ -1550,6 +1569,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.elementBoundaryElementsArray,
             self.mesh.elementBoundaryLocalElementBoundariesArray,
 	    forceExtractionFaces,len(forceExtractionFaces),
+            self.coefficients.ebqe_vf,
             self.coefficients.ebqe_phi,
             self.coefficients.ebqe_n,
             self.coefficients.ebqe_kappa,

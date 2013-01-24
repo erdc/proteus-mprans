@@ -1,12 +1,16 @@
 from proteus.default_so import *
 import dambreak
 
-pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
-          ("ls_p",                "ls_n"),
-          ("vof_p",               "vof_n"),
-          ("redist_p",            "redist_n"),
-          ("ls_consrv_p",         "ls_consrv_n")]
-
+if dambreak.useOnlyVF:
+    pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
+              ("vof_p",               "vof_n")]
+else:
+    pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
+              ("vof_p",               "vof_n"),
+              ("ls_p",                "ls_n"),
+              ("redist_p",            "redist_n"),
+              ("ls_consrv_p",         "ls_consrv_n")]
+    
     
 name = "dambreak_p" 
 

@@ -73,6 +73,8 @@ namespace proteus
 				   double* v_dof, 
 				   double* w_dof,
 				   double* g,
+				   const double useVF,
+				   double* vf,
 				   double* phi,
 				   double* normal_phi,
 				   double* kappa_phi,
@@ -101,6 +103,8 @@ namespace proteus
 				   int* exteriorElementBoundariesArray,
 				   int* elementBoundaryElementsArray,
 				   int* elementBoundaryLocalElementBoundariesArray,
+				   double* ebqe_vf_ext,
+				   double* bc_ebqe_vf_ext,
 				   double* ebqe_phi_ext,
 				   double* bc_ebqe_phi_ext,
 				   double* ebqe_normal_phi_ext,
@@ -193,6 +197,8 @@ namespace proteus
 				   int* vel_l2g,
 				   double* p_dof, double* u_dof, double* v_dof, double* w_dof,
 				   double* g,
+				   const double useVF,
+				   double* vf,
 				   double* phi,
 				   double* normal_phi,
 				   double* kappa_phi,
@@ -230,6 +236,7 @@ namespace proteus
 				   int* exteriorElementBoundariesArray,
 				   int* elementBoundaryElementsArray,
 				   int* elementBoundaryLocalElementBoundariesArray,
+				   double* ebqe_vf_ext,
 				   double* ebqe_phi_ext,
 				   double* ebqe_normal_phi_ext,
 				   double* ebqe_kappa_phi_ext,
@@ -329,6 +336,8 @@ namespace proteus
 				   double* w_dof,
 				   double* g,
 				   double* rho_init,
+				   const double useVF,
+				   double* vf,
 				   double* phi,
 				   double* normal_phi,
 				   double* kappa_phi,
@@ -358,6 +367,7 @@ namespace proteus
 				   int* elementBoundaryElementsArray,
 				   int* elementBoundaryLocalElementBoundariesArray,
 				   int*  forceExtractionFaces, int nForceExtractionFaces,
+				   double* ebqe_vf_ext,
 				   double* ebqe_phi_ext,
 				   double* ebqe_normal_phi_ext,
 				   double* ebqe_kappa_phi_ext,
@@ -495,6 +505,8 @@ namespace proteus
 			      const double rho_1,
 			      const double nu_1,
 			      const double g[nSpace],
+			      const double useVF,
+			      const double& vf,
 			      const double& phi,
 			      const double n[nSpace],
 			      const double& kappa,
@@ -546,10 +558,10 @@ namespace proteus
 			      double dmom_w_ham_grad_p[nSpace])
     {
       double rho,nu,mu,H_rho,d_rho,H_mu,d_mu,norm_n;
-      H_rho = smoothedHeaviside(eps_rho,phi);
-      d_rho = smoothedDirac(eps_rho,phi);
-      H_mu = smoothedHeaviside(eps_mu,phi);
-      d_mu = smoothedDirac(eps_mu,phi);
+      H_rho = (1.0-useVF)*smoothedHeaviside(eps_rho,phi) + useVF*fmin(1.0,fmax(0.0,vf));
+      d_rho = (1.0-useVF)*smoothedDirac(eps_rho,phi);
+      H_mu = (1.0-useVF)*smoothedHeaviside(eps_mu,phi) + useVF*fmin(1.0,fmax(0.0,vf));
+      d_mu = (1.0-useVF)*smoothedDirac(eps_mu,phi);
   
       rho = rho_0*(1.0-H_rho)+rho_1*H_rho;
       nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
@@ -835,6 +847,8 @@ namespace proteus
 					   const double nu_0,
 					   const double rho_1,
 					   const double nu_1,
+					   const double useVF,
+					   const double vf,
 					   const double phi,
 					   const double u,
 					   const double v,
@@ -852,7 +866,7 @@ namespace proteus
 					   double dmom_w_source[nSpace])
     {
       double mu,nu,H_mu,uc,duc_du,duc_dv,duc_dw,viscosity,H_s;
-      H_mu = smoothedHeaviside(eps_mu,phi);
+      H_mu = (1.0-useVF)*smoothedHeaviside(eps_mu,phi)+useVF*fmin(1.0,fmax(0.0,vf));
       nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
       mu  = rho_0*nu_0*(1.0-H_mu)+rho_1*nu_1*H_mu;
 #ifdef COMPRESSIBLE_FORM
@@ -860,7 +874,7 @@ namespace proteus
 #else
       viscosity = nu;
 #endif
-      H_s = smoothedHeaviside(eps_s,phi_s);
+      H_s = (1.0-useVF)*smoothedHeaviside(eps_s,phi_s)+useVF*fmin(1.0,fmax(0.0,vf));
 
       uc = sqrt(u*u+v*v*+w*w); 
       duc_du = u/(uc+1.0e-12);
@@ -1420,7 +1434,7 @@ namespace proteus
 					const double& bc_u,
 					const double& bc_flux,
 					double* a,
-					const double grad_phi[nSpace],
+					const double grad_potential[nSpace],
 					const double& u,
 					const double& penalty,
 					double& flux)
@@ -1435,7 +1449,7 @@ namespace proteus
 	      diffusiveVelocityComponent_I=0.0;
 	      for(int m=rowptr[I];m<rowptr[I+1];m++)
 		{
-		  diffusiveVelocityComponent_I -= a[m]*grad_phi[colind[m]];
+		  diffusiveVelocityComponent_I -= a[m]*grad_potential[colind[m]];
 		  max_a = fmax(max_a,a[m]);
 		}
 	      flux+= diffusiveVelocityComponent_I*n[I];
@@ -1552,6 +1566,8 @@ namespace proteus
 			   double* v_dof, 
 			   double* w_dof,
 			   double* g,
+			   const double useVF,
+			   double* vf,
 			   double* phi,
 			   double* normal_phi,
 			   double* kappa_phi,
@@ -1580,6 +1596,8 @@ namespace proteus
 			   int* exteriorElementBoundariesArray,
 			   int* elementBoundaryElementsArray,
 			   int* elementBoundaryLocalElementBoundariesArray,
+			   double* ebqe_vf_ext,
+			   double* bc_ebqe_vf_ext,
 			   double* ebqe_phi_ext,
 			   double* bc_ebqe_phi_ext,
 			   double* ebqe_normal_phi_ext,
@@ -1805,6 +1823,8 @@ namespace proteus
 				   rho_1,
 				   nu_1,
 				   g,
+				   useVF,
+				   vf[eN_k],
 				   phi[eN_k],
 				   &normal_phi[eN_k_nSpace],
 				   kappa_phi[eN_k],
@@ -1871,6 +1891,8 @@ namespace proteus
 						nu_0,
 						rho_1,
 						nu_1,
+						useVF,
+						vf[eN_k],
 						phi[eN_k],
 						u,//q_velocity_sge[eN_k_nSpace+0],//u
 						v,//q_velocity_sge[eN_k_nSpace+1],//v
@@ -2423,6 +2445,8 @@ namespace proteus
 				   rho_1,
 				   nu_1,
 				   g,
+				   useVF,
+				   ebqe_vf_ext[ebNE_kb],
 				   ebqe_phi_ext[ebNE_kb],
 				   &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 				   ebqe_kappa_phi_ext[ebNE_kb],
@@ -2482,8 +2506,9 @@ namespace proteus
 				   rho_1,
 				   nu_1,
 				   g,
-				   bc_ebqe_phi_ext[ebNE_kb],//cek new phi to cause correct density eval
-				   //z_ext - 0.5,//cek hack, hardwire phi on exterior boundary
+				   useVF,
+				   bc_ebqe_vf_ext[ebNE_kb],
+				   bc_ebqe_phi_ext[ebNE_kb],
 				   &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 				   ebqe_kappa_phi_ext[ebNE_kb],
 				   //VRANS
@@ -2785,6 +2810,8 @@ namespace proteus
 			   int* vel_l2g,
 			   double* p_dof, double* u_dof, double* v_dof, double* w_dof,
 			   double* g,
+			   const double useVF,
+			   double* vf,
 			   double* phi,
 			   double* normal_phi,
 			   double* kappa_phi,
@@ -2822,6 +2849,7 @@ namespace proteus
 			   int* exteriorElementBoundariesArray,
 			   int* elementBoundaryElementsArray,
 			   int* elementBoundaryLocalElementBoundariesArray,
+			   double* ebqe_vf_ext,
 			   double* ebqe_phi_ext,
 			   double* ebqe_normal_phi_ext,
 			   double* ebqe_kappa_phi_ext,
@@ -3116,6 +3144,8 @@ namespace proteus
 				   rho_1,
 				   nu_1,
 				   g,
+				   useVF,
+				   vf[eN_k],
 				   phi[eN_k],
 				   &normal_phi[eN_k_nSpace],
 				   kappa_phi[eN_k],
@@ -3182,6 +3212,8 @@ namespace proteus
 						nu_0,
 						rho_1,
 						nu_1,
+						useVF,
+						vf[eN_k],
 						phi[eN_k],
 						u,//q_velocity_sge[eN_k_nSpace+0],//u
 						v,//q_velocity_sge[eN_k_nSpace+1],//v
@@ -3809,6 +3841,8 @@ namespace proteus
 				   rho_1,
 				   nu_1,
 				   g,
+				   useVF,
+				   ebqe_vf_ext[ebNE_kb],
 				   ebqe_phi_ext[ebNE_kb],
 				   &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 				   ebqe_kappa_phi_ext[ebNE_kb],
@@ -3868,6 +3902,8 @@ namespace proteus
 				   rho_1,
 				   nu_1,
 				   g,
+				   useVF,
+				   ebqe_vf_ext[ebNE_kb],
 				   ebqe_phi_ext[ebNE_kb],
 				   &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 				   ebqe_kappa_phi_ext[ebNE_kb],
@@ -4417,6 +4453,8 @@ namespace proteus
 			   double* w_dof,
 			   double* g,
 			   double* rho_init,
+			   const double useVF,
+			   double* vf,
 			   double* phi,
 			   double* normal_phi,
 			   double* kappa_phi,
@@ -4446,6 +4484,7 @@ namespace proteus
 			   int* elementBoundaryElementsArray,
 			   int* elementBoundaryLocalElementBoundariesArray,
 			   int* forceExtractionFaces, int nForceExtractionFaces,
+			   double* ebqe_vf_ext,
 			   double* ebqe_phi_ext,
 			   double* ebqe_normal_phi_ext,
 			   double* ebqe_kappa_phi_ext,
@@ -4553,10 +4592,10 @@ namespace proteus
 	      eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	      eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 
-              H_rho = RANS2P::smoothedHeaviside(eps_rho,ebqe_phi_ext[ebNE_kb]);
-              d_rho = RANS2P::smoothedDirac(eps_rho,ebqe_phi_ext[ebNE_kb]);
-              H_mu  = RANS2P::smoothedHeaviside(eps_mu,ebqe_phi_ext[ebNE_kb]);
-              d_mu  = RANS2P::smoothedDirac(eps_mu,ebqe_phi_ext[ebNE_kb]);
+              H_rho = (1.0-useVF)*RANS2P::smoothedHeaviside(eps_rho,ebqe_phi_ext[ebNE_kb]) + useVF*fmin(1.0,fmax(0.0,ebqe_vf_ext[ebNE_kb]));
+              d_rho = (1.0-useVF)*RANS2P::smoothedDirac(eps_rho,ebqe_phi_ext[ebNE_kb]);
+              H_mu  = (1.0-useVF)*RANS2P::smoothedHeaviside(eps_mu,ebqe_phi_ext[ebNE_kb]) + useVF*fmin(1.0,fmax(0.0,ebqe_vf_ext[ebNE_kb]));
+              d_mu  = (1.0-useVF)*RANS2P::smoothedDirac(eps_mu,ebqe_phi_ext[ebNE_kb]);
   
               rho = rho_0*(1.0-H_rho)+rho_1*H_rho;
               mu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
@@ -4565,7 +4604,6 @@ namespace proteus
 	      //shape
 	      ck.gradTrialFromRef(&  p_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,p_grad_trial_trace);
 	      ck.gradTrialFromRef(&vel_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,vel_grad_trial_trace);
-	      //ck.gradTrialFromRef(&vel_grad_test_trace_ref [ebN_local_kb_nSpace*nDOF_test_element] ,jacInv_ext,vel_grad_test_trace);
 	      //solution and gradients	
 	      ck.valFromDOF(p_dof,&p_l2g[eN_nDOF_trial_element],&p_trial_trace_ref[ebN_local_kb*nDOF_test_element],p_ext);
 	      ck.valFromDOF(u_dof,&vel_l2g[eN_nDOF_trial_element],&vel_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);

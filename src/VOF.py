@@ -7,7 +7,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.NonlinearSolvers import EikonalSolver
     from proteus.ctransportCoefficients import VolumeAveragedVOFCoefficientsEvaluate
     from proteus.cfemIntegrals import copyExteriorElementBoundaryValuesFromElementBoundaryValues
-    def __init__(self,LS_model=-1,V_model=0,RD_model=-1,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,setParamsFunc=None):
+    def __init__(self,LS_model=None,V_model=0,RD_model=None,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,setParamsFunc=None):
         self.useMetrics = useMetrics
         self.variableNames=['vof']
         nc=1
@@ -54,19 +54,20 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
 	self.u_old_dof = numpy.copy(self.model.u[0].dof)
 	
         #redistanced level set
-        if self.RD_modelIndex >= 0:
+        if self.RD_modelIndex is not None:
             self.rdModel = modelList[self.RD_modelIndex]
         #level set
-        self.lsModel = modelList[self.LS_modelIndex]
-        self.q_phi = modelList[self.LS_modelIndex].q[('u',0)]
-        self.ebqe_phi = modelList[self.LS_modelIndex].ebqe[('u',0)]
-        if modelList[self.LS_modelIndex].ebq.has_key(('u',0)):
-            self.ebq_phi = modelList[self.LS_modelIndex].ebq[('u',0)]
+        if self.LS_modelIndex is not None:
+            self.lsModel = modelList[self.LS_modelIndex]
+            self.q_phi = modelList[self.LS_modelIndex].q[('u',0)]
+            self.ebqe_phi = modelList[self.LS_modelIndex].ebqe[('u',0)]
+            if modelList[self.LS_modelIndex].ebq.has_key(('u',0)):
+                self.ebq_phi = modelList[self.LS_modelIndex].ebq[('u',0)]
         else:
-            self.ebq_phi = None
+            self.ebqe_phi = numpy.zeros(self.model.ebqe[('u',0)].shape,'d')#cek hack, we don't need this
         #flow model
         #print "flow model index------------",self.flowModelIndex,modelList[self.flowModelIndex].q.has_key(('velocity',0))
-        if self.flowModelIndex >= 0:
+        if self.flowModelIndex is not None:
             if modelList[self.flowModelIndex].q.has_key(('velocity',0)):
                 self.q_v = modelList[self.flowModelIndex].q[('velocity',0)]
                 self.ebqe_v = modelList[self.flowModelIndex].ebqe[('velocity',0)]

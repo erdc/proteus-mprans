@@ -18,7 +18,7 @@ subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=True
 shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=True)
 
 fullNewtonFlag = True
-multilevelNonlinearSolver = NLNI#NS
+multilevelNonlinearSolver = Newton#NS
 levelNonlinearSolver      = Newton#NS
 
 nonlinearSmoother = None
@@ -44,5 +44,5 @@ linearSolverConvergenceTest         = 'r-true'
 tolFac = 0.0
 nl_atol_res = 1.0e-6
 
-maxNonlinearIts = 10
+maxNonlinearIts = 20
 maxLineSearches = 0
