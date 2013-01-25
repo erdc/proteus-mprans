@@ -555,6 +555,7 @@ namespace proteus
 		  elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
 		    ck.Advection_weak(f,&u_grad_test_dV[i_nSpace]) + 
 		    ck.SubgridError(subgridError_u,Lstar_u[i]) + 
+		    ck.NumericalDiffusion(nu,grad_u,&u_grad_test_dV[i_nSpace]) + //scalar diffusion so steal numericalDiffusion approximation
 		    ck.NumericalDiffusion(q_numDiff_u_last[eN_k],grad_u,&u_grad_test_dV[i_nSpace]); 
 	      
 		}//i
@@ -977,6 +978,7 @@ namespace proteus
 		      elementJacobian_u_u[i][j] += ck.MassJacobian_weak(dm_t,u_trial_ref[k*nDOF_trial_element+j],u_test_dV[i]) + 
 			ck.AdvectionJacobian_weak(df,u_trial_ref[k*nDOF_trial_element+j],&u_grad_test_dV[i_nSpace]) +
 			ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u[i]) + 
+			ck.NumericalDiffusionJacobian(nu,&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]) + //steal numericalDiffusion for scalar term
 			ck.NumericalDiffusionJacobian(q_numDiff_u_last[eN_k],&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]); 
 		    }//j
 		}//i
