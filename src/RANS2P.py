@@ -229,9 +229,9 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             self.ebqe_vf   = modelList[self.VF_model].ebqe[('u',0)]
             self.bc_ebqe_vf = modelList[self.VF_model].numericalFlux.ebqe[('u',0)]
         else:
-            self.q_vf = numpy.zeros(self.model.q[('u',0)].shape,'d')
-            self.ebqe_vf = numpy.zeros(self.model.ebqe[('u',0)].shape,'d')
-            self.bc_ebqe_vf = numpy.zeros(self.model.ebqe[('u',0)].shape,'d')            
+            self.q_vf = numpy.zeros(self.model.q[('u',1)].shape,'d')
+            self.ebqe_vf = numpy.zeros(self.model.ebqe[('u',1)].shape,'d')
+            self.bc_ebqe_vf = numpy.zeros(self.model.ebqe[('u',1)].shape,'d')            
         #curvature
         if self.KN_model != None:
             self.q_kappa    = modelList[self.KN_model].q[('u',0)]

@@ -69,7 +69,7 @@ NOTE: assumes 3d for now
     """
 
     from proteus.ctransportCoefficients import kEpsilon_k_3D_Evaluate_sd
-    def __init__(self,LS_model=-1,V_model=0,RD_model=-1,epsilon_model=5,ME_model=6,
+    def __init__(self,LS_model=None,V_model=0,RD_model=None,epsilon_model=5,ME_model=6,
                  c_mu   =0.09,    
                  sigma_k=1.0,#Prandtl Number
                  rho_0=998.2,nu_0=1.004e-6,
@@ -123,7 +123,7 @@ NOTE: assumes 3d for now
     def initializeMesh(self,mesh):
         self.eps = self.epsFact*mesh.h
     def attachModels(self,modelList):
-        assert self.modelIndex >= 0 and self.modelIndex < len(modelList), "Kappa: invalid index for self model allowed range: [0,%s]" % len(modelList)
+        assert self.modelIndex != None and self.modelIndex < len(modelList), "Kappa: invalid index for self model allowed range: [0,%s]" % len(modelList)
         #self
         self.model = modelList[self.modelIndex]
 	
@@ -131,10 +131,10 @@ NOTE: assumes 3d for now
 	self.u_old_dof = numpy.copy(self.model.u[0].dof)
 	
         #redistanced level set
-        if self.RD_modelIndex >= 0:
+        if self.RD_modelIndex != None:
             self.rdModel = modelList[self.RD_modelIndex]
         #level set
-        if self.LS_modelIndex >= 0:
+        if self.LS_modelIndex != None:
             self.lsModel = modelList[self.LS_modelIndex]
             self.q_phi = modelList[self.LS_modelIndex].q[('u',0)]
             self.ebqe_phi = modelList[self.LS_modelIndex].ebqe[('u',0)]
@@ -143,9 +143,9 @@ NOTE: assumes 3d for now
             else:
                 self.ebq_phi = None
         #flow model
-        assert self.flowModelIndex >= 0, "Kappa: invalid index for flow model allowed range: [0,%s]" % len(modelList)
+        assert self.flowModelIndex != None, "Kappa: invalid index for flow model allowed range: [0,%s]" % len(modelList)
         #print "flow model index------------",self.flowModelIndex,modelList[self.flowModelIndex].q.has_key(('velocity',0))
-        if self.flowModelIndex >= 0: #keep for debugging for now
+        if self.flowModelIndex != None: #keep for debugging for now
             if modelList[self.flowModelIndex].q.has_key(('velocity',0)):
                 self.q_v = modelList[self.flowModelIndex].q[('velocity',0)]
                 self.ebqe_v = modelList[self.flowModelIndex].ebqe[('velocity',0)]
@@ -172,8 +172,8 @@ NOTE: assumes 3d for now
             if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',3)):
                 self.ebq_grad_w = modelList[self.flowModelIndex].ebq[('grad(u)',3)]
         #
-        #assert self.epsilon_modelIndex >= 0 and self.epsilon_modelIndex < len(modelList), "Kappa: invalid index for epsilon model allowed range: [0,%s]" % len(modelList) 
-        if self.epsilon_modelIndex >= 0: #keep for debugging for now
+        #assert self.epsilon_modelIndex != None and self.epsilon_modelIndex < len(modelList), "Kappa: invalid index for epsilon model allowed range: [0,%s]" % len(modelList) 
+        if self.epsilon_modelIndex != None: #keep for debugging for now
             #assume have q,ebqe always
             self.q_epsilon = modelList[self.epsilon_modelIndex].q[('u',0)]
             self.ebqe_epsilon = modelList[self.epsilon_modelIndex].ebqe[('u',0)]
