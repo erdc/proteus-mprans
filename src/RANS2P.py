@@ -714,7 +714,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         # find the union of all element quadrature points and
         # build a quadrature rule for each integral that has a
         # weight at each point in the union
-        #mwf include tag telling me which indices are which quadrature rule?
         (self.elementQuadraturePoints,self.elementQuadratureWeights,
          self.elementQuadratureRuleIndeces) = Quadrature.buildUnion(elementQuadratureDict)
         self.nQuadraturePoints_element = self.elementQuadraturePoints.shape[0]
@@ -786,6 +785,15 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #VRANS start, defaults to RANS 
         self.q[('r',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         #VRANS end
+        #RANS 2eq Models start
+        self.q[('grad(u)',1)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
+        self.q[('grad(u)',2)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
+        self.q[('grad(u)',3)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
+        #probably don't need ebqe gradients
+        self.ebqe[('grad(u)',1)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
+        self.ebqe[('grad(u)',2)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
+        self.ebqe[('grad(u)',3)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
+        #RANS 2eq Models end
         self.points_elementBoundaryQuadrature= set()
         self.scalars_elementBoundaryQuadrature= set([('u',ci) for ci in range(self.nc)])
         self.vectors_elementBoundaryQuadrature= set()

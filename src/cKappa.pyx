@@ -27,6 +27,10 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* normal_ref,
                                double* boundaryJac_ref,
                                int nElements_global,
+                               #diffusion terms
+                               double nu_0,
+                               double nu_1,
+                               #end diffusion
 			       double useMetrics, 
                                double alphaBDF,
                                int lag_shockCapturing,
@@ -36,6 +40,7 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* elementDiameter,
                                double* u_dof,double* u_dof_old,	
                                double* velocity,
+                               double* phi_ls, #level set variable
                                double* q_m,
                                double* q_u,
                                double* q_m_betaBDF,
@@ -77,6 +82,10 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* normal_ref,
                                double* boundaryJac_ref,
                                int nElements_global,
+                               #diffusion
+                               double nu_0,
+                               double nu_1,
+                               #end diffuion
 			       double useMetrics, 
                                double alphaBDF,
                                int lag_shockCapturing,
@@ -85,6 +94,7 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* elementDiameter,
                                double* u_dof, 
                                double* velocity,
+                               double* phi_ls, #level set variable
                                double* q_m_betaBDF, 
                                double* cfl,
                                double* q_numDiff_u_last, 
@@ -99,7 +109,8 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* ebqe_bc_u_ext,
                                int* isFluxBoundary_u,
                                double* ebqe_bc_flux_u_ext,
-                               int* csrColumnOffsets_eb_u_u)
+                               int* csrColumnOffsets_eb_u_u,
+                               double* ebqe_phi,double epsFact)
     Kappa_base* newKappa(int nSpaceIn,
                        int nQuadraturePoints_elementIn,
                        int nDOF_mesh_trial_elementIn,
@@ -149,6 +160,10 @@ cdef class cKappa_base:
                          numpy.ndarray normal_ref,
                          numpy.ndarray boundaryJac_ref,
                          int nElements_global,
+                         #diffusion terms
+                         double nu_0,
+                         double nu_1,
+                         #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
                          int lag_shockCapturing,
@@ -159,6 +174,7 @@ cdef class cKappa_base:
                          numpy.ndarray u_dof,
                          numpy.ndarray u_dof_old,
                          numpy.ndarray velocity,
+                         numpy.ndarray phi_ls, #level set variable
                          numpy.ndarray q_m,
                          numpy.ndarray q_u,
                          numpy.ndarray q_m_betaBDF,
@@ -200,6 +216,10 @@ cdef class cKappa_base:
                                        <double*> normal_ref.data,
                                        <double*> boundaryJac_ref.data,
                                        nElements_global,
+                                       #diffusion
+                                       nu_0,
+                                       nu_1,
+                                       #end diffuion
 			               useMetrics, 
                                        alphaBDF,
                                        lag_shockCapturing,
@@ -210,6 +230,7 @@ cdef class cKappa_base:
                                        <double*> u_dof.data,
 				       <double*> u_dof_old.data,	
                                        <double*> velocity.data,
+                                       <double*> phi_ls.data,
                                        <double*> q_m.data,
                                        <double*> q_u.data,
                                        <double*> q_m_betaBDF.data,
@@ -253,6 +274,10 @@ cdef class cKappa_base:
                          numpy.ndarray normal_ref,
                          numpy.ndarray boundaryJac_ref,
                          int nElements_global,
+                         #diffusion
+                         double nu_0,
+                         double nu_1,
+                         #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
                          int lag_shockCapturing,
@@ -261,6 +286,7 @@ cdef class cKappa_base:
                          numpy.ndarray elementDiameter,
                          numpy.ndarray u_dof, 
                          numpy.ndarray velocity,
+                         numpy.ndarray phi_ls, #level set variable
                          numpy.ndarray q_m_betaBDF, 
                          numpy.ndarray cfl,
                          numpy.ndarray q_numDiff_u_last, 
@@ -275,7 +301,9 @@ cdef class cKappa_base:
                          numpy.ndarray ebqe_bc_u_ext,
                          numpy.ndarray isFluxBoundary_u,
                          numpy.ndarray ebqe_bc_flux_u_ext,
-                         numpy.ndarray csrColumnOffsets_eb_u_u):
+                         numpy.ndarray csrColumnOffsets_eb_u_u,
+                         numpy.ndarray ebqe_phi,
+                         double epsFact):
        cdef numpy.ndarray rowptr,colind,globalJacobian_a
        (rowptr,colind,globalJacobian_a) = globalJacobian.getCSRrepresentation()
        self.thisptr.calculateJacobian(<double*> mesh_trial_ref.data,
@@ -299,6 +327,10 @@ cdef class cKappa_base:
                                        <double*> normal_ref.data,
                                        <double*> boundaryJac_ref.data,
                                        nElements_global,
+                                       #diffusion
+                                       nu_0,
+                                       nu_1,
+                                       #end diffusion
 			               useMetrics, 
                                        alphaBDF,
                                        lag_shockCapturing,
@@ -307,6 +339,7 @@ cdef class cKappa_base:
                                        <double*> elementDiameter.data,
                                        <double*> u_dof.data, 
                                        <double*> velocity.data,
+                                       <double*> phi_ls.data,
                                        <double*> q_m_betaBDF.data, 
                                        <double*> cfl.data,
                                        <double*> q_numDiff_u_last.data, 
@@ -321,4 +354,4 @@ cdef class cKappa_base:
                                        <double*> ebqe_bc_u_ext.data,
                                        <int*> isFluxBoundary_u.data,
                                        <double*> ebqe_bc_flux_u_ext.data,
-                                       <int*> csrColumnOffsets_eb_u_u.data)
+                                       <int*> csrColumnOffsets_eb_u_u.data,                                                  <double*> ebqe_phi.data,epsFact)
