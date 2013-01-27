@@ -11,7 +11,7 @@ LevelModelType = RDLS.LevelModel
 
 coefficients = RDLS.Coefficients(applyRedistancing=True,
                                  epsFact=epsFact_redistance,
-                                 nModelId=1,
+                                 nModelId=2,
                                  rdModelId=3,
 		                 useMetrics=useMetrics)
 

@@ -214,7 +214,7 @@ quad_order = 3
 # Boundary conditions and other flags
 #----------------------------------------------------
 openTop = True
-openSides = False
+openSides = True
 smoothBottom = False
 smoothObstacle = False
 rampInitialConditions = False
@@ -245,13 +245,16 @@ runCFL = 0.33
 
 useRBLES   = 0.0
 useMetrics = 0.0
-ns_shockCapturingFactor=0.1
+useVF = 1.0
+useOnlyVF = True
 
-ls_shockCapturingFactor=0.1
+ns_shockCapturingFactor=0.9
+
+ls_shockCapturingFactor=0.9
 ls_sc_uref = 1.0
 ls_sc_beta = 1.5
 
-vof_shockCapturingFactor=0.1
+vof_shockCapturingFactor=0.9
 vof_sc_uref = 1.0
 vof_sc_beta = 1.5
 
@@ -332,7 +335,7 @@ nDTout             = %i
 
 #  Discretization -- input options  
 useOldPETSc=False
-useSuperlu = False # set to False if running in parallel with petsc.options
+useSuperlu = True # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 
