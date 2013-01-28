@@ -39,7 +39,7 @@ nonlinearSolverConvergenceTest = 'rits'
 levelNonlinearSolverConvergenceTest = 'rits'
 
 tolFac = 0.0
-nl_atol_res = 0.5
+nl_atol_res = 1.0e-3
 
 maxNonlinearIts = 10
 maxLineSearches = 0

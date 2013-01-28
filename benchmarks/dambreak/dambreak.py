@@ -6,14 +6,16 @@ from proteus.default_n import *
 #  Discretization -- input options  
 Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
 #Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
+Refinement = 5
 genMesh=True
 useOldPETSc=False
-useSuperlu=False
-spaceOrder = 2
+useSuperlu=True#False
+spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 0.0
-
+useVF = 1.0
+useOnlyVF = False
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -59,9 +61,9 @@ if quasi2D:
     L = (L[0],he,L[2])
 
 nLevels = 1
-parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
-#parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
-nLayersOfOverlapForParallel = 2
+#parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
+parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
+nLayersOfOverlapForParallel = 1
 
 if useHex:   
     nnx=4*Refinement
@@ -127,11 +129,11 @@ runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.3
-ls_shockCapturingFactor  = 0.3
+ns_shockCapturingFactor  = 0.9
+ls_shockCapturingFactor  = 0.9
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.3
+vof_shockCapturingFactor = 0.9
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
 rd_shockCapturingFactor  = 0.9

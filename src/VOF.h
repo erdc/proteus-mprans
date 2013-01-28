@@ -703,7 +703,7 @@ namespace proteus
 					     normal,
 					     bc_u_ext,
 					     ebqe_bc_flux_u_ext[ebNE_kb],
-					     u_ext,//smoothedHeaviside(eps,ebqe_phi[ebNE_kb]),
+					     u_ext,//smoothedHeaviside(eps,ebqe_phi[ebNE_kb]),//cek hack
 					     df_ext,//VRANS includes porosity
 					     //velocity_ext,
 					     flux_ext);

@@ -4,6 +4,10 @@ from dambreak import *
 from proteus.mprans import RANS2P
 
 LevelModelType = RANS2P.LevelModel
+if useOnlyVF:
+    LS_model = None
+else:
+    LS_model = 2
 coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    sigma=0.0,
                                    rho_0 = rho_0,
@@ -12,9 +16,11 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    nu_1 = nu_1,
                                    g=g,
                                    nd=nd,
-                                   LS_model=1,
+                                   VF_model=1,
+                                   LS_model=LS_model,
                                    epsFact_density=epsFact_density,
                                    stokes=False,
+                                   useVF=useVF,
                                    useRBLES=useRBLES,
                                    useMetrics=useMetrics)
 
