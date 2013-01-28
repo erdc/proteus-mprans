@@ -161,22 +161,39 @@ namespace proteus
 			      const double phi,
 			      const double nu_0,
 			      const double nu_1,
+			      const double sigma_k,
+			      const double c_mu,
 			      const double& u,
+			      const double& epsilon,
 			      double& m,
 			      double& dm,
 			      double f[nSpace],
 			      double df[nSpace],
-			      double& nu)
+			      double& a,
+			      double& da_dk)
     {
+      const double div_eps = 1.0e-6;
+      double nu_t=0.0,dnu_t_dk=0.0,PiD4=0.0;
       m = u;
       dm = 1.0;
+
       for (int I=0; I < nSpace; I++)
 	{
 	  f[I] = v[I]*u;
 	  df[I] = v[I];
 	}
-      double H_mu = smoothedHeaviside(eps_mu,phi);
-      nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
+      const double H_mu = smoothedHeaviside(eps_mu,phi);
+      const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
+      //eddy viscosity 
+      nu_t     = c_mu*u*u/(epsilon+div_eps);
+      dnu_t_dk = 2.0*c_mu*u/(epsilon+div_eps);
+      if (nu_t < 0.0) 
+	{
+	  nu_t = 0.0; dnu_t_dk = 0.0;
+	}
+
+      a = nu_t/sigma_k + nu;
+      da_dk = dnu_t_dk/sigma_k;
 
     }
 
@@ -427,9 +444,9 @@ namespace proteus
 		eN_nDOF_trial_element = eN*nDOF_trial_element;
 	      register double u=0.0,grad_u[nSpace],grad_u_old[nSpace],
 		m=0.0,dm=0.0,
-		f[nSpace],df[nSpace],
+		f[nSpace],df[nSpace],df_minus_da_grad_u[nSpace],
 		m_t=0.0,dm_t=0.0,
-		nu=0.0,
+		a=0.0,da=0.0,
 		pdeResidual_u=0.0,
 		Lstar_u[nDOF_test_element],
 		subgridError_u=0.0,
@@ -505,12 +522,16 @@ namespace proteus
 				   phi_ls[eN_k],
 				   nu_0,
 				   nu_1,
+				   sigma_k,
+				   c_mu,
 				   u,
+				   1.0,//mwf hack tmp
 				   m,
 				   dm,
 				   f,
 				   df,
-				   nu);
+				   a,
+				   da);
 	      //
 	      //moving mesh
 	      //
@@ -520,6 +541,12 @@ namespace proteus
 	      df[0] -= MOVING_DOMAIN*dm*xt;
 	      df[1] -= MOVING_DOMAIN*dm*yt;
 	      df[2] -= MOVING_DOMAIN*dm*zt;
+
+	      //combine df and da/du \grad u term for stabilization and jacobian calculations
+	      assert(fabs(da) <= 1.0e-32);
+	      df_minus_da_grad_u[0] = df[0] - da*grad_u[0];
+	      df_minus_da_grad_u[1] = df[1] - da*grad_u[1];
+	      df_minus_da_grad_u[2] = df[2] - da*grad_u[2];
 	      //
 	      //calculate time derivative at quadrature points
 	      //
@@ -533,21 +560,21 @@ namespace proteus
 	      //calculate subgrid error (strong residual and adjoint)
 	      //
 	      //calculate strong residual
-	      pdeResidual_u = ck.Mass_strong(m_t) + ck.Advection_strong(df,grad_u);
+	      pdeResidual_u = ck.Mass_strong(m_t) + ck.Advection_strong(df_minus_da_grad_u,grad_u);
 	      //calculate adjoint
 	      for (int i=0;i<nDOF_test_element;i++)
 		{
 		  // register int eN_k_i_nSpace = (eN_k*nDOF_trial_element+i)*nSpace;
 		  // Lstar_u[i]  = ck.Advection_adjoint(df,&u_grad_test_dV[eN_k_i_nSpace]);
 		  register int i_nSpace = i*nSpace;
-		  Lstar_u[i]  = ck.Advection_adjoint(df,&u_grad_test_dV[i_nSpace]);
+		  Lstar_u[i]  = ck.Advection_adjoint(df_minus_da_grad_u,&u_grad_test_dV[i_nSpace]);
 		}
 	      //calculate tau and tau*Res
-	      calculateSubgridError_tau(elementDiameter[eN],dm_t,df,cfl[eN_k],tau0);
+	      calculateSubgridError_tau(elementDiameter[eN],dm_t,df_minus_da_grad_u,cfl[eN_k],tau0);
               calculateSubgridError_tau(Ct_sge,
                                         G,
 					dm_t,
-					df,
+					df_minus_da_grad_u,
 					tau1,
 				        cfl[eN_k]);
 					
@@ -576,7 +603,7 @@ namespace proteus
 		  elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
 		    ck.Advection_weak(f,&u_grad_test_dV[i_nSpace]) + 
 		    ck.SubgridError(subgridError_u,Lstar_u[i]) + 
-		    ck.NumericalDiffusion(nu,grad_u,&u_grad_test_dV[i_nSpace]) + //scalar diffusion so steal numericalDiffusion approximation
+		    ck.NumericalDiffusion(a,grad_u,&u_grad_test_dV[i_nSpace]) + //scalar diffusion so steal numericalDiffusion approximation
 		    ck.NumericalDiffusion(q_numDiff_u_last[eN_k],grad_u,&u_grad_test_dV[i_nSpace]); 
 	      
 		}//i
@@ -627,7 +654,7 @@ namespace proteus
 		dm_ext=0.0,
 		f_ext[nSpace],
 		df_ext[nSpace],
-		nu_ext=0.0,
+		a_ext=0.0,da_ext=0.0,
 		flux_ext=0.0,
 		bc_u_ext=0.0,
 		bc_grad_u_ext[nSpace],
@@ -707,23 +734,31 @@ namespace proteus
 				   ebqe_phi[ebNE_kb],
 				   nu_0,
 				   nu_1,
+				   sigma_k,
+				   c_mu,
 				   u_ext,
+				   1.0,//mwf hack tmp
 				   m_ext,
 				   dm_ext,
 				   f_ext,
 				   df_ext,
-				   nu_ext);
+				   a_ext,
+				   da_ext);
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
 				   epsFact,
 				   ebqe_phi[ebNE_kb],
 				   nu_0,
 				   nu_1,
+				   sigma_k,
+				   c_mu,
 				   bc_u_ext,
+				   1.0,//mwf hack tmp
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
 				   bc_df_ext,
-				   nu_ext);    
+				   a_ext,
+				   da_ext);    
 	      //
 	      //moving mesh
 	      //
@@ -853,8 +888,8 @@ namespace proteus
 	      //declare local storage
 	      register double u=0.0,
 		grad_u[nSpace],
-		m=0.0,dm=0.0,nu=0.0,
-		f[nSpace],df[nSpace],
+		m=0.0,dm=0.0,a=0.0,da=0.0,
+		f[nSpace],df[nSpace],df_minus_da_grad_u[nSpace],
 		m_t=0.0,dm_t=0.0,
 		dpdeResidual_u_u[nDOF_trial_element],
 		Lstar_u[nDOF_test_element],
@@ -932,12 +967,16 @@ namespace proteus
 				   phi_ls[eN_k],
 				   nu_0,
 				   nu_1,
+				   sigma_k,
+				   c_mu,
 				   u,
+				   1.0,//mwf hack tmp
 				   m,
 				   dm,
 				   f,
 				   df,
-				   nu);
+				   a,
+				   da);
 	      //
 	      //moving mesh
 	      //
@@ -947,6 +986,14 @@ namespace proteus
 	      df[0] -= MOVING_DOMAIN*dm*xt;
 	      df[1] -= MOVING_DOMAIN*dm*yt;
 	      df[2] -= MOVING_DOMAIN*dm*zt;
+
+	      //
+	      //account for nonlinearity in diffusion coefficient by piggy backing on advection routines
+	      assert(fabs(da) <= 1.0e-32);
+	      df_minus_da_grad_u[0] = df[0] - da*grad_u[0];
+	      df_minus_da_grad_u[1] = df[1] - da*grad_u[1];
+	      df_minus_da_grad_u[2] = df[2] - da*grad_u[2];
+
 	      //
 	      //calculate time derivatives
 	      //
@@ -965,7 +1012,8 @@ namespace proteus
 		  // int eN_k_i_nSpace = (eN_k*nDOF_trial_element+i)*nSpace;
 		  // Lstar_u[i]=ck.Advection_adjoint(df,&u_grad_test_dV[eN_k_i_nSpace]);	      
 		  register int i_nSpace = i*nSpace;
-		  Lstar_u[i]=ck.Advection_adjoint(df,&u_grad_test_dV[i_nSpace]);	      
+		  //mwf todo add a'\grad u term to adjoint
+		  Lstar_u[i]=ck.Advection_adjoint(df_minus_da_grad_u,&u_grad_test_dV[i_nSpace]);	      
 		}
 	      //calculate the Jacobian of strong residual
 	      for (int j=0;j<nDOF_trial_element;j++)
@@ -974,19 +1022,20 @@ namespace proteus
 		  //int eN_k_j_nSpace = eN_k_j*nSpace;
 		  int j_nSpace = j*nSpace;
 		  dpdeResidual_u_u[j]= ck.MassJacobian_strong(dm_t,u_trial_ref[k*nDOF_trial_element+j]) +
-		    ck.AdvectionJacobian_strong(df,&u_grad_trial[j_nSpace]);
+		    ck.AdvectionJacobian_strong(df_minus_da_grad_u,&u_grad_trial[j_nSpace]);
+		  //mwf todo add a'\grad u term to strong residual
 		}
 	      //tau and tau*Res
 	      calculateSubgridError_tau(elementDiameter[eN],
 					dm_t,
-					df,
+					df_minus_da_grad_u,
 					cfl[eN_k],
 					tau0);
   
               calculateSubgridError_tau(Ct_sge,
                                         G,
 					dm_t,
-					df,
+					df_minus_da_grad_u,
 					tau1,
 				        cfl[eN_k]);
               tau = useMetrics*tau1+(1.0-useMetrics)*tau0;
@@ -1004,9 +1053,10 @@ namespace proteus
 		      int j_nSpace = j*nSpace;
 		      int i_nSpace = i*nSpace;
 		      elementJacobian_u_u[i][j] += ck.MassJacobian_weak(dm_t,u_trial_ref[k*nDOF_trial_element+j],u_test_dV[i]) + 
-			ck.AdvectionJacobian_weak(df,u_trial_ref[k*nDOF_trial_element+j],&u_grad_test_dV[i_nSpace]) +
+			//incorporate nonlinearity of diffusion coefficient here 
+			ck.AdvectionJacobian_weak(df_minus_da_grad_u,u_trial_ref[k*nDOF_trial_element+j],&u_grad_test_dV[i_nSpace]) +
 			ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u[i]) + 
-			ck.NumericalDiffusionJacobian(nu,&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]) + //steal numericalDiffusion for scalar term
+			ck.NumericalDiffusionJacobian(a,&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]) + //steal numericalDiffusion for scalar term
 			ck.NumericalDiffusionJacobian(q_numDiff_u_last[eN_k],&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]); 
 		    }//j
 		}//i
@@ -1047,7 +1097,7 @@ namespace proteus
 		f_ext[nSpace],
 		df_ext[nSpace],
 		dflux_u_u_ext=0.0,
-		nu_ext=0.0,
+		a_ext=0.0,da_ext=0.0,
 		bc_u_ext=0.0,
 		//bc_grad_u_ext[nSpace],
 		bc_m_ext=0.0,
@@ -1143,23 +1193,31 @@ namespace proteus
 				   ebqe_phi[ebNE_kb],
 				   nu_0,
 				   nu_1,
+				   sigma_k,
+				   c_mu,
 				   u_ext,
+				   1.0,//mwf hack tmp
 				   m_ext,
 				   dm_ext,
 				   f_ext,
 				   df_ext,
-				   nu_ext);
+				   a_ext,
+				   da_ext);
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
 				   epsFact,
 				   ebqe_phi[ebNE_kb],
 				   nu_0,
 				   nu_1,
+				   sigma_k,
+				   c_mu,
 				   bc_u_ext,
+				   1.0,//mwf hack tmp
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
 				   bc_df_ext,
-				   nu_ext);
+				   a_ext,
+				   da_ext);
 	      //
 	      //moving domain
 	      //
