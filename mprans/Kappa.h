@@ -39,6 +39,8 @@ namespace proteus
 				   //diffusion terms
 				   double nu_0,
 				   double nu_1,
+                                   double sigma_k,
+                                   double c_mu,
 				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
@@ -50,6 +52,11 @@ namespace proteus
 				   double* u_dof,double* u_dof_old,	
 				   double* velocity,
 				   double* phi_ls, //level set variable
+                                   //velocity dof
+                                   double * velocity_dof_u,
+                                   double * velocity_dof_v,
+                                   double * velocity_dof_w,
+                                   //end velocity dof
 				   double* q_m,
 				   double* q_u,
 				   double* q_m_betaBDF,
@@ -97,6 +104,8 @@ namespace proteus
 				   //diffusion
 				   double nu_0,
 				   double nu_1,
+                                   double sigma_k,
+                                   double c_mu,
 				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
@@ -107,6 +116,11 @@ namespace proteus
 				   double* u_dof, 
 				   double* velocity,
 				   double* phi_ls, //level set variable
+                                   //velocity dof
+                                   double * velocity_dof_u,
+                                   double * velocity_dof_v,
+                                   double * velocity_dof_w,
+                                   //end velocity dof
 				   double* q_m_betaBDF, 
 				   double* cfl,
 				   double* q_numDiff_u_last, 
@@ -345,6 +359,8 @@ namespace proteus
 			   //diffusion terms
 			   double nu_0,
 			   double nu_1,
+                           double sigma_k,
+                           double c_mu,
 			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
@@ -356,6 +372,11 @@ namespace proteus
 			   double* u_dof,double* u_dof_old,
 			   double* velocity,
 			   double* phi_ls, //level set variable
+                           //velocity dof
+                           double * velocity_dof_u,
+                           double * velocity_dof_v,
+                           double * velocity_dof_w,
+                           //end velocity dof
 			   double* q_m,
 			   double* q_u,
 			   double* q_m_betaBDF,
@@ -776,6 +797,8 @@ namespace proteus
 			   //diffusion terms
 			   double nu_0,
 			   double nu_1,
+                           double sigma_k,
+                           double c_mu,
 			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
@@ -786,6 +809,11 @@ namespace proteus
 			   double* u_dof, 
 			   double* velocity,
 			   double* phi_ls, //level set variable
+                           //velocity dof
+                           double * velocity_dof_u,
+                           double * velocity_dof_v,
+                           double * velocity_dof_w,
+                           //end velocity dof
 			   double* q_m_betaBDF, 
 			   double* cfl,
 			   double* q_numDiff_u_last, 
