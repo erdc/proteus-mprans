@@ -400,7 +400,6 @@ namespace proteus
 				   double* ebqe_velocity,
 				   double* flux,
 				   double* elementResidual_p)=0;
-
     virtual void calculateVelocityAverage(int nExteriorElementBoundaries_global,
     					  int* exteriorElementBoundariesArray,
     					  int nInteriorElementBoundaries_global,
@@ -450,7 +449,7 @@ namespace proteus
 		      <<nQuadraturePoints_elementBoundaryIn<<">());"*/
 	  /*  <<std::endl<<std::flush; */
 	}
-
+      
     inline double smoothedHeaviside(double eps, double phi)
     {
       double H;
@@ -464,7 +463,7 @@ namespace proteus
 	H = 0.5*(1.0 + phi/eps + sin(M_PI*phi/eps)/M_PI);
       return H;
     }
-
+    
     inline double smoothedHeaviside_integral(double eps, double phi)
     {
       double HI;
@@ -926,7 +925,6 @@ namespace proteus
       tau_p = (4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h)/pfac;
     }
 
-
     inline
     void calculateSubgridError_tau(     const double&  Ct_sge,
                                         const double&  Cd_sge,
@@ -949,47 +947,6 @@ namespace proteus
       tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + Cd_sge*Kij*Kij*G_dd_G); 
       tau_p = 1.0/(pfac*tr_G*tau_v);     
     }
-
-
-
-    /* inline */
-    /*   void calculateSubgridError_tau(const double&  Ct_sge, */
-    /* 				   const double&  Cd_sge, */
-    /* 				   const double* G, */
-    /* 				   const double& G_dd_G, */
-    /* 				   const double& tr_G, */
-    /* 				   const double& rho, */
-    /* 				   const double& Dt, */
-    /* 				   const double v[nSpace], */
-    /* 				   const double& mu, */
-    /* 				   double& tau_p, */
-    /* 				   double& tau_v, */
-    /* 				   double& cfl) */
-    /* { */
-    /*   const double rho2=rho*rho,Dt2=Dt*Dt,mu2=mu*mu; */
-    /*   register double v_d_Gv=0.0; */
-    /*   for(int I=0;I<nSpace;I++) */
-    /*     for (int J=0;J<nSpace;J++) */
-    /* 	v_d_Gv += v[I]*G[I*nSpace+J]*v[J]; */
-    /*   cfl = 2.0*sqrt(v_d_Gv); */
-    /*   //cek 1.0/sqrt(rho2*Dt2 + 4*v_d_Gv + 144*mu2*G_dd_G); ? */
-    /*   /\* tau_v = 1.0/sqrt(rho2*Dt2 + 4*v_d_Gv + 144*mu2*G_dd_G); *\/ */
-    /*   /\* tau_p = 1.0/(tr_G*tau_v);  *\/ */
-    /*   //cek "correct" tau */
-    /*   tau_v = 1.0/sqrt(Ct_sge*rho2*Dt2 + rho2*v_d_Gv + Cd_sge*mu2*G_dd_G); */
-    /*   tau_p = 1.0/(tr_G*tau_v); */
-    /*   //debug */
-    /*   /\* double tau_v_old = tau_v,tau_p_old = tau_p; *\/ */
-    /*   /\* double nrm_v=0.0,h=1.0/20.0; *\/ */
-    /*   /\* double oneByAbsdt =  fabs(Dt); *\/ */
-    /*   /\* for(int I=0;I<nSpace;I++) *\/ */
-    /*   /\* 	nrm_v += v[I]*v[I]; *\/ */
-    /*   /\* nrm_v = sqrt(nrm_v); *\/ */
-    /*   /\* cfl = nrm_v/h; *\/ */
-    /*   /\* tau_v = 1.0/(4.0*mu/(h*h) + 2.0*rho*nrm_v/h + oneByAbsdt); *\/ */
-    /*   /\* tau_p = 4.0*mu + 2.0*rho*nrm_v*h+ oneByAbsdt*h*h; *\/ */
-    /*   /\* std::cout<<"nrm_v "<<nrm_v<<" tau_v "<<tau_v<<"\t"<<tau_v_old<<" tau_p "<<tau_p<<'\t'<<tau_p_old<<std::endl; *\/ */
-    /* } */
 
     inline
     void calculateSubgridError_tauRes(const double& tau_p,
@@ -1910,7 +1867,6 @@ namespace proteus
 						dmom_v_source,
 						dmom_w_source);
 	      //
-	      //
 	      //save momentum for time history and velocity for subgrid error
 	      //
 	      q_mom_u_acc[eN_k] = mom_u_acc;                            
@@ -2013,7 +1969,6 @@ namespace proteus
 					tau_p0,
 					q_cfl[eN_k]);
 
-
 	      calculateSubgridError_tau(Ct_sge,Cd_sge,
 			                G,G_dd_G,tr_G,
 					dmom_u_acc_u_t,
@@ -2024,23 +1979,9 @@ namespace proteus
 					tau_p1,
 					q_cfl[eN_k]);	
 
-
 	      tau_v = useMetrics*tau_v1+(1.0-useMetrics)*tau_v0;
 	      tau_p = useMetrics*tau_p1+(1.0-useMetrics)*tau_p0;
 
-
-	      //calculateSubgridError_tau(Ct_sge,
-	      // 				      Cd_sge,
-	      // 				      G,
-	      // 				      G_dd_G,
-	      // 				      tr_G,
-	      // 				      dmom_u_acc_u,//rho
-	      // 				      dmom_u_acc_u_t/dmom_u_acc_u,//Dt
-	      // 				      &q_velocity_sge[eN_k_nSpace],//v
-	      // 				      mom_u_diff_ten[1],//mu
-	      // 				      tau_p,
-	      // 				      tau_v,
-	      // 				      q_cfl[eN_k]);
 	      calculateSubgridError_tauRes(tau_p,
 					   tau_v,
 					   pdeResidual_p,
@@ -2383,7 +2324,6 @@ namespace proteus
 	      //VRANS
 	      porosity_ext = ebqe_porosity_ext[ebNE_kb];
 	      //
-	      // 
 	      //calculate the pde coefficients using the solution and the boundary values for the solution 
 	      // 
 	      evaluateCoefficients(eps_rho,
@@ -2552,9 +2492,6 @@ namespace proteus
 	      //calculate the numerical fluxes 
 	      // 
 	      //ck.calculateGScale(G,normal,h_penalty);
-	      //h_penalty = 10.0/h_penalty;
-	      //cek debug, do it the old way
-	      //h_penalty = 1000.0/elementDiameter[eN];
 	      exteriorNumericalAdvectiveFlux(isDOFBoundary_p[ebNE_kb],
 					     isDOFBoundary_u[ebNE_kb],
 					     isDOFBoundary_v[ebNE_kb],
@@ -2563,7 +2500,6 @@ namespace proteus
 					     isAdvectiveFluxBoundary_u[ebNE_kb],
 					     isAdvectiveFluxBoundary_v[ebNE_kb],
 					     isAdvectiveFluxBoundary_w[ebNE_kb],
-					     //dmom_u_ham_grad_p_ext[0],//=1/rho,
 					     dmom_u_ham_grad_p_ext[0],//=1/rho,
 					     bc_dmom_u_ham_grad_p_ext[0],//=1/bc_rho,
 					     normal,
@@ -2625,7 +2561,7 @@ namespace proteus
 					     normal,
 					     bc_mom_uv_diff_ten_ext,
 					     bc_v_ext,
-					     0.0,//ebqe_bc_flux_u_diff_ext[ebNE_kb],
+					     0.0,//assume all of the flux gets applied in diagonal component
 					     mom_uv_diff_ten_ext,
 					     grad_v_ext,
 					     v_ext,
@@ -2640,7 +2576,7 @@ namespace proteus
 					     normal,
 					     bc_mom_uw_diff_ten_ext,
 					     bc_w_ext,
-					     0.0,//ebqe_bc_flux_uw_diff_ext[ebNE_kb],
+					     0.0,//see above
 					     mom_uw_diff_ten_ext,
 					     grad_w_ext,
 					     w_ext,
@@ -2655,7 +2591,7 @@ namespace proteus
 					     normal,
 					     bc_mom_vu_diff_ten_ext,
 					     bc_u_ext,
-					     0.0,//ebqe_bc_flux_v_diff_ext[ebNE_kb],
+					     0.0,//see above
 					     mom_vu_diff_ten_ext,
 					     grad_u_ext,
 					     u_ext,
@@ -2685,7 +2621,7 @@ namespace proteus
 					     normal,
 					     bc_mom_vw_diff_ten_ext,
 					     bc_w_ext,
-					     0.0,//ebqe_bc_flux_v_diff_ext[ebNE_kb],
+					     0.0,//see above
 					     mom_vw_diff_ten_ext,
 					     grad_w_ext,
 					     w_ext,
@@ -2700,7 +2636,7 @@ namespace proteus
 					     normal,
 					     bc_mom_wu_diff_ten_ext,
 					     bc_u_ext,
-					     0.0,//ebqe_bc_flux_w_diff_ext[ebNE_kb],
+					     0.0,//see above
 					     mom_wu_diff_ten_ext,
 					     grad_u_ext,
 					     u_ext,
@@ -2715,7 +2651,7 @@ namespace proteus
 					     normal,
 					     bc_mom_wv_diff_ten_ext,
 					     bc_v_ext,
-					     0.0,//ebqe_bc_flux_w_diff_ext[ebNE_kb],
+					     0.0,//see above
 					     mom_wv_diff_ten_ext,
 					     grad_v_ext,
 					     v_ext,
@@ -3215,7 +3151,6 @@ namespace proteus
 	      //
 	      //VRANS
 	      porosity = q_porosity[eN_k];
-	      //meanGrainSize = q_meanGrain[eN_k]; 
 	      //
 	      //
 	      //calculate pde coefficients and derivatives at quadrature points
@@ -3513,7 +3448,7 @@ namespace proteus
               dmom_w_adv_w[2] += dmom_u_acc_u*(useRBLES*subgridError_w); 
 
 
-	      //cek todo add RBLES terms consistent to residual modifications or ignore them partials w.r.t the additional RBLES terms
+	      //cek todo add RBLES terms consistent to residual modifications or ignore the partials w.r.t the additional RBLES terms
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
 		  register int i_nSpace = i*nSpace;
@@ -4092,9 +4027,6 @@ namespace proteus
 	      //calculate the flux jacobian
 	      //
 	      //ck.calculateGScale(G,normal,h_penalty);
-	      //h_penalty = 10.0/h_penalty;
-	      //cek debug, do it the old way
-	      //h_penalty = 1000.0/elementDiameter[eN];
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
 		  register int j_nSpace = j*nSpace,ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
