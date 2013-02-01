@@ -43,7 +43,12 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  waterDepth=0.5,
                  Omega_s=[[0.45,0.55],[0.2,0.4],[0.0,1.0]],
                  epsFact_source=1.,
-                 epsFact_solid=1.0):
+                 epsFact_solid=1.0,
+                 eb_adjoint_sigma=1.0,
+                 forceStrongDirichlet=False):
+        self.forceStrongDirichlet=forceStrongDirichlet
+        self.eb_adjoint_sigma=eb_adjoint_sigma
+        self.movingDomain = movingDomain
         self.epsFact_solid = epsFact_solid
         self.useConstant_he = useConstant_he
         self.useVF=useVF
@@ -533,9 +538,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  name='RANS2P',
                  reuse_trial_and_test_quadrature=True,
                  sd = True,
-                 movingDomain=False,
-                 eb_adjoint_sigma=1.0):
-        self.eb_adjoint_sigma = eb_adjoint_sigma
+                 movingDomain=False):
+        self.eb_adjoint_sigma = coefficients.eb_adjoint_sigma
         useConstant_he=coefficients.useConstant_he#this is a hack to test the effect of using a constant smoothing width
         self.postProcessing = False#this is a hack to test the effect of post-processing
         if self.postProcessing:
@@ -568,7 +572,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #
         #set the objects describing the method and boundary conditions
         #
-        self.movingDomain=movingDomain
+        self.movingDomain=coefficients.movingDomain
         self.tLast_mesh=None
         #
         #cek todo clean up these flags in the optimized version
@@ -952,7 +956,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.mesh.nodeVelocityArray==None:
             self.mesh.nodeVelocityArray = numpy.zeros(self.mesh.nodeArray.shape,'d')
         #cek/ido todo replace python loops in modules with optimized code if possible/necessary
-        self.forceStrongConditions=False#True
+        self.forceStrongConditions=coefficients.forceStrongDirichlet
         self.dirichletConditionsForceDOF = {}
         if self.forceStrongConditions:
             for cj in range(self.nc):
