@@ -2,9 +2,9 @@
 The split operator module for air/water flow around a moving rigid cylinder
 """
 from proteus.default_so import *
-import wigley
+import example
 
-if wigley.useOnlyVF:
+if example.useOnlyVF:
     pnList = [("twp_navier_stokes_p", #0
                "twp_navier_stokes_n"),
               ("vof_p", #1              
@@ -21,15 +21,15 @@ else:
               ("ls_consrv_p" ,#4 
                "ls_consrv_n")]
 
-if wigley.movingDomain:
+if example.movingDomain:
     pnList.append(("moveMesh_p","moveMesh_n"))
 
-name = "wigley"
+name = "example"
 
 systemStepControllerType = Sequential_MinAdaptiveModelStep
 
 needEBQ_GLOBAL = False
 needEBQ = False
 
-tnList = [0.0,wigley.dt_init]+[wigley.dt_init+ i*wigley.dt_out for i in range(1,wigley.nDTout+1)]
+tnList = [0.0,example.dt_init]+[example.dt_init+ i*example.dt_out for i in range(1,example.nDTout+1)]
 

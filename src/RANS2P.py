@@ -43,7 +43,12 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  waterDepth=0.5,
                  Omega_s=[[0.45,0.55],[0.2,0.4],[0.0,1.0]],
                  epsFact_source=1.,
-                 epsFact_solid=1.0):
+                 epsFact_solid=1.0,
+                 eb_adjoint_sigma=1.0,
+                 forceStrongDirichlet=False):
+        self.forceStrongDirichlet=forceStrongDirichlet
+        self.eb_adjoint_sigma=eb_adjoint_sigma
+        self.movingDomain = movingDomain
         self.epsFact_solid = epsFact_solid
         self.useConstant_he = useConstant_he
         self.useVF=useVF
@@ -534,6 +539,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  reuse_trial_and_test_quadrature=True,
                  sd = True,
                  movingDomain=False):
+        self.eb_adjoint_sigma = coefficients.eb_adjoint_sigma
         useConstant_he=coefficients.useConstant_he#this is a hack to test the effect of using a constant smoothing width
         self.postProcessing = False#this is a hack to test the effect of post-processing
         if self.postProcessing:
@@ -566,7 +572,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #
         #set the objects describing the method and boundary conditions
         #
-        self.movingDomain=movingDomain
+        self.movingDomain=coefficients.movingDomain
         self.tLast_mesh=None
         #
         #cek todo clean up these flags in the optimized version
@@ -775,7 +781,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.ebqe[('advectiveFlux_bc',2)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.ebqe[('advectiveFlux_bc',3)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.ebqe[('diffusiveFlux_bc',1,1)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
-        self.ebqe[('penalty')] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
+        self.ebqe['penalty'] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.ebqe[('diffusiveFlux_bc',2,2)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.ebqe[('diffusiveFlux_bc',3,3)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.ebqe[('velocity',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
@@ -905,6 +911,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                 ebN = self.mesh.exteriorElementBoundariesArray[ebNE]
                 for k in range(self.nElementBoundaryQuadraturePoints_elementBoundary):
                     self.ebqe['penalty'][ebNE,k] = self.numericalFlux.penalty_constant/self.mesh.elementBoundaryDiametersArray[ebN]**self.numericalFlux.penalty_power
+        print self.ebqe['penalty']
         log(memory("numericalFlux","OneLevelTransport"),level=4)
         self.elementEffectiveDiametersArray  = self.mesh.elementInnerDiametersArray
         #use post processing tools to get conservative fluxes, None by default
@@ -949,7 +956,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.mesh.nodeVelocityArray==None:
             self.mesh.nodeVelocityArray = numpy.zeros(self.mesh.nodeArray.shape,'d')
         #cek/ido todo replace python loops in modules with optimized code if possible/necessary
-        self.forceStrongConditions=False#True
+        self.forceStrongConditions=coefficients.forceStrongDirichlet
         self.dirichletConditionsForceDOF = {}
         if self.forceStrongConditions:
             for cj in range(self.nc):
@@ -1035,6 +1042,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
+            self.eb_adjoint_sigma,
             self.elementDiameter,#mesh.elementDiametersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
@@ -1130,7 +1138,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('advectiveFlux_bc',3)],
             self.numericalFlux.ebqe[('u',1)],
             self.ebqe[('diffusiveFlux_bc',1,1)],
-            self.ebqe[('penalty')],
+            self.ebqe['penalty'],
             self.numericalFlux.ebqe[('u',2)],
             self.ebqe[('diffusiveFlux_bc',2,2)],
             self.numericalFlux.ebqe[('u',3)],
@@ -1189,6 +1197,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[1].femSpace.grad_psi_trace,
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
+            self.eb_adjoint_sigma,
             self.elementDiameter,#mesh.elementDiametersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
@@ -1289,7 +1298,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('advectiveFlux_bc',3)],
             self.numericalFlux.ebqe[('u',1)],
             self.ebqe[('diffusiveFlux_bc',1,1)],
-            self.ebqe[('penalty')],
+            self.ebqe['penalty'],
             self.numericalFlux.ebqe[('u',2)],
             self.ebqe[('diffusiveFlux_bc',2,2)],
             self.numericalFlux.ebqe[('u',3)],
@@ -1582,7 +1591,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('advectiveFlux_bc',3)],
             self.numericalFlux.ebqe[('u',1)],
             self.ebqe[('diffusiveFlux_bc',1,1)],
-            self.ebqe[('penalty')],
+            self.ebqe['penalty'],
             self.numericalFlux.ebqe[('u',2)],
             self.ebqe[('diffusiveFlux_bc',2,2)],
             self.numericalFlux.ebqe[('u',3)],

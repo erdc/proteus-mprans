@@ -20,9 +20,6 @@ nu_0 =1.004e-6
 rho_1=1.205
 nu_1 =1.500e-5
 
-#cek debug
-#rho_1 = rho_0
-#nu_1 = nu_0
 sigma_01=0.0
 
 g=[0.0,0.0,-9.81]
@@ -51,10 +48,8 @@ hull_center = (0.0,
                0.5*hull_length)#cek todo, still not sure about where the waterline is
 
 #debug
-L=(#2.5*hull_length,
-   2.0*hull_length,
-   #1.5*hull_length,
-   0.5*hull_length,
+L=(2.5*hull_length,
+   1.5*hull_length,
    3.0*hull_draft)
 x_ll = (-1.0*hull_length,
          -L[1]/2.0,
@@ -79,8 +74,8 @@ RBR_angCons  = [1,0,1]
 
 nLevels = 1
 
-he = hull_draft/1.5 #16 cores
-he *=0.5 #128 but can run on 2 cores with 8G
+he = hull_draft/1.0 #16 cores
+#he *=0.5 #128 but can run on 2 cores with 8G
 #he *=0.5 #1024
 #vessel = 'wigley-gmsh'
 #genMesh=False
@@ -218,8 +213,8 @@ quad_order = 3
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
-openTop = False#True
-openSides = False#True
+openTop = True
+openSides = True
 smoothBottom = False
 smoothObstacle = False
 rampInitialConditions = False
