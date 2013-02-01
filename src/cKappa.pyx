@@ -30,6 +30,8 @@ cdef extern from "Kappa.h" namespace "proteus":
                                #diffusion terms
                                double nu_0,
                                double nu_1,
+                               double sigma_k,
+                               double c_mu,
                                #end diffusion
 			       double useMetrics, 
                                double alphaBDF,
@@ -41,6 +43,11 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* u_dof,double* u_dof_old,	
                                double* velocity,
                                double* phi_ls, #level set variable
+                               #velocity dof
+                               double * velocity_dof_u,
+                               double * velocity_dof_v,
+                               double * velocity_dof_w,
+                               #end velocity dof
                                double* q_m,
                                double* q_u,
                                double* q_m_betaBDF,
@@ -85,6 +92,8 @@ cdef extern from "Kappa.h" namespace "proteus":
                                #diffusion
                                double nu_0,
                                double nu_1,
+                               double sigma_k,
+                               double c_mu,
                                #end diffuion
 			       double useMetrics, 
                                double alphaBDF,
@@ -95,6 +104,11 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* u_dof, 
                                double* velocity,
                                double* phi_ls, #level set variable
+                               #velocity dof
+                               double* velocity_dof_u,
+                               double* velocity_dof_v,
+                               double* velocity_dof_w,
+                               #end velocity dof
                                double* q_m_betaBDF, 
                                double* cfl,
                                double* q_numDiff_u_last, 
@@ -163,6 +177,8 @@ cdef class cKappa_base:
                          #diffusion terms
                          double nu_0,
                          double nu_1,
+                         double sigma_k,
+                         double c_mu,
                          #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
@@ -175,6 +191,11 @@ cdef class cKappa_base:
                          numpy.ndarray u_dof_old,
                          numpy.ndarray velocity,
                          numpy.ndarray phi_ls, #level set variable
+                         #velocity dof
+                         numpy.ndarray velocity_dof_u,
+                         numpy.ndarray velocity_dof_v,
+                         numpy.ndarray velocity_dof_w,
+                         #end velocity dof
                          numpy.ndarray q_m,
                          numpy.ndarray q_u,
                          numpy.ndarray q_m_betaBDF,
@@ -219,6 +240,8 @@ cdef class cKappa_base:
                                        #diffusion
                                        nu_0,
                                        nu_1,
+                                       sigma_k,
+                                       c_mu,
                                        #end diffuion
 			               useMetrics, 
                                        alphaBDF,
@@ -231,6 +254,11 @@ cdef class cKappa_base:
 				       <double*> u_dof_old.data,	
                                        <double*> velocity.data,
                                        <double*> phi_ls.data,
+                                       #velocity dof
+                                       <double*> velocity_dof_u.data,
+                                       <double*> velocity_dof_v.data,
+                                       <double*> velocity_dof_w.data,
+                                      #end velocity dof
                                        <double*> q_m.data,
                                        <double*> q_u.data,
                                        <double*> q_m_betaBDF.data,
@@ -277,6 +305,8 @@ cdef class cKappa_base:
                          #diffusion
                          double nu_0,
                          double nu_1,
+                         double sigma_k,
+                         double c_mu,
                          #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
@@ -287,6 +317,11 @@ cdef class cKappa_base:
                          numpy.ndarray u_dof, 
                          numpy.ndarray velocity,
                          numpy.ndarray phi_ls, #level set variable
+                         #velocity dof
+                         numpy.ndarray velocity_dof_u,
+                         numpy.ndarray velocity_dof_v,
+                         numpy.ndarray velocity_dof_w,
+                         #end velocity dof
                          numpy.ndarray q_m_betaBDF, 
                          numpy.ndarray cfl,
                          numpy.ndarray q_numDiff_u_last, 
@@ -330,6 +365,8 @@ cdef class cKappa_base:
                                        #diffusion
                                        nu_0,
                                        nu_1,
+                                       sigma_k,
+                                       c_mu,
                                        #end diffusion
 			               useMetrics, 
                                        alphaBDF,
@@ -340,6 +377,11 @@ cdef class cKappa_base:
                                        <double*> u_dof.data, 
                                        <double*> velocity.data,
                                        <double*> phi_ls.data,
+                                       #velocity dofs
+                                       <double*> velocity_dof_u.data,
+                                       <double*> velocity_dof_v.data,
+                                       <double*> velocity_dof_w.data,
+                                       #end velocity dofs
                                        <double*> q_m_betaBDF.data, 
                                        <double*> cfl.data,
                                        <double*> q_numDiff_u_last.data, 
