@@ -5,7 +5,6 @@ install_proteus:
 
 install:
 	${PROTEUS_PYTHON} setup.py install
-	cd scripts && make
 
 clean:
 	${PROTEUS_PYTHON} setup.py clean

@@ -135,7 +135,7 @@ g = [0.0,0.0,0.0]
 #----------------------------------------------------
 
 residence_time = length/inflow
-T=10.0#1.0e2#10.0*length/inflow
+T=1.0#1.0e2#10.0*length/inflow
 #tnList = [0.0,0.1*residence_time,T]
 nDTout=1
 tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]

@@ -7,10 +7,10 @@ stepController  = Min_dt_cfl_controller
 femSpaces = {0:basis}
 
 massLumping       = False
-numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
+numericalFluxType = Advection_DiagonalUpwind_Diffusion_IIPG_exterior
 conservativeFlux  = None
 subgridError      = Advection_ASGS(coefficients,nd,lag=False) #needs to be addressed or just skip because going to handle in optimized code anyway?
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=False)
+shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=True)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton
@@ -18,14 +18,15 @@ levelNonlinearSolver      = Newton
 
 nonlinearSmoother = None
 linearSmoother    = None
-
+#printNonlinearSolverInfo = True
 matrix = SparseMatrix
-if not use_petsc4py:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver      = PETSc
-else:
+if use_petsc4py:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
+else:
+    multilevelLinearSolver = LU
+    levelLinearSolver      = LU
+
 linear_solver_options_prefix = 'kappa_'
 levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest         = 'rits'
