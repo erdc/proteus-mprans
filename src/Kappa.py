@@ -171,15 +171,6 @@ NOTE: assumes 3d for now
                 self.ebq_grad_v = modelList[self.flowModelIndex].ebq[('grad(u)',2)]
             if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',3)):
                 self.ebq_grad_w = modelList[self.flowModelIndex].ebq[('grad(u)',3)]
-            #
-            self.velocity_dof_u = modelList[self.flowModelIndex].u[1].dof
-            self.velocity_dof_v = modelList[self.flowModelIndex].u[2].dof 
-            self.velocity_dof_w = modelList[self.flowModelIndex].u[3].dof 
-        else:
-            self.velocity_dof_u = numpy.zeros(self.model.u[0].dof.shape,'d')
-            self.velocity_dof_v = numpy.zeros(self.model.u[0].dof.shape,'d')
-            self.velocity_dof_w = numpy.zeros(self.model.u[0].dof.shape,'d')
-            
         #
         #assert self.epsilon_modelIndex != None and self.epsilon_modelIndex < len(modelList), "Kappa: invalid index for epsilon model allowed range: [0,%s]" % len(modelList) 
         if self.epsilon_modelIndex != None: #keep for debugging for now
@@ -710,8 +701,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             #diffusion
             self.coefficients.nu_0,
             self.coefficients.nu_1,
-            self.coefficients.sigma_k,
-            self.coefficients.c_mu,
             #end diffusion
 	    self.coefficients.useMetrics, 
             self.timeIntegration.alpha_bdf,
@@ -725,11 +714,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 	    self.coefficients.u_old_dof,
             self.coefficients.q_v,
             self.coefficients.q_phi, #level set variable goes here
-            #velocity dof
-            self.coefficients.velocity_dof_u,
-            self.coefficients.velocity_dof_v,
-            self.coefficients.velocity_dof_w,
-            #end velocity dof
             self.timeIntegration.m_tmp[0],
             self.q[('u',0)],
             self.timeIntegration.beta_bdf[0],
@@ -793,8 +777,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             #diffusion
             self.coefficients.nu_0,
             self.coefficients.nu_1,
-            self.coefficients.sigma_k,
-            self.coefficients.c_mu,
             #end diffusion
 	    self.coefficients.useMetrics, 
             self.timeIntegration.alpha_bdf,
@@ -805,11 +787,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].dof,
             self.coefficients.q_v,
             self.coefficients.q_phi,
-            #velocity dof
-            self.coefficients.velocity_dof_u,
-            self.coefficients.velocity_dof_v,
-            self.coefficients.velocity_dof_w,
-            #end velocity dof
             self.timeIntegration.beta_bdf[0],
             self.q[('cfl',0)],
             self.shockCapturing.numDiff_last[0],
