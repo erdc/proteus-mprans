@@ -75,12 +75,13 @@ RBR_angCons  = [1,0,1]
 nLevels = 1
 
 he = hull_draft/1.0 #16 cores
-#he *=0.5 #128 but can run on 2 cores with 8G
-#he *=0.5 #1024
+he *=0.5 #128 
+he *=0.5 #512 (2048 8-way nodes)
+
 #vessel = 'wigley-gmsh'
 #genMesh=False
 vessel = 'wigley'
-genMesh=True
+genMesh=False#True
 #vessel = None
 #genMesh=True
 
