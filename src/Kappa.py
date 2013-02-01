@@ -512,6 +512,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.ebqe[('advectiveFlux_bc_flag',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'i')
         self.ebqe[('advectiveFlux_bc',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.ebqe[('advectiveFlux',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
+        self.ebqe[('penalty')] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.points_elementBoundaryQuadrature= set()
         self.scalars_elementBoundaryQuadrature= set([('u',ci) for ci in range(self.nc)])
         self.vectors_elementBoundaryQuadrature= set()
@@ -736,6 +737,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.q[('cfl',0)],
             self.shockCapturing.numDiff[0],
             self.shockCapturing.numDiff_last[0],
+            self.ebqe['penalty'],
             self.offset[0],self.stride[0],
             r,
             self.mesh.nExteriorElementBoundaries_global,
@@ -758,8 +760,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.stabilization:
             self.stabilization.accumulateSubgridMassHistory(self.q)
         log("Global residual",level=9,data=r)
-        #mwf debug
-        #pdb.set_trace()
         #mwf decide if this is reasonable for keeping solver statistics
         self.nonlinear_function_evaluations += 1
         if self.globalResidualDummy == None:
@@ -813,6 +813,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.timeIntegration.beta_bdf[0],
             self.q[('cfl',0)],
             self.shockCapturing.numDiff_last[0],
+            self.ebqe['penalty'],
             self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
             jacobian,
             self.mesh.nExteriorElementBoundaries_global,

@@ -63,6 +63,7 @@ namespace proteus
 				   double* cfl,
 				   double* q_numDiff_u, 
 				   double* q_numDiff_u_last, 
+				   double* ebqe_penalty_ext, //penalty
 				   int offset_u, int stride_u, 
 				   double* globalResidual,
 				   int nExteriorElementBoundaries_global,
@@ -124,6 +125,7 @@ namespace proteus
 				   double* q_m_betaBDF, 
 				   double* cfl,
 				   double* q_numDiff_u_last, 
+				   double* ebqe_penalty_ext, //penalty
 				   int* csrRowIndeces_u_u,int* csrColumnOffsets_u_u,
 				   double* globalJacobian,
 				   int nExteriorElementBoundaries_global,
@@ -191,7 +193,6 @@ namespace proteus
 	{
 	  nu_t = 0.0; dnu_t_dk = 0.0;
 	}
-
       a = nu_t/sigma_k + nu;
       da_dk = dnu_t_dk/sigma_k;
 
@@ -348,6 +349,54 @@ namespace proteus
 	  dflux = 0.0;
 	}
     }
+    inline
+    void exteriorNumericalDiffusiveFlux(const double& bc_flux,
+					const int& isDOFBoundary,
+					double n[nSpace],
+					double bc_u,
+					double a,
+					double grad_psi[nSpace],
+					double u,
+					double penalty,
+					double& flux)
+    {
+      double v_I;
+      if (isDOFBoundary)
+	{
+	  flux = 0.0;
+	  for(int I=0;I<nSpace;I++)
+	    {
+	      v_I = -a*grad_psi[I];
+	      flux += v_I*n[I];
+	    }
+	  flux += penalty*(u-bc_u);
+	}
+      else
+	flux = bc_flux;
+    }
+    inline
+    void exteriorNumericalDiffusiveFluxDerivative(const int& isDOFBoundary,
+						  double n[nSpace],
+						  double a,
+						  double da,
+						  double grad_psi[nSpace],
+						  const double grad_v[nSpace],
+						  double v,
+						  double penalty,
+						  double& fluxJacobian)
+    {
+      if (isDOFBoundary)
+	{
+	  fluxJacobian = 0.0;
+	  for(int I=0;I<nSpace;I++)
+	    {
+	      fluxJacobian -= (a*grad_v[I] + da*v*grad_psi[I])*n[I];
+	    }
+	  fluxJacobian += penalty*v;
+	}
+      else
+	fluxJacobian = 0.0;
+    }
 
     void calculateResidual(//element
 			   double* mesh_trial_ref,
@@ -400,6 +449,7 @@ namespace proteus
 			   double* cfl,
 			   double* q_numDiff_u, 
 			   double* q_numDiff_u_last, 
+			   double* ebqe_penalty_ext, //penalty
 			   int offset_u, int stride_u, 
 			   double* globalResidual,
 			   int nExteriorElementBoundaries_global,
@@ -656,6 +706,7 @@ namespace proteus
 		df_ext[nSpace],
 		a_ext=0.0,da_ext=0.0,
 		flux_ext=0.0,
+		diffusive_flux_ext=0.0,
 		bc_u_ext=0.0,
 		bc_grad_u_ext[nSpace],
 		bc_m_ext=0.0,
@@ -777,7 +828,19 @@ namespace proteus
 					     u_ext,//smoothedHeaviside(eps,ebqe_phi[ebNE_kb]),
 					     velocity_ext,
 					     flux_ext);
-	      ebqe_flux[ebNE_kb] = flux_ext;
+	      //diffusive flux now as well
+	      //for now just apply flux boundary through advection term
+	      const double bc_diffusive_flux = 0.0;
+	      exteriorNumericalDiffusiveFlux(bc_diffusive_flux,
+					     isDOFBoundary_u[ebNE_kb],
+					     normal,
+					     bc_u_ext,
+					     a_ext,
+					     grad_u_ext,
+					     u_ext,
+					     ebqe_penalty_ext[ebNE_kb],//penalty,
+					     diffusive_flux_ext);
+	      ebqe_flux[ebNE_kb] = flux_ext + diffusive_flux_ext;
 	      //save for other models? cek need to be consistent with numerical flux
 	      if(flux_ext >=0.0)
 		ebqe_u[ebNE_kb] = u_ext;
@@ -852,6 +915,7 @@ namespace proteus
 			   double* q_m_betaBDF, 
 			   double* cfl,
 			   double* q_numDiff_u_last, 
+			   double* ebqe_penalty_ext, //penalty
 			   int* csrRowIndeces_u_u,int* csrColumnOffsets_u_u,
 			   double* globalJacobian,
 			   int nExteriorElementBoundaries_global,
@@ -1105,6 +1169,7 @@ namespace proteus
 		bc_f_ext[nSpace],
 		bc_df_ext[nSpace],
 		fluxJacobian_u_u[nDOF_trial_element],
+		diffusiveFluxJacobian_u_u[nDOF_trial_element],
 		jac_ext[nSpace*nSpace],
 		jacDet_ext,
 		jacInv_ext[nSpace*nSpace],
@@ -1240,6 +1305,16 @@ namespace proteus
 		{
 		  //register int ebNE_kb_j = ebNE_kb*nDOF_trial_element+j;
 		  register int ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
+		  //diffusive flux
+		  exteriorNumericalDiffusiveFluxDerivative(isDOFBoundary_u[ebNE_kb],
+							   normal,
+							   a_ext,
+							   da_ext,
+							   grad_u_ext,
+							   u_grad_trial_trace,
+							   u_trial_trace_ref[ebN_local_kb_j],
+							   ebqe_penalty_ext[ebNE_kb],//penalty,
+							   diffusiveFluxJacobian_u_u[j]);
 	      
 		  fluxJacobian_u_u[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_u_u_ext,u_trial_trace_ref[ebN_local_kb_j]);
 		}//j
@@ -1254,7 +1329,8 @@ namespace proteus
 		    {
 		      register int ebN_i_j = ebN*4*nDOF_test_X_trial_element + i*nDOF_trial_element + j;
 
-		      globalJacobian[csrRowIndeces_u_u[eN_i] + csrColumnOffsets_eb_u_u[ebN_i_j]] += fluxJacobian_u_u[j]*u_test_dS[i];
+		      globalJacobian[csrRowIndeces_u_u[eN_i] + csrColumnOffsets_eb_u_u[ebN_i_j]] += fluxJacobian_u_u[j]*u_test_dS[i] 
+			+ diffusiveFluxJacobian_u_u[j]*u_test_dS[i];
 		    }//j
 		}//i
 	    }//kb
