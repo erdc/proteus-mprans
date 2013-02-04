@@ -248,6 +248,10 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         else:
             self.q_kappa = -numpy.ones(self.model.q[('u',1)].shape,'d')
             self.ebqe_kappa = -numpy.ones(self.model.ebqe[('u',1)].shape,'d')
+        #2eq Models
+        self.u_old_dof = {}
+        for ci in range(1,4):#don't really need pressure
+            self.u_old_dof[ci] = numpy.copy(self.model.u[ci].dof)
     def initializeMesh(self,mesh):
         #cek we eventually need to use the local element diameter
         self.eps_density = self.epsFact_density*mesh.h
@@ -366,6 +370,13 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                     eN  = self.mesh.elementBoundaryElementsArray[ebN,0]
                     self.ebqe_dragBeta[ebNE,:] = self.dragBetaTypes[self.elementMaterialTypes[eN]]
         #
+
+    def postStep(self,t,firstStep=False):    
+        for ci in range(1,4):
+            self.u_old_dof[ci][:] = self.model.u[ci].dof[:]	 
+        copyInstructions = {}
+        return copyInstructions
+
     def updateToMovingDomain(self,t,c):
         pass
     def evaluateForcingTerms(self,t,c,mesh=None,mesh_trial_ref=None,mesh_l2g=None):
