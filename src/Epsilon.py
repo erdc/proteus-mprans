@@ -182,9 +182,9 @@ NOTE: assumes 3d for now
             if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',3)):
                 self.ebq_grad_w = modelList[self.flowModelIndex].ebq[('grad(u)',3)]
             #
-            self.velocity_dof_u = modelList[self.flowModelIndex].coefficients.u_old_dof[1]
-            self.velocity_dof_v = modelList[self.flowModelIndex].coefficients.u_old_dof[2]
-            self.velocity_dof_w = modelList[self.flowModelIndex].coefficients.u_old_dof[3]
+            self.velocity_dof_u = modelList[self.flowModelIndex].u[1].dof
+            self.velocity_dof_v = modelList[self.flowModelIndex].u[2].dof
+            self.velocity_dof_w = modelList[self.flowModelIndex].u[3].dof
         else:
             self.velocity_dof_u = numpy.zeros(self.model.u[0].dof.shape,'d')
             self.velocity_dof_v = numpy.zeros(self.model.u[0].dof.shape,'d')
