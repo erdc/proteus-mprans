@@ -5,6 +5,13 @@ from proteus.mprans.cKappa import *
 TODO:
   just skip evaluate routine in Coefficients?
   grab TWP velocity dofs and calculate gradients locally in getResidual routine 
+NOTES:
+  Hardwired Numerics include: 
+   lagging all terms from Navier-Stokes, Epsilon equations
+   same solution space for velocity from Navier-Stokes and Kappa equations
+     This can be removed by saving gradient calculations in N-S and lagging
+     rather than passing degrees of freedom between models
+
 """
 class Coefficients(proteus.TransportCoefficients.TC_base):
     """
@@ -684,6 +691,10 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.forceStrongConditions:
               for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():
                   self.u[0].dof[dofN] = g(self.dirichletConditionsForceDOF.DOFBoundaryPointDict[dofN],self.timeIntegration.t)
+        #
+        #mwf debug
+        #import pdb
+        #pdb.set_trace()
         self.kappa.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,

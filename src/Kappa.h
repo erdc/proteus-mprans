@@ -165,36 +165,54 @@ namespace proteus
 			      const double nu_1,
 			      const double sigma_k,
 			      const double c_mu,
-			      const double& u,
+			      const double grad_vx[nSpace], //gradient of x component of velocity
+			      const double grad_vy[nSpace], //gradient of x component of velocity
+			      const double grad_vz[nSpace], //gradient of x component of velocity
+			      const double& k,
 			      const double& epsilon,
 			      double& m,
 			      double& dm,
 			      double f[nSpace],
 			      double df[nSpace],
 			      double& a,
-			      double& da_dk)
+			      double& da_dk,
+			      double& r,
+			      double& dr_dk)
     {
       const double div_eps = 1.0e-6;
       double nu_t=0.0,dnu_t_dk=0.0,PiD4=0.0;
-      m = u;
+      m = k;
       dm = 1.0;
 
       for (int I=0; I < nSpace; I++)
 	{
-	  f[I] = v[I]*u;
+	  f[I] = v[I]*k;
 	  df[I] = v[I];
 	}
       const double H_mu = smoothedHeaviside(eps_mu,phi);
       const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
       //eddy viscosity 
-      nu_t     = c_mu*u*u/(epsilon+div_eps);
-      dnu_t_dk = 2.0*c_mu*u/(epsilon+div_eps);
+      nu_t     = c_mu*k*k/(epsilon+div_eps);
+      dnu_t_dk = 2.0*c_mu*k/(epsilon+div_eps);
       if (nu_t < 0.0) 
 	{
 	  nu_t = 0.0; dnu_t_dk = 0.0;
 	}
       a = nu_t/sigma_k + nu;
       da_dk = dnu_t_dk/sigma_k;
+
+      PiD4 = 2.0*(grad_vx[0]*grad_vx[0] + 
+		  grad_vy[1]*grad_vy[1] + 
+		  grad_vz[2]*grad_vz[2]) 
+	+
+	(grad_vx[1] + grad_vy[0])*(grad_vx[1] + grad_vy[0])
+	+
+	(grad_vx[2] + grad_vz[0])*(grad_vx[2] + grad_vz[0])
+	+
+	(grad_vy[2] + grad_vz[1])*(grad_vy[2] + grad_vz[1]);
+
+      r = -nu_t*PiD4 + epsilon;
+      dr_dk = -dnu_t_dk*PiD4;
 
     }
 
@@ -497,6 +515,8 @@ namespace proteus
 		f[nSpace],df[nSpace],df_minus_da_grad_u[nSpace],
 		m_t=0.0,dm_t=0.0,
 		a=0.0,da=0.0,
+		r=0.0,dr=0.0,
+		grad_vx[nSpace],grad_vy[nSpace],grad_vz[nSpace],
 		pdeResidual_u=0.0,
 		Lstar_u[nDOF_test_element],
 		subgridError_u=0.0,
@@ -555,6 +575,14 @@ namespace proteus
 	      //get the solution gradients
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u);
 	      ck.gradFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u_old);
+	      //
+	      //compute velocity production terms, ***assumes same spaces for velocity dofs and kappa!***
+	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vx);
+	      ck.gradFromDOF(velocity_dof_v,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vy);
+	      ck.gradFromDOF(velocity_dof_w,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vz);
+	      //
+
+	      //
 	      //precalculate test function products with integration weights
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
@@ -574,6 +602,9 @@ namespace proteus
 				   nu_1,
 				   sigma_k,
 				   c_mu,
+				   grad_vx,
+				   grad_vy,
+				   grad_vz,
 				   u,
 				   1.0,//mwf hack tmp
 				   m,
@@ -581,7 +612,9 @@ namespace proteus
 				   f,
 				   df,
 				   a,
-				   da);
+				   da,
+				   r,
+				   dr);
 	      //
 	      //moving mesh
 	      //
@@ -649,13 +682,13 @@ namespace proteus
 		  register int eN_k_i=eN_k*nDOF_test_element+i,
 		    eN_k_i_nSpace = eN_k_i*nSpace,
 		    i_nSpace=i*nSpace;
-
+		  
 		  elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
 		    ck.Advection_weak(f,&u_grad_test_dV[i_nSpace]) + 
 		    ck.SubgridError(subgridError_u,Lstar_u[i]) + 
 		    ck.NumericalDiffusion(a,grad_u,&u_grad_test_dV[i_nSpace]) + //scalar diffusion so steal numericalDiffusion approximation
 		    ck.NumericalDiffusion(q_numDiff_u_last[eN_k],grad_u,&u_grad_test_dV[i_nSpace]); 
-	      
+		  
 		}//i
 	      //
 	      //cek/ido todo, get rid of m, since u=m
@@ -699,12 +732,13 @@ namespace proteus
 		ebN_local_kb = ebN_local*nQuadraturePoints_elementBoundary+kb,
 		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
 	      register double u_ext=0.0,
-		grad_u_ext[nSpace],
+		grad_u_ext[nSpace],grad_vx_ext[nSpace],grad_vy_ext[nSpace],grad_vz_ext[nSpace],
 		m_ext=0.0,
 		dm_ext=0.0,
 		f_ext[nSpace],
 		df_ext[nSpace],
 		a_ext=0.0,da_ext=0.0,
+		r_ext=0.0,dr_ext=0.0,
 		flux_ext=0.0,
 		diffusive_flux_ext=0.0,
 		bc_u_ext=0.0,
@@ -768,6 +802,14 @@ namespace proteus
 	      //solution and gradients	
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_ext);
+
+	      //
+	      //compute velocity production terms, ***assumes same spaces for velocity dofs and kappa!***
+	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vx_ext);
+	      ck.gradFromDOF(velocity_dof_v,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vy_ext);
+	      ck.gradFromDOF(velocity_dof_w,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vz_ext);
+	      //
+
 	      //precalculate test function products with integration weights
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
@@ -787,6 +829,9 @@ namespace proteus
 				   nu_1,
 				   sigma_k,
 				   c_mu,
+				   grad_vx_ext,
+				   grad_vy_ext,
+				   grad_vz_ext,
 				   u_ext,
 				   1.0,//mwf hack tmp
 				   m_ext,
@@ -794,7 +839,9 @@ namespace proteus
 				   f_ext,
 				   df_ext,
 				   a_ext,
-				   da_ext);
+				   da_ext,
+				   r_ext,
+				   dr_ext);
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
 				   epsFact,
 				   ebqe_phi[ebNE_kb],
@@ -802,6 +849,9 @@ namespace proteus
 				   nu_1,
 				   sigma_k,
 				   c_mu,
+				   grad_vx_ext,
+				   grad_vy_ext,
+				   grad_vz_ext,
 				   bc_u_ext,
 				   1.0,//mwf hack tmp
 				   bc_m_ext,
@@ -809,7 +859,9 @@ namespace proteus
 				   bc_f_ext,
 				   bc_df_ext,
 				   a_ext,
-				   da_ext);    
+				   da_ext,
+				   r_ext,
+				   dr_ext);    
 	      //
 	      //moving mesh
 	      //
@@ -840,7 +892,10 @@ namespace proteus
 					     u_ext,
 					     ebqe_penalty_ext[ebNE_kb],//penalty,
 					     diffusive_flux_ext);
-	      ebqe_flux[ebNE_kb] = flux_ext + diffusive_flux_ext;
+	      //mwf debug
+	      //std::cout<<"Residual ebNE= "<<ebNE<<" kb= "<<kb <<" penalty= "<<ebqe_penalty_ext[ebNE_kb] <<std::endl;
+	      flux_ext += diffusive_flux_ext;
+	      ebqe_flux[ebNE_kb] = flux_ext;
 	      //save for other models? cek need to be consistent with numerical flux
 	      if(flux_ext >=0.0)
 		ebqe_u[ebNE_kb] = u_ext;
@@ -951,8 +1006,8 @@ namespace proteus
 
 	      //declare local storage
 	      register double u=0.0,
-		grad_u[nSpace],
-		m=0.0,dm=0.0,a=0.0,da=0.0,
+		grad_u[nSpace],grad_vx[nSpace],grad_vy[nSpace],grad_vz[nSpace],
+		m=0.0,dm=0.0,a=0.0,da=0.0,r=0.0,dr=0.0,
 		f[nSpace],df[nSpace],df_minus_da_grad_u[nSpace],
 		m_t=0.0,dm_t=0.0,
 		dpdeResidual_u_u[nDOF_trial_element],
@@ -1014,6 +1069,13 @@ namespace proteus
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_ref[k*nDOF_trial_element],u);
 	      //get the solution gradients
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u);
+	      //
+	      //compute velocity production terms, ***assumes same spaces for velocity dofs and kappa!***
+	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vx);
+	      ck.gradFromDOF(velocity_dof_v,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vy);
+	      ck.gradFromDOF(velocity_dof_w,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vz);
+	      //
+
 	      //precalculate test function products with integration weights
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
@@ -1033,6 +1095,9 @@ namespace proteus
 				   nu_1,
 				   sigma_k,
 				   c_mu,
+				   grad_vx,
+				   grad_vy,
+				   grad_vz,
 				   u,
 				   1.0,//mwf hack tmp
 				   m,
@@ -1040,7 +1105,9 @@ namespace proteus
 				   f,
 				   df,
 				   a,
-				   da);
+				   da,
+				   r,
+				   dr);
 	      //
 	      //moving mesh
 	      //
@@ -1053,7 +1120,7 @@ namespace proteus
 
 	      //
 	      //account for nonlinearity in diffusion coefficient by piggy backing on advection routines
-	      assert(fabs(da) <= 1.0e-32);
+	      //
 	      df_minus_da_grad_u[0] = df[0] - da*grad_u[0];
 	      df_minus_da_grad_u[1] = df[1] - da*grad_u[1];
 	      df_minus_da_grad_u[2] = df[2] - da*grad_u[2];
@@ -1156,12 +1223,13 @@ namespace proteus
 
 	      register double u_ext=0.0,
 		grad_u_ext[nSpace],
+		grad_vx_ext[nSpace],grad_vy_ext[nSpace],grad_vz_ext[nSpace],
 		m_ext=0.0,
 		dm_ext=0.0,
 		f_ext[nSpace],
 		df_ext[nSpace],
 		dflux_u_u_ext=0.0,
-		a_ext=0.0,da_ext=0.0,
+		a_ext=0.0,da_ext=0.0,r_ext=0.0,dr_ext=0.0,
 		bc_u_ext=0.0,
 		//bc_grad_u_ext[nSpace],
 		bc_m_ext=0.0,
@@ -1241,6 +1309,14 @@ namespace proteus
 	      //solution and gradients	
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_ext);
+
+	      //
+	      //compute velocity production terms, ***assumes same spaces for velocity dofs and kappa!***
+	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vx_ext);
+	      ck.gradFromDOF(velocity_dof_v,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vy_ext);
+	      ck.gradFromDOF(velocity_dof_w,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vz_ext);
+	      //
+
 	      //precalculate test function products with integration weights
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
@@ -1260,6 +1336,9 @@ namespace proteus
 				   nu_1,
 				   sigma_k,
 				   c_mu,
+				   grad_vx_ext,
+				   grad_vy_ext,
+				   grad_vz_ext,
 				   u_ext,
 				   1.0,//mwf hack tmp
 				   m_ext,
@@ -1267,7 +1346,9 @@ namespace proteus
 				   f_ext,
 				   df_ext,
 				   a_ext,
-				   da_ext);
+				   da_ext,
+				   r_ext,
+				   dr_ext);
 	      evaluateCoefficients(&ebqe_velocity_ext[ebNE_kb_nSpace],
 				   epsFact,
 				   ebqe_phi[ebNE_kb],
@@ -1275,6 +1356,9 @@ namespace proteus
 				   nu_1,
 				   sigma_k,
 				   c_mu,
+				   grad_vx_ext,
+				   grad_vy_ext,
+				   grad_vz_ext,
 				   bc_u_ext,
 				   1.0,//mwf hack tmp
 				   bc_m_ext,
@@ -1282,7 +1366,9 @@ namespace proteus
 				   bc_f_ext,
 				   bc_df_ext,
 				   a_ext,
-				   da_ext);
+				   da_ext,
+				   r_ext,
+				   dr_ext);
 	      //
 	      //moving domain
 	      //
@@ -1311,11 +1397,12 @@ namespace proteus
 							   a_ext,
 							   da_ext,
 							   grad_u_ext,
-							   u_grad_trial_trace,
+							   &u_grad_trial_trace[j*nSpace],
 							   u_trial_trace_ref[ebN_local_kb_j],
 							   ebqe_penalty_ext[ebNE_kb],//penalty,
 							   diffusiveFluxJacobian_u_u[j]);
-	      
+		  //mwf debug
+		  //std::cout<<"Jacobian ebNE= "<<ebNE<<" kb= "<<kb <<" penalty= "<<ebqe_penalty_ext[ebNE_kb] <<std::endl;
 		  fluxJacobian_u_u[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_u_u_ext,u_trial_trace_ref[ebN_local_kb_j]);
 		}//j
 	      //
