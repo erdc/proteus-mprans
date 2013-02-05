@@ -76,14 +76,14 @@ NOTE: assumes 3d for now
     """
 
     from proteus.ctransportCoefficients import kEpsilon_k_3D_Evaluate_sd
-    def __init__(self,LS_model=None,V_model=0,RD_model=None,epsilon_model=5,ME_model=6,
+    def __init__(self,LS_model=None,V_model=0,RD_model=None,epsilon_model=None,ME_model=6,
                  c_mu   =0.09,    
                  sigma_k=1.0,#Prandtl Number
                  rho_0=998.2,nu_0=1.004e-6,
                  rho_1=1.205,nu_1=1.500e-5,
                  g=[0.0,-9.8],
                  nd=3,
-                 epsFact=0.01,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0):
+                 epsFact=0.01,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,default_epsilon=1.0e-3):
         self.useMetrics = useMetrics
         self.variableNames=['kappa']
         nc=1
@@ -125,7 +125,8 @@ NOTE: assumes 3d for now
 	
 	self.sc_uref=sc_uref
 	self.sc_beta=sc_beta	
-        
+        #for debugging model
+        self.default_epsilon = default_epsilon
 	
     def initializeMesh(self,mesh):
         self.eps = self.epsFact*mesh.h
@@ -195,6 +196,14 @@ NOTE: assumes 3d for now
             self.ebqe_epsilon = modelList[self.epsilon_modelIndex].ebqe[('u',0)]
             if modelList[self.epsilon_modelIndex].ebq.has_key(('u',0)):
                 self.ebq_epsilon = modelList[self.epsilon_modelIndex].ebq[('u',0)]
+        else:
+            self.q_epsilon = numpy.zeros(self.model.q[('u',0)].shape,'d'); self.q_epsilon.fill(self.default_epsilon); 
+            self.ebqe_epsilon = numpy.zeros(self.model.ebqe[('u',0)].shape,'d'); self.ebqe_epsilon.fill(self.default_epsilon)
+             
+            if self.model.ebq.has_key(('u',0)):
+                self.ebq_epsilon = numpy.zeros(self.model.ebq[('u',0)].shape,'d')
+                self.ebq_epsilon.fill(self.default_epsilon)
+            #
         #
     def initializeElementQuadrature(self,t,cq):
         if self.flowModelIndex == None:
@@ -737,6 +746,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 	    self.coefficients.u_old_dof,
             self.coefficients.q_v,
             self.coefficients.q_phi, #level set variable goes here
+            self.coefficients.q_epsilon, #dissipation rate variable
             #velocity dof
             self.coefficients.velocity_dof_u,
             self.coefficients.velocity_dof_v,
@@ -761,6 +771,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('advectiveFlux_bc_flag',0)],
             self.ebqe[('advectiveFlux_bc',0)],
             self.coefficients.ebqe_phi,self.coefficients.epsFact,
+            self.coefficients.ebqe_epsilon, #dissipation rate variable on boundary
             self.ebqe[('u',0)],
             self.ebqe[('advectiveFlux',0)])
 
@@ -816,6 +827,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].dof,
             self.coefficients.q_v,
             self.coefficients.q_phi,
+            self.coefficients.q_epsilon, #dissipation rate variable
             #velocity dof
             self.coefficients.velocity_dof_u,
             self.coefficients.velocity_dof_v,
@@ -837,7 +849,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('advectiveFlux_bc_flag',0)],
             self.ebqe[('advectiveFlux_bc',0)],
             self.csrColumnOffsets_eb[(0,0)],
-            self.coefficients.ebqe_phi,self.coefficients.epsFact)
+            self.coefficients.ebqe_phi,self.coefficients.epsFact,
+            self.coefficients.ebqe_epsilon) #dissipation rate variable on boundary
+
 
 
 
