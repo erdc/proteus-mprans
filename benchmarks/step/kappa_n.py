@@ -10,7 +10,7 @@ massLumping       = False
 numericalFluxType = Advection_DiagonalUpwind_Diffusion_IIPG_exterior
 conservativeFlux  = None
 subgridError      = Advection_ASGS(coefficients,nd,lag=False) #needs to be addressed or just skip because going to handle in optimized code anyway?
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=True)
+shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=kappa_shockCapturingFactor,lag=True)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton
@@ -32,7 +32,7 @@ levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest         = 'rits'
 
 tolFac = 1e-3
-nl_atol_res = 0.0
+nl_atol_res = 1.0e-8
 
 maxNonlinearIts = 10
 maxLineSearches = 0

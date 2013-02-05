@@ -73,6 +73,10 @@ setup(name='proteus_mprans',
 		             depends=["src/Kappa.h",os.getenv('PROTEUS')+'/proteusModule/include/ModelFactory.h',os.getenv('PROTEUS')+'/proteusModule/src/CompKernel.h'], 
 		             language="c++",
 			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/include',os.getenv('PROTEUS')+'/proteusModule/src']),
+                   Extension("cEpsilon",["src/cEpsilon.pyx"],
+		             depends=["src/Epsilon.h",os.getenv('PROTEUS')+'/proteusModule/include/ModelFactory.h',os.getenv('PROTEUS')+'/proteusModule/src/CompKernel.h'], 
+		             language="c++",
+			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/proteusModule/include',os.getenv('PROTEUS')+'/proteusModule/src']),
 
                    ],
       requires=['numpy']

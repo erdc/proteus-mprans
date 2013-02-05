@@ -217,8 +217,7 @@ namespace proteus
 
       r = -nu_t*PiD4 + epsilon;
       dr_dk = -dnu_t_dk*PiD4;
-      //mwf hack
-      r = 0.0; dr_dk = 0.0;
+      
     }
 
     inline

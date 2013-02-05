@@ -77,8 +77,8 @@ NOTE: assumes 3d for now
 
     from proteus.ctransportCoefficients import kEpsilon_k_3D_Evaluate_sd
     def __init__(self,LS_model=None,V_model=0,RD_model=None,kappa_model=None,ME_model=6,
-                 c_mu   =0.09,    
-                 sigma_k=1.0,#Prandtl Number
+                 c_mu   =0.09,c_1=0.126,c_2=1.92,c_e=0.07,
+                 sigma_e=1.29,
                  rho_0=998.2,nu_0=1.004e-6,
                  rho_1=1.205,nu_1=1.500e-5,
                  g=[0.0,-9.8],
@@ -91,7 +91,9 @@ NOTE: assumes 3d for now
         assert self.nd == 3, "Epsilon only implements 3d for now" #assume 3d for now
         self.rho_0 = rho_0; self.nu_0 = nu_0
         self.rho_1 = rho_1; self.nu_1 = nu_1
-        self.c_mu = c_mu; self.sigma_k = sigma_k
+        self.c_mu = c_mu;  self.c_1=c_1; self.c_2=c_2; self.c_e=c_e;
+        self.sigma_e = sigma_e
+
         self.g = g
         #
         mass={0:{0:'linear'}}
@@ -265,7 +267,7 @@ NOTE: assumes 3d for now
             grad_u = self.ebq_grad_u
             grad_v = self.ebq_grad_v
             grad_w = self.ebqe_grad_w
-            epsilon = self.ebq_kappa
+            kappa = self.ebq_kappa
         else:
             v=None
             phi=None
@@ -273,23 +275,26 @@ NOTE: assumes 3d for now
             grad_v = None
             grad_w = None
         if v != None:
-            self.kEpsilon_k_3D_Evaluate_sd(self.sigma_k,
-                                           self.c_mu,
-                                           self.nu,
-                                           velocity,
-                                           gradu,
-                                           gradv,
-                                           gradw,
-                                           c[('u',0)],
-                                           epsilon,
-                                           c[('m',0)],
-                                           c[('dm',0,0)],
-                                           c[('f',0)],
-                                           c[('df',0,0)],
-                                           c[('a',0,0)],
-                                           c[('da',0,0,0)],
-                                           c[('r',0)],
-                                           c[('dr',0,0)])
+            self.kEpsilon_epsilon_3D_Evaluate_sd(self.sigma_e,
+                                                 self.c_1,
+                                                 self.c_2,
+                                                 self.c_mu,
+                                                 self.c_e,
+                                                 self.nu,
+                                                 velocity,
+                                                 gradu,
+                                                 gradv,
+                                                 gradw,
+                                                 c[('u',0)],
+                                                 kappa,
+                                                 c[('m',0)],
+                                                 c[('dm',0,0)],
+                                                 c[('f',0)],
+                                                 c[('df',0,0)],
+                                                 c[('a',0,0)],
+                                                 c[('da',0,0,0)],
+                                                 c[('r',0)],
+                                                 c[('dr',0,0)])
 class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
     def __init__(self,
@@ -734,8 +739,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             #diffusion
             self.coefficients.nu_0,
             self.coefficients.nu_1,
-            self.coefficients.sigma_k,
+            self.coefficients.sigma_e,
             self.coefficients.c_mu,
+            self.coefficients.c_1,
+            self.coefficients.c_2,
+            self.coefficients.c_e,
             #end diffusion
 	    self.coefficients.useMetrics, 
             self.timeIntegration.alpha_bdf,
@@ -818,8 +826,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             #diffusion
             self.coefficients.nu_0,
             self.coefficients.nu_1,
-            self.coefficients.sigma_k,
+            self.coefficients.sigma_e,
             self.coefficients.c_mu,
+            self.coefficients.c_1,
+            self.coefficients.c_2,
+            self.coefficients.c_e,
             #end diffusion
 	    self.coefficients.useMetrics, 
             self.timeIntegration.alpha_bdf,

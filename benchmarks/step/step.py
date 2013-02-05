@@ -8,7 +8,7 @@ import step3d
 #----------------------------------------------------
 #  Discretization -- input options    
 #----------------------------------------------------
-Refinement=4
+Refinement=8
 genMesh=True
 spaceOrder=1
 useHex=False
@@ -135,9 +135,9 @@ g = [0.0,0.0,0.0]
 #----------------------------------------------------
 
 residence_time = length/inflow
-T=1.0#1.0e2#10.0*length/inflow
+T=10.0#10.0*length/inflow
 #tnList = [0.0,0.1*residence_time,T]
-nDTout=1
+nDTout=100
 tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
 
 
@@ -227,6 +227,13 @@ vof_sc_beta = 1.5
 
 rd_shockCapturingFactor=0.3
 
+kappa_shockCapturingFactor=0.9
+kappa_sc_uref = 1.0
+kappa_sc_beta = 1.5
+
+epsilon_shockCapturingFactor=0.9
+epsilon_sc_uref = 1.0
+epsilon_sc_beta = 1.5
 
 #----------------------------------------------------
 # Interface width

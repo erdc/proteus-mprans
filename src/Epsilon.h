@@ -39,8 +39,11 @@ namespace proteus
 				   //diffusion terms
 				   double nu_0,
 				   double nu_1,
-                                   double sigma_k,
+                                   double sigma_e,
                                    double c_mu,
+				   double c_1,
+				   double c_2,
+				   double c_e,
 				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
@@ -107,8 +110,11 @@ namespace proteus
 				   //diffusion
 				   double nu_0,
 				   double nu_1,
-                                   double sigma_k,
+                                   double sigma_e,
                                    double c_mu,
+				   double c_1,
+				   double c_2,
+				   double c_e,
 				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
@@ -167,43 +173,46 @@ namespace proteus
 			      const double phi,
 			      const double nu_0,
 			      const double nu_1,
-			      const double sigma_k,
+			      const double sigma_e,
 			      const double c_mu,
+			      const double c_1,
+			      const double c_2,
+			      const double c_e,
 			      const double grad_vx[nSpace], //gradient of x component of velocity
 			      const double grad_vy[nSpace], //gradient of x component of velocity
 			      const double grad_vz[nSpace], //gradient of x component of velocity
-			      const double& k,
 			      const double& epsilon,
+			      const double& k,
 			      double& m,
 			      double& dm,
 			      double f[nSpace],
 			      double df[nSpace],
 			      double& a,
-			      double& da_dk,
+			      double& da_de,
 			      double& r,
-			      double& dr_dk)
+			      double& dr_de)
     {
       const double div_eps = 1.0e-6;
-      double nu_t=0.0,dnu_t_dk=0.0,PiD4=0.0;
-      m = k;
+      double nu_t=0.0,dnu_t_de=0.0,PiD4=0.0,disp=0.0,ddisp_de=0.0;
+      m = epsilon;
       dm = 1.0;
 
       for (int I=0; I < nSpace; I++)
 	{
-	  f[I] = v[I]*k;
+	  f[I] = v[I]*epsilon;
 	  df[I] = v[I];
 	}
       const double H_mu = smoothedHeaviside(eps_mu,phi);
       const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
       //eddy viscosity 
       nu_t     = c_mu*k*k/(epsilon+div_eps);
-      dnu_t_dk = 2.0*c_mu*k/(epsilon+div_eps);
+      dnu_t_de = -c_mu*k*k/(epsilon*epsilon+div_eps);
       if (nu_t < 0.0) 
 	{
-	  nu_t = 0.0; dnu_t_dk = 0.0;
+	  nu_t = 0.0; dnu_t_de = 0.0;
 	}
-      a = nu_t/sigma_k + nu;
-      da_dk = dnu_t_dk/sigma_k;
+      a = nu_t/sigma_e + nu;
+      da_de = dnu_t_de/sigma_e;
 
       PiD4 = 2.0*(grad_vx[0]*grad_vx[0] + 
 		  grad_vy[1]*grad_vy[1] + 
@@ -215,10 +224,14 @@ namespace proteus
 	+
 	(grad_vy[2] + grad_vz[1])*(grad_vy[2] + grad_vz[1]);
 
-      r = -nu_t*PiD4 + epsilon;
-      dr_dk = -dnu_t_dk*PiD4;
-      //mwf hack
-      r = 0.0; dr_dk = 0.0;
+      disp = c_2*epsilon*epsilon/(k+div_eps);
+      ddisp_de = 2.0*c_2*epsilon/(k+div_eps); 
+      if (disp < 0.0)
+	{
+	  disp = 0.0; ddisp_de = 0.0;
+	}
+      r = -c_1*k*PiD4 + disp;
+      dr_de = ddisp_de;
     }
 
     inline
@@ -367,9 +380,16 @@ namespace proteus
 	      dflux = 0.0;
 	    }
 	}
-      if (isFluxBoundary_u == 1)
+      else if (isFluxBoundary_u == 1)
 	{
 	  dflux = 0.0;
+	}
+      else
+	{
+	  if (flow >= 0.0)
+	    {
+	      dflux = flow;
+	    }
 	}
     }
     inline
@@ -448,8 +468,11 @@ namespace proteus
 			   //diffusion terms
 			   double nu_0,
 			   double nu_1,
-                           double sigma_k,
+                           double sigma_e,
                            double c_mu,
+			   double c_1,
+			   double c_2,
+			   double c_e,
 			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
@@ -607,8 +630,11 @@ namespace proteus
 				   phi_ls[eN_k],
 				   nu_0,
 				   nu_1,
-				   sigma_k,
+				   sigma_e,
 				   c_mu,
+				   c_1,
+				   c_2,
+				   c_e,
 				   grad_vx,
 				   grad_vy,
 				   grad_vz,
@@ -835,8 +861,11 @@ namespace proteus
 				   ebqe_phi[ebNE_kb],
 				   nu_0,
 				   nu_1,
-				   sigma_k,
+				   sigma_e,
 				   c_mu,
+				   c_1,
+				   c_2,
+				   c_e,
 				   grad_vx_ext,
 				   grad_vy_ext,
 				   grad_vz_ext,
@@ -855,8 +884,11 @@ namespace proteus
 				   ebqe_phi[ebNE_kb],
 				   nu_0,
 				   nu_1,
-				   sigma_k,
+				   sigma_e,
 				   c_mu,
+				   c_1,
+				   c_2,
+				   c_e,
 				   grad_vx_ext,
 				   grad_vy_ext,
 				   grad_vz_ext,
@@ -958,8 +990,11 @@ namespace proteus
 			   //diffusion terms
 			   double nu_0,
 			   double nu_1,
-                           double sigma_k,
+                           double sigma_e,
                            double c_mu,
+			   double c_1,
+			   double c_2,
+			   double c_e,
 			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
@@ -1103,8 +1138,11 @@ namespace proteus
 				   phi_ls[eN_k],
 				   nu_0,
 				   nu_1,
-				   sigma_k,
+				   sigma_e,
 				   c_mu,
+				   c_1,
+				   c_2,
+				   c_e,
 				   grad_vx,
 				   grad_vy,
 				   grad_vz,
@@ -1344,8 +1382,11 @@ namespace proteus
 				   ebqe_phi[ebNE_kb],
 				   nu_0,
 				   nu_1,
-				   sigma_k,
+				   sigma_e,
 				   c_mu,
+				   c_1,
+				   c_2,
+				   c_e,
 				   grad_vx_ext,
 				   grad_vy_ext,
 				   grad_vz_ext,
@@ -1364,8 +1405,11 @@ namespace proteus
 				   ebqe_phi[ebNE_kb],
 				   nu_0,
 				   nu_1,
-				   sigma_k,
+				   sigma_e,
 				   c_mu,
+				   c_1,
+				   c_2,
+				   c_e,
 				   grad_vx_ext,
 				   grad_vy_ext,
 				   grad_vz_ext,

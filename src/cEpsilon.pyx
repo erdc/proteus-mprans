@@ -32,6 +32,9 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double nu_1,
                                double sigma_k,
                                double c_mu,
+                               double c_1,
+                               double c_2,
+                               double c_e,
                                #end diffusion
 			       double useMetrics, 
                                double alphaBDF,
@@ -97,6 +100,9 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double nu_1,
                                double sigma_k,
                                double c_mu,
+                               double c_1,
+                               double c_2,
+                               double c_e,
                                #end diffuion
 			       double useMetrics, 
                                double alphaBDF,
@@ -185,6 +191,9 @@ cdef class cEpsilon_base:
                          double nu_1,
                          double sigma_k,
                          double c_mu,
+                         double c_1,
+                         double c_2,
+                         double c_e,
                          #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
@@ -251,6 +260,9 @@ cdef class cEpsilon_base:
                                        nu_1,
                                        sigma_k,
                                        c_mu,
+                                       c_1,
+                                       c_2,
+                                       c_e,
                                        #end diffuion
 			               useMetrics, 
                                        alphaBDF,
@@ -319,6 +331,9 @@ cdef class cEpsilon_base:
                          double nu_1,
                          double sigma_k,
                          double c_mu,
+                         double c_1,
+                         double c_2,
+                         double c_e,
                          #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
@@ -383,6 +398,9 @@ cdef class cEpsilon_base:
                                        nu_1,
                                        sigma_k,
                                        c_mu,
+                                       c_1,
+                                       c_2,
+                                       c_e,
                                        #end diffusion
 			               useMetrics, 
                                        alphaBDF,

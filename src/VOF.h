@@ -293,9 +293,16 @@ namespace proteus
 	      dflux = 0.0;
 	    }
 	}
-      if (isFluxBoundary_u == 1)
+      else if (isFluxBoundary_u == 1)
 	{
 	  dflux = 0.0;
+	}
+      else
+	{
+	  if (flow >= 0.0)
+	    {
+	      dflux = flow;
+	    }
 	}
     }
 

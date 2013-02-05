@@ -2,7 +2,7 @@ from proteus import *
 from twp_navier_stokes_p import *
 from step import *
 
-timeIntegration = BackwardEuler
+timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_controller
 
 femSpaces = {0:basis,
