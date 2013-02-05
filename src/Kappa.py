@@ -213,6 +213,7 @@ NOTE: assumes 3d for now
             self.q_grad_w = numpy.ones(cq[('grad(u)',0)].shape,'d')
         if self.epsilon_modelIndex == None:
             self.q_epsilon = numpy.ones(cq[('u',0)].shape,'d')
+            self.q_epsilon.fill(self.default_epsilon);
     def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
         if self.flowModelIndex == None:
             self.ebq_v = numpy.ones(cebq[('f',0)].shape,'d')
@@ -221,6 +222,7 @@ NOTE: assumes 3d for now
             self.ebq_grad_w = numpy.ones(cebq[('grad(u)',0)].shape,'d')
         if self.epsilon_modelIndex == None:
             self.ebq_epsilon = numpy.ones(cebq[('u',0)].shape,'d')
+            self.ebq_epsilon.fill(self.default_epsilon)
     def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
         if self.flowModelIndex == None:
             self.ebqe_v = numpy.ones(cebqe[('f',0)].shape,'d')
@@ -229,6 +231,7 @@ NOTE: assumes 3d for now
             self.ebqe_grad_w = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
         if self.epsilon_modelIndex == None:
             self.ebqe_epsilon = numpy.ones(cebqe[('u',0)].shape,'d')
+            self.ebqe_epsilon.fill(self.default_epsilon)
     def preStep(self,t,firstStep=False):
         copyInstructions = {}
         return copyInstructions
@@ -774,7 +777,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.ebqe_epsilon, #dissipation rate variable on boundary
             self.ebqe[('u',0)],
             self.ebqe[('advectiveFlux',0)])
-
 	if self.forceStrongConditions:#
 	    for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():
                      r[dofN] = 0

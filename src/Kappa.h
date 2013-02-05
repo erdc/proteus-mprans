@@ -217,7 +217,8 @@ namespace proteus
 
       r = -nu_t*PiD4 + epsilon;
       dr_dk = -dnu_t_dk*PiD4;
-
+      //mwf hack
+      r = 0.0; dr_dk = 0.0;
     }
 
     inline
@@ -366,9 +367,16 @@ namespace proteus
 	      dflux = 0.0;
 	    }
 	}
-      if (isFluxBoundary_u == 1)
+      else if (isFluxBoundary_u == 1)
 	{
 	  dflux = 0.0;
+	}
+      else
+	{
+	  if (flow >= 0.0)
+	    {
+	      dflux = flow;
+	    }
 	}
     }
     inline

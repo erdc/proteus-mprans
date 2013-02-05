@@ -27,6 +27,12 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double* normal_ref,
                                double* boundaryJac_ref,
                                int nElements_global,
+                               #diffusion terms
+                               double nu_0,
+                               double nu_1,
+                               double sigma_k,
+                               double c_mu,
+                               #end diffusion
 			       double useMetrics, 
                                double alphaBDF,
                                int lag_shockCapturing,
@@ -36,12 +42,20 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double* elementDiameter,
                                double* u_dof,double* u_dof_old,	
                                double* velocity,
+                               double* phi_ls, #level set variable
+                               double* q_kappa, #kinetic energy variable
+                               #velocity dof
+                               double * velocity_dof_u,
+                               double * velocity_dof_v,
+                               double * velocity_dof_w,
+                               #end velocity dof
                                double* q_m,
                                double* q_u,
                                double* q_m_betaBDF,
                                double* cfl,
                                double* q_numDiff_u, 
-                               double* q_numDiff_u_last, 
+                               double* q_numDiff_u_last,
+                               double* ebqe_penalty_ext,
                                int offset_u, int stride_u, 
                                double* globalResidual,
                                int nExteriorElementBoundaries_global,
@@ -54,6 +68,7 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                int* isFluxBoundary_u,
                                double* ebqe_bc_flux_u_ext,
                                double* ebqe_phi,double epsFact,
+                               double* ebqe_kappa, #kinetic energy 
                                double* ebqe_u,
                                double* ebqe_flux)
         void calculateJacobian(double* mesh_trial_ref,
@@ -77,6 +92,12 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double* normal_ref,
                                double* boundaryJac_ref,
                                int nElements_global,
+                               #diffusion
+                               double nu_0,
+                               double nu_1,
+                               double sigma_k,
+                               double c_mu,
+                               #end diffuion
 			       double useMetrics, 
                                double alphaBDF,
                                int lag_shockCapturing,
@@ -85,9 +106,17 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double* elementDiameter,
                                double* u_dof, 
                                double* velocity,
+                               double* phi_ls, #level set variable
+                               double* q_kappa, #kinetic energy 
+                               #velocity dof
+                               double* velocity_dof_u,
+                               double* velocity_dof_v,
+                               double* velocity_dof_w,
+                               #end velocity dof
                                double* q_m_betaBDF, 
                                double* cfl,
                                double* q_numDiff_u_last, 
+                               double* ebqe_penalty_ext,
                                int* csrRowIndeces_u_u,int* csrColumnOffsets_u_u,
                                double* globalJacobian,
                                int nExteriorElementBoundaries_global,
@@ -99,7 +128,9 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double* ebqe_bc_u_ext,
                                int* isFluxBoundary_u,
                                double* ebqe_bc_flux_u_ext,
-                               int* csrColumnOffsets_eb_u_u)
+                               int* csrColumnOffsets_eb_u_u,
+                               double* ebqe_phi,double epsFact,
+                               double* ebqe_kappa)#kinetic energy 
     Epsilon_base* newEpsilon(int nSpaceIn,
                        int nQuadraturePoints_elementIn,
                        int nDOF_mesh_trial_elementIn,
@@ -149,6 +180,12 @@ cdef class cEpsilon_base:
                          numpy.ndarray normal_ref,
                          numpy.ndarray boundaryJac_ref,
                          int nElements_global,
+                         #diffusion terms
+                         double nu_0,
+                         double nu_1,
+                         double sigma_k,
+                         double c_mu,
+                         #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
                          int lag_shockCapturing,
@@ -159,12 +196,20 @@ cdef class cEpsilon_base:
                          numpy.ndarray u_dof,
                          numpy.ndarray u_dof_old,
                          numpy.ndarray velocity,
+                         numpy.ndarray phi_ls, #level set variable
+                         numpy.ndarray q_kappa, #kinetic energy 
+                         #velocity dof
+                         numpy.ndarray velocity_dof_u,
+                         numpy.ndarray velocity_dof_v,
+                         numpy.ndarray velocity_dof_w,
+                         #end velocity dof
                          numpy.ndarray q_m,
                          numpy.ndarray q_u,
                          numpy.ndarray q_m_betaBDF,
                          numpy.ndarray cfl,
                          numpy.ndarray q_numDiff_u, 
                          numpy.ndarray q_numDiff_u_last, 
+                         numpy.ndarray ebqe_penalty_ext,
                          int offset_u, int stride_u, 
                          numpy.ndarray globalResidual,
                          int nExteriorElementBoundaries_global,
@@ -177,6 +222,7 @@ cdef class cEpsilon_base:
                          numpy.ndarray isFluxBoundary_u,
                          numpy.ndarray ebqe_bc_flux_u_ext,
                          numpy.ndarray ebqe_phi,double epsFact,
+                         numpy.ndarray ebqe_kappa,#kinetic energy 
                          numpy.ndarray ebqe_u,
                          numpy.ndarray ebqe_flux):
        self.thisptr.calculateResidual(<double*> mesh_trial_ref.data,
@@ -200,6 +246,12 @@ cdef class cEpsilon_base:
                                        <double*> normal_ref.data,
                                        <double*> boundaryJac_ref.data,
                                        nElements_global,
+                                       #diffusion
+                                       nu_0,
+                                       nu_1,
+                                       sigma_k,
+                                       c_mu,
+                                       #end diffuion
 			               useMetrics, 
                                        alphaBDF,
                                        lag_shockCapturing,
@@ -210,12 +262,20 @@ cdef class cEpsilon_base:
                                        <double*> u_dof.data,
 				       <double*> u_dof_old.data,	
                                        <double*> velocity.data,
+                                       <double*> phi_ls.data,
+                                       <double*> q_kappa.data,#kinetic energy 
+                                       #velocity dof
+                                       <double*> velocity_dof_u.data,
+                                       <double*> velocity_dof_v.data,
+                                       <double*> velocity_dof_w.data,
+                                      #end velocity dof
                                        <double*> q_m.data,
                                        <double*> q_u.data,
                                        <double*> q_m_betaBDF.data,
                                        <double*> cfl.data,
                                        <double*> q_numDiff_u.data, 
                                        <double*> q_numDiff_u_last.data, 
+                                       <double*> ebqe_penalty_ext.data,
                                        offset_u, stride_u, 
                                        <double*> globalResidual.data,
                                        nExteriorElementBoundaries_global,
@@ -229,6 +289,7 @@ cdef class cEpsilon_base:
                                        <double*> ebqe_bc_flux_u_ext.data,
                                        <double*> ebqe_phi.data,
                                        epsFact,
+                                       <double*> ebqe_kappa.data,#kinetic energy on boundary
                                        <double*> ebqe_u.data,
                                        <double*> ebqe_flux.data)
    def calculateJacobian(self,
@@ -253,6 +314,12 @@ cdef class cEpsilon_base:
                          numpy.ndarray normal_ref,
                          numpy.ndarray boundaryJac_ref,
                          int nElements_global,
+                         #diffusion
+                         double nu_0,
+                         double nu_1,
+                         double sigma_k,
+                         double c_mu,
+                         #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
                          int lag_shockCapturing,
@@ -261,9 +328,17 @@ cdef class cEpsilon_base:
                          numpy.ndarray elementDiameter,
                          numpy.ndarray u_dof, 
                          numpy.ndarray velocity,
+                         numpy.ndarray phi_ls, #level set variable
+                         numpy.ndarray q_kappa, #kinetic energy 
+                         #velocity dof
+                         numpy.ndarray velocity_dof_u,
+                         numpy.ndarray velocity_dof_v,
+                         numpy.ndarray velocity_dof_w,
+                         #end velocity dof
                          numpy.ndarray q_m_betaBDF, 
                          numpy.ndarray cfl,
                          numpy.ndarray q_numDiff_u_last, 
+                         numpy.ndarray ebqe_penalty_ext,
                          numpy.ndarray csrRowIndeces_u_u,numpy.ndarray csrColumnOffsets_u_u,
                          globalJacobian,
                          int nExteriorElementBoundaries_global,
@@ -275,7 +350,11 @@ cdef class cEpsilon_base:
                          numpy.ndarray ebqe_bc_u_ext,
                          numpy.ndarray isFluxBoundary_u,
                          numpy.ndarray ebqe_bc_flux_u_ext,
-                         numpy.ndarray csrColumnOffsets_eb_u_u):
+                         numpy.ndarray csrColumnOffsets_eb_u_u,
+                         numpy.ndarray ebqe_phi,
+                         double epsFact,
+                         numpy.ndarray ebqe_kappa): #kinetic energy 
+
        cdef numpy.ndarray rowptr,colind,globalJacobian_a
        (rowptr,colind,globalJacobian_a) = globalJacobian.getCSRrepresentation()
        self.thisptr.calculateJacobian(<double*> mesh_trial_ref.data,
@@ -299,6 +378,12 @@ cdef class cEpsilon_base:
                                        <double*> normal_ref.data,
                                        <double*> boundaryJac_ref.data,
                                        nElements_global,
+                                       #diffusion
+                                       nu_0,
+                                       nu_1,
+                                       sigma_k,
+                                       c_mu,
+                                       #end diffusion
 			               useMetrics, 
                                        alphaBDF,
                                        lag_shockCapturing,
@@ -307,9 +392,17 @@ cdef class cEpsilon_base:
                                        <double*> elementDiameter.data,
                                        <double*> u_dof.data, 
                                        <double*> velocity.data,
+                                       <double*> phi_ls.data,
+                                       <double*> q_kappa.data,
+                                       #velocity dofs
+                                       <double*> velocity_dof_u.data,
+                                       <double*> velocity_dof_v.data,
+                                       <double*> velocity_dof_w.data,
+                                       #end velocity dofs
                                        <double*> q_m_betaBDF.data, 
                                        <double*> cfl.data,
                                        <double*> q_numDiff_u_last.data, 
+                                       <double*> ebqe_penalty_ext.data,
                                        <int*> csrRowIndeces_u_u.data,<int*> csrColumnOffsets_u_u.data,
                                        <double*> globalJacobian_a.data,
                                        nExteriorElementBoundaries_global,
@@ -321,4 +414,6 @@ cdef class cEpsilon_base:
                                        <double*> ebqe_bc_u_ext.data,
                                        <int*> isFluxBoundary_u.data,
                                        <double*> ebqe_bc_flux_u_ext.data,
-                                       <int*> csrColumnOffsets_eb_u_u.data)
+                                       <int*> csrColumnOffsets_eb_u_u.data,                      
+                                       <double*> ebqe_phi.data,epsFact,
+                                       <double*> ebqe_kappa.data)
