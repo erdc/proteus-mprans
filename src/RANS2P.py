@@ -45,7 +45,11 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  epsFact_source=1.,
                  epsFact_solid=1.0,
                  eb_adjoint_sigma=1.0,
-                 forceStrongDirichlet=False):
+                 forceStrongDirichlet=False,
+                 turbulenceClosureModel=0, #0=No Model 1=Smagorinksy 2=Dynamic Smagorinsky
+                 smagorinskyConstant=0.1):
+        self.smagorinskyConstant = smagorinskyConstant
+        self.turbulenceClosureModel=turbulenceClosureModel
         self.forceStrongDirichlet=forceStrongDirichlet
         self.eb_adjoint_sigma=eb_adjoint_sigma
         self.movingDomain = movingDomain
@@ -911,7 +915,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                 ebN = self.mesh.exteriorElementBoundariesArray[ebNE]
                 for k in range(self.nElementBoundaryQuadraturePoints_elementBoundary):
                     self.ebqe['penalty'][ebNE,k] = self.numericalFlux.penalty_constant/self.mesh.elementBoundaryDiametersArray[ebN]**self.numericalFlux.penalty_power
-        print self.ebqe['penalty']
         log(memory("numericalFlux","OneLevelTransport"),level=4)
         self.elementEffectiveDiametersArray  = self.mesh.elementInnerDiametersArray
         #use post processing tools to get conservative fluxes, None by default
@@ -1056,6 +1059,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.nu_0,
             self.coefficients.rho_1,
             self.coefficients.nu_1,
+            self.coefficients.smagorinskyConstant,
+            self.coefficients.turbulenceClosureModel,
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
@@ -1211,6 +1216,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.nu_0,
             self.coefficients.rho_1,
             self.coefficients.nu_1,
+            self.coefficients.smagorinskyConstant,
+            self.coefficients.turbulenceClosureModel,
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
@@ -1520,6 +1527,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.nu_0,
             self.coefficients.rho_1,
             self.coefficients.nu_1,
+            self.coefficients.smagorinskyConstant,
+            self.coefficients.turbulenceClosureModel,
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
