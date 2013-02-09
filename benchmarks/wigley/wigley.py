@@ -20,6 +20,9 @@ nu_0 =1.004e-6
 rho_1=1.205
 nu_1 =1.500e-5
 
+#cek debug
+#rho_1 = rho_0
+#nu_1 = nu_0
 sigma_01=0.0
 
 g=[0.0,0.0,-9.81]
@@ -48,18 +51,20 @@ hull_center = (0.0,
                0.5*hull_length)#cek todo, still not sure about where the waterline is
 
 #debug
-L=(2.5*hull_length,
-   1.5*hull_length,
-   3.0*hull_draft)
-x_ll = (-1.0*hull_length,
-         -L[1]/2.0,
-         0.0)
-
-waterLevel   = 1.5*hull_draft
-
-hull_center = (0.0,
-               0.0,
-               1.5*hull_draft)#cek todo, still not sure about where the waterline is
+#L=(#2.5*hull_length,
+#   2.0*hull_length,
+#   #1.5*hull_length,
+#   0.5*hull_length,
+#   3.0*hull_draft)
+#x_ll = (-1.0*hull_length,
+#         -L[1]/2.0,
+#         0.0)
+#
+#waterLevel   = 1.5*hull_draft
+#
+#hull_center = (0.0,
+#               0.0,
+#               1.5*hull_draft)#cek todo, still not sure about where the waterline is
 
 #cek todo these are the same as the 5414, somethings not right
 hull_mass    = 532.277
@@ -78,6 +83,9 @@ he = hull_draft/1.0 #16 cores
 he *=0.5 #128 
 he *=0.5 #512 (2048 8-way nodes)
 
+#he = hull_draft/1.5 #16 cores
+#he *=0.5 #128 but can run on 2 cores with 8G
+#he *=0.5 #1024
 #vessel = 'wigley-gmsh'
 #genMesh=False
 vessel = 'wigley'
@@ -205,6 +213,7 @@ else:
     else:
         domain.writePoly("meshNoVessel")
     triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
+
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
@@ -236,7 +245,7 @@ Re = hull_length*Um*rho_0/nu_0
 residence_time = hull_length/Um
 dt_init=0.001
 T = 4*residence_time
-nDTout=100
+nDTout=400
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
 
@@ -247,7 +256,7 @@ runCFL = 0.33
 useRBLES   = 0.0
 useMetrics = 0.0
 useVF = 1.0
-useOnlyVF = True
+useOnlyVF = False
 
 ns_shockCapturingFactor=0.9
 
@@ -336,7 +345,7 @@ nDTout             = %i
 
 #  Discretization -- input options  
 useOldPETSc=False
-useSuperlu = True # set to False if running in parallel with petsc.options
+useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 

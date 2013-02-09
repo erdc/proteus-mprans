@@ -16,7 +16,22 @@ femSpaces = {0:basis,
 massLumping       = False
 numericalFluxType = None
 conservativeFlux  = None
-numericalFluxType = NavierStokes_Advection_DiagonalUpwind_Diffusion_IIPG_exterior 
+
+class NumericalFluxType(NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior):
+    hasInterior=False
+    def __init__(self,vt,getPointwiseBoundaryConditions,
+                 getAdvectiveFluxBoundaryConditions,
+                 getDiffusiveFluxBoundaryConditions,
+                 getPeriodicBoundaryConditions=None):
+        NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior.__init__(self,vt,getPointwiseBoundaryConditions,
+                                                                               getAdvectiveFluxBoundaryConditions,
+                                                                               getDiffusiveFluxBoundaryConditions,getPeriodicBoundaryConditions)
+        self.penalty_constant = 2.0
+        self.includeBoundaryAdjoint=True
+        self.boundaryAdjoint_sigma=1.0
+        self.hasInterior=False
+
+numericalFluxType = NumericalFluxType
 subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=True,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=False)
 shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=True)
 

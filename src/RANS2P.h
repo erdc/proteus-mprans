@@ -539,9 +539,9 @@ namespace proteus
 			      double dmom_w_adv_u[nSpace],
 			      double dmom_w_adv_v[nSpace],
 			      double dmom_w_adv_w[nSpace],
-			      double mom_u_diff_ten[nSpace],
-			      double mom_v_diff_ten[nSpace],
-			      double mom_w_diff_ten[nSpace],
+			      double mom_uu_diff_ten[nSpace],
+			      double mom_vv_diff_ten[nSpace],
+			      double mom_ww_diff_ten[nSpace],
 			      double mom_uv_diff_ten[1],
 			      double mom_uw_diff_ten[1],
 			      double mom_vu_diff_ten[1],
@@ -651,27 +651,27 @@ namespace proteus
       dmom_w_adv_w[2]=porosity*rho*2.0*w;
   
       //u momentum diffusion tensor
-      mom_u_diff_ten[0] = 2.0*porosity*mu;
-      mom_u_diff_ten[1] = porosity*mu;
-      mom_u_diff_ten[2] = porosity*mu;
+      mom_uu_diff_ten[0] = 2.0*porosity*mu;
+      mom_uu_diff_ten[1] = porosity*mu;
+      mom_uu_diff_ten[2] = porosity*mu;
   
       mom_uv_diff_ten[0]=porosity*mu;
   
       mom_uw_diff_ten[0]=porosity*mu;
   
       //v momentum diffusion tensor
-      mom_v_diff_ten[0] = porosity*mu;
-      mom_v_diff_ten[1] = 2.0*porosity*mu;
-      mom_v_diff_ten[2] = porosity*mu;
+      mom_vv_diff_ten[0] = porosity*mu;
+      mom_vv_diff_ten[1] = 2.0*porosity*mu;
+      mom_vv_diff_ten[2] = porosity*mu;
   
       mom_vu_diff_ten[0]=porosity*mu;
   
       mom_vw_diff_ten[0]=porosity*mu;
   
       //w momentum diffusion tensor
-      mom_w_diff_ten[0] = porosity*mu;
-      mom_w_diff_ten[1] = porosity*mu;
-      mom_w_diff_ten[2] = 2.0*porosity*mu;
+      mom_ww_diff_ten[0] = porosity*mu;
+      mom_ww_diff_ten[1] = porosity*mu;
+      mom_ww_diff_ten[2] = 2.0*porosity*mu;
   
       mom_wu_diff_ten[0]=porosity*mu;
   
@@ -783,27 +783,27 @@ namespace proteus
       dmom_w_adv_w[2]=2.0*porosity*w;
 
       //u momentum diffusion tensor
-      mom_u_diff_ten[0] = 2.0*porosity*nu;
-      mom_u_diff_ten[1] = porosity*nu;
-      mom_u_diff_ten[2] = porosity*nu;
+      mom_uu_diff_ten[0] = 2.0*porosity*nu;
+      mom_uu_diff_ten[1] = porosity*nu;
+      mom_uu_diff_ten[2] = porosity*nu;
   
       mom_uv_diff_ten[0]=porosity*nu;
   
       mom_uw_diff_ten[0]=porosity*nu;
   
       //v momentum diffusion tensor
-      mom_v_diff_ten[0] = porosity*nu;
-      mom_v_diff_ten[1] = 2.0*porosity*nu;
-      mom_v_diff_ten[2] = porosity*nu;
+      mom_vv_diff_ten[0] = porosity*nu;
+      mom_vv_diff_ten[1] = 2.0*porosity*nu;
+      mom_vv_diff_ten[2] = porosity*nu;
   
       mom_vu_diff_ten[0]=porosity*nu;
   
       mom_vw_diff_ten[0]=porosity*nu;
   
       //w momentum diffusion tensor
-      mom_w_diff_ten[0] = porosity*nu;
-      mom_w_diff_ten[1] = porosity*nu;
-      mom_w_diff_ten[2] = 2.0*porosity*nu;
+      mom_ww_diff_ten[0] = porosity*nu;
+      mom_ww_diff_ten[1] = porosity*nu;
+      mom_ww_diff_ten[2] = 2.0*porosity*nu;
   
       mom_wu_diff_ten[0]=porosity*nu;
   
@@ -1420,7 +1420,7 @@ namespace proteus
 	  penaltyFlux = max_a*penalty*(u-bc_u);
 	  flux += penaltyFlux;
 	  //contact line slip
-	  flux*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
+	  //flux*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
 	}
       else
 	{
@@ -1458,7 +1458,7 @@ namespace proteus
 	    }
 	  tmp +=max_a*penalty*v;
 	  //contact line slip
-	  tmp*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
+	  //tmp*=(smoothedDirac(eps,0) - smoothedDirac(eps,phi))/smoothedDirac(eps,0);
 	}
       return tmp;
     }
@@ -1649,9 +1649,9 @@ namespace proteus
 		dmom_w_adv_u[nSpace],
 		dmom_w_adv_v[nSpace],
 		dmom_w_adv_w[nSpace],
-		mom_u_diff_ten[nSpace],
-		mom_v_diff_ten[nSpace],
-		mom_w_diff_ten[nSpace],
+		mom_uu_diff_ten[nSpace],
+		mom_vv_diff_ten[nSpace],
+		mom_ww_diff_ten[nSpace],
 		mom_uv_diff_ten[1],
 		mom_uw_diff_ten[1],
 		mom_vu_diff_ten[1],
@@ -1816,9 +1816,9 @@ namespace proteus
 				   dmom_w_adv_u,
 				   dmom_w_adv_v,
 				   dmom_w_adv_w,
-				   mom_u_diff_ten,
-				   mom_v_diff_ten,
-				   mom_w_diff_ten,
+				   mom_uu_diff_ten,
+				   mom_vv_diff_ten,
+				   mom_ww_diff_ten,
 				   mom_uv_diff_ten,
 				   mom_uw_diff_ten,
 				   mom_vu_diff_ten,
@@ -1963,7 +1963,7 @@ namespace proteus
 					tmpR,//dmom_u_acc_u_t,
 					dmom_u_acc_u,
 					dmom_adv_sge,
-					mom_u_diff_ten[1],
+					mom_uu_diff_ten[1],
 					dmom_u_ham_grad_p[0],
 					tau_v0,
 					tau_p0,
@@ -1973,7 +1973,7 @@ namespace proteus
 			                G,G_dd_G,tr_G,
 					dmom_u_acc_u_t,
 					dmom_adv_sge,
-					mom_u_diff_ten[1],
+					mom_uu_diff_ten[1],
 					dmom_u_ham_grad_p[0],
 					tau_v1,
 					tau_p1,
@@ -2053,7 +2053,7 @@ namespace proteus
 
 		  elementResidual_u[i] += ck.Mass_weak(mom_u_acc_t,vel_test_dV[i]) + 
 		    ck.Advection_weak(mom_u_adv,&vel_grad_test_dV[i_nSpace]) +
-		    ck.Diffusion_weak(sdInfo_u_u_rowptr,sdInfo_u_u_colind,mom_u_diff_ten,grad_u,&vel_grad_test_dV[i_nSpace]) + 
+		    ck.Diffusion_weak(sdInfo_u_u_rowptr,sdInfo_u_u_colind,mom_uu_diff_ten,grad_u,&vel_grad_test_dV[i_nSpace]) + 
 		    ck.Diffusion_weak(sdInfo_u_v_rowptr,sdInfo_u_v_colind,mom_uv_diff_ten,grad_v,&vel_grad_test_dV[i_nSpace]) + 
 		    ck.Diffusion_weak(sdInfo_u_w_rowptr,sdInfo_u_w_colind,mom_uw_diff_ten,grad_w,&vel_grad_test_dV[i_nSpace]) + 
 		    ck.Reaction_weak(mom_u_source,vel_test_dV[i]) + 
@@ -2064,8 +2064,8 @@ namespace proteus
 		 
 		  elementResidual_v[i] += ck.Mass_weak(mom_v_acc_t,vel_test_dV[i]) + 
 		    ck.Advection_weak(mom_v_adv,&vel_grad_test_dV[i_nSpace]) +
-		    ck.Diffusion_weak(sdInfo_v_v_rowptr,sdInfo_v_v_colind,mom_v_diff_ten,grad_v,&vel_grad_test_dV[i_nSpace]) + 
 		    ck.Diffusion_weak(sdInfo_v_u_rowptr,sdInfo_v_u_colind,mom_vu_diff_ten,grad_u,&vel_grad_test_dV[i_nSpace]) + 
+		    ck.Diffusion_weak(sdInfo_v_v_rowptr,sdInfo_v_v_colind,mom_vv_diff_ten,grad_v,&vel_grad_test_dV[i_nSpace]) + 
 		    ck.Diffusion_weak(sdInfo_v_w_rowptr,sdInfo_v_w_colind,mom_vw_diff_ten,grad_w,&vel_grad_test_dV[i_nSpace]) + 
 		    ck.Reaction_weak(mom_v_source,vel_test_dV[i]) + 
 		    ck.Hamiltonian_weak(mom_v_ham,vel_test_dV[i]) + 
@@ -2075,9 +2075,9 @@ namespace proteus
 
 		  elementResidual_w[i] +=  ck.Mass_weak(mom_w_acc_t,vel_test_dV[i]) +
 		    ck.Advection_weak(mom_w_adv,&vel_grad_test_dV[i_nSpace]) + 
-		    ck.Diffusion_weak(sdInfo_w_w_rowptr,sdInfo_w_w_colind,mom_w_diff_ten,grad_w,&vel_grad_test_dV[i_nSpace]) + 
 		    ck.Diffusion_weak(sdInfo_w_u_rowptr,sdInfo_w_u_colind,mom_wu_diff_ten,grad_u,&vel_grad_test_dV[i_nSpace]) + 
 		    ck.Diffusion_weak(sdInfo_w_v_rowptr,sdInfo_w_v_colind,mom_wv_diff_ten,grad_v,&vel_grad_test_dV[i_nSpace]) + 
+		    ck.Diffusion_weak(sdInfo_w_w_rowptr,sdInfo_w_w_colind,mom_ww_diff_ten,grad_w,&vel_grad_test_dV[i_nSpace]) + 
 		    ck.Reaction_weak(mom_w_source,vel_test_dV[i]) + 
 		    ck.Hamiltonian_weak(mom_w_ham,vel_test_dV[i]) + 
 		    ck.SubgridError(subgridError_p,Lstar_p_w[i]) + 
@@ -3024,9 +3024,9 @@ namespace proteus
 		dmom_w_adv_u[nSpace],
 		dmom_w_adv_v[nSpace],
 		dmom_w_adv_w[nSpace],
-		mom_u_diff_ten[nSpace],
-		mom_v_diff_ten[nSpace],
-		mom_w_diff_ten[nSpace],
+		mom_uu_diff_ten[nSpace],
+		mom_vv_diff_ten[nSpace],
+		mom_ww_diff_ten[nSpace],
 		mom_uv_diff_ten[1],
 		mom_uw_diff_ten[1],
 		mom_vu_diff_ten[1],
@@ -3198,9 +3198,9 @@ namespace proteus
 				   dmom_w_adv_u,
 				   dmom_w_adv_v,
 				   dmom_w_adv_w,
-				   mom_u_diff_ten,
-				   mom_v_diff_ten,
-				   mom_w_diff_ten,
+				   mom_uu_diff_ten,
+				   mom_vv_diff_ten,
+				   mom_ww_diff_ten,
 				   mom_uv_diff_ten,
 				   mom_uw_diff_ten,
 				   mom_vu_diff_ten,
@@ -3359,7 +3359,7 @@ namespace proteus
 					tmpR,//dmom_u_acc_u_t,
 					dmom_u_acc_u,
 					dmom_adv_sge,
-					mom_u_diff_ten[1],
+					mom_uu_diff_ten[1],
 					dmom_u_ham_grad_p[0],
 					tau_v0,
 					tau_p0,
@@ -3369,7 +3369,7 @@ namespace proteus
 			                G,G_dd_G,tr_G,
 					dmom_u_acc_u_t,
 					dmom_adv_sge,
-					mom_u_diff_ten[1],
+					mom_uu_diff_ten[1],
                                         dmom_u_ham_grad_p[0],					
 					tau_v1,
 					tau_p1,
@@ -3470,7 +3470,7 @@ namespace proteus
 			ck.SubgridErrorJacobian(dsubgridError_u_p[j],Lstar_u_u[i]); 
 		      elementJacobian_u_u[i][j] += ck.MassJacobian_weak(dmom_u_acc_u_t,vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) + 
 			ck.AdvectionJacobian_weak(dmom_u_adv_u,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +
-			ck.SimpleDiffusionJacobian_weak(sdInfo_u_u_rowptr,sdInfo_u_u_colind,mom_u_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+			ck.SimpleDiffusionJacobian_weak(sdInfo_u_u_rowptr,sdInfo_u_u_colind,mom_uu_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
 			//VRANS
 			ck.ReactionJacobian_weak(dmom_u_source[0],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
 			//
@@ -3500,7 +3500,7 @@ namespace proteus
 			ck.SubgridErrorJacobian(dsubgridError_p_u[j],Lstar_p_v[i]);
 		      elementJacobian_v_v[i][j] += ck.MassJacobian_weak(dmom_v_acc_v_t,vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) + 
 			ck.AdvectionJacobian_weak(dmom_v_adv_v,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +
-			ck.SimpleDiffusionJacobian_weak(sdInfo_v_v_rowptr,sdInfo_v_v_colind,mom_v_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+			ck.SimpleDiffusionJacobian_weak(sdInfo_v_v_rowptr,sdInfo_v_v_colind,mom_vv_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
 			//VRANS
 			ck.ReactionJacobian_weak(dmom_v_source[1],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
 			//
@@ -3530,7 +3530,7 @@ namespace proteus
 			ck.SubgridErrorJacobian(dsubgridError_p_v[j],Lstar_p_w[i]); 
 		      elementJacobian_w_w[i][j] += ck.MassJacobian_weak(dmom_w_acc_w_t,vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) + 
 			ck.AdvectionJacobian_weak(dmom_w_adv_w,vel_trial_ref[k*nDOF_trial_element+j],&vel_grad_test_dV[i_nSpace]) +  
-			ck.SimpleDiffusionJacobian_weak(sdInfo_w_w_rowptr,sdInfo_w_w_colind,mom_w_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
+			ck.SimpleDiffusionJacobian_weak(sdInfo_w_w_rowptr,sdInfo_w_w_colind,mom_ww_diff_ten,&vel_grad_trial[j_nSpace],&vel_grad_test_dV[i_nSpace]) + 
 			//VRANS
 			ck.ReactionJacobian_weak(dmom_w_source[2],vel_trial_ref[k*nDOF_trial_element+j],vel_test_dV[i]) +
 			//

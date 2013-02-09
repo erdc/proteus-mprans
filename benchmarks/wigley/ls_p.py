@@ -14,8 +14,10 @@ def getDBC_ls(x,flag):
         return wavePhi
     elif flag == boundaryTags['right']:
         return lambda x,t: x[2] - outflowHeight
-#    elif flag == boundaryTags['top']:
-#        return lambda x,t: x[2] - outflowHeight
+    elif openTop and flag == boundaryTags['top']:
+        return lambda x,t: x[2] - outflowHeight
+    elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
+        return lambda x,t: x[2] - outflowHeight
 
 dirichletConditions = {0:getDBC_ls}
 

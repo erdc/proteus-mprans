@@ -1,9 +1,9 @@
 #!/bin/bash
 #PBS -A ERDCV00898ENQ
-#PBS -l walltime=07:30:00
+#PBS -l walltime=72:00:00
 #PBS -l ncpus=2048
 ##PBS -q standard
-#PBS -q R245003
+#PBS -q R245006
 #PBS -N wigley
 #PBS -j oe
 #PBS -l application=proteus
@@ -14,4 +14,4 @@ source ${PROTEUS}/envConfig/garnet.gnu.bash
 cd $PBS_O_WORKDIR
 export MPICH_RANK_REORDER_METHOD=0
 mkdir $WORKDIR/wigley.$PBS_JOBID
-aprun -n 512 -N 8 parun wigley_so.py -l 7 -v -O petsc.options -D $WORKDIR/wigley.$PBS_JOBID
+aprun -n 256 -N 4 parun wigley_so.py -l 7 -v -O petsc.options -D $WORKDIR/wigley.$PBS_JOBID
