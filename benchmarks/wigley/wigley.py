@@ -213,7 +213,7 @@ else:
         domain.writePoly("meshNoVessel")
     triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
 restrictFineSolutionToAllMeshes=False
-parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.element
+parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
 
 quad_order = 3
@@ -272,7 +272,7 @@ rd_shockCapturingFactor=0.9
 #----------------------------------------------------
 # Interface width
 #----------------------------------------------------
-epsFact = 1.5
+epsFact = 3.0
 
 epsFact_density          = epsFact 
 epsFact_viscosity        = epsFact 
@@ -343,9 +343,11 @@ nDTout             = %i
 
 #  Discretization -- input options  
 useOldPETSc=False
-useSuperlu = True#False # set to False if running in parallel with petsc.options
+useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
+useRBLES   = 0.0
+useMetrics = 0.0
 
 # Input checks
 if spaceOrder not in [1,2]:

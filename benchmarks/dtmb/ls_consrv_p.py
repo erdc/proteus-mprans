@@ -5,7 +5,7 @@ from proteus.mprans import MCorr
 
 LevelModelType = MCorr.LevelModel
 
-coefficients = MCorr.Coefficients(LSModel_index=1,V_model=0,me_model=4,VOFModel_index=2,
+coefficients = MCorr.Coefficients(LSModel_index=2,V_model=0,me_model=4,VOFModel_index=1,
                                   applyCorrection=True,nd=nd,checkMass=False,useMetrics=useMetrics,
                                   epsFactHeaviside=epsFact_consrv_heaviside,
                                   epsFactDirac=epsFact_consrv_dirac,

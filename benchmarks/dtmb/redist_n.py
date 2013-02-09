@@ -49,9 +49,9 @@ psitc['reduceRatio']=0.5
 psitc['startRatio']=1.0 
 
 tolFac = 0.0
-nl_atol_res = he#0.1*he
+nl_atol_res = 1.0e-3
 rtol_res[0] = 0.0
-atol_res[0] = he#0.1*he
+atol_res[0] = 1.0e-3
 
 maxNonlinearIts = 5
 maxLineSearches = 0
