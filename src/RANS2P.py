@@ -47,7 +47,9 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  eb_adjoint_sigma=1.0,
                  forceStrongDirichlet=False,
                  turbulenceClosureModel=0, #0=No Model 1=Smagorinksy 2=Dynamic Smagorinsky
-                 smagorinskyConstant=0.1):
+                 smagorinskyConstant=0.1,
+                 barycenters=None):
+        self.barycenters=barycenters
         self.smagorinskyConstant = smagorinskyConstant
         self.turbulenceClosureModel=turbulenceClosureModel
         self.forceStrongDirichlet=forceStrongDirichlet
@@ -259,6 +261,17 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.mesh = mesh
         self.elementMaterialTypes = mesh.elementMaterialTypes
         self.eps_source=self.epsFact_source*mesh.h
+        nBoundariesMax = int(globalMax(max(self.mesh.elementBoundaryMaterialTypes)))+1
+        print "nBoundariesMax+++++++++++++++++++++++++++++++++++++++++++++++++++",nBoundariesMax
+        self.netForces = numpy.zeros((nBoundariesMax,3),'d')
+        self.netMoments = numpy.zeros((nBoundariesMax,3),'d')
+        if self.barycenters == None:
+            self.barycenters = numpy.zeros((nBoundariesMax,3),'d')
+        comm = Comm.get()
+        if comm.isMaster():
+            self.forceHistory = open("forceHistory.txt","w")
+            self.momentHistory = open("momentHistory.txt","w")
+        self.comm = comm
     #initialize so it can run as single phase
     def initializeElementQuadrature(self,t,cq):
         #VRANS
@@ -514,6 +527,11 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         #                                     c[('r',0)])
     def evaluate(self,t,c):
         pass
+    def postStep(self,t,firstStep=False):
+        if self.comm.isMaster():
+            print "forces",self.netForces
+            self.forceHistory.write("%21.16e %21.16e %21.16e\n" %tuple(self.netForces[7]))
+            self.momentHistory.write("%21.15e %21.16e %21.16e\n" % tuple(self.netMoments[7]))
 
 class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
@@ -1010,6 +1028,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if 'evaluateForcingTerms' in dir(self.coefficients):
             self.coefficients.evaluateForcingTerms(self.timeIntegration.t,self.q,self.mesh,
                                                    self.u[0].femSpace.elementMaps.psi,self.mesh.elementNodesArray)
+        self.coefficients.netForces[:,:]  = 0.0
+        self.coefficients.netMoments[:,:] = 0.0
+
         if self.forceStrongConditions:
             for cj in range(len(self.dirichletConditionsForceDOF)):
                 for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
@@ -1152,8 +1173,17 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.q[('velocity',0)],
             self.ebqe[('velocity',0)],
             self.ebq_global[('totalFlux',0)],
-            self.elementResidual[0])
+            self.elementResidual[0],
+            self.mesh.elementBoundaryMaterialTypes,
+            self.coefficients.barycenters,
+            self.coefficients.netForces,
+            self.coefficients.netMoments)
 
+	from proteus.flcbdfWrappers import globalSum
+        for i in range(self.coefficients.netForces.shape[0]):
+            for I in range(3):
+                self.coefficients.netForces[i,I]  = globalSum(self.coefficients.netForces[i,I]) 
+                self.coefficients.netMoments[i,I] = globalSum(self.coefficients.netMoments[i,I]) 
 	if self.forceStrongConditions:#
 	    for cj in range(len(self.dirichletConditionsForceDOF)):#
 		for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():

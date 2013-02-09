@@ -22,16 +22,18 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
 				   stokes=False,
                                    useVF=useVF,
 				   useRBLES=useRBLES,
-				   useMetrics=useMetrics)
+				   useMetrics=useMetrics,
+                                   eb_adjoint_sigma=1.0,
+                                   forceStrongDirichlet=0)
 
 def getDBC_p(x,flag):
     if openTop and flag == boundaryTags['top']:
-        return lambda x,t: twpflowPressure(x,0.0)
-    if openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
+        return outflowPressure#lambda x,t: twpflowPressure(x,0.0)
+    elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
         return outflowPressure
     elif flag == boundaryTags['right']:
         return outflowPressure
-
+    
 def getDBC_u(x,flag):
     if flag == boundaryTags['left']:
         return twpflowVelocity_u
@@ -41,9 +43,11 @@ def getDBC_u(x,flag):
         return twpflowVelocity_u
     elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
         return twpflowVelocity_u
+    elif smoothBottom == False and flag == boundaryTags['bottom']:
+        return twpflowVelocity_u
     elif flag == boundaryTags['obstacle']:
         return lambda x,t: 0.0
-
+    
 def getDBC_v(x,flag):
     if flag == boundaryTags['left']:
         return twpflowVelocity_v
@@ -52,6 +56,8 @@ def getDBC_v(x,flag):
     elif openTop and flag == boundaryTags['top']:
         return twpflowVelocity_v
     elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
+        return twpflowVelocity_v
+    elif smoothBottom == False and flag == boundaryTags['bottom']:
         return twpflowVelocity_v
     elif flag == boundaryTags['obstacle']:
         return lambda x,t: 0.0
@@ -62,12 +68,14 @@ def getDBC_w(x,flag):
     elif flag == boundaryTags['right']:
         return twpflowVelocity_w
     elif openTop and flag == boundaryTags['top']:
-       return lambda x,t: 0.0
+        return twpflowVelocity_w
     elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
+        return twpflowVelocity_w
+    elif smoothBottom == False and flag == boundaryTags['bottom']:
         return twpflowVelocity_w
     elif flag == boundaryTags['obstacle']:
         return lambda x,t: 0.0
-
+    
 dirichletConditions = {0:getDBC_p,
                        1:getDBC_u,
                        2:getDBC_v,
@@ -108,8 +116,8 @@ def getAFBC_u(x,flag):
             return None
         else:
             return lambda x,t: 0.0
-    elif flag == boundaryTags['obstacle']:
-        return None
+#    elif flag == boundaryTags['obstacle']:
+#        return None
     else:
         return lambda x,t: 0.0
 
@@ -128,8 +136,8 @@ def getAFBC_v(x,flag):
             return None
         else:
             return lambda x,t: 0.0
-    elif flag == boundaryTags['obstacle']:
-        return None
+#    elif flag == boundaryTags['obstacle']:
+#        return None
     else:
         return lambda x,t: 0.0
 
@@ -148,8 +156,8 @@ def getAFBC_w(x,flag):
             return None
         else:
             return lambda x,t: 0.0
-    elif flag == boundaryTags['obstacle']:
-        return None
+#    elif flag == boundaryTags['obstacle']:#cek todo, ch
+#        return None
     else:
         return lambda x,t: 0.0
 
@@ -163,6 +171,8 @@ def getDFBC_u(x,flag):
     elif (flag == boundaryTags['front'] or flag == boundaryTags['back']):
         return lambda x,t: 0.0
     elif flag == boundaryTags['obstacle']:
+        return None
+    elif smoothBottom == False and flag == boundaryTags['bottom']:
         return None
     else:
         return lambda x,t: 0.0
@@ -178,6 +188,8 @@ def getDFBC_v(x,flag):
         return lambda x,t: 0.0
     elif flag == boundaryTags['obstacle']:
         return None
+    elif smoothBottom == False and flag == boundaryTags['bottom']:
+        return None
     else:  #no flux everywhere else
         return lambda x,t: 0.0
 
@@ -191,6 +203,8 @@ def getDFBC_w(x,flag):
     elif flag == boundaryTags['right']:
         return lambda x,t: 0.0
     elif flag == boundaryTags['obstacle']:
+        return None
+    elif smoothBottom == False and flag == boundaryTags['bottom']:
         return None
     else: #no diffusive flux everywhere else
         return lambda x,t: 0.0
