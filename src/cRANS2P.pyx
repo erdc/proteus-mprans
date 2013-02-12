@@ -59,6 +59,10 @@ cdef extern from "RANS2P.h" namespace "proteus":
 				   double* q_dragAlpha,
 				   double* q_dragBeta,
 				   double* q_mass_source,
+				   int turbulence_closure_flag,
+				   double* q_turb_var_0,
+				   double* q_turb_var_1,
+				   double* q_turb_var_grad_0,
 # VRANS end
 				   int* p_l2g, 
 				   int* vel_l2g, 
@@ -105,6 +109,8 @@ cdef extern from "RANS2P.h" namespace "proteus":
 				   double* ebqe_kappa_phi_ext,
 # VRANS start
 				   double* ebqe_porosity_ext,
+                                   double* ebqe_turb_var_0,
+				   double* ebqe_turb_var_1,
 # VRANS end
 				   int* isDOFBoundary_p,
 				   int* isDOFBoundary_u,
@@ -187,6 +193,10 @@ cdef extern from "RANS2P.h" namespace "proteus":
 				   double* q_dragAlpha,
 				   double* q_dragBeta,
 				   double* q_mass_source,
+				   int turbulence_closure_flag,
+				   double* q_turb_var_0,
+				   double* q_turb_var_1,
+				   double* q_turb_var_grad_0,
 # VRANS end
 				   int* p_l2g, 
 				   int* vel_l2g,
@@ -237,6 +247,8 @@ cdef extern from "RANS2P.h" namespace "proteus":
 				   double* ebqe_kappa_phi_ext,
 # VRANS start
 				   double* ebqe_porosity_ext,
+                                   double* ebqe_turb_var_0,
+				   double* ebqe_turb_var_1,
 # VRANS end
 				   int* isDOFBoundary_p,
 				   int* isDOFBoundary_u,
@@ -490,6 +502,10 @@ cdef class cRANS2P_base:
                          numpy.ndarray q_dragAlpha,
                          numpy.ndarray q_dragBeta,
                          numpy.ndarray q_mass_source,
+                         int turbulence_closure_flag,
+                         numpy.ndarray q_turb_var_0,
+                         numpy.ndarray q_turb_var_1,
+                         numpy.ndarray q_turb_var_grad_0,
 # VRANS end
                          numpy.ndarray p_l2g, 
                          numpy.ndarray vel_l2g, 
@@ -536,6 +552,8 @@ cdef class cRANS2P_base:
                          numpy.ndarray ebqe_kappa_phi_ext,
 # VRANS start
                          numpy.ndarray ebqe_porosity_ext,
+                         numpy.ndarray ebqe_turb_var_0,
+                         numpy.ndarray ebqe_turb_var_1,
 # VRANS end
                          numpy.ndarray isDOFBoundary_p,
                          numpy.ndarray isDOFBoundary_u,
@@ -618,6 +636,10 @@ cdef class cRANS2P_base:
                                        <double*> q_dragAlpha.data,
                                        <double*> q_dragBeta.data,
                                        <double*> q_mass_source.data,
+                                       turbulence_closure_flag,
+                                       <double*> q_turb_var_0.data,
+                                       <double*> q_turb_var_1.data,
+                                       <double*> q_turb_var_grad_0.data,
 # VRANS end
                                        <int*> p_l2g.data, 
                                        <int*> vel_l2g.data, 
@@ -664,6 +686,8 @@ cdef class cRANS2P_base:
                                        <double*> ebqe_kappa_phi_ext.data,
 # VRANS start
                                        <double*> ebqe_porosity_ext.data,
+                                       <double*> ebqe_turb_var_0.data,
+                                       <double*> ebqe_turb_var_1.data,
 # VRANS end
                                        <int*> isDOFBoundary_p.data,
                                        <int*> isDOFBoundary_u.data,
@@ -748,6 +772,10 @@ cdef class cRANS2P_base:
                          numpy.ndarray q_dragAlpha,
                          numpy.ndarray q_dragBeta,
                          numpy.ndarray q_mass_source,
+                         int turbulence_closure_flag,
+                         numpy.ndarray q_turb_var_0,
+                         numpy.ndarray q_turb_var_1,
+                         numpy.ndarray q_turb_var_grad_0,
 # VRANS end
                          numpy.ndarray p_l2g, 
                          numpy.ndarray vel_l2g,
@@ -798,6 +826,8 @@ cdef class cRANS2P_base:
                          numpy.ndarray ebqe_kappa_phi_ext,
 # VRANS start
                          numpy.ndarray ebqe_porosity_ext,
+                         numpy.ndarray ebqe_turb_var_0,
+                         numpy.ndarray ebqe_turb_var_1,
 # VRANS end
                          numpy.ndarray isDOFBoundary_p,
                          numpy.ndarray isDOFBoundary_u,
@@ -893,6 +923,10 @@ cdef class cRANS2P_base:
                                       <double*> q_dragAlpha.data,
                                       <double*> q_dragBeta.data,
                                       <double*> q_mass_source.data,
+                                      turbulence_closure_flag,
+                                      <double*> q_turb_var_0.data,
+                                      <double*> q_turb_var_1.data,
+                                      <double*> q_turb_var_grad_0.data,
 # VRANS end
                                       <int*> p_l2g.data, 
                                       <int*> vel_l2g.data,
@@ -943,6 +977,8 @@ cdef class cRANS2P_base:
                                       <double*> ebqe_kappa_phi_ext.data,
 # VRANS start
                                       <double*> ebqe_porosity_ext.data,
+                                      <double*> ebqe_turb_var_0.data,
+                                      <double*> ebqe_turb_var_1.data,
 # VRANS end
                                       <int*> isDOFBoundary_p.data,
                                       <int*> isDOFBoundary_u.data,

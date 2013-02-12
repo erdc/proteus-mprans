@@ -20,6 +20,9 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  LS_model=None,
                  VF_model=None,
                  KN_model=None,
+                 Closure_0_model=None, #Turbulence closure model 
+                 Closure_1_model=None, #Second possible Turbulence closure model
+                 Closure_model_flag=None, #id for closure model
                  epsFact_density=None,
                  stokes=False,
                  sd=True,
@@ -63,6 +66,9 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.LS_model=LS_model
         self.VF_model=VF_model
         self.KN_model=KN_model
+        self.Closure_0_model=Closure_0_model   
+        self.Closure_1_model=Closure_1_model
+        self.Closure_model_flag = Closure_model_flag
         self.epsFact=epsFact
         self.eps=None
         self.sigma=sigma
@@ -248,6 +254,26 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         else:
             self.q_kappa = -numpy.ones(self.model.q[('u',1)].shape,'d')
             self.ebqe_kappa = -numpy.ones(self.model.ebqe[('u',1)].shape,'d')
+        #Turbulence Closures
+        #only option for now is k-epsilon
+        self.q_turb_var = {}; self.q_turb_var_grad = {}; self.ebqe_turb_var = {};
+        if self.Closure_0_model != None:
+            assert self.closure_model_flag == 1
+            self.q_turb_var[0] = modelList[self.Closure_0_model].q[('u',0)]
+            self.q_turb_var_grad[0] = modelList[self.Closure_0_model].q[('grad(u)',0)]
+            self.ebqe_turb_var[0] = modelList[self.Closure_0_model].ebqe[('u',0)]
+        else:
+            self.q_turb_var[0] = numpy.ones(self.model.q[('u',0)].shape,'d')
+            self.q_turb_var_grad[0] = numpy.ones(self.model.q[('grad(u)',0)].shape,'d')
+            self.ebqe_turb_var[0] = numpy.ones(self.model.ebqe[('u',0)].shape,'d')
+        if self.Closure_1_model != None:
+            assert self.closure_model_flag == 1
+            self.q_turb_var[1] = modelList[self.Closure_1_model].q[('u',0)]
+            self.ebqe_turb_var[1] = modelList[self.Closure_1_model].ebqe[('u',0)]
+        else:
+            self.q_turb_var[1] = numpy.ones(self.model.q[('u',0)].shape,'d')
+            self.ebqe_turb_var[1] = numpy.ones(self.model.ebqe[('u',0)].shape,'d')
+
     def initializeMesh(self,mesh):
         #cek we eventually need to use the local element diameter
         self.eps_density = self.epsFact_density*mesh.h
@@ -1071,6 +1097,10 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.q_porosity,
             self.coefficients.q_dragAlpha,
             self.coefficients.q_dragBeta,
+            self.coefficients.closure_model_flag,
+            self.coefficients.q_turb_var[0],
+            self.coefficients.q_turb_var[1],
+            self.coefficients.q_turb_var_grad[0],
             self.q[('r',0)],
             #VRANS end
             self.u[0].femSpace.dofMap.l2g,
@@ -1084,7 +1114,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.q_vf,
             self.coefficients.q_phi,
             self.coefficients.q_n,
-            self.coefficients.q_kappa,
+            self.coefficients.q_kappa,            
             self.timeIntegration.m_tmp[1],
             self.timeIntegration.m_tmp[2],
             self.timeIntegration.m_tmp[3],
@@ -1124,6 +1154,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.ebqe_kappa,
             #VRANS start
             self.coefficients.ebqe_porosity,
+            self.coefficients.ebqe_turb_var[0],
+            self.coefficients.ebqe_turb_var[1],
             #VRANS end
             self.numericalFlux.isDOFBoundary[0],
             self.numericalFlux.isDOFBoundary[1],
@@ -1226,6 +1258,10 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.q_porosity,
             self.coefficients.q_dragAlpha,
             self.coefficients.q_dragBeta,
+            self.coefficients.closure_model_flag,
+            self.coefficients.q_turb_var[0],
+            self.coefficients.q_turb_var[1],
+            self.coefficients.q_turb_var_grad[0],
             self.q[('r',0)],
             #VRANS end
             self.u[0].femSpace.dofMap.l2g,
@@ -1284,6 +1320,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.ebqe_kappa,
             #VRANS start
             self.coefficients.ebqe_porosity,
+            self.coefficients.ebqe_turb_var[0],
+            self.coefficients.ebqe_turb_var[1],
             #VRANS end
             self.numericalFlux.isDOFBoundary[0],
             self.numericalFlux.isDOFBoundary[1],
@@ -1536,7 +1574,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[2].dof,
             self.u[3].dof,
             self.coefficients.g,
-	     self.q[('cfl',0)],   # ULTRA UGLY HACK self.q[('rho_0')],
+            self.q[('cfl',0)],   # ULTRA UGLY HACK self.q[('rho_0')],
             self.coefficients.useVF,
             self.coefficients.q_vf,
             self.coefficients.q_phi,

@@ -757,6 +757,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             #end velocity dof
             self.timeIntegration.m_tmp[0],
             self.q[('u',0)],
+            self.q[('grad(u)',0)],
             self.timeIntegration.beta_bdf[0],
             self.q[('cfl',0)],
             self.shockCapturing.numDiff[0],

@@ -67,6 +67,10 @@ namespace proteus
 				   const double* q_dragAlpha,
 				   const double* q_dragBeta,
 				   const double* q_mass_source,
+				   int turbulence_closure_flag,
+				   const double* q_turb_var_0,
+				   const double* q_turb_var_1,
+				   const double* q_turb_var_grad_0,
 				   int* p_l2g, 
 				   int* vel_l2g, 
 				   double* p_dof, 
@@ -110,7 +114,11 @@ namespace proteus
 				   double* bc_ebqe_phi_ext,
 				   double* ebqe_normal_phi_ext,
 				   double* ebqe_kappa_phi_ext,
+                                   //VRANS
 				   const double* ebqe_porosity_ext,
+				   const double* ebqe_turb_var_0,
+				   const double* ebqe_turb_var_1,
+                                   //VRANS end
 				   int* isDOFBoundary_p,
 				   int* isDOFBoundary_u,
 				   int* isDOFBoundary_v,
@@ -195,6 +203,10 @@ namespace proteus
 				   const double* q_dragAlpha,
 				   const double* q_dragBeta,
 				   const double* q_mass_source,
+				   int turbulence_closure_flag,
+				   const double* q_turb_var_0,
+				   const double* q_turb_var_1,
+				   const double* q_turb_var_grad_0,
 				   int* p_l2g, 
 				   int* vel_l2g,
 				   double* p_dof, double* u_dof, double* v_dof, double* w_dof,
@@ -244,7 +256,9 @@ namespace proteus
 				   double* ebqe_kappa_phi_ext,
 				   //VRANS
 				   const double* ebqe_porosity_ext,
-				   //					   
+				   const double* ebqe_turb_var_0,
+				   const double* ebqe_turb_var_1,
+				   //VRANS end					   
 				   int* isDOFBoundary_p,
 				   int* isDOFBoundary_u,
 				   int* isDOFBoundary_v,
@@ -1519,6 +1533,10 @@ namespace proteus
 			   const double* q_dragAlpha,
 			   const double* q_dragBeta,
 			   const double* q_mass_source,
+			   int turbulence_closure_flag,
+			   const double* q_turb_var_0,
+			   const double* q_turb_var_1,
+			   const double* q_turb_var_grad_0,
 			   //
 			   int* p_l2g, 
 			   int* vel_l2g, 
@@ -1565,7 +1583,9 @@ namespace proteus
 			   double* ebqe_kappa_phi_ext,
 			   //VRANS
 			   const double* ebqe_porosity_ext,
-			   //
+			   const double* ebqe_turb_var_0,
+			   const double* ebqe_turb_var_1,
+			   //VRANS end
 			   int* isDOFBoundary_p,
 			   int* isDOFBoundary_u,
 			   int* isDOFBoundary_v,
@@ -2859,6 +2879,10 @@ namespace proteus
 			   const double* q_dragAlpha,
 			   const double* q_dragBeta,
 			   const double* q_mass_source,
+			   int turbulence_closure_flag,
+			   const double* q_turb_var_0,
+			   const double* q_turb_var_1,
+			   const double* q_turb_var_grad_0,
 			   //
 			   int* p_l2g, 
 			   int* vel_l2g,
@@ -2909,6 +2933,8 @@ namespace proteus
 			   double* ebqe_kappa_phi_ext,
 			   //VRANS
 			   const double* ebqe_porosity_ext,
+			   const double* ebqe_turb_var_0,
+			   const double* ebqe_turb_var_1,
 			   //
 			   int* isDOFBoundary_p,
 			   int* isDOFBoundary_u,
