@@ -8,7 +8,7 @@ import step3d
 #----------------------------------------------------
 #  Discretization -- input options    
 #----------------------------------------------------
-Refinement=8
+Refinement=4
 genMesh=True
 spaceOrder=1
 useHex=False
@@ -135,9 +135,9 @@ g = [0.0,0.0,0.0]
 #----------------------------------------------------
 
 residence_time = length/inflow
-T=10.0#10.0*length/inflow
+T=1.0#10.0*length/inflow
 #tnList = [0.0,0.1*residence_time,T]
-nDTout=100
+nDTout=1
 tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
 
 
