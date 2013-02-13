@@ -22,7 +22,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  KN_model=None,
                  Closure_0_model=None, #Turbulence closure model 
                  Closure_1_model=None, #Second possible Turbulence closure model
-                 Closure_model_flag=None, #id for closure model
+                 closure_model_flag=-1, #id for the type of closure relation 
                  epsFact_density=None,
                  stokes=False,
                  sd=True,
@@ -68,7 +68,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.KN_model=KN_model
         self.Closure_0_model=Closure_0_model   
         self.Closure_1_model=Closure_1_model
-        self.Closure_model_flag = Closure_model_flag
+        self.closure_model_flag = closure_model_flag
         self.epsFact=epsFact
         self.eps=None
         self.sigma=sigma
@@ -263,16 +263,16 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             self.q_turb_var_grad[0] = modelList[self.Closure_0_model].q[('grad(u)',0)]
             self.ebqe_turb_var[0] = modelList[self.Closure_0_model].ebqe[('u',0)]
         else:
-            self.q_turb_var[0] = numpy.ones(self.model.q[('u',0)].shape,'d')
-            self.q_turb_var_grad[0] = numpy.ones(self.model.q[('grad(u)',0)].shape,'d')
-            self.ebqe_turb_var[0] = numpy.ones(self.model.ebqe[('u',0)].shape,'d')
+            self.q_turb_var[0] = numpy.ones(self.model.q[('u',1)].shape,'d')
+            self.q_turb_var_grad[0] = numpy.ones(self.model.q[('grad(u)',1)].shape,'d')
+            self.ebqe_turb_var[0] = numpy.ones(self.model.ebqe[('u',1)].shape,'d')
         if self.Closure_1_model != None:
             assert self.closure_model_flag == 1
             self.q_turb_var[1] = modelList[self.Closure_1_model].q[('u',0)]
             self.ebqe_turb_var[1] = modelList[self.Closure_1_model].ebqe[('u',0)]
         else:
-            self.q_turb_var[1] = numpy.ones(self.model.q[('u',0)].shape,'d')
-            self.ebqe_turb_var[1] = numpy.ones(self.model.ebqe[('u',0)].shape,'d')
+            self.q_turb_var[1] = numpy.ones(self.model.q[('u',1)].shape,'d')
+            self.ebqe_turb_var[1] = numpy.ones(self.model.ebqe[('u',1)].shape,'d')
 
     def initializeMesh(self,mesh):
         #cek we eventually need to use the local element diameter
@@ -1097,11 +1097,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.q_porosity,
             self.coefficients.q_dragAlpha,
             self.coefficients.q_dragBeta,
+            self.q[('r',0)],
             self.coefficients.closure_model_flag,
             self.coefficients.q_turb_var[0],
             self.coefficients.q_turb_var[1],
             self.coefficients.q_turb_var_grad[0],
-            self.q[('r',0)],
             #VRANS end
             self.u[0].femSpace.dofMap.l2g,
             self.u[1].femSpace.dofMap.l2g,
@@ -1258,11 +1258,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.q_porosity,
             self.coefficients.q_dragAlpha,
             self.coefficients.q_dragBeta,
+            self.q[('r',0)],
             self.coefficients.closure_model_flag,
             self.coefficients.q_turb_var[0],
             self.coefficients.q_turb_var[1],
             self.coefficients.q_turb_var_grad[0],
-            self.q[('r',0)],
             #VRANS end
             self.u[0].femSpace.dofMap.l2g,
             self.u[1].femSpace.dofMap.l2g,
