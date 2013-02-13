@@ -262,7 +262,6 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.elementMaterialTypes = mesh.elementMaterialTypes
         self.eps_source=self.epsFact_source*mesh.h
         nBoundariesMax = int(globalMax(max(self.mesh.elementBoundaryMaterialTypes)))+1
-        print "nBoundariesMax+++++++++++++++++++++++++++++++++++++++++++++++++++",nBoundariesMax
         self.netForces = numpy.zeros((nBoundariesMax,3),'d')
         self.netMoments = numpy.zeros((nBoundariesMax,3),'d')
         if self.barycenters == None:
@@ -529,9 +528,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         pass
     def postStep(self,t,firstStep=False):
         if self.comm.isMaster():
-            print "forces",self.netForces
-            self.forceHistory.write("%21.16e %21.16e %21.16e\n" %tuple(self.netForces[7]))
-            self.momentHistory.write("%21.15e %21.16e %21.16e\n" % tuple(self.netMoments[7]))
+            self.forceHistory.write("%21.16e %21.16e %21.16e\n" %tuple(self.netForces[-1,:]))
+            self.momentHistory.write("%21.15e %21.16e %21.16e\n" % tuple(self.netMoments[-1,:]))
 
 class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
