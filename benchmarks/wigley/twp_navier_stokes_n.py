@@ -42,7 +42,7 @@ multilevelNonlinearSolver = Newton
 levelNonlinearSolver      = Newton
 
 nonlinearSmoother = None
-linearSmoother    = None
+linearSmoother    = SimpleNavierStokes3D
 
 matrix = SparseMatrix
 
@@ -62,7 +62,7 @@ levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest         = 'r-true'
 
 tolFac = 0.0
-nl_atol_res = 1.0e-4
+nl_atol_res = 1.0e-3
 
 maxNonlinearIts = 20
 maxLineSearches = 0

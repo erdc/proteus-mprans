@@ -22,7 +22,7 @@ multilevelNonlinearSolver = NLNI#NS
 levelNonlinearSolver      = Newton#NS
 
 nonlinearSmoother = None
-linearSmoother    = None
+linearSmoother    = SimpleNavierStokes3D
 
 matrix = SparseMatrix
 

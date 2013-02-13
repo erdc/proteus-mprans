@@ -48,7 +48,8 @@ waterLevel   = 0.5*hull_length
 
 hull_center = (0.0,
                0.0,
-               0.5*hull_length)#cek todo, still not sure about where the waterline is
+               0.5*hull_length)
+
 
 #debug
 #L=(#2.5*hull_length,
@@ -66,7 +67,10 @@ hull_center = (0.0,
 #               0.0,
 #               1.5*hull_draft)#cek todo, still not sure about where the waterline is
 
-#cek todo these are the same as the 5414, somethings not right
+#set up barycenters for force calculation
+barycenters = numpy.zeros((8,3),'d')
+barycenters[7,:] = hull_center
+#cek todo these are the same as the 5414, something's not right
 hull_mass    = 532.277
 hull_cg      = [2.7618104935392300,  0.0 ,0.27953462008339180  ]
 hull_inertia = [[28.2823,  0.0,       20.86855 ],
@@ -82,7 +86,6 @@ nLevels = 1
 he = hull_draft/1.0 #16 cores
 he *=0.5 #128 
 he *=0.5 #512 (2048 8-way nodes)
-
 #he = hull_draft/1.5 #16 cores
 #he *=0.5 #128 but can run on 2 cores with 8G
 #he *=0.5 #1024
@@ -92,7 +95,6 @@ vessel = 'wigley'
 genMesh=False#True
 #vessel = None
 #genMesh=True
-
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
 if vessel is 'wigley-gmsh':
     domain = Domain.MeshTetgenDomain(fileprefix="mesh")
@@ -223,8 +225,8 @@ quad_order = 3
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
-openTop = True
-openSides = True
+openTop = False
+openSides = False#True
 smoothBottom = False
 smoothObstacle = False
 rampInitialConditions = False
@@ -237,8 +239,8 @@ freezeLevelSet=True
 #----------------------------------------------------
 # Time stepping and velocity
 #----------------------------------------------------
-Fr = 0.25
-#Fr = 0.51
+#Fr = 0.25
+Fr = 0.51
 Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um*rho_0/nu_0
 
@@ -274,7 +276,7 @@ rd_shockCapturingFactor=0.9
 #----------------------------------------------------
 # Interface width
 #----------------------------------------------------
-epsFact = 1.5
+epsFact = 3.0
 
 epsFact_density          = epsFact 
 epsFact_viscosity        = epsFact 
@@ -348,6 +350,8 @@ useOldPETSc=False
 useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
+useRBLES   = 0.0
+useMetrics = 0.0
 
 # Input checks
 if spaceOrder not in [1,2]:

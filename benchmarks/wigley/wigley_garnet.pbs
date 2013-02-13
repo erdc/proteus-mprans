@@ -1,9 +1,8 @@
 #!/bin/bash
 #PBS -A ERDCV00898ENQ
-#PBS -l walltime=72:00:00
-#PBS -l ncpus=2048
-##PBS -q standard
-#PBS -q R245006
+#PBS -l walltime=048:00:00
+#PBS -l ncpus=2496
+#PBS -q standard
 #PBS -N wigley
 #PBS -j oe
 #PBS -l application=proteus
@@ -12,6 +11,7 @@
 source /opt/modules/default/etc/modules.sh
 source ${PROTEUS}/envConfig/garnet.gnu.bash
 cd $PBS_O_WORKDIR
-export MPICH_RANK_REORDER_METHOD=0
+export MPICH_RANK_REORDER_METHOD=2
 mkdir $WORKDIR/wigley.$PBS_JOBID
-aprun -n 256 -N 4 parun wigley_so.py -l 7 -v -O petsc.options -D $WORKDIR/wigley.$PBS_JOBID
+#aprun -n 312 -N 4 parun wigley_so.py -l 7 -v -O ../inputTemplates/petsc.options.asm -D $WORKDIR/wigley.$PBS_JOBID
+aprun -n 312 -N 4 parun wigley_so.py -l 7 -v -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/wigley.$PBS_JOBID

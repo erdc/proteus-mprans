@@ -1,5 +1,5 @@
 """
-A helper module for doing air/water flow around the DTMB 5414 hull form
+A helper module for doing air/water flow around the DTMB 5415 hull form
 """
 from math import *
 from proteus import *
@@ -42,14 +42,18 @@ RBR_angCons  = [1,0,1]
 L = (20.0,15.0,5.75)
 x_ll = (-5.0,-7.5,-3.25)
 waterLevel   = 0.241984 
+barycenters = numpy.zeros((8,3),'d')
+barycenters[7,:] = hull_cg
 
 nLevels = 1
 
 he = L[2]/11 #16 cores
 he *=0.5 #128 
 he *=0.5 #1024
-vessel = 5414
+vessel = 5415
 genMesh=False
+#vessel = 'wigley'
+#genMesh=False
 #he = 3.0
 he = 0.1
 #vessel = 'wigley'
@@ -58,7 +62,7 @@ he = 0.1
 #genMesh=True
 
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
-if vessel is 5414:
+if vessel is 5415:
     domain = Domain.MeshTetgenDomain(fileprefix="mesh")
     domain.boundaryTags = boundaryTags
 else:
@@ -190,8 +194,8 @@ quad_order = 3
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
-openTop = True
-openSides = False
+openTop = False
+openSides = False#True
 smoothBottom = False
 smoothObstacle = False
 rampInitialConditions = False
@@ -210,9 +214,9 @@ Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um*rho_0/nu_0
 
 residence_time = hull_length/Um
-dt_init=0.001
-T = 5.0*residence_time
-nDTout=500
+dt_init=0.0001
+T = 4*residence_time
+nDTout=100
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.3
 
@@ -222,6 +226,9 @@ runCFL = 0.3
 
 useRBLES   = 0.0
 useMetrics = 0.0
+useVF = 1.0
+useOnlyVF = False
+
 ns_shockCapturingFactor=0.9
 
 ls_shockCapturingFactor=0.9

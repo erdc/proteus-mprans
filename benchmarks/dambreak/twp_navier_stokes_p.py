@@ -22,7 +22,8 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    stokes=False,
                                    useVF=useVF,
                                    useRBLES=useRBLES,
-                                   useMetrics=useMetrics)
+                                   useMetrics=useMetrics,
+                                   turbulenceClosureModel=2)
 
 def getDBC_p(x,flag):
     if flag == boundaryTags['top']:
