@@ -838,7 +838,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.shockCapturing.shockCapturingFactor,
             self.u[0].femSpace.dofMap.l2g,
             self.mesh.elementDiametersArray,
-            self.u[0].dof,
+            self.u[0].dof,self.coefficients.u_old_dof,
             self.coefficients.q_v,
             self.coefficients.q_phi,
             self.coefficients.q_kappa, #dissipation rate variable

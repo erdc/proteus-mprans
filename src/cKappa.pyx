@@ -105,7 +105,7 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double shockCapturingDiffusion,
                                int* u_l2g,
                                double* elementDiameter,
-                               double* u_dof, 
+                               double* u_dof, double* u_dof_old,
                                double* velocity,
                                double* phi_ls, #level set variable
                                double* q_epsilon, #dissipation rate
@@ -329,7 +329,7 @@ cdef class cKappa_base:
                          double shockCapturingDiffusion,
                          numpy.ndarray u_l2g,
                          numpy.ndarray elementDiameter,
-                         numpy.ndarray u_dof, 
+                         numpy.ndarray u_dof, numpy.ndarray u_dof_old, 
                          numpy.ndarray velocity,
                          numpy.ndarray phi_ls, #level set variable
                          numpy.ndarray q_epsilon, #dissipation rate
@@ -393,7 +393,7 @@ cdef class cKappa_base:
                                        shockCapturingDiffusion,
                                        <int*> u_l2g.data,
                                        <double*> elementDiameter.data,
-                                       <double*> u_dof.data, 
+                                       <double*> u_dof.data,<double*> u_dof_old.data, 
                                        <double*> velocity.data,
                                        <double*> phi_ls.data,
                                        <double*> q_epsilon.data,

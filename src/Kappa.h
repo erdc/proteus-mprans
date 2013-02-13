@@ -117,7 +117,7 @@ namespace proteus
 				   double shockCapturingDiffusion,
 				   int* u_l2g,
 				   double* elementDiameter,
-				   double* u_dof, 
+				   double* u_dof, double* u_dof_old,
 				   double* velocity,
 				   double* phi_ls, //level set variable
 				   double* q_epsilon, //dissipation rate
@@ -163,7 +163,7 @@ namespace proteus
       ck()
     {}
     inline
-    void evaluateCoefficients(const double v[nSpace],
+    void evaluateCoefficients_orig(const double v[nSpace],
 			      const double eps_mu,
 			      const double phi,
 			      const double nu_0,
@@ -174,6 +174,7 @@ namespace proteus
 			      const double grad_vy[nSpace], //gradient of x component of velocity
 			      const double grad_vz[nSpace], //gradient of x component of velocity
 			      const double& k,
+			      const double& k_old,
 			      const double& epsilon,
 			      double& m,
 			      double& dm,
@@ -218,6 +219,68 @@ namespace proteus
 
       r = -nu_t*PiD4 + epsilon;
       dr_dk = -dnu_t_dk*PiD4;
+      
+    }
+    //Try Lew, Buscaglia approximation
+    inline 
+    void evaluateCoefficients(const double v[nSpace],
+				       const double eps_mu,
+				       const double phi,
+				       const double nu_0,
+				       const double nu_1,
+				       const double sigma_k,
+				       const double c_mu,
+				       const double grad_vx[nSpace], //gradient of x component of velocity
+				       const double grad_vy[nSpace], //gradient of x component of velocity
+				       const double grad_vz[nSpace], //gradient of x component of velocity
+				       const double& k,
+				       const double& k_old,
+				       const double& epsilon,
+				       double& m,
+				       double& dm,
+				       double f[nSpace],
+				       double df[nSpace],
+				       double& a,
+				       double& da_dk,
+				       double& r,
+				       double& dr_dk)
+    {
+      const double div_eps = 1.0e-6;
+      double nu_t=0.0,dnu_t_dk=0.0,PiD4=0.0;
+      double gamma_k=0.0,F_k=0.0;
+      m = k;
+      dm = 1.0;
+
+      for (int I=0; I < nSpace; I++)
+	{
+	  f[I] = v[I]*k;
+	  df[I] = v[I];
+	}
+      const double H_mu = smoothedHeaviside(eps_mu,phi);
+      const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
+      //eddy viscosity 
+      nu_t     = c_mu*k_old*k_old/(epsilon+div_eps);
+      nu_t     = fmax(nu_t,1.e-4*nu);
+      dnu_t_dk = 0.0;
+
+      a = nu_t/sigma_k + nu;
+      da_dk = dnu_t_dk/sigma_k;
+
+      PiD4 = 2.0*(grad_vx[0]*grad_vx[0] + 
+		  grad_vy[1]*grad_vy[1] + 
+		  grad_vz[2]*grad_vz[2]) 
+	+
+	(grad_vx[1] + grad_vy[0])*(grad_vx[1] + grad_vy[0])
+	+
+	(grad_vx[2] + grad_vz[0])*(grad_vx[2] + grad_vz[0])
+	+
+	(grad_vy[2] + grad_vz[1])*(grad_vy[2] + grad_vz[1]);
+
+      gamma_k = fmax(c_mu*k_old/nu_t,0.0);
+     
+      F_k =  nu_t*PiD4;
+      r = -F_k + gamma_k*k;
+      dr_dk = gamma_k;
       
     }
 
@@ -525,7 +588,7 @@ namespace proteus
 	      register int eN_k = eN*nQuadraturePoints_element+k,
 		eN_k_nSpace = eN_k*nSpace,
 		eN_nDOF_trial_element = eN*nDOF_trial_element;
-	      register double u=0.0,grad_u[nSpace],grad_u_old[nSpace],
+	      register double u=0.0,u_old=0.0,grad_u[nSpace],grad_u_old[nSpace],
 		m=0.0,dm=0.0,
 		f[nSpace],df[nSpace],df_minus_da_grad_u[nSpace],
 		m_t=0.0,dm_t=0.0,
@@ -585,8 +648,10 @@ namespace proteus
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
 	      //get the trial function gradients
 	      ck.gradTrialFromRef(&u_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,u_grad_trial);
-	      //get the solution
+	      //get the solution and previous solution
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_ref[k*nDOF_trial_element],u);
+	      ck.valFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],&u_trial_ref[k*nDOF_trial_element],u_old);
+	      
 	      //get the solution gradients
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u);
 	      ck.gradFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u_old);
@@ -621,6 +686,7 @@ namespace proteus
 				   grad_vy,
 				   grad_vz,
 				   u,
+				   u_old,
 				   q_epsilon[eN_k],
 				   m,
 				   dm,
@@ -751,7 +817,7 @@ namespace proteus
 		ebNE_kb_nSpace = ebNE_kb*nSpace,
 		ebN_local_kb = ebN_local*nQuadraturePoints_elementBoundary+kb,
 		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
-	      register double u_ext=0.0,
+	      register double u_ext=0.0,u_old_ext,
 		grad_u_ext[nSpace],grad_vx_ext[nSpace],grad_vy_ext[nSpace],grad_vz_ext[nSpace],
 		m_ext=0.0,
 		dm_ext=0.0,
@@ -821,6 +887,7 @@ namespace proteus
 	      ck.gradTrialFromRef(&u_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,u_grad_trial_trace);
 	      //solution and gradients	
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
+	      ck.valFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_old_ext);
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_ext);
 
 	      //
@@ -853,6 +920,7 @@ namespace proteus
 				   grad_vy_ext,
 				   grad_vz_ext,
 				   u_ext,
+				   u_old_ext,
 				   ebqe_epsilon[ebNE_kb],
 				   m_ext,
 				   dm_ext,
@@ -872,6 +940,7 @@ namespace proteus
 				   grad_vx_ext,
 				   grad_vy_ext,
 				   grad_vz_ext,
+				   bc_u_ext,
 				   bc_u_ext,
 				   ebqe_epsilon[ebNE_kb],
 				   bc_m_ext,
@@ -979,7 +1048,7 @@ namespace proteus
 			   double shockCapturingDiffusion,
 			   int* u_l2g,
 			   double* elementDiameter,
-			   double* u_dof, 
+			   double* u_dof, double* u_dof_old,
 			   double* velocity,
 			   double* phi_ls, //level set variable
 			   double* q_epsilon, //dissipation rate
@@ -1027,7 +1096,7 @@ namespace proteus
 		eN_nDOF_trial_element = eN*nDOF_trial_element; //index to a vector at a quadrature point
 
 	      //declare local storage
-	      register double u=0.0,
+	      register double u=0.0,u_old,
 		grad_u[nSpace],grad_vx[nSpace],grad_vy[nSpace],grad_vz[nSpace],
 		m=0.0,dm=0.0,a=0.0,da=0.0,r=0.0,dr=0.0,
 		f[nSpace],df[nSpace],df_minus_da_grad_u[nSpace],
@@ -1087,8 +1156,9 @@ namespace proteus
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
 	      //get the trial function gradients
 	      ck.gradTrialFromRef(&u_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,u_grad_trial);
-	      //get the solution 	
+	      //get the solution at old and new time step 	
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_ref[k*nDOF_trial_element],u);
+	      ck.valFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],&u_trial_ref[k*nDOF_trial_element],u_old);
 	      //get the solution gradients
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u);
 	      //
@@ -1121,6 +1191,7 @@ namespace proteus
 				   grad_vy,
 				   grad_vz,
 				   u,
+				   u_old,
 				   q_epsilon[eN_k],
 				   m,
 				   dm,
@@ -1243,7 +1314,7 @@ namespace proteus
 		ebN_local_kb = ebN_local*nQuadraturePoints_elementBoundary+kb,
 		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
 
-	      register double u_ext=0.0,
+	      register double u_ext=0.0,u_old_ext=0.0,
 		grad_u_ext[nSpace],
 		grad_vx_ext[nSpace],grad_vy_ext[nSpace],grad_vz_ext[nSpace],
 		m_ext=0.0,
@@ -1330,6 +1401,7 @@ namespace proteus
 	      ck.gradTrialFromRef(&u_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,u_grad_trial_trace);
 	      //solution and gradients	
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
+	      ck.valFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_old_ext);
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_ext);
 
 	      //
@@ -1362,6 +1434,7 @@ namespace proteus
 				   grad_vy_ext,
 				   grad_vz_ext,
 				   u_ext,
+				   u_old_ext,
 				   ebqe_epsilon[ebNE_kb],
 				   m_ext,
 				   dm_ext,
@@ -1381,6 +1454,7 @@ namespace proteus
 				   grad_vx_ext,
 				   grad_vy_ext,
 				   grad_vz_ext,
+				   bc_u_ext,
 				   bc_u_ext,
 				   ebqe_epsilon[ebNE_kb],
 				   bc_m_ext,
