@@ -5,18 +5,21 @@ from proteus.mprans import RANS2P
 
 LevelModelType = RANS2P.LevelModel
 coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
-                                             sigma=0.0,
-                                             rho_0 = rho_0,
-                                             nu_0 = nu_0,
-                                             rho_1 = rho_0,
-                                             nu_1 = nu_0,
-                                             g=g,
-                                             nd=nd,
-                                             LS_model=1,
-                                             epsFact_density=epsFact_density,
-                                             stokes=False,
-                                             useRBLES=useRBLES,
-		                             useMetrics=useMetrics)
+                                   sigma=0.0,
+                                   rho_0 = rho_0,
+                                   nu_0 = nu_0,
+                                   rho_1 = rho_0,
+                                   nu_1 = nu_0,
+                                   g=g,
+                                   nd=nd,
+                                   LS_model=1,
+                                   Closure_0_model=3,
+                                   Closure_1_model=4,
+                                   closure_model_flag=1,
+                                   epsFact_density=epsFact_density,
+                                   stokes=False,
+                                   useRBLES=useRBLES,
+                                   useMetrics=useMetrics)
 
 bcsTimeDependent = True
 

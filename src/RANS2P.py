@@ -258,7 +258,6 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         #only option for now is k-epsilon
         self.q_turb_var = {}; self.q_turb_var_grad = {}; self.ebqe_turb_var = {};
         if self.Closure_0_model != None:
-            assert self.closure_model_flag == 1
             self.q_turb_var[0] = modelList[self.Closure_0_model].q[('u',0)]
             self.q_turb_var_grad[0] = modelList[self.Closure_0_model].q[('grad(u)',0)]
             self.ebqe_turb_var[0] = modelList[self.Closure_0_model].ebqe[('u',0)]
@@ -267,7 +266,6 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             self.q_turb_var_grad[0] = numpy.ones(self.model.q[('grad(u)',1)].shape,'d')
             self.ebqe_turb_var[0] = numpy.ones(self.model.ebqe[('u',1)].shape,'d')
         if self.Closure_1_model != None:
-            assert self.closure_model_flag == 1
             self.q_turb_var[1] = modelList[self.Closure_1_model].q[('u',0)]
             self.ebqe_turb_var[1] = modelList[self.Closure_1_model].ebqe[('u',0)]
         else:

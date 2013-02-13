@@ -914,6 +914,117 @@ namespace proteus
     }
 
     inline
+    void updateTurbulenceClosure(const int closure_model_flag,
+				 const double eps_rho,
+				 const double eps_mu,
+				 const double rho_0,
+				 const double nu_0,
+				 const double rho_1,
+				 const double nu_1,
+				 const double useVF,
+				 const double vf,
+				 const double phi,
+				 const double porosity,
+				 const double eddy_visc_coef_0,
+				 const double turb_var_0, //k for k-eps or k-omega
+				 const double turb_var_1, //epsilon for k-epsilon, omega for k-omega
+				 const double turb_grad_0[nSpace],//grad k for k-eps,k-omega
+				 double mom_uu_diff_ten[nSpace],
+				 double mom_vv_diff_ten[nSpace],
+				 double mom_ww_diff_ten[nSpace],
+				 double mom_uv_diff_ten[1],
+				 double mom_uw_diff_ten[1],
+				 double mom_vu_diff_ten[1],
+				 double mom_vw_diff_ten[1],
+				 double mom_wu_diff_ten[1],
+				 double mom_wv_diff_ten[1],
+				 double& mom_u_source,
+				 double& mom_v_source,
+				 double& mom_w_source)
+    {
+      /****
+	   eddy_visc_coef 
+	       <= 0  None
+	       == 1  k-epsilon 
+	
+      */
+      assert (closure_model_flag > 0);
+      double rho,nu,H_mu,eddy_viscosity,nu_t =0.0;
+      H_mu = (1.0-useVF)*smoothedHeaviside(eps_mu,phi)+useVF*fmin(1.0,fmax(0.0,vf));
+      nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
+      rho  = rho_0*(1.0-H_mu)+rho_1*H_mu;
+
+      const double twoThirds = 2.0/3.0; const double div_zero = 1.0e-6;
+      mom_u_source += twoThirds*turb_grad_0[0];
+      mom_v_source += twoThirds*turb_grad_0[1];
+      mom_w_source += twoThirds*turb_grad_0[2];
+
+      //--- k epsilon specific ---
+      nu_t = eddy_visc_coef_0*turb_var_0*turb_var_0/(turb_var_1 + div_zero);
+      nu_t = fmax(nu_t,1.0e-4*nu); //limit according to Lew, Buscaglia etal 01
+#ifdef COMPRESSIBLE_FORM
+      eddy_viscosity = nu_t*rho;
+      //u momentum diffusion tensor
+      mom_uu_diff_ten[0] += 2.0*porosity*eddy_viscosity;
+      mom_uu_diff_ten[1] += porosity*eddy_viscosity;
+      mom_uu_diff_ten[2] += porosity*eddy_viscosity;
+  
+      mom_uv_diff_ten[0] +=porosity*eddy_viscosity;
+  
+      mom_uw_diff_ten[0] +=porosity*eddy_viscosity;
+  
+      //v momentum diffusion tensor
+      mom_vv_diff_ten[0] += porosity*eddy_viscosity;
+      mom_vv_diff_ten[1] += 2.0*porosity*eddy_viscosity;
+      mom_vv_diff_ten[2] += porosity*eddy_viscosity;
+  
+      mom_vu_diff_ten[0] += porosity*eddy_viscosity;
+  
+      mom_vw_diff_ten[0] += porosity*eddy_viscosity;
+  
+      //w momentum diffusion tensor
+      mom_ww_diff_ten[0] += porosity*eddy_viscosity;
+      mom_ww_diff_ten[1] += porosity*eddy_viscosity;
+      mom_ww_diff_ten[2] += 2.0*porosity*eddy_viscosity;
+  
+      mom_wu_diff_ten[0] += porosity*eddy_viscosity;
+  
+      mom_wv_diff_ten[0] += porosity*eddy_viscosity;
+  
+#else
+      eddy_viscosity = nu_t;
+      //u momentum diffusion tensor
+      mom_uu_diff_ten[0] += 2.0*porosity*eddy_viscosity;
+      mom_uu_diff_ten[1] += porosity*eddy_viscosity;
+      mom_uu_diff_ten[2] += porosity*eddy_viscosity;
+  
+      mom_uv_diff_ten[0]+=porosity*eddy_viscosity;
+  
+      mom_uw_diff_ten[0]+=porosity*eddy_viscosity;
+  
+      //v momentum diffusion tensor
+      mom_vv_diff_ten[0] += porosity*eddy_viscosity;
+      mom_vv_diff_ten[1] += 2.0*porosity*eddy_viscosity;
+      mom_vv_diff_ten[2] += porosity*eddy_viscosity;
+  
+      mom_vu_diff_ten[0]+=porosity*eddy_viscosity;
+  
+      mom_vw_diff_ten[0]+=porosity*eddy_viscosity;
+  
+      //w momentum diffusion tensor
+      mom_ww_diff_ten[0] += porosity*eddy_viscosity;
+      mom_ww_diff_ten[1] += porosity*eddy_viscosity;
+      mom_ww_diff_ten[2] += 2.0*porosity*eddy_viscosity;
+  
+      mom_wu_diff_ten[0]+=porosity*eddy_viscosity;
+  
+      mom_wv_diff_ten[0]+=porosity*eddy_viscosity;
+  
+#endif
+
+    }
+
+    inline
     void calculateSubgridError_tau(const double&  hFactor,
 				   const double& elementDiameter,
 				   const double& dmt,
@@ -1886,6 +1997,40 @@ namespace proteus
 						dmom_u_source,
 						dmom_v_source,
 						dmom_w_source);
+
+	      //Turbulence closure model
+	      if (turbulence_closure_flag > 0)
+		{
+		  const double c_mu = 0.09;//mwf hack 
+		  updateTurbulenceClosure(turbulence_closure_flag,
+					  eps_rho,
+					  eps_mu,
+					  rho_0,
+					  nu_0,
+					  rho_1,
+					  nu_1,
+					  useVF,
+					  vf[eN_k],
+					  phi[eN_k],
+					  porosity,
+					  c_mu, //mwf hack
+					  q_turb_var_0[eN_k],
+					  q_turb_var_1[eN_k],
+					  &q_turb_var_grad_0[eN_k_nSpace],
+					  mom_uu_diff_ten,
+					  mom_vv_diff_ten,
+					  mom_ww_diff_ten,
+					  mom_uv_diff_ten,
+					  mom_uw_diff_ten,
+					  mom_vu_diff_ten,
+					  mom_vw_diff_ten,
+					  mom_wu_diff_ten,
+					  mom_wv_diff_ten,
+					  mom_u_source,
+					  mom_v_source,
+					  mom_w_source);					  
+
+		}
 	      //
 	      //save momentum for time history and velocity for subgrid error
 	      //
@@ -2468,6 +2613,70 @@ namespace proteus
 				   bc_dmom_v_ham_grad_p_ext,
 				   bc_mom_w_ham_ext,
 				   bc_dmom_w_ham_grad_p_ext);          
+
+	      //Turbulence closure model
+	      if (turbulence_closure_flag > 0)
+		{
+		  const double turb_var_grad_0_dummy[3] = {0.,0.,0.};
+		  const double c_mu = 0.09;//mwf hack 
+		  updateTurbulenceClosure(turbulence_closure_flag,
+					  eps_rho,
+					  eps_mu,
+					  rho_0,
+					  nu_0,
+					  rho_1,
+					  nu_1,
+					  useVF,
+					  ebqe_vf_ext[ebNE_kb],
+					  ebqe_phi_ext[ebNE_kb],
+					  porosity_ext,
+					  c_mu, //mwf hack
+					  ebqe_turb_var_0[ebNE_kb],
+					  ebqe_turb_var_1[ebNE_kb],
+					  turb_var_grad_0_dummy, //not needed
+					  mom_uu_diff_ten_ext,
+					  mom_vv_diff_ten_ext,
+					  mom_ww_diff_ten_ext,
+					  mom_uv_diff_ten_ext,
+					  mom_uw_diff_ten_ext,
+					  mom_vu_diff_ten_ext,
+					  mom_vw_diff_ten_ext,
+					  mom_wu_diff_ten_ext,
+					  mom_wv_diff_ten_ext,
+					  mom_u_source_ext,
+					  mom_v_source_ext,
+					  mom_w_source_ext);					  
+
+		  updateTurbulenceClosure(turbulence_closure_flag,
+					  eps_rho,
+					  eps_mu,
+					  rho_0,
+					  nu_0,
+					  rho_1,
+					  nu_1,
+					  useVF,
+					  bc_ebqe_vf_ext[ebNE_kb],
+					  bc_ebqe_phi_ext[ebNE_kb],
+					  porosity_ext,
+					  c_mu, //mwf hack
+					  ebqe_turb_var_0[ebNE_kb],
+					  ebqe_turb_var_1[ebNE_kb],
+					  turb_var_grad_0_dummy, //not needed
+					  bc_mom_uu_diff_ten_ext,
+					  bc_mom_vv_diff_ten_ext,
+					  bc_mom_ww_diff_ten_ext,
+					  bc_mom_uv_diff_ten_ext,
+					  bc_mom_uw_diff_ten_ext,
+					  bc_mom_vu_diff_ten_ext,
+					  bc_mom_vw_diff_ten_ext,
+					  bc_mom_wu_diff_ten_ext,
+					  bc_mom_wv_diff_ten_ext,
+					  bc_mom_u_source_ext,
+					  bc_mom_v_source_ext,
+					  bc_mom_w_source_ext);					  
+		}
+
+
 	      //
 	      //moving domain
 	      //
@@ -3274,6 +3483,39 @@ namespace proteus
 						dmom_u_source,
 						dmom_v_source,
 						dmom_w_source);
+	      //Turbulence closure model
+	      if (turbulence_closure_flag > 0)
+		{
+		  const double c_mu = 0.09;//mwf hack 
+		  updateTurbulenceClosure(turbulence_closure_flag,
+					  eps_rho,
+					  eps_mu,
+					  rho_0,
+					  nu_0,
+					  rho_1,
+					  nu_1,
+					  useVF,
+					  vf[eN_k],
+					  phi[eN_k],
+					  porosity,
+					  c_mu, //mwf hack
+					  q_turb_var_0[eN_k],
+					  q_turb_var_1[eN_k],
+					  &q_turb_var_grad_0[eN_k_nSpace],
+					  mom_uu_diff_ten,
+					  mom_vv_diff_ten,
+					  mom_ww_diff_ten,
+					  mom_uv_diff_ten,
+					  mom_uw_diff_ten,
+					  mom_vu_diff_ten,
+					  mom_vw_diff_ten,
+					  mom_wu_diff_ten,
+					  mom_wv_diff_ten,
+					  mom_u_source,
+					  mom_v_source,
+					  mom_w_source);					  
+
+		}
 	      //
 	      //
 	      //moving mesh
@@ -3952,6 +4194,67 @@ namespace proteus
 				   bc_dmom_v_ham_grad_p_ext,
 				   bc_mom_w_ham_ext,
 				   bc_dmom_w_ham_grad_p_ext);          
+	      //Turbulence closure model
+	      if (turbulence_closure_flag > 0)
+		{
+		  const double turb_var_grad_0_dummy[3] = {0.,0.,0.};
+		  const double c_mu = 0.09;//mwf hack 
+		  updateTurbulenceClosure(turbulence_closure_flag,
+					  eps_rho,
+					  eps_mu,
+					  rho_0,
+					  nu_0,
+					  rho_1,
+					  nu_1,
+					  useVF,
+					  ebqe_vf_ext[ebNE_kb],
+					  ebqe_phi_ext[ebNE_kb],
+					  porosity_ext,
+					  c_mu, //mwf hack
+					  ebqe_turb_var_0[ebNE_kb],
+					  ebqe_turb_var_1[ebNE_kb],
+					  turb_var_grad_0_dummy, //not needed
+					  mom_uu_diff_ten_ext,
+					  mom_vv_diff_ten_ext,
+					  mom_ww_diff_ten_ext,
+					  mom_uv_diff_ten_ext,
+					  mom_uw_diff_ten_ext,
+					  mom_vu_diff_ten_ext,
+					  mom_vw_diff_ten_ext,
+					  mom_wu_diff_ten_ext,
+					  mom_wv_diff_ten_ext,
+					  mom_u_source_ext,
+					  mom_v_source_ext,
+					  mom_w_source_ext);					  
+
+		  updateTurbulenceClosure(turbulence_closure_flag,
+					  eps_rho,
+					  eps_mu,
+					  rho_0,
+					  nu_0,
+					  rho_1,
+					  nu_1,
+					  useVF,
+					  ebqe_vf_ext[ebNE_kb],
+					  ebqe_phi_ext[ebNE_kb],
+					  porosity_ext,
+					  c_mu, //mwf hack
+					  ebqe_turb_var_0[ebNE_kb],
+					  ebqe_turb_var_1[ebNE_kb],
+					  turb_var_grad_0_dummy, //not needed
+					  bc_mom_uu_diff_ten_ext,
+					  bc_mom_vv_diff_ten_ext,
+					  bc_mom_ww_diff_ten_ext,
+					  bc_mom_uv_diff_ten_ext,
+					  bc_mom_uw_diff_ten_ext,
+					  bc_mom_vu_diff_ten_ext,
+					  bc_mom_vw_diff_ten_ext,
+					  bc_mom_wu_diff_ten_ext,
+					  bc_mom_wv_diff_ten_ext,
+					  bc_mom_u_source_ext,
+					  bc_mom_v_source_ext,
+					  bc_mom_w_source_ext);					  
+		}
 	      //
 	      //moving domain
 	      //
