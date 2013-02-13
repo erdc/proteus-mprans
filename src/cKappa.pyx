@@ -51,6 +51,7 @@ cdef extern from "Kappa.h" namespace "proteus":
                                #end velocity dof
                                double* q_m,
                                double* q_u,
+                               double* q_grad_u,
                                double* q_m_betaBDF,
                                double* cfl,
                                double* q_numDiff_u, 
@@ -205,6 +206,7 @@ cdef class cKappa_base:
                          #end velocity dof
                          numpy.ndarray q_m,
                          numpy.ndarray q_u,
+                         numpy.ndarray q_grad_u,
                          numpy.ndarray q_m_betaBDF,
                          numpy.ndarray cfl,
                          numpy.ndarray q_numDiff_u, 
@@ -268,9 +270,10 @@ cdef class cKappa_base:
                                        <double*> velocity_dof_u.data,
                                        <double*> velocity_dof_v.data,
                                        <double*> velocity_dof_w.data,
-                                      #end velocity dof
+                                       #end velocity dof
                                        <double*> q_m.data,
                                        <double*> q_u.data,
+                                       <double*> q_grad_u.data,
                                        <double*> q_m_betaBDF.data,
                                        <double*> cfl.data,
                                        <double*> q_numDiff_u.data, 
