@@ -2,7 +2,7 @@ from proteus import *
 from marin import *
 from vof_p import *
 
-timeIntegration = BackwardEuler
+timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_controller
 
 femSpaces = {0:basis}
@@ -10,8 +10,8 @@ femSpaces = {0:basis}
 massLumping       = False
 numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
 conservativeFlux  = None
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=False)
 subgridError      = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)
+shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)
 
 fullNewtonFlag = True
 multilevelNonlinearSolver = Newton
@@ -21,18 +21,27 @@ nonlinearSmoother = None
 linearSmoother    = None
 
 matrix = SparseMatrix
-if not use_petsc4py:
+
+if useOldPETSc:
     multilevelLinearSolver = PETSc
     levelLinearSolver      = PETSc
 else:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
+
+if useSuperlu:
+    multilevelLinearSolver = LU
+    levelLinearSolver      = LU
+
 linear_solver_options_prefix = 'vof_'
-levelNonlinearSolverConvergenceTest = 'rits'
-linearSolverConvergenceTest         = 'rits'
+levelNonlinearSolverConvergenceTest = 'r'
+linearSolverConvergenceTest         = 'r-true'
 
-tolFac      = 1e-4
-nl_atol_res = 0.0
+tolFac      = 0.0
+linTolFac   = 0.0
+nl_atol_res = 1.0e-5
+l_atol_res = 1.0e-5
+useEisenstatWalker = False#True
 
-maxNonlinearIts = 10
+maxNonlinearIts = 2
 maxLineSearches = 0

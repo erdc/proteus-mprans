@@ -4,9 +4,8 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options  
-#Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
-Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
-#Refinement = 5
+Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
+#Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
 useSuperlu=False
@@ -63,7 +62,7 @@ if quasi2D:
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
-nLayersOfOverlapForParallel = 1
+nLayersOfOverlapForParallel = 0
 
 if useHex:   
     nnx=4*Refinement
