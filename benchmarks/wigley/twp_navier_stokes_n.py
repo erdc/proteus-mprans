@@ -2,11 +2,8 @@ from proteus import *
 from twp_navier_stokes_p import *
 from wigley import *
 
-timeIntegration = BackwardEuler
-stepController  = Min_dt_controller
-
 timeIntegration = BackwardEuler_cfl
-stepController = Min_dt_controller
+stepController  = Min_dt_controller
 
 femSpaces = {0:basis,
 	     1:basis,
@@ -38,8 +35,6 @@ shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag
 fullNewtonFlag = True
 multilevelNonlinearSolver = NewtonNS
 levelNonlinearSolver      = NewtonNS
-multilevelNonlinearSolver = Newton
-levelNonlinearSolver      = Newton
 
 nonlinearSmoother = None
 linearSmoother    = SimpleNavierStokes3D
@@ -56,14 +51,14 @@ else:
 if useSuperlu:
     multilevelLinearSolver = LU
     levelLinearSolver      = LU
-    
+
 linear_solver_options_prefix = 'rans2p_'
-levelNonlinearSolverConvergenceTest = 'rits'
-linearSolverConvergenceTest         = 'r-true'
+levelNonlinearSolverConvergenceTest = 'r'
+linearSolverConvergenceTest             = 'r-true'
 
-tolFac = 0.0
-nl_atol_res = 1.0e-3
-
+tolFac = 1.0e-3
+nl_atol_res = 1.0e-4
+useEisenstatWalker = True
 maxNonlinearIts = 20
 maxLineSearches = 0
 

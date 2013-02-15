@@ -5,7 +5,13 @@ from marin import *
 from proteus.mprans import VOF
 
 LevelModelType = VOF.LevelModel
-coefficients = VOF.Coefficients(LS_model=1,V_model=0,RD_model=3,ME_model=2,
+if useOnlyVF:
+    RD_model = None
+    LS_model = None
+else:
+    RD_model = 3
+    LS_model = 2
+coefficients = VOF.Coefficients(LS_model=LS_model,V_model=0,RD_model=RD_model,ME_model=1,
                                 checkMass=False,useMetrics=useMetrics,
                                 epsFact=epsFact_vof,sc_uref=vof_sc_uref,sc_beta=vof_sc_beta)
  
@@ -22,9 +28,6 @@ diffusiveFluxBoundaryConditions = {0:{}}
 
 class PerturbedSurface_H:
     def uOfXT(self,x,t):
-        if signedDistance(x) < 0.0:
-            return 0.0
-	else:
-	    return 1.0  
+        return smoothedHeaviside(epsFact_consrv_heaviside*he,signedDistance(x))
 	    
 initialConditions  = {0:PerturbedSurface_H()}

@@ -2,11 +2,14 @@ from proteus import *
 from redist_p import *
 from wigley import *
 
-timeIntegration = BackwardEuler
-stepController = Osher_PsiTC_controller2	     
+#timeIntegration = BackwardEuler_cfl
+#stepController = Osher_PsiTC_controller
 
+#timeIntegration = BackwardEuler
+#stepController = Osher_PsiTC_controller2	     
+
+timeIntegrator  = ForwardIntegrator
 timeIntegration = NoIntegration
-stepController  = Newton_controller
 
 femSpaces = {0:basis}
        
@@ -17,7 +20,7 @@ subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=Fal
 shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=False)
 
 fullNewtonFlag = True
-multilevelNonlinearSolver  = Newton
+multilevelNonlinearSolver  = NLNI
 levelNonlinearSolver       = Newton
 
 nonlinearSmoother = NLGaussSeidel
@@ -37,21 +40,20 @@ if useSuperlu:
     levelLinearSolver      = LU
 
 linear_solver_options_prefix = 'rdls_'
+nonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest = 'r-true'
 
-nonlinearSolverConvergenceTest = 'rits'
-levelNonlinearSolverConvergenceTest = 'rits'
-
 runCFL=1.0
-psitc['nStepsForce']=5
-psitc['nStepsMax']=10 
-psitc['reduceRatio']=0.5
+rtol_res[0] = 0.0
+atol_res[0] = 0.1*he
+psitc['nStepsForce']=3
+psitc['nStepsMax']=5
+psitc['reduceRatio']=1.0
 psitc['startRatio']=1.0 
 
 tolFac = 0.0
-nl_atol_res = 1.0e-3
-rtol_res[0] = 0.0
-atol_res[0] = 1.0e-3
+nl_atol_res = 0.1*he
+useEisenstatWalker = True
 
 maxNonlinearIts = 5
 maxLineSearches = 0
