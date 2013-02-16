@@ -1,5 +1,5 @@
 from proteus import *
-from kappa_p import *
+from epsilon_p import *
 
 timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_cfl_controller

@@ -5,7 +5,7 @@ from proteus.mprans import Epsilon
 
 LevelModelType = Epsilon.LevelModel
 
-coefficients = Epsilon.Coefficients(V_model=0,ME_model=4,LS_model=1,RD_model=None,kappa_model=3,
+coefficients = Epsilon.Coefficients(V_model=0,ME_model=6,LS_model=1,RD_model=3,kappa_model=5,
                                     useMetrics=useMetrics,
                                     rho_0=rho_0,nu_0=nu_0,
                                     rho_1=rho_1,nu_1=nu_1,
