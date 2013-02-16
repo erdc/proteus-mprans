@@ -35,11 +35,11 @@ if useSuperlu:
 
 linear_solver_options_prefix = 'mcorr_'
 linearSolverConvergenceTest  = 'r-true'
-nonlinearSolverConvergenceTest = 'rits'
-levelNonlinearSolverConvergenceTest = 'rits'
 
 tolFac = 0.0
-nl_atol_res = 0.5
+linTolFac = 0.0
+nl_atol_res = 1.0e-5
+useEisenstatWalker = True
 
 maxNonlinearIts = 10
 maxLineSearches = 0

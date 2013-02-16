@@ -4,13 +4,16 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options    
-Refinement=4#8#17
+Refinement=8#17
 genMesh=True
-spaceOrder=1
-useHex=False
+useOldPETSc=False
+useSuperlu=False
+spaceOrder = 1
+useHex     = False
 useRBLES   = 0.0
 useMetrics = 0.0
-
+useVF = 1.0
+useOnlyVF = False
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -23,7 +26,7 @@ if useRBLES not in [0.0, 1.0]:
 if useMetrics not in [0.0, 1.0]:
     print "INVALID: useMetrics"
     sys.exit()
-
+    
 #  Discretization   
 nd = 3
 if spaceOrder == 1:
@@ -50,7 +53,7 @@ elif spaceOrder == 2:
 
 # Domain and mesh
 nLevels = 1
-parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
+parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
 use_petsc4py=True#False
 
@@ -145,18 +148,19 @@ else:
 
 # Time stepping
 T=6.00
+dt_init  =0.001
 dt_fixed = 0.1/Refinement
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.2
-ls_shockCapturingFactor  = 0.2
+ns_shockCapturingFactor  = 0.9
+ls_shockCapturingFactor  = 0.9
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.2
+vof_shockCapturingFactor = 0.9
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.2
+rd_shockCapturingFactor  = 0.9
 
 epsFact_density    = 1.5
 epsFact_viscosity  = 1.5

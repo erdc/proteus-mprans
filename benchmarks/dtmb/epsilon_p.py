@@ -5,13 +5,23 @@ from proteus.mprans import Epsilon
 
 LevelModelType = Epsilon.LevelModel
 
-coefficients = Epsilon.Coefficients(V_model=0,ME_model=6,LS_model=1,RD_model=3,kappa_model=5,
-                                    useMetrics=useMetrics,
-                                    rho_0=rho_0,nu_0=nu_0,
-                                    rho_1=rho_1,nu_1=nu_1,
-                                    g=g,
-                                    c_mu=0.09,sigma_e=1.0,#default values for c_1,c_2,c_e
-                                    sc_uref=epsilon_sc_uref,sc_beta=epsilon_sc_beta)
+if useOnlyVF:
+    coefficients = Epsilon.Coefficients(V_model=0,ME_model=3,LS_model=None,RD_model=None,kappa_model=2,
+                                        useMetrics=useMetrics,
+                                        rho_0=rho_0,nu_0=nu_0,
+                                        rho_1=rho_1,nu_1=nu_1,
+                                        g=g,
+                                        c_mu=0.09,sigma_e=1.0,#default values for c_1,c_2,c_e
+                                        sc_uref=epsilon_sc_uref,sc_beta=epsilon_sc_beta)
+    
+else:
+    coefficients = Epsilon.Coefficients(V_model=0,ME_model=6,LS_model=2,RD_model=3,kappa_model=5,
+                                        useMetrics=useMetrics,
+                                        rho_0=rho_0,nu_0=nu_0,
+                                        rho_1=rho_1,nu_1=nu_1,
+                                        g=g,
+                                        c_mu=0.09,sigma_e=1.0,#default values for c_1,c_2,c_e
+                                        sc_uref=epsilon_sc_uref,sc_beta=epsilon_sc_beta)
 
 epsilonInflow = coefficients.c_mu*kInflow**(1.5)/(0.03*L[2])
 

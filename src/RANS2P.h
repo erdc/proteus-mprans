@@ -56,6 +56,8 @@ namespace proteus
 				   double nu_0,
 				   double rho_1,
 				   double nu_1,
+				   double smagorinskyConstant,
+				   int turbulenceClosureModel,
 				   double Ct_sge,
 				   double Cd_sge,
 				   double C_dc,
@@ -67,7 +69,6 @@ namespace proteus
 				   const double* q_dragAlpha,
 				   const double* q_dragBeta,
 				   const double* q_mass_source,
-				   int turbulence_closure_flag,
 				   const double* q_turb_var_0,
 				   const double* q_turb_var_1,
 				   const double* q_turb_var_grad_0,
@@ -146,7 +147,11 @@ namespace proteus
 				   double* q_velocity,
 				   double* ebqe_velocity,
 				   double* flux,
-				   double* elementResidual_p)=0;
+				   double* elementResidual_p,
+				   int* boundaryFlags,
+				   double* barycenters,
+				   double* netForces,
+				   double* netMoments)=0;
     virtual void calculateJacobian(//element
 				   double* mesh_trial_ref,
 				   double* mesh_grad_trial_ref,
@@ -192,6 +197,8 @@ namespace proteus
 				   double nu_0,
 				   double rho_1,
 				   double nu_1,
+				   double smagorinskyConstant,
+				   int turbulenceClosureModel,
 				   double Ct_sge,
 				   double Cd_sge,
 				   double C_dg,
@@ -203,7 +210,6 @@ namespace proteus
 				   const double* q_dragAlpha,
 				   const double* q_dragBeta,
 				   const double* q_mass_source,
-				   int turbulence_closure_flag,
 				   const double* q_turb_var_0,
 				   const double* q_turb_var_1,
 				   const double* q_turb_var_grad_0,
@@ -340,6 +346,8 @@ namespace proteus
 				   double nu_0,
 				   double rho_1,
 				   double nu_1,
+				   double smagorinskyConstant,
+				   int turbulenceClosureModel,
 				   double Ct_sge,
 				   double Cd_sge,
 				   double C_dc,
@@ -516,9 +524,12 @@ namespace proteus
 			      const double eps_mu,
 			      const double sigma,
 			      const double rho_0,
-			      const double nu_0,
+			      double nu_0,
 			      const double rho_1,
-			      const double nu_1,
+			      double nu_1,
+			      const double h_e,
+			      const double smagorinskyConstant,
+			      const int turbulenceClosureModel,
 			      const double g[nSpace],
 			      const double useVF,
 			      const double& vf,
@@ -528,6 +539,9 @@ namespace proteus
 			      const double porosity,//VRANS specific
 			      const double& p,
 			      const double grad_p[nSpace],
+			      const double grad_u[nSpace],
+			      const double grad_v[nSpace],
+			      const double grad_w[nSpace],
 			      const double& u,
 			      const double& v,
 			      const double& w,
@@ -578,6 +592,35 @@ namespace proteus
       H_mu = (1.0-useVF)*smoothedHeaviside(eps_mu,phi) + useVF*fmin(1.0,fmax(0.0,vf));
       d_mu = (1.0-useVF)*smoothedDirac(eps_mu,phi);
   
+      //calculate eddy viscosity
+      switch (turbulenceClosureModel)
+	{
+	  double norm_S;
+	case 1:
+	  {
+	    norm_S = sqrt(2.0*(grad_u[0]*grad_u[0] + grad_v[1]*grad_v[1] + grad_w[2]*grad_w[2] +
+			       0.5*(grad_u[1]+grad_v[0])*(grad_u[1]+grad_v[0]) + 
+			       0.5*(grad_u[2]+grad_w[0])*(grad_u[2]+grad_w[0]) +
+			       0.5*(grad_v[2]+grad_w[1])*(grad_v[2]+grad_w[1])));
+	    nu_0 += smagorinskyConstant*smagorinskyConstant*h_e*h_e*norm_S;
+	    nu_1 += smagorinskyConstant*smagorinskyConstant*h_e*h_e*norm_S;
+	  }
+	case 2:
+	  {
+	    double re_0,cs_0,re_1,cs_1;
+	    norm_S = sqrt(2.0*(grad_u[0]*grad_u[0] + grad_v[1]*grad_v[1] + grad_w[2]*grad_w[2] +
+			       0.5*(grad_u[1]+grad_v[0])*(grad_u[1]+grad_v[0]) + 
+			       0.5*(grad_u[2]+grad_w[0])*(grad_u[2]+grad_w[0]) +
+			       0.5*(grad_v[2]+grad_w[1])*(grad_v[2]+grad_w[1])));
+	    re_0 = h_e*h_e*norm_S/nu_0;
+	    cs_0=0.027*pow(10.0,-3.23*pow(re_0,-0.92));
+	    nu_0 += cs_0*h_e*h_e*norm_S;
+	    re_1 = h_e*h_e*norm_S/nu_1;
+	    cs_1=0.027*pow(10.0,-3.23*pow(re_1,-0.92));
+	    nu_1 += cs_1*h_e*h_e*norm_S;
+	  }
+	}
+      
       rho = rho_0*(1.0-H_rho)+rho_1*H_rho;
       nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
       mu  = rho_0*nu_0*(1.0-H_mu)+rho_1*nu_1*H_mu;
@@ -914,7 +957,7 @@ namespace proteus
     }
 
     inline
-    void updateTurbulenceClosure(const int closure_model_flag,
+      void updateTurbulenceClosure(const int turbulenceClosureModel,
 				 const double eps_rho,
 				 const double eps_mu,
 				 const double rho_0,
@@ -944,11 +987,11 @@ namespace proteus
     {
       /****
 	   eddy_visc_coef 
-	       <= 0  None
-	       == 1  k-epsilon 
+	       <= 2  LES (do nothing)
+	       == 3  k-epsilon 
 	
       */
-      assert (closure_model_flag > 0);
+      assert (turbulenceClosureModel >=3);
       double rho,nu,H_mu,eddy_viscosity,nu_t =0.0;
       H_mu = (1.0-useVF)*smoothedHeaviside(eps_mu,phi)+useVF*fmin(1.0,fmax(0.0,vf));
       nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
@@ -1633,6 +1676,8 @@ namespace proteus
 			   double nu_0,
 			   double rho_1,
 			   double nu_1,
+			   double smagorinskyConstant,
+			   int turbulenceClosureModel,
 			   double Ct_sge,
 			   double Cd_sge,
 			   double C_dc,
@@ -1644,8 +1689,7 @@ namespace proteus
 			   const double* q_dragAlpha,
 			   const double* q_dragBeta,
 			   const double* q_mass_source,
-			   int turbulence_closure_flag,
-			   const double* q_turb_var_0,
+                           const double* q_turb_var_0,
 			   const double* q_turb_var_1,
 			   const double* q_turb_var_grad_0,
 			   //
@@ -1724,7 +1768,11 @@ namespace proteus
 			   double* q_velocity,
 			   double* ebqe_velocity,
 			   double* flux,
-			   double* elementResidual_p_save)
+			   double* elementResidual_p_save,
+			   int* boundaryFlags,
+			   double* barycenters,
+			   double* netForces,
+			   double* netMoments)
     {
       //
       //loop over elements to compute volume integrals and load them into element and global residual
@@ -1911,6 +1959,9 @@ namespace proteus
 				   nu_0,
 				   rho_1,
 				   nu_1,
+				   elementDiameter[eN],
+				   smagorinskyConstant,
+				   turbulenceClosureModel,
 				   g,
 				   useVF,
 				   vf[eN_k],
@@ -1922,6 +1973,9 @@ namespace proteus
 				   //
 				   p,
 				   grad_p,
+				   grad_u,
+				   grad_v,
+				   grad_w,
 				   u,
 				   v,
 				   w,
@@ -1999,10 +2053,10 @@ namespace proteus
 						dmom_w_source);
 
 	      //Turbulence closure model
-	      if (turbulence_closure_flag > 0)
+	      if (turbulenceClosureModel >= 3)
 		{
 		  const double c_mu = 0.09;//mwf hack 
-		  updateTurbulenceClosure(turbulence_closure_flag,
+		  updateTurbulenceClosure(turbulenceClosureModel,
 					  eps_rho,
 					  eps_mu,
 					  rho_0,
@@ -2416,7 +2470,8 @@ namespace proteus
 		//VRANS
 		porosity_ext,
 		//
-		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty;
+		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty,
+		force_x,force_y,force_z,r_x,r_y,r_z;
 	      //compute information about mapping from reference element to physical element
 	      ck.calculateMapping_elementBoundary(eN,
 						  ebN_local,
@@ -2498,6 +2553,9 @@ namespace proteus
 				   nu_0,
 				   rho_1,
 				   nu_1,
+				   elementDiameter[eN],
+				   smagorinskyConstant,
+				   turbulenceClosureModel,
 				   g,
 				   useVF,
 				   ebqe_vf_ext[ebNE_kb],
@@ -2509,6 +2567,9 @@ namespace proteus
 				   //
 				   p_ext,
 				   grad_p_ext,
+				   grad_u_ext,
+				   grad_v_ext,
+				   grad_w_ext,
 				   u_ext,
 				   v_ext,
 				   w_ext,
@@ -2559,6 +2620,9 @@ namespace proteus
 				   nu_0,
 				   rho_1,
 				   nu_1,
+				   elementDiameter[eN],
+				   smagorinskyConstant,
+				   turbulenceClosureModel,
 				   g,
 				   useVF,
 				   bc_ebqe_vf_ext[ebNE_kb],
@@ -2569,7 +2633,10 @@ namespace proteus
 				   porosity_ext,
 				   //
 				   bc_p_ext,
-				   grad_p_ext,//cek should't be used
+				   grad_p_ext,
+				   grad_u_ext,
+				   grad_v_ext,
+				   grad_w_ext,
 				   bc_u_ext,
 				   bc_v_ext,
 				   bc_w_ext,
@@ -2615,11 +2682,11 @@ namespace proteus
 				   bc_dmom_w_ham_grad_p_ext);          
 
 	      //Turbulence closure model
-	      if (turbulence_closure_flag > 0)
+	      if (turbulenceClosureModel >= 3)
 		{
 		  const double turb_var_grad_0_dummy[3] = {0.,0.,0.};
 		  const double c_mu = 0.09;//mwf hack 
-		  updateTurbulenceClosure(turbulence_closure_flag,
+		  updateTurbulenceClosure(turbulenceClosureModel,
 					  eps_rho,
 					  eps_mu,
 					  rho_0,
@@ -2647,7 +2714,7 @@ namespace proteus
 					  mom_v_source_ext,
 					  mom_w_source_ext);					  
 
-		  updateTurbulenceClosure(turbulence_closure_flag,
+		  updateTurbulenceClosure(turbulenceClosureModel,
 					  eps_rho,
 					  eps_mu,
 					  rho_0,
@@ -2902,6 +2969,28 @@ namespace proteus
 					     ebqe_penalty_ext[ebNE_kb],
 					     flux_mom_ww_diff_ext);
 	      flux[ebN*nQuadraturePoints_elementBoundary+kb] = flux_mass_ext;
+	      // 
+	      //integrate the net force and moment on flagged boundaries
+	      //
+	      /* force_x = flux_mom_uu_diff_ext + flux_mom_uv_diff_ext + flux_mom_uw_diff_ext + p_ext*normal[0];  */
+	      /* force_y = flux_mom_vu_diff_ext + flux_mom_vv_diff_ext + flux_mom_vw_diff_ext + p_ext*normal[1];  */
+	      /* force_z = flux_mom_wu_diff_ext + flux_mom_wv_diff_ext + flux_mom_ww_diff_ext + p_ext*normal[2];  */
+	      force_x = p_ext*normal[0]; 
+	      force_y = p_ext*normal[1]; 
+	      force_z = p_ext*normal[2]; 
+ 	        
+	      r_x = x_ext - barycenters[3*boundaryFlags[ebN]+0];
+	      r_y = y_ext - barycenters[3*boundaryFlags[ebN]+1];
+	      r_z = z_ext - barycenters[3*boundaryFlags[ebN]+2];
+
+	      netForces[3*boundaryFlags[ebN]+0] += force_x*dS;      		        									
+	      netForces[3*boundaryFlags[ebN]+1] += force_y*dS;      		        									
+	      netForces[3*boundaryFlags[ebN]+2] += force_z*dS;      		        									
+
+	      netMoments[3*boundaryFlags[ebN]+0] += (r_y*force_z - r_z*force_y)*dS;
+	      netMoments[3*boundaryFlags[ebN]+1] += (r_z*force_x - r_x*force_z)*dS;	       
+	      netMoments[3*boundaryFlags[ebN]+2] += (r_x*force_y - r_y*force_x)*dS;
+	      
 	      //
 	      //update residuals
 	      //
@@ -3077,6 +3166,8 @@ namespace proteus
 			   double nu_0,
 			   double rho_1,
 			   double nu_1,
+			   double smagorinskyConstant,
+			   int turbulenceClosureModel,
 			   double Ct_sge,
 			   double Cd_sge,
 			   double C_dg,
@@ -3088,7 +3179,6 @@ namespace proteus
 			   const double* q_dragAlpha,
 			   const double* q_dragBeta,
 			   const double* q_mass_source,
-			   int turbulence_closure_flag,
 			   const double* q_turb_var_0,
 			   const double* q_turb_var_1,
 			   const double* q_turb_var_grad_0,
@@ -3397,6 +3487,9 @@ namespace proteus
 				   nu_0,
 				   rho_1,
 				   nu_1,
+				   elementDiameter[eN],
+				   smagorinskyConstant,
+				   turbulenceClosureModel,
 				   g,
 				   useVF,
 				   vf[eN_k],
@@ -3408,6 +3501,9 @@ namespace proteus
 				   //
 				   p,
 				   grad_p,
+				   grad_u,
+				   grad_v,
+				   grad_w,
 				   u,
 				   v,
 				   w,
@@ -3484,10 +3580,10 @@ namespace proteus
 						dmom_v_source,
 						dmom_w_source);
 	      //Turbulence closure model
-	      if (turbulence_closure_flag > 0)
+	      if (turbulenceClosureModel >= 3)
 		{
 		  const double c_mu = 0.09;//mwf hack 
-		  updateTurbulenceClosure(turbulence_closure_flag,
+		  updateTurbulenceClosure(turbulenceClosureModel,
 					  eps_rho,
 					  eps_mu,
 					  rho_0,
@@ -4079,6 +4175,9 @@ namespace proteus
 				   nu_0,
 				   rho_1,
 				   nu_1,
+				   elementDiameter[eN],
+				   smagorinskyConstant,
+				   turbulenceClosureModel,
 				   g,
 				   useVF,
 				   ebqe_vf_ext[ebNE_kb],
@@ -4090,6 +4189,9 @@ namespace proteus
 				   //
 				   p_ext,
 				   grad_p_ext,
+				   grad_u_ext,
+				   grad_v_ext,
+				   grad_w_ext,
 				   u_ext,
 				   v_ext,
 				   w_ext,
@@ -4140,6 +4242,9 @@ namespace proteus
 				   nu_0,
 				   rho_1,
 				   nu_1,
+				   elementDiameter[eN],
+				   smagorinskyConstant,
+				   turbulenceClosureModel,
 				   g,
 				   useVF,
 				   ebqe_vf_ext[ebNE_kb],
@@ -4150,7 +4255,10 @@ namespace proteus
 				   porosity_ext,
 				   //
 				   bc_p_ext,
-				   grad_p_ext, //cek shouldn't be used
+				   grad_p_ext,
+				   grad_u_ext,
+				   grad_v_ext,
+				   grad_w_ext,
 				   bc_u_ext,
 				   bc_v_ext,
 				   bc_w_ext,
@@ -4195,11 +4303,11 @@ namespace proteus
 				   bc_mom_w_ham_ext,
 				   bc_dmom_w_ham_grad_p_ext);          
 	      //Turbulence closure model
-	      if (turbulence_closure_flag > 0)
+	      if (turbulenceClosureModel >= 3)
 		{
 		  const double turb_var_grad_0_dummy[3] = {0.,0.,0.};
 		  const double c_mu = 0.09;//mwf hack 
-		  updateTurbulenceClosure(turbulence_closure_flag,
+		  updateTurbulenceClosure(turbulenceClosureModel,
 					  eps_rho,
 					  eps_mu,
 					  rho_0,
@@ -4227,7 +4335,7 @@ namespace proteus
 					  mom_v_source_ext,
 					  mom_w_source_ext);					  
 
-		  updateTurbulenceClosure(turbulence_closure_flag,
+		  updateTurbulenceClosure(turbulenceClosureModel,
 					  eps_rho,
 					  eps_mu,
 					  rho_0,
@@ -4785,6 +4893,8 @@ namespace proteus
 			   double nu_0,
 			   double rho_1,
 			   double nu_1,
+			   double smagorinskyConstant,
+			   int turbulenceClosureModel,
 			   double Ct_sge,
 			   double Cd_sge,
 			   double C_dc,
@@ -4907,7 +5017,7 @@ namespace proteus
 		p_grad_trial_trace[nDOF_trial_element*nSpace],vel_grad_trial_trace[nDOF_trial_element*nSpace],
 		normal[3],x_ext,y_ext,z_ext,
 		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty,penalty,gi[nSpace], unormal,gnormal,uneg,
-		H_rho,d_rho, H_mu,d_mu, rho, mu;
+		H_rho,d_rho, H_mu,d_mu, rho, mu,nu;
 	      //compute information about mapping from reference element to physical element
 	      ck.calculateMapping_elementBoundary(eN,
 						  ebN_local,
@@ -4941,8 +5051,6 @@ namespace proteus
               H_mu  = (1.0-useVF)*RANS2P::smoothedHeaviside(eps_mu,ebqe_phi_ext[ebNE_kb]) + useVF*fmin(1.0,fmax(0.0,ebqe_vf_ext[ebNE_kb]));
               d_mu  = (1.0-useVF)*RANS2P::smoothedDirac(eps_mu,ebqe_phi_ext[ebNE_kb]);
   
-              rho = rho_0*(1.0-H_rho)+rho_1*H_rho;
-              mu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
 	  	      
 	      //compute shape and solution information
 	      //shape
@@ -4973,6 +5081,40 @@ namespace proteus
               ebqe_velocity[ebNE_kb_nSpace + 1 ] = v_ext;
               ebqe_velocity[ebNE_kb_nSpace + 2 ] = w_ext;
 	      
+	      //calculate eddy viscosity
+	      double norm_S,h_e=elementDiameter[eN],t_nu_0,t_nu_1;
+	      t_nu_0=nu_0;
+	      t_nu_1=nu_1;
+	      switch (turbulenceClosureModel)
+		{
+		case 1:
+		  {
+		    norm_S = sqrt(2.0*(grad_u_ext[0]*grad_u_ext[0] + grad_v_ext[1]*grad_v_ext[1] + grad_w_ext[2]*grad_w_ext[2] +
+				       0.5*(grad_u_ext[1]+grad_v_ext[0])*(grad_u_ext[1]+grad_v_ext[0]) + 
+				       0.5*(grad_u_ext[2]+grad_w_ext[0])*(grad_u_ext[2]+grad_w_ext[0]) +
+				       0.5*(grad_v_ext[2]+grad_w_ext[1])*(grad_v_ext[2]+grad_w_ext[1])));
+		    t_nu_0 += smagorinskyConstant*smagorinskyConstant*h_e*h_e*norm_S;
+		    t_nu_1 += smagorinskyConstant*smagorinskyConstant*h_e*h_e*norm_S;
+		  }
+		case 2:
+		  {
+		    double re_0,cs_0,re_1,cs_1;
+		    norm_S = sqrt(2.0*(grad_u_ext[0]*grad_u_ext[0] + grad_v_ext[1]*grad_v_ext[1] + grad_w_ext[2]*grad_w_ext[2] +
+				       0.5*(grad_u_ext[1]+grad_v_ext[0])*(grad_u_ext[1]+grad_v_ext[0]) + 
+				       0.5*(grad_u_ext[2]+grad_w_ext[0])*(grad_u_ext[2]+grad_w_ext[0]) +
+				       0.5*(grad_v_ext[2]+grad_w_ext[1])*(grad_v_ext[2]+grad_w_ext[1])));
+		    re_0 = h_e*h_e*norm_S/nu_0;
+		    cs_0=0.027*pow(10.0,-3.23*pow(re_0,-0.92));
+		    t_nu_0 += cs_0*h_e*h_e*norm_S;
+		    re_1 = h_e*h_e*norm_S/nu_1;
+		    cs_1=0.027*pow(10.0,-3.23*pow(re_1,-0.92));
+		    t_nu_1 += cs_1*h_e*h_e*norm_S;
+		  }
+		}
+	      
+              rho = rho_0*(1.0-H_rho)+rho_1*H_rho;
+	      nu  = t_nu_0*(1.0-H_mu)+t_nu_1*H_mu;
+              mu  = rho_0*t_nu_0*(1.0-H_mu)+rho_1*t_nu_1*H_mu;
 	      //
 	      // Assume either nono or all velocity have dir BC
 	      //	   	        	      	      
@@ -5036,7 +5178,7 @@ namespace proteus
 	        // 
 	        //calculate the moment
 	        //		  
- 	        moment[0] += ( (y_ext-cg[1])*tmp1[2] - (z_ext-cg[2])*tmp1[1] + tmp2[2*nSpace + 1] - tmp2[1*nSpace + 2] )*dS;		        									
+ 	        moment[0] += ( (y_ext-cg[1])*tmp1[2] - (z_ext-cg[2])*tmp1[1] + tmp2[2*nSpace + 1] - tmp2[1*nSpace + 2] )*dS;
 		moment[1] += ( (z_ext-cg[2])*tmp1[0] - (x_ext-cg[0])*tmp1[2] + tmp2[0*nSpace + 2] - tmp2[2*nSpace + 0] )*dS;	       
 		moment[2] += ( (x_ext-cg[0])*tmp1[1] - (y_ext-cg[1])*tmp1[0] + tmp2[1*nSpace + 0] - tmp2[0*nSpace + 1] )*dS;
 		

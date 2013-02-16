@@ -34,12 +34,15 @@ if useSuperlu:
     levelLinearSolver      = LU
 
 linear_solver_options_prefix = 'ncls_'
-levelNonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest         = 'r-true'
 
 tolFac = 0.0
-nl_atol_res = 1.0e-3
+linTolFac = 0.0
+nl_atol_res = 1.0e-5
+l_atol_res = 1.0e-5
+useEisenstatWalker = False#True
 
-maxNonlinearIts = 10
+maxNonlinearIts = 2
 maxLineSearches = 0
 

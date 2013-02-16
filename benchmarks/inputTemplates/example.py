@@ -45,21 +45,23 @@ waterLevel   = 0.5*hull_length
 
 hull_center = (0.0,
                0.0,
-               0.5*hull_length)#cek todo, still not sure about where the waterline is
+               0.5*hull_length)
 
 #debug
-L=(2.5*hull_length,
-   1.5*hull_length,
-   3.0*hull_draft)
+L=(#2.5*hull_length,
+  2.0*hull_length,
+  #1.5*hull_length,
+  0.5*hull_length,
+  3.0*hull_draft)
 x_ll = (-1.0*hull_length,
-         -L[1]/2.0,
-         0.0)
+        -L[1]/2.0,
+        0.0)
 
 waterLevel   = 1.5*hull_draft
 
 hull_center = (0.0,
-               0.0,
-               1.5*hull_draft)#cek todo, still not sure about where the waterline is
+              0.0,
+              1.5*hull_draft)#cek todo, still not sure about where the waterline is
 
 #cek todo these are the same as the 5414, somethings not right
 hull_mass    = 532.277
@@ -83,7 +85,6 @@ vessel = 'wigley'
 genMesh=True
 #vessel = None
 #genMesh=True
-
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
 if vessel is 'wigley-gmsh':
     domain = Domain.MeshTetgenDomain(fileprefix="mesh")
