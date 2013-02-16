@@ -3,3 +3,5 @@
 -vof_ksp_type    bcgsl -vof_pc_type    asm -vof_pc_asm_type basic -vof_ksp_atol    1.0e-8 -vof_ksp_rtol    0.0
 -rdls_ksp_type   bcgsl -rdls_pc_type   asm -vof_pc_asm_type basic -rdls_ksp_atol   1.0e-8 -rdls_ksp_rtol   0.0
 -mcorr_ksp_type  bcgsl -mcorr_pc_type  asm -mcorr_pc_asm_type basic -mcorr_ksp_atol 1.0e-8 -mcorr_ksp_rtol  0.0
+-kappa_ksp_type bcgsl -kappa_pc_type asm -kappa_pc_asm_type basic -kappa_ksp_atol 1.0e-8 -kappa_ksp_rtol 0.0
+-epsilon_ksp_type bcgsl -epsilon_pc_type asm -epsilon_pc_asm_type basic -epsilon_ksp_atol 1.0e-8 -epsilon_ksp_rtol 0.0

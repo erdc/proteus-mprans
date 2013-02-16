@@ -25,7 +25,11 @@ pnList = [("twp_navier_stokes_p" , #0
           ("redist_p" ,#3 
            "redist_n"),
           ("ls_consrv_p" ,#4 
-           "ls_consrv_n")]
+           "ls_consrv_n"),
+          ("kappa_p",
+           "kappa_n"),#5
+          ("epsilon_p",
+           "epsilon_n")] #6
 
 name = "dtmb"
 

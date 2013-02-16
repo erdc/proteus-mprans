@@ -46,8 +46,8 @@ waterLevel   = 0.241984
 nLevels = 1
 
 he = L[2]/11 #16 cores
-he *=0.5 #128 
-he *=0.5 #1024
+#he *=0.5 #128 
+#he *=0.5 #1024
 #vessel = 5414
 #genMesh=False
 vessel = 'wigley'
@@ -231,6 +231,13 @@ vof_sc_beta = 1.5
 
 rd_shockCapturingFactor=0.9
 
+kappa_shockCapturingFactor=0.9
+kappa_sc_uref = 1.0
+kappa_sc_beta = 1.5
+
+epsilon_shockCapturingFactor=0.9
+epsilon_sc_uref = 1.0
+epsilon_sc_beta = 1.5
 
 #----------------------------------------------------
 # Interface width
@@ -359,6 +366,8 @@ outflowVelocity = (Um,0.0,0.0)
 
 inflowHeightMean = waterLevel
 inflowVelocityMean = (Um,0.0,0.0)
+
+kInflow = 0.003*Um*Um
 
 def waveHeight(x,t):
     return waterLevel
