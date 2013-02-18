@@ -47,6 +47,7 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double* velocity,
                                double* phi_ls, #level set variable
                                double* q_kappa, #kinetic energy variable
+                               double* q_porosity, #VRANS
                                #velocity dof
                                double * velocity_dof_u,
                                double * velocity_dof_v,
@@ -71,7 +72,8 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                int* isFluxBoundary_u,
                                double* ebqe_bc_flux_u_ext,
                                double* ebqe_phi,double epsFact,
-                               double* ebqe_kappa, #kinetic energy 
+                               double* ebqe_kappa, #kinetic energy
+                               double* ebqe_porosity, #VRANS
                                double* ebqe_u,
                                double* ebqe_flux)
         void calculateJacobian(double* mesh_trial_ref,
@@ -114,6 +116,7 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double* velocity,
                                double* phi_ls, #level set variable
                                double* q_kappa, #kinetic energy 
+                               double* q_porosity, #VRANS
                                #velocity dof
                                double* velocity_dof_u,
                                double* velocity_dof_v,
@@ -136,7 +139,8 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double* ebqe_bc_flux_u_ext,
                                int* csrColumnOffsets_eb_u_u,
                                double* ebqe_phi,double epsFact,
-                               double* ebqe_kappa)#kinetic energy 
+                               double* ebqe_kappa,#kinetic energy 
+                               double* ebqe_porosity)#VRANS
     Epsilon_base* newEpsilon(int nSpaceIn,
                        int nQuadraturePoints_elementIn,
                        int nDOF_mesh_trial_elementIn,
@@ -207,6 +211,7 @@ cdef class cEpsilon_base:
                          numpy.ndarray velocity,
                          numpy.ndarray phi_ls, #level set variable
                          numpy.ndarray q_kappa, #kinetic energy 
+                         numpy.ndarray q_porosity, #VRANS
                          #velocity dof
                          numpy.ndarray velocity_dof_u,
                          numpy.ndarray velocity_dof_v,
@@ -232,6 +237,7 @@ cdef class cEpsilon_base:
                          numpy.ndarray ebqe_bc_flux_u_ext,
                          numpy.ndarray ebqe_phi,double epsFact,
                          numpy.ndarray ebqe_kappa,#kinetic energy 
+                         numpy.ndarray ebqe_porosity,#VRANS
                          numpy.ndarray ebqe_u,
                          numpy.ndarray ebqe_flux):
        self.thisptr.calculateResidual(<double*> mesh_trial_ref.data,
@@ -276,6 +282,7 @@ cdef class cEpsilon_base:
                                        <double*> velocity.data,
                                        <double*> phi_ls.data,
                                        <double*> q_kappa.data,#kinetic energy 
+                                       <double*> q_porosity.data,#kinetic energy 
                                        #velocity dof
                                        <double*> velocity_dof_u.data,
                                        <double*> velocity_dof_v.data,
@@ -302,6 +309,7 @@ cdef class cEpsilon_base:
                                        <double*> ebqe_phi.data,
                                        epsFact,
                                        <double*> ebqe_kappa.data,#kinetic energy on boundary
+                                       <double*> ebqe_porosity.data, #VRANS
                                        <double*> ebqe_u.data,
                                        <double*> ebqe_flux.data)
    def calculateJacobian(self,
@@ -345,6 +353,7 @@ cdef class cEpsilon_base:
                          numpy.ndarray velocity,
                          numpy.ndarray phi_ls, #level set variable
                          numpy.ndarray q_kappa, #kinetic energy 
+                         numpy.ndarray q_porosity, #VRANS
                          #velocity dof
                          numpy.ndarray velocity_dof_u,
                          numpy.ndarray velocity_dof_v,
@@ -368,7 +377,8 @@ cdef class cEpsilon_base:
                          numpy.ndarray csrColumnOffsets_eb_u_u,
                          numpy.ndarray ebqe_phi,
                          double epsFact,
-                         numpy.ndarray ebqe_kappa): #kinetic energy 
+                         numpy.ndarray ebqe_kappa,#kinetic energy 
+                         numpy.ndarray ebqe_porosity): #VRANS
 
        cdef numpy.ndarray rowptr,colind,globalJacobian_a
        (rowptr,colind,globalJacobian_a) = globalJacobian.getCSRrepresentation()
@@ -412,6 +422,7 @@ cdef class cEpsilon_base:
                                        <double*> velocity.data,
                                        <double*> phi_ls.data,
                                        <double*> q_kappa.data,
+                                       <double*> q_porosity.data,
                                        #velocity dofs
                                        <double*> velocity_dof_u.data,
                                        <double*> velocity_dof_v.data,
@@ -434,4 +445,5 @@ cdef class cEpsilon_base:
                                        <double*> ebqe_bc_flux_u_ext.data,
                                        <int*> csrColumnOffsets_eb_u_u.data,                      
                                        <double*> ebqe_phi.data,epsFact,
-                                       <double*> ebqe_kappa.data)
+                                       <double*> ebqe_kappa.data,
+                                       <double*> ebqe_porosity.data)

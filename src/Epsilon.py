@@ -185,10 +185,20 @@ NOTE: assumes 3d for now
             self.velocity_dof_u = modelList[self.flowModelIndex].u[1].dof
             self.velocity_dof_v = modelList[self.flowModelIndex].u[2].dof
             self.velocity_dof_w = modelList[self.flowModelIndex].u[3].dof
+            if hasattr(modelList[self.flowModelIndex].coefficients,'q_porosity'): 
+                self.q_porosity = modelList[self.flowModelIndex].coefficients.q_porosity
+            else:
+                self.q_porosity = numpy.ones(self.q[('u',0)].shape,'d')
+            if hasattr(modelList[self.flowModelIndex].coefficients,'ebqe_porosity'): 
+                self.ebqe_porosity = modelList[self.flowModelIndex].coefficients.ebqe_porosity
+            else:
+                self.ebqe_porosity = numpy.ones(self.ebqe[('u',0)].shape,'d')
         else:
             self.velocity_dof_u = numpy.zeros(self.model.u[0].dof.shape,'d')
             self.velocity_dof_v = numpy.zeros(self.model.u[0].dof.shape,'d')
             self.velocity_dof_w = numpy.zeros(self.model.u[0].dof.shape,'d')
+            self.q_porosity = numpy.ones(self.q[('u',0)].shape,'d')
+            self.ebqe_porosity = numpy.ones(self.ebqe[('u',0)].shape,'d')
             
         #
         #assert self.kappa_modelIndex != None and self.kappa_modelIndex < len(modelList), "Epsilon: invalid index for epsilon model allowed range: [0,%s]" % len(modelList) 
@@ -758,6 +768,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.q_v,
             self.coefficients.q_phi, #level set variable goes here
             self.coefficients.q_kappa, #dissipation rate variable
+            self.coefficients.q_porosity, #dissipation rate variable
             #velocity dof
             self.coefficients.velocity_dof_u,
             self.coefficients.velocity_dof_v,
@@ -783,6 +794,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('advectiveFlux_bc',0)],
             self.coefficients.ebqe_phi,self.coefficients.epsFact,
             self.coefficients.ebqe_kappa, #dissipation rate variable on boundary
+            self.coefficients.ebqe_porosity, #dissipation rate variable on boundary
             self.ebqe[('u',0)],
             self.ebqe[('advectiveFlux',0)])
 
@@ -842,6 +854,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.q_v,
             self.coefficients.q_phi,
             self.coefficients.q_kappa, #dissipation rate variable
+            self.coefficients.q_porosity, #dissipation rate variable
             #velocity dof
             self.coefficients.velocity_dof_u,
             self.coefficients.velocity_dof_v,
@@ -864,7 +877,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('advectiveFlux_bc',0)],
             self.csrColumnOffsets_eb[(0,0)],
             self.coefficients.ebqe_phi,self.coefficients.epsFact,
-            self.coefficients.ebqe_kappa) #dissipation rate variable on boundary
+            self.coefficients.ebqe_kappa,#dissipation rate variable on boundary
+            self.coefficients.ebqe_porosity) #VRANS
 
 
 

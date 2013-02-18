@@ -56,6 +56,7 @@ namespace proteus
 				   double* velocity,
 				   double* phi_ls, //level set variable
 				   double* q_kappa, //kinetic energy variable
+				   double* q_porosity, //VRANS
                                    //velocity dof
                                    double * velocity_dof_u,
                                    double * velocity_dof_v,
@@ -81,6 +82,7 @@ namespace proteus
 				   double* ebqe_bc_flux_u_ext,
 				   double* ebqe_phi,double epsFact,
 				   double* ebqe_kappa, //kinetic energy variable on boundary
+				   double* ebqe_porosity, //VRANS
 				   double* ebqe_u,
 				   double* ebqe_flux)=0;
     virtual void calculateJacobian(//element
@@ -126,6 +128,7 @@ namespace proteus
 				   double* velocity,
 				   double* phi_ls, //level set variable
 				   double* q_kappa, //kinetic energy
+				   double* q_porosity,//VRANS
                                    //velocity dof
                                    double * velocity_dof_u,
                                    double * velocity_dof_v,
@@ -148,7 +151,8 @@ namespace proteus
 				   double* ebqe_bc_flux_u_ext,
 				   int* csrColumnOffsets_eb_u_u,
 				   double* ebqe_phi,double epsFact,
-				   double* ebqe_kappa)=0; //kinetic energy on boundary
+				   double* ebqe_kappa,//kinetic energy on boundary
+				   double* ebqe_porosity)=0; //VRANS
   };
 
   template<class CompKernelType,
@@ -167,74 +171,7 @@ namespace proteus
       nDOF_test_X_trial_element(nDOF_test_element*nDOF_trial_element),
       ck()
     {}
-    inline
-    void evaluateCoefficients_orig(const double v[nSpace],
-			      const double eps_mu,
-			      const double phi,
-			      const double nu_0,
-			      const double nu_1,
-			      const double sigma_e,
-			      const double c_mu,
-			      const double c_1,
-			      const double c_2,
-			      const double c_e,
-			      const double grad_vx[nSpace], //gradient of x component of velocity
-			      const double grad_vy[nSpace], //gradient of x component of velocity
-			      const double grad_vz[nSpace], //gradient of x component of velocity
-			      const double& epsilon,
-				   const double& epsilon_old,	   
-			      const double& k,
-			      double& m,
-			      double& dm,
-			      double f[nSpace],
-			      double df[nSpace],
-			      double& a,
-			      double& da_de,
-			      double& r,
-			      double& dr_de)
-    {
-      const double div_eps = 1.0e-6;
-      double nu_t=0.0,dnu_t_de=0.0,PiD4=0.0,disp=0.0,ddisp_de=0.0;
-      m = epsilon;
-      dm = 1.0;
-
-      for (int I=0; I < nSpace; I++)
-	{
-	  f[I] = v[I]*epsilon;
-	  df[I] = v[I];
-	}
-      const double H_mu = smoothedHeaviside(eps_mu,phi);
-      const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
-      //eddy viscosity 
-      nu_t     = c_mu*k*k/(epsilon+div_eps);
-      dnu_t_de = -c_mu*k*k/(epsilon*epsilon+div_eps);
-      if (nu_t < 0.0) 
-	{
-	  nu_t = 0.0; dnu_t_de = 0.0;
-	}
-      a = nu_t/sigma_e + nu;
-      da_de = dnu_t_de/sigma_e;
-
-      PiD4 = 2.0*(grad_vx[0]*grad_vx[0] + 
-		  grad_vy[1]*grad_vy[1] + 
-		  grad_vz[2]*grad_vz[2]) 
-	+
-	(grad_vx[1] + grad_vy[0])*(grad_vx[1] + grad_vy[0])
-	+
-	(grad_vx[2] + grad_vz[0])*(grad_vx[2] + grad_vz[0])
-	+
-	(grad_vy[2] + grad_vz[1])*(grad_vy[2] + grad_vz[1]);
-
-      disp = c_2*epsilon*epsilon/(k+div_eps);
-      ddisp_de = 2.0*c_2*epsilon/(k+div_eps); 
-      if (disp < 0.0)
-	{
-	  disp = 0.0; ddisp_de = 0.0;
-	}
-      r = -c_1*k*PiD4 + disp;
-      dr_de = ddisp_de;
-    }
-    //Try Lew, Buscaglia approximation
+   //Try Lew, Buscaglia approximation
     inline
     void evaluateCoefficients(const double v[nSpace],
 				       const double eps_mu,
@@ -550,6 +487,7 @@ namespace proteus
 			   double* velocity,
 			   double* phi_ls, //level set variable
 			   double* q_kappa, //kinetic energy
+			   double* q_porosity, //VRANS
                            //velocity dof
                            double * velocity_dof_u,
                            double * velocity_dof_v,
@@ -575,6 +513,7 @@ namespace proteus
 			   double* ebqe_bc_flux_u_ext,
 			   double* ebqe_phi,double epsFact,
 			   double* ebqe_kappa, //kinetic energy on boundary
+			   double* ebqe_porosity, //VRANS
 			   double* ebqe_u,
 			   double* ebqe_flux)
     {
@@ -1077,6 +1016,7 @@ namespace proteus
 			   double* velocity,
 			   double* phi_ls, //level set variable
 			   double* q_kappa, //kinetic energy
+			   double* q_porosity,//VRANS
                            //velocity dof
                            double * velocity_dof_u,
                            double * velocity_dof_v,
@@ -1099,7 +1039,8 @@ namespace proteus
 			   double* ebqe_bc_flux_u_ext,
 			   int* csrColumnOffsets_eb_u_u,
 			   double* ebqe_phi,double epsFact,
-			   double* ebqe_kappa) //kinetic energy on boundary
+			   double* ebqe_kappa, //kinetic energy on boundary
+			   double* ebqe_porosity)//VRANS
     {
       double Ct_sge = 4.0;
     
