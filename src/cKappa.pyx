@@ -44,6 +44,7 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* velocity,
                                double* phi_ls, #level set variable
                                double* q_epsilon, #dissipation rate variable
+                               double* q_porosity, #VRANS
                                #velocity dof
                                double * velocity_dof_u,
                                double * velocity_dof_v,
@@ -70,6 +71,7 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* ebqe_bc_flux_u_ext,
                                double* ebqe_phi,double epsFact,
                                double* ebqe_epsilon, #dissipation rate
+                               double* ebqe_porosity, #VRANS
                                double* ebqe_u,
                                double* ebqe_flux)
         void calculateJacobian(double* mesh_trial_ref,
@@ -109,6 +111,7 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* velocity,
                                double* phi_ls, #level set variable
                                double* q_epsilon, #dissipation rate
+                               double* q_porosity, #VRANS
                                #velocity dof
                                double* velocity_dof_u,
                                double* velocity_dof_v,
@@ -131,7 +134,8 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* ebqe_bc_flux_u_ext,
                                int* csrColumnOffsets_eb_u_u,
                                double* ebqe_phi,double epsFact,
-                               double* ebqe_epsilon)#dissipation rate
+                               double* ebqe_epsilon,#dissipation rate
+                               double* ebqe_porosity)#VRANS
     Kappa_base* newKappa(int nSpaceIn,
                        int nQuadraturePoints_elementIn,
                        int nDOF_mesh_trial_elementIn,
@@ -199,6 +203,7 @@ cdef class cKappa_base:
                          numpy.ndarray velocity,
                          numpy.ndarray phi_ls, #level set variable
                          numpy.ndarray q_epsilon, #dissipation rate
+                         numpy.ndarray q_porosity,#VRANS
                          #velocity dof
                          numpy.ndarray velocity_dof_u,
                          numpy.ndarray velocity_dof_v,
@@ -225,6 +230,7 @@ cdef class cKappa_base:
                          numpy.ndarray ebqe_bc_flux_u_ext,
                          numpy.ndarray ebqe_phi,double epsFact,
                          numpy.ndarray ebqe_epsilon,#dissipation rate
+                         numpy.ndarray ebqe_porosity, #VRANS
                          numpy.ndarray ebqe_u,
                          numpy.ndarray ebqe_flux):
        self.thisptr.calculateResidual(<double*> mesh_trial_ref.data,
@@ -266,6 +272,7 @@ cdef class cKappa_base:
                                        <double*> velocity.data,
                                        <double*> phi_ls.data,
                                        <double*> q_epsilon.data,#dissipation rate
+                                       <double*> q_porosity.data, #VRANS
                                        #velocity dof
                                        <double*> velocity_dof_u.data,
                                        <double*> velocity_dof_v.data,
@@ -293,6 +300,7 @@ cdef class cKappa_base:
                                        <double*> ebqe_phi.data,
                                        epsFact,
                                        <double*> ebqe_epsilon.data,#dissipation rate on boundary
+                                       <double*> ebqe_porosity.data, #VRANS
                                        <double*> ebqe_u.data,
                                        <double*> ebqe_flux.data)
    def calculateJacobian(self,
@@ -333,6 +341,7 @@ cdef class cKappa_base:
                          numpy.ndarray velocity,
                          numpy.ndarray phi_ls, #level set variable
                          numpy.ndarray q_epsilon, #dissipation rate
+                         numpy.ndarray q_porosity, #VRANS
                          #velocity dof
                          numpy.ndarray velocity_dof_u,
                          numpy.ndarray velocity_dof_v,
@@ -356,7 +365,8 @@ cdef class cKappa_base:
                          numpy.ndarray csrColumnOffsets_eb_u_u,
                          numpy.ndarray ebqe_phi,
                          double epsFact,
-                         numpy.ndarray ebqe_epsilon): #dissipation rate
+                         numpy.ndarray ebqe_epsilon,#dissipation rate
+                         numpy.ndarray ebqe_porosity): #VRANS
 
        cdef numpy.ndarray rowptr,colind,globalJacobian_a
        (rowptr,colind,globalJacobian_a) = globalJacobian.getCSRrepresentation()
@@ -397,6 +407,7 @@ cdef class cKappa_base:
                                        <double*> velocity.data,
                                        <double*> phi_ls.data,
                                        <double*> q_epsilon.data,
+                                       <double*> q_porosity.data,#VRANS
                                        #velocity dofs
                                        <double*> velocity_dof_u.data,
                                        <double*> velocity_dof_v.data,
@@ -419,4 +430,5 @@ cdef class cKappa_base:
                                        <double*> ebqe_bc_flux_u_ext.data,
                                        <int*> csrColumnOffsets_eb_u_u.data,                      
                                        <double*> ebqe_phi.data,epsFact,
-                                       <double*> ebqe_epsilon.data)
+                                       <double*> ebqe_epsilon.data,
+                                       <double*> ebqe_porosity.data)#VRANS

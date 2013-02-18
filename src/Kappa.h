@@ -53,6 +53,7 @@ namespace proteus
 				   double* velocity,
 				   double* phi_ls, //level set variable
 				   double* q_epsilon, //dissipation rate variable
+				   double* q_porosity, //VRANS
                                    //velocity dof
                                    double * velocity_dof_u,
                                    double * velocity_dof_v,
@@ -79,6 +80,7 @@ namespace proteus
 				   double* ebqe_bc_flux_u_ext,
 				   double* ebqe_phi,double epsFact,
 				   double* ebqe_epsilon, //dissipation rate variable on boundary
+				   double* ebqe_porosity, //VRANS
 				   double* ebqe_u,
 				   double* ebqe_flux)=0;
     virtual void calculateJacobian(//element
@@ -121,6 +123,7 @@ namespace proteus
 				   double* velocity,
 				   double* phi_ls, //level set variable
 				   double* q_epsilon, //dissipation rate
+				   double* q_porosity,//VRANS
                                    //velocity dof
                                    double * velocity_dof_u,
                                    double * velocity_dof_v,
@@ -143,7 +146,8 @@ namespace proteus
 				   double* ebqe_bc_flux_u_ext,
 				   int* csrColumnOffsets_eb_u_u,
 				   double* ebqe_phi,double epsFact,
-				   double* ebqe_epsilon)=0; //dissipation rate on boundary
+				   double* ebqe_epsilon,//dissipation rate on boundary
+				   double* ebqe_porosity)=0; //VRANS
   };
 
   template<class CompKernelType,
@@ -162,8 +166,9 @@ namespace proteus
       nDOF_test_X_trial_element(nDOF_test_element*nDOF_trial_element),
       ck()
     {}
-    inline
-    void evaluateCoefficients_orig(const double v[nSpace],
+   //Try Lew, Buscaglia approximation
+    inline 
+    void evaluateCoefficients(const double v[nSpace],
 			      const double eps_mu,
 			      const double phi,
 			      const double nu_0,
@@ -176,6 +181,7 @@ namespace proteus
 			      const double& k,
 			      const double& k_old,
 			      const double& epsilon,
+			      const double& porosity,
 			      double& m,
 			      double& dm,
 			      double f[nSpace],
@@ -187,74 +193,14 @@ namespace proteus
     {
       const double div_eps = 1.0e-6;
       double nu_t=0.0,dnu_t_dk=0.0,PiD4=0.0;
-      m = k;
-      dm = 1.0;
-
-      for (int I=0; I < nSpace; I++)
-	{
-	  f[I] = v[I]*k;
-	  df[I] = v[I];
-	}
-      const double H_mu = smoothedHeaviside(eps_mu,phi);
-      const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
-      //eddy viscosity 
-      nu_t     = c_mu*k*k/(epsilon+div_eps);
-      dnu_t_dk = 2.0*c_mu*k/(epsilon+div_eps);
-      if (nu_t < 0.0) 
-	{
-	  nu_t = 0.0; dnu_t_dk = 0.0;
-	}
-      a = nu_t/sigma_k + nu;
-      da_dk = dnu_t_dk/sigma_k;
-
-      PiD4 = 2.0*(grad_vx[0]*grad_vx[0] + 
-		  grad_vy[1]*grad_vy[1] + 
-		  grad_vz[2]*grad_vz[2]) 
-	+
-	(grad_vx[1] + grad_vy[0])*(grad_vx[1] + grad_vy[0])
-	+
-	(grad_vx[2] + grad_vz[0])*(grad_vx[2] + grad_vz[0])
-	+
-	(grad_vy[2] + grad_vz[1])*(grad_vy[2] + grad_vz[1]);
-
-      r = -nu_t*PiD4 + epsilon;
-      dr_dk = -dnu_t_dk*PiD4;
-      
-    }
-    //Try Lew, Buscaglia approximation
-    inline 
-    void evaluateCoefficients(const double v[nSpace],
-				       const double eps_mu,
-				       const double phi,
-				       const double nu_0,
-				       const double nu_1,
-				       const double sigma_k,
-				       const double c_mu,
-				       const double grad_vx[nSpace], //gradient of x component of velocity
-				       const double grad_vy[nSpace], //gradient of x component of velocity
-				       const double grad_vz[nSpace], //gradient of x component of velocity
-				       const double& k,
-				       const double& k_old,
-				       const double& epsilon,
-				       double& m,
-				       double& dm,
-				       double f[nSpace],
-				       double df[nSpace],
-				       double& a,
-				       double& da_dk,
-				       double& r,
-				       double& dr_dk)
-    {
-      const double div_eps = 1.0e-6;
-      double nu_t=0.0,dnu_t_dk=0.0,PiD4=0.0;
       double gamma_k=0.0,F_k=0.0;
-      m = k;
-      dm = 1.0;
+      m = k*porosity;
+      dm = porosity;
 
       for (int I=0; I < nSpace; I++)
 	{
-	  f[I] = v[I]*k;
-	  df[I] = v[I];
+	  f[I] = v[I]*k*porosity;
+	  df[I] = v[I]*porosity;
 	}
       const double H_mu = smoothedHeaviside(eps_mu,phi);
       const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
@@ -263,8 +209,8 @@ namespace proteus
       nu_t     = fmax(nu_t,1.e-4*nu);
       dnu_t_dk = 0.0;
 
-      a = nu_t/sigma_k + nu;
-      da_dk = dnu_t_dk/sigma_k;
+      a = porosity*nu_t/sigma_k + porosity*nu;
+      da_dk = porosity*dnu_t_dk/sigma_k;
 
       PiD4 = 2.0*(grad_vx[0]*grad_vx[0] + 
 		  grad_vy[1]*grad_vy[1] + 
@@ -279,8 +225,8 @@ namespace proteus
       gamma_k = fmax(c_mu*k_old/nu_t,0.0);
      
       F_k =  nu_t*PiD4;
-      r = -F_k + gamma_k*k;
-      dr_dk = gamma_k;
+      r = -porosity*F_k + porosity*gamma_k*k;
+      dr_dk = porosity*gamma_k;
       
     }
 
@@ -532,6 +478,7 @@ namespace proteus
 			   double* velocity,
 			   double* phi_ls, //level set variable
 			   double* q_epsilon, //dissipation rate
+			   double* q_porosity, //VRANS
                            //velocity dof
                            double * velocity_dof_u,
                            double * velocity_dof_v,
@@ -558,6 +505,7 @@ namespace proteus
 			   double* ebqe_bc_flux_u_ext,
 			   double* ebqe_phi,double epsFact,
 			   double* ebqe_epsilon, //dissipation rate on boundary
+			   double* ebqe_porosity, //VRANS
 			   double* ebqe_u,
 			   double* ebqe_flux)
     {
@@ -688,6 +636,7 @@ namespace proteus
 				   u,
 				   u_old,
 				   q_epsilon[eN_k],
+				   q_porosity[eN_k],
 				   m,
 				   dm,
 				   f,
@@ -922,6 +871,7 @@ namespace proteus
 				   u_ext,
 				   u_old_ext,
 				   ebqe_epsilon[ebNE_kb],
+				   ebqe_porosity[ebNE_kb],
 				   m_ext,
 				   dm_ext,
 				   f_ext,
@@ -943,6 +893,7 @@ namespace proteus
 				   bc_u_ext,
 				   bc_u_ext,
 				   ebqe_epsilon[ebNE_kb],
+				   ebqe_porosity[ebNE_kb],
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
@@ -1052,6 +1003,7 @@ namespace proteus
 			   double* velocity,
 			   double* phi_ls, //level set variable
 			   double* q_epsilon, //dissipation rate
+			   double* q_porosity,//VRANS
                            //velocity dof
                            double * velocity_dof_u,
                            double * velocity_dof_v,
@@ -1074,7 +1026,8 @@ namespace proteus
 			   double* ebqe_bc_flux_u_ext,
 			   int* csrColumnOffsets_eb_u_u,
 			   double* ebqe_phi,double epsFact,
-			   double* ebqe_epsilon) //dissipation rate on boundary
+			   double* ebqe_epsilon,//dissipation rate on boundary
+			   double* ebqe_porosity) //VRANS
     {
       double Ct_sge = 4.0;
     
@@ -1193,6 +1146,7 @@ namespace proteus
 				   u,
 				   u_old,
 				   q_epsilon[eN_k],
+				   q_porosity[eN_k],
 				   m,
 				   dm,
 				   f,
@@ -1436,6 +1390,7 @@ namespace proteus
 				   u_ext,
 				   u_old_ext,
 				   ebqe_epsilon[ebNE_kb],
+				   ebqe_porosity[ebNE_kb],
 				   m_ext,
 				   dm_ext,
 				   f_ext,
@@ -1457,6 +1412,7 @@ namespace proteus
 				   bc_u_ext,
 				   bc_u_ext,
 				   ebqe_epsilon[ebNE_kb],
+				   ebqe_porosity[ebNE_kb],
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
