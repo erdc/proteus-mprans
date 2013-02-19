@@ -209,7 +209,7 @@ namespace proteus
       nu_t     = fmax(nu_t,1.e-4*nu);
       dnu_t_dk = 0.0;
 
-      a = porosity*nu_t/sigma_k + porosity*nu;
+      a = porosity*(nu_t/sigma_k + nu);
       da_dk = porosity*dnu_t_dk/sigma_k;
 
       PiD4 = 2.0*(grad_vx[0]*grad_vx[0] + 

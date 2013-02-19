@@ -174,40 +174,41 @@ namespace proteus
    //Try Lew, Buscaglia approximation
     inline
     void evaluateCoefficients(const double v[nSpace],
-				       const double eps_mu,
-				       const double phi,
-				       const double nu_0,
-				       const double nu_1,
-				       const double sigma_e,
-				       const double c_mu,
-				       const double c_1,
-				       const double c_2,
-				       const double c_e,
-				       const double grad_vx[nSpace], //gradient of x component of velocity
-				       const double grad_vy[nSpace], //gradient of x component of velocity
-				       const double grad_vz[nSpace], //gradient of x component of velocity
-				       const double& epsilon,
-				       const double& epsilon_old,
-				       const double& k,
-				       double& m,
-				       double& dm,
-				       double f[nSpace],
-				       double df[nSpace],
-				       double& a,
-				       double& da_de,
-				       double& r,
-				       double& dr_de)
+			      const double eps_mu,
+			      const double phi,
+			      const double nu_0,
+			      const double nu_1,
+			      const double sigma_e,
+			      const double c_mu,
+			      const double c_1,
+			      const double c_2,
+			      const double c_e,
+			      const double grad_vx[nSpace], //gradient of x component of velocity
+			      const double grad_vy[nSpace], //gradient of x component of velocity
+			      const double grad_vz[nSpace], //gradient of x component of velocity
+			      const double& epsilon,
+			      const double& epsilon_old,
+			      const double& k,
+			      const double& porosity,
+			      double& m,
+			      double& dm,
+			      double f[nSpace],
+			      double df[nSpace],
+			      double& a,
+			      double& da_de,
+			      double& r,
+			      double& dr_de)
     {
       const double div_eps = 1.0e-6;
       double nu_t=0.0,dnu_t_de=0.0,PiD4=0.0,disp=0.0,ddisp_de=0.0;
       double gamma_e=0.0,F_e=0.0;
-      m = epsilon;
-      dm = 1.0;
+      m = epsilon*porosity;
+      dm = porosity;
 
       for (int I=0; I < nSpace; I++)
 	{
-	  f[I] = v[I]*epsilon;
-	  df[I] = v[I];
+	  f[I] = v[I]*porosity*epsilon;
+	  df[I] = v[I]*porosity;
 	}
       const double H_mu = smoothedHeaviside(eps_mu,phi);
       const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
@@ -216,8 +217,8 @@ namespace proteus
       dnu_t_de = 0.0;
       nu_t = fmax(nu_t,1.e-4*nu);
 
-      a = nu_t/sigma_e + nu;
-      da_de = dnu_t_de/sigma_e;
+      a = porosity*(nu_t/sigma_e + nu);
+      da_de = porosity*dnu_t_de/sigma_e;
 
       PiD4 = 2.0*(grad_vx[0]*grad_vx[0] + 
 		  grad_vy[1]*grad_vy[1] + 
@@ -232,8 +233,8 @@ namespace proteus
       gamma_e = fmax(c_2*epsilon_old/k,0.0);
       F_e = fmax(c_1*k*PiD4,0.0);
 
-      r = -F_e + gamma_e*epsilon;
-      dr_de = gamma_e;
+      r = -porosity*F_e + porosity*gamma_e*epsilon;
+      dr_de = porosity*gamma_e;
     }
 
     inline
@@ -647,6 +648,7 @@ namespace proteus
 				   u,
 				   u_old,
 				   q_kappa[eN_k],
+				   q_porosity[eN_k],
 				   m,
 				   dm,
 				   f,
@@ -880,6 +882,7 @@ namespace proteus
 				   u_ext,
 				   u_old_ext,
 				   ebqe_kappa[ebNE_kb],
+				   ebqe_porosity[ebNE_kb],
 				   m_ext,
 				   dm_ext,
 				   f_ext,
@@ -904,6 +907,7 @@ namespace proteus
 				   bc_u_ext,
 				   bc_u_ext,
 				   ebqe_kappa[ebNE_kb],
+				   ebqe_porosity[ebNE_kb],
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
@@ -1162,6 +1166,7 @@ namespace proteus
 				   u,
 				   u_old,
 				   q_kappa[eN_k],
+				   q_porosity[eN_k],
 				   m,
 				   dm,
 				   f,
@@ -1408,6 +1413,7 @@ namespace proteus
 				   u_ext,
 				   u_old_ext,
 				   ebqe_kappa[ebNE_kb],
+				   ebqe_porosity[ebNE_kb],
 				   m_ext,
 				   dm_ext,
 				   f_ext,
@@ -1432,6 +1438,7 @@ namespace proteus
 				   bc_u_ext,
 				   bc_u_ext,
 				   ebqe_kappa[ebNE_kb],
+				   ebqe_porosity[ebNE_kb],
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
