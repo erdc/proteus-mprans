@@ -76,14 +76,15 @@ NOTE: assumes 3d for now
     """
 
     from proteus.ctransportCoefficients import kEpsilon_k_3D_Evaluate_sd
-    def __init__(self,LS_model=None,V_model=0,RD_model=None,epsilon_model=None,ME_model=6,
+    def __init__(self,LS_model=None,V_model=0,RD_model=None,dissipation_model=None,ME_model=6,
+                 dissipation_model_flag=1, #default K-Epsilon, 2 --> K-Omega
                  c_mu   =0.09,    
                  sigma_k=1.0,#Prandtl Number
                  rho_0=998.2,nu_0=1.004e-6,
                  rho_1=1.205,nu_1=1.500e-5,
                  g=[0.0,-9.8],
                  nd=3,
-                 epsFact=0.01,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,default_epsilon=1.0e-3):
+                 epsFact=0.01,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,default_dissipation=1.0e-3):
         self.useMetrics = useMetrics
         self.variableNames=['kappa']
         nc=1
@@ -121,12 +122,12 @@ NOTE: assumes 3d for now
         self.modelIndex=ME_model
         self.RD_modelIndex=RD_model
         self.LS_modelIndex=LS_model
-        self.epsilon_modelIndex = epsilon_model
-	
+        self.dissipation_modelIndex = dissipation_model
+	self.dissipation_model_flag = dissipation_model_flag #default K-Epsilon, 2 --> K-Omega
 	self.sc_uref=sc_uref
 	self.sc_beta=sc_beta	
         #for debugging model
-        self.default_epsilon = default_epsilon
+        self.default_dissipation = default_dissipation
 	
     def initializeMesh(self,mesh):
         self.eps = self.epsFact*mesh.h
@@ -199,20 +200,22 @@ NOTE: assumes 3d for now
             self.ebqe_porosity = numpy.ones(self.ebqe[('u',0)].shape,'d')
             
         #
-        #assert self.epsilon_modelIndex != None and self.epsilon_modelIndex < len(modelList), "Kappa: invalid index for epsilon model allowed range: [0,%s]" % len(modelList) 
-        if self.epsilon_modelIndex != None: #keep for debugging for now
+        #assert self.dissipation_modelIndex != None and self.dissipation_modelIndex < len(modelList), "Kappa: invalid index for dissipation model allowed range: [0,%s]" % len(modelList) 
+        if self.dissipation_modelIndex != None: #keep for debugging for now
             #assume have q,ebqe always
-            self.q_epsilon = modelList[self.epsilon_modelIndex].q[('u',0)]
-            self.ebqe_epsilon = modelList[self.epsilon_modelIndex].ebqe[('u',0)]
-            if modelList[self.epsilon_modelIndex].ebq.has_key(('u',0)):
-                self.ebq_epsilon = modelList[self.epsilon_modelIndex].ebq[('u',0)]
+            self.q_dissipation = modelList[self.dissipation_modelIndex].q[('u',0)]
+            self.ebqe_dissipation = modelList[self.dissipation_modelIndex].ebqe[('u',0)]
+            self.q_grad_dissipation = modelList[self.dissipation_modelIndex].q[('grad(u)',0)]
+            if modelList[self.dissipation_modelIndex].ebq.has_key(('u',0)):
+                self.ebq_dissipation = modelList[self.dissipation_modelIndex].ebq[('u',0)]
         else:
-            self.q_epsilon = numpy.zeros(self.model.q[('u',0)].shape,'d'); self.q_epsilon.fill(self.default_epsilon); 
-            self.ebqe_epsilon = numpy.zeros(self.model.ebqe[('u',0)].shape,'d'); self.ebqe_epsilon.fill(self.default_epsilon)
+            self.q_dissipation = numpy.zeros(self.model.q[('u',0)].shape,'d'); self.q_dissipation.fill(self.default_dissipation); 
+            self.ebqe_dissipation = numpy.zeros(self.model.ebqe[('u',0)].shape,'d'); self.ebqe_dissipation.fill(self.default_dissipation)
+            self.q_grad_dissipation = numpy.zeros(self.model.q[('grad(u)',0)].shape,'d'); 
              
             if self.model.ebq.has_key(('u',0)):
-                self.ebq_epsilon = numpy.zeros(self.model.ebq[('u',0)].shape,'d')
-                self.ebq_epsilon.fill(self.default_epsilon)
+                self.ebq_dissipation = numpy.zeros(self.model.ebq[('u',0)].shape,'d')
+                self.ebq_dissipation.fill(self.default_dissipation)
             #
         #
     def initializeElementQuadrature(self,t,cq):
@@ -221,27 +224,27 @@ NOTE: assumes 3d for now
             self.q_grad_u = numpy.ones(cq[('grad(u)',0)].shape,'d')
             self.q_grad_v = numpy.ones(cq[('grad(u)',0)].shape,'d')
             self.q_grad_w = numpy.ones(cq[('grad(u)',0)].shape,'d')
-        if self.epsilon_modelIndex == None:
-            self.q_epsilon = numpy.ones(cq[('u',0)].shape,'d')
-            self.q_epsilon.fill(self.default_epsilon);
+        if self.dissipation_modelIndex == None:
+            self.q_dissipation = numpy.ones(cq[('u',0)].shape,'d')
+            self.q_dissipation.fill(self.default_dissipation);
     def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
         if self.flowModelIndex == None:
             self.ebq_v = numpy.ones(cebq[('f',0)].shape,'d')
             self.ebq_grad_u = numpy.ones(cebq[('grad(u)',0)].shape,'d')
             self.ebq_grad_v = numpy.ones(cebq[('grad(u)',0)].shape,'d')
             self.ebq_grad_w = numpy.ones(cebq[('grad(u)',0)].shape,'d')
-        if self.epsilon_modelIndex == None:
-            self.ebq_epsilon = numpy.ones(cebq[('u',0)].shape,'d')
-            self.ebq_epsilon.fill(self.default_epsilon)
+        if self.dissipation_modelIndex == None:
+            self.ebq_dissipation = numpy.ones(cebq[('u',0)].shape,'d')
+            self.ebq_dissipation.fill(self.default_dissipation)
     def initializeGlobalExteriorElementBoundaryQuadrature(self,t,cebqe):
         if self.flowModelIndex == None:
             self.ebqe_v = numpy.ones(cebqe[('f',0)].shape,'d')
             self.ebqe_grad_u = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
             self.ebqe_grad_v = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
             self.ebqe_grad_w = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
-        if self.epsilon_modelIndex == None:
-            self.ebqe_epsilon = numpy.ones(cebqe[('u',0)].shape,'d')
-            self.ebqe_epsilon.fill(self.default_epsilon)
+        if self.dissipation_modelIndex == None:
+            self.ebqe_dissipation = numpy.ones(cebqe[('u',0)].shape,'d')
+            self.ebqe_dissipation.fill(self.default_dissipation)
     def preStep(self,t,firstStep=False):
         copyInstructions = {}
         return copyInstructions
@@ -261,28 +264,28 @@ NOTE: assumes 3d for now
             grad_u = self.q_grad_u
             grad_v = self.q_grad_v
             grad_w = self.q_grad_w
-            epsilon = self.q_epsilon
+            dissipation = self.q_dissipation
         elif c[('f',0)].shape == self.ebqe_v.shape:
             v = self.ebqe_v
             phi = self.ebqe_phi
             grad_u = self.ebqe_grad_u
             grad_v = self.ebqe_grad_v
             grad_w = self.ebqe_grad_w
-            epsilon = self.ebqe_epsilon
-        elif ((self.ebq_v != None and self.ebq_phi != None and self.ebq_grad_u != None and self.ebq_grad_v != None and self.ebq_grad_w != None and self.ebq_epsilon != None) and c[('f',0)].shape == self.ebq_v.shape):
+            dissipation = self.ebqe_dissipation
+        elif ((self.ebq_v != None and self.ebq_phi != None and self.ebq_grad_u != None and self.ebq_grad_v != None and self.ebq_grad_w != None and self.ebq_dissipation != None) and c[('f',0)].shape == self.ebq_v.shape):
             v = self.ebq_v
             phi = self.ebq_phi
             grad_u = self.ebq_grad_u
             grad_v = self.ebq_grad_v
             grad_w = self.ebqe_grad_w
-            epsilon = self.ebq_epsilon
+            dissipation = self.ebq_dissipation
         else:
             v=None
             phi=None
             grad_u = None
             grad_v = None
             grad_w = None
-        if v != None:
+        if v != None and self.dissipation_model_flag != 2:
             self.kEpsilon_k_3D_Evaluate_sd(self.sigma_k,
                                            self.c_mu,
                                            self.nu,
@@ -291,7 +294,7 @@ NOTE: assumes 3d for now
                                            gradv,
                                            gradw,
                                            c[('u',0)],
-                                           epsilon,
+                                           dissipation,
                                            c[('m',0)],
                                            c[('dm',0,0)],
                                            c[('f',0)],
@@ -746,6 +749,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.nu_1,
             self.coefficients.sigma_k,
             self.coefficients.c_mu,
+            self.coefficients.rho_0,
+            self.coefficients.rho_1,
+            self.coefficients.dissipation_model_flag,
             #end diffusion
 	    self.coefficients.useMetrics, 
             self.timeIntegration.alpha_bdf,
@@ -759,7 +765,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 	    self.coefficients.u_old_dof,
             self.coefficients.q_v,
             self.coefficients.q_phi, #level set variable goes here
-            self.coefficients.q_epsilon, #dissipation rate variable
+            self.coefficients.q_dissipation, #dissipation rate variable
+            self.coefficients.q_grad_dissipation,
             self.coefficients.q_porosity, #VRANS
             #velocity dof
             self.coefficients.velocity_dof_u,
@@ -786,7 +793,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('advectiveFlux_bc_flag',0)],
             self.ebqe[('advectiveFlux_bc',0)],
             self.coefficients.ebqe_phi,self.coefficients.epsFact,
-            self.coefficients.ebqe_epsilon, #dissipation rate variable on boundary
+            self.coefficients.ebqe_dissipation, #dissipation rate variable on boundary
             self.coefficients.ebqe_porosity,#VRANS
             self.ebqe[('u',0)],
             self.ebqe[('advectiveFlux',0)])
@@ -832,6 +839,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.nu_1,
             self.coefficients.sigma_k,
             self.coefficients.c_mu,
+            self.coefficients.rho_0,
+            self.coefficients.rho_1,
+            self.coefficients.dissipation_model_flag,
             #end diffusion
 	    self.coefficients.useMetrics, 
             self.timeIntegration.alpha_bdf,
@@ -842,7 +852,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].dof,self.coefficients.u_old_dof,
             self.coefficients.q_v,
             self.coefficients.q_phi,
-            self.coefficients.q_epsilon, #dissipation rate variable
+            self.coefficients.q_dissipation, #dissipation rate variable
+            self.coefficients.q_grad_dissipation,
             self.coefficients.q_porosity, #VRANS
             #velocity dof
             self.coefficients.velocity_dof_u,
@@ -866,7 +877,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('advectiveFlux_bc',0)],
             self.csrColumnOffsets_eb[(0,0)],
             self.coefficients.ebqe_phi,self.coefficients.epsFact,
-            self.coefficients.ebqe_epsilon,#dissipation rate variable on boundary
+            self.coefficients.ebqe_dissipation,#dissipation rate variable on boundary
             self.coefficients.ebqe_porosity) #VRANS
 
 

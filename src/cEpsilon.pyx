@@ -55,6 +55,7 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                #end velocity dof
                                double* q_m,
                                double* q_u,
+                               double* q_grad_u,
                                double* q_m_betaBDF,
                                double* cfl,
                                double* q_numDiff_u, 
@@ -219,6 +220,7 @@ cdef class cEpsilon_base:
                          #end velocity dof
                          numpy.ndarray q_m,
                          numpy.ndarray q_u,
+                         numpy.ndarray q_grad_u,
                          numpy.ndarray q_m_betaBDF,
                          numpy.ndarray cfl,
                          numpy.ndarray q_numDiff_u, 
@@ -290,6 +292,7 @@ cdef class cEpsilon_base:
                                       #end velocity dof
                                        <double*> q_m.data,
                                        <double*> q_u.data,
+                                       <double*> q_grad_u.data,
                                        <double*> q_m_betaBDF.data,
                                        <double*> cfl.data,
                                        <double*> q_numDiff_u.data, 

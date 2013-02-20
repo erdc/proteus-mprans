@@ -64,6 +64,7 @@ namespace proteus
                                    //end velocity dof
 				   double* q_m,
 				   double* q_u,
+				   double* q_grad_u,
 				   double* q_m_betaBDF,
 				   double* cfl,
 				   double* q_numDiff_u, 
@@ -496,6 +497,7 @@ namespace proteus
                            //end velocity dof
 			   double* q_m,
 			   double* q_u,
+			   double* q_grad_u,
 			   double* q_m_betaBDF,
 			   double* cfl,
 			   double* q_numDiff_u, 
@@ -740,6 +742,8 @@ namespace proteus
 	      //
 	      q_u[eN_k] = u;
 	      q_m[eN_k] = m;
+	      for (int I=0; I < nSpace; I++)
+		q_grad_u[eN_k_nSpace+I] = grad_u[I];
 	    }
 	  //
 	  //load element into global residual and save element residual

@@ -41,6 +41,9 @@ namespace proteus
 				   double nu_1,
                                    double sigma_k,
                                    double c_mu,
+				   double rho_0,
+				   double rho_1,
+				   int dissipation_model_flag,
 				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
@@ -52,7 +55,8 @@ namespace proteus
 				   double* u_dof,double* u_dof_old,	
 				   double* velocity,
 				   double* phi_ls, //level set variable
-				   double* q_epsilon, //dissipation rate variable
+				   double* q_dissipation, //dissipation rate variable
+				   double* q_grad_dissipation,
 				   double* q_porosity, //VRANS
                                    //velocity dof
                                    double * velocity_dof_u,
@@ -79,7 +83,7 @@ namespace proteus
 				   int* isFluxBoundary_u,
 				   double* ebqe_bc_flux_u_ext,
 				   double* ebqe_phi,double epsFact,
-				   double* ebqe_epsilon, //dissipation rate variable on boundary
+				   double* ebqe_dissipation, //dissipation rate variable on boundary
 				   double* ebqe_porosity, //VRANS
 				   double* ebqe_u,
 				   double* ebqe_flux)=0;
@@ -112,6 +116,9 @@ namespace proteus
 				   double nu_1,
                                    double sigma_k,
                                    double c_mu,
+				   double rho_0,
+				   double rho_1,
+				   int dissipation_model_flag,
 				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
@@ -122,7 +129,8 @@ namespace proteus
 				   double* u_dof, double* u_dof_old,
 				   double* velocity,
 				   double* phi_ls, //level set variable
-				   double* q_epsilon, //dissipation rate
+				   double* q_dissipation, //dissipation rate
+				   double* q_grad_dissipation,
 				   double* q_porosity,//VRANS
                                    //velocity dof
                                    double * velocity_dof_u,
@@ -146,7 +154,7 @@ namespace proteus
 				   double* ebqe_bc_flux_u_ext,
 				   int* csrColumnOffsets_eb_u_u,
 				   double* ebqe_phi,double epsFact,
-				   double* ebqe_epsilon,//dissipation rate on boundary
+				   double* ebqe_dissipation,//dissipation rate on boundary
 				   double* ebqe_porosity)=0; //VRANS
   };
 
@@ -180,8 +188,11 @@ namespace proteus
 			      const double grad_vz[nSpace], //gradient of x component of velocity
 			      const double& k,
 			      const double& k_old,
-			      const double& epsilon,
+			      const double& dissipation,
 			      const double& porosity,
+			      int dissipation_model_flag,
+			      const double grad_k_old[nSpace],
+			      const double grad_dissipation[nSpace],
 			      double& m,
 			      double& dm,
 			      double f[nSpace],
@@ -194,6 +205,8 @@ namespace proteus
       const double div_eps = 1.0e-6;
       double nu_t=0.0,dnu_t_dk=0.0,PiD4=0.0;
       double gamma_k=0.0,F_k=0.0;
+      //either K-Epsilon or K-Omega
+      const double isKEpsilon = (dissipation_model_flag==2) ? 0.0 : 1.0;
       m = k*porosity;
       dm = porosity;
 
@@ -204,8 +217,11 @@ namespace proteus
 	}
       const double H_mu = smoothedHeaviside(eps_mu,phi);
       const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
+
       //eddy viscosity 
-      nu_t     = c_mu*k_old*k_old/(epsilon+div_eps);
+      nu_t     = isKEpsilon*c_mu*k_old*k_old/(dissipation+div_eps)
+	+ (1.0-isKEpsilon)*k_old/(dissipation+div_eps); 
+      
       nu_t     = fmax(nu_t,1.e-4*nu);
       dnu_t_dk = 0.0;
 
@@ -222,14 +238,87 @@ namespace proteus
 	+
 	(grad_vy[2] + grad_vz[1])*(grad_vy[2] + grad_vz[1]);
 
+      //K-Epsilon
       gamma_k = fmax(c_mu*k_old/nu_t,0.0);
-     
+      //K-Omega
+      if (dissipation_model_flag==2)
+	{
+	  double sigma_k=1.,sigma_omega=1.,beta_star=1.,beta=1.,gamma=1.;
+	  computeK_OmegaCoefficients(k_old,
+				     dissipation,
+				     grad_k_old,
+				     grad_dissipation,
+				     grad_vx,
+				     grad_vy,
+				     grad_vz,
+				     sigma_k,
+				     sigma_omega,
+				     beta_star,
+				     beta,
+				     gamma);
+	  gamma_k=beta_star*dissipation;
+	}
       F_k =  nu_t*PiD4;
       r = -porosity*F_k + porosity*gamma_k*k;
       dr_dk = porosity*gamma_k;
       
     }
+    inline
+    void computeK_OmegaCoefficients(const double& k,
+				    const double& omega,
+				    const double grad_k[nSpace],
+				    const double grad_omega[nSpace],
+				    const double grad_vx[nSpace], //gradient of x component of velocity
+				    const double grad_vy[nSpace], //gradient of x component of velocity
+				    const double grad_vz[nSpace], //gradient of x component of velocity				      
+				    double& sigma_k,
+				    double& sigma_omega,
+				    double& beta_star,
+				    double& beta,
+				    double& gamma)
+    {
+      const double div_eps = 1.0e-6;
+      //take these from NASA Langley Turbulence Model page
+      //brute force just to see if I can figure it out
+      sigma_k = 0.5; sigma_omega=0.5; gamma = 13.0/25.0;
+      const double beta0_star = 0.09; const double beta0 = 9.0/125.0;
+      double Omega[nSpace][nSpace] = {{0.,0.,0,},
+				      {0.,0.,0.},
+				      {0.,0.,0.}};
+      double S[nSpace][nSpace] = {{0.0,0.,0},
+				  {0.,0.,0.},
+				  {0.,0.,0.}};
 
+      //Omega_ij = (\pd{u_i}{x_j} - \pd{u_j}{x_i})/2
+      Omega[0][1] = 0.5*(grad_vx[1]-grad_vy[0]); Omega[0][2] = 0.5*(grad_vx[2]-grad_vz[0]);
+      Omega[1][0] =-Omega[0][1]; Omega[1][2] = 0.5*(grad_vy[2]-grad_vz[1]);
+      Omega[2][0] =-Omega[0][2]; Omega[2][1] =-Omega[1][2];
+      //S_ij = (\pd{u_i}{x_j} + \pd{u_j}{x_i})/2
+      S[0][0] = grad_vx[0]; S[0][1] = 0.5*(grad_vx[1]+grad_vy[0]);  S[0][2] = 0.5*(grad_vx[2]+grad_vz[0]);
+      S[1][0] = S[0][1];    S[1][1] = grad_vy[1];                   S[1][2] = 0.5*(grad_vy[2] + grad_vz[1]);
+      S[2][0] = S[0][2];    S[2][1] = S[1][2];                      S[2][2] = grad_vz[2];
+      
+      double chi_omega = 0.0;
+      for (int i=0; i < nSpace; i++)
+	for (int k=0; k < nSpace; k++)
+	  for (int j=0; j < nSpace; j++)
+	    chi_omega += Omega[i][j]*Omega[j][k]*S[k][i];
+      
+      chi_omega = fabs(chi_omega/(div_eps + beta0_star*omega*beta0_star*omega*beta0_star*omega));
+
+      const double f_beta = (1.0+70.0*chi_omega)/(1.0 + 80.0*chi_omega);
+      beta = beta0*f_beta;
+
+      double chi_k = grad_k[0]*grad_omega[0] + grad_k[1]*grad_omega[1] + grad_k[2]*grad_omega[2];
+      chi_k = chi_k/(omega*omega*omega);
+      double f_beta_star = 1.0;
+      if (chi_k > 0.0)
+	f_beta_star = (1.0 + 680.0*chi_k*chi_k)/(1.0 + 400.0*chi_k*chi_k);
+
+      beta_star = beta0_star*f_beta_star;
+    }
+
+				      
     inline
     void calculateSubgridError_tau(const double& elementDiameter,
 				   const double& dmt,
@@ -466,6 +555,9 @@ namespace proteus
 			   double nu_1,
                            double sigma_k,
                            double c_mu,
+			   double rho_0,
+			   double rho_1,
+			   int dissipation_model_flag,
 			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
@@ -477,7 +569,8 @@ namespace proteus
 			   double* u_dof,double* u_dof_old,
 			   double* velocity,
 			   double* phi_ls, //level set variable
-			   double* q_epsilon, //dissipation rate
+			   double* q_dissipation, //dissipation rate
+			   double* q_grad_dissipation,
 			   double* q_porosity, //VRANS
                            //velocity dof
                            double * velocity_dof_u,
@@ -504,7 +597,7 @@ namespace proteus
 			   int* isFluxBoundary_u,
 			   double* ebqe_bc_flux_u_ext,
 			   double* ebqe_phi,double epsFact,
-			   double* ebqe_epsilon, //dissipation rate on boundary
+			   double* ebqe_dissipation, //dissipation rate on boundary
 			   double* ebqe_porosity, //VRANS
 			   double* ebqe_u,
 			   double* ebqe_flux)
@@ -635,8 +728,11 @@ namespace proteus
 				   grad_vz,
 				   u,
 				   u_old,
-				   q_epsilon[eN_k],
+				   q_dissipation[eN_k],
 				   q_porosity[eN_k],
+				   dissipation_model_flag,
+				   grad_u_old,
+				   &q_grad_dissipation[eN_k_nSpace],
 				   m,
 				   dm,
 				   f,
@@ -768,6 +864,7 @@ namespace proteus
 		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
 	      register double u_ext=0.0,u_old_ext,
 		grad_u_ext[nSpace],grad_vx_ext[nSpace],grad_vy_ext[nSpace],grad_vz_ext[nSpace],
+		grad_u_old_ext[nSpace],grad_dissipation_ext_dummy[nSpace],
 		m_ext=0.0,
 		dm_ext=0.0,
 		f_ext[nSpace],
@@ -838,7 +935,10 @@ namespace proteus
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
 	      ck.valFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_old_ext);
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_ext);
+	      ck.gradFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_old_ext);
 
+	      //mwf hack, skip on boundary for now
+	      grad_dissipation_ext_dummy[0] = 0.0; grad_dissipation_ext_dummy[1] = 0.0; grad_dissipation_ext_dummy[2] = 0.0;
 	      //
 	      //compute velocity production terms, ***assumes same spaces for velocity dofs and kappa!***
 	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vx_ext);
@@ -870,8 +970,11 @@ namespace proteus
 				   grad_vz_ext,
 				   u_ext,
 				   u_old_ext,
-				   ebqe_epsilon[ebNE_kb],
+				   ebqe_dissipation[ebNE_kb],
 				   ebqe_porosity[ebNE_kb],
+				   dissipation_model_flag,
+				   grad_u_old_ext,
+				   grad_dissipation_ext_dummy,
 				   m_ext,
 				   dm_ext,
 				   f_ext,
@@ -892,8 +995,11 @@ namespace proteus
 				   grad_vz_ext,
 				   bc_u_ext,
 				   bc_u_ext,
-				   ebqe_epsilon[ebNE_kb],
+				   ebqe_dissipation[ebNE_kb],
 				   ebqe_porosity[ebNE_kb],
+				   dissipation_model_flag,
+				   grad_u_old_ext,
+				   grad_dissipation_ext_dummy,
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
@@ -992,6 +1098,9 @@ namespace proteus
 			   double nu_1,
                            double sigma_k,
                            double c_mu,
+			   double rho_0,
+			   double rho_1,
+			   int dissipation_model_flag,
 			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
@@ -1002,7 +1111,8 @@ namespace proteus
 			   double* u_dof, double* u_dof_old,
 			   double* velocity,
 			   double* phi_ls, //level set variable
-			   double* q_epsilon, //dissipation rate
+			   double* q_dissipation, //dissipation rate
+			   double* q_grad_dissipation,
 			   double* q_porosity,//VRANS
                            //velocity dof
                            double * velocity_dof_u,
@@ -1026,7 +1136,7 @@ namespace proteus
 			   double* ebqe_bc_flux_u_ext,
 			   int* csrColumnOffsets_eb_u_u,
 			   double* ebqe_phi,double epsFact,
-			   double* ebqe_epsilon,//dissipation rate on boundary
+			   double* ebqe_dissipation,//dissipation rate on boundary
 			   double* ebqe_porosity) //VRANS
     {
       double Ct_sge = 4.0;
@@ -1050,7 +1160,7 @@ namespace proteus
 
 	      //declare local storage
 	      register double u=0.0,u_old,
-		grad_u[nSpace],grad_vx[nSpace],grad_vy[nSpace],grad_vz[nSpace],
+		grad_u[nSpace],grad_vx[nSpace],grad_vy[nSpace],grad_vz[nSpace],grad_u_old[nSpace],
 		m=0.0,dm=0.0,a=0.0,da=0.0,r=0.0,dr=0.0,
 		f[nSpace],df[nSpace],df_minus_da_grad_u[nSpace],
 		m_t=0.0,dm_t=0.0,
@@ -1145,8 +1255,11 @@ namespace proteus
 				   grad_vz,
 				   u,
 				   u_old,
-				   q_epsilon[eN_k],
+				   q_dissipation[eN_k],
 				   q_porosity[eN_k],
+				   dissipation_model_flag,
+				   grad_u_old,
+				   &q_grad_dissipation[eN_k_nSpace],
 				   m,
 				   dm,
 				   f,
@@ -1271,6 +1384,7 @@ namespace proteus
 	      register double u_ext=0.0,u_old_ext=0.0,
 		grad_u_ext[nSpace],
 		grad_vx_ext[nSpace],grad_vy_ext[nSpace],grad_vz_ext[nSpace],
+		grad_u_old_ext[nSpace],grad_dissipation_ext_dummy[nSpace],
 		m_ext=0.0,
 		dm_ext=0.0,
 		f_ext[nSpace],
@@ -1357,7 +1471,10 @@ namespace proteus
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
 	      ck.valFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_old_ext);
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_ext);
+	      ck.gradFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_old_ext);
 
+	      //mwf hack, skip on boundary for now
+	      grad_dissipation_ext_dummy[0] = 0.0; grad_dissipation_ext_dummy[1] = 0.0; grad_dissipation_ext_dummy[2] = 0.0;
 	      //
 	      //compute velocity production terms, ***assumes same spaces for velocity dofs and kappa!***
 	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vx_ext);
@@ -1389,8 +1506,11 @@ namespace proteus
 				   grad_vz_ext,
 				   u_ext,
 				   u_old_ext,
-				   ebqe_epsilon[ebNE_kb],
+				   ebqe_dissipation[ebNE_kb],
 				   ebqe_porosity[ebNE_kb],
+				   dissipation_model_flag,
+				   grad_u_old_ext,
+				   grad_dissipation_ext_dummy,
 				   m_ext,
 				   dm_ext,
 				   f_ext,
@@ -1411,8 +1531,11 @@ namespace proteus
 				   grad_vz_ext,
 				   bc_u_ext,
 				   bc_u_ext,
-				   ebqe_epsilon[ebNE_kb],
+				   ebqe_dissipation[ebNE_kb],
 				   ebqe_porosity[ebNE_kb],
+				   dissipation_model_flag,
+				   grad_u_old_ext,
+				   grad_dissipation_ext_dummy,
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
