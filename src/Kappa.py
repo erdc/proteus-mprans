@@ -227,6 +227,7 @@ NOTE: assumes 3d for now
         if self.dissipation_modelIndex == None:
             self.q_dissipation = numpy.ones(cq[('u',0)].shape,'d')
             self.q_dissipation.fill(self.default_dissipation);
+            self.q_grad_dissipation = numpy.zeros(cq[('grad(u)',0)].shape,'d'); 
     def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
         if self.flowModelIndex == None:
             self.ebq_v = numpy.ones(cebq[('f',0)].shape,'d')

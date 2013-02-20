@@ -44,6 +44,9 @@ namespace proteus
 				   double c_1,
 				   double c_2,
 				   double c_e,
+				   double rho_0,
+				   double rho_1,
+				   int dissipation_model_flag,
 				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
@@ -56,6 +59,7 @@ namespace proteus
 				   double* velocity,
 				   double* phi_ls, //level set variable
 				   double* q_kappa, //kinetic energy variable
+				   double* q_grad_kappa,
 				   double* q_porosity, //VRANS
                                    //velocity dof
                                    double * velocity_dof_u,
@@ -118,6 +122,9 @@ namespace proteus
 				   double c_1,
 				   double c_2,
 				   double c_e,
+				   double rho_0,
+				   double rho_1,
+				   int dissipation_model_flag,
 				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
@@ -129,6 +136,7 @@ namespace proteus
 				   double* velocity,
 				   double* phi_ls, //level set variable
 				   double* q_kappa, //kinetic energy
+				   double* q_grad_kappa,
 				   double* q_porosity,//VRANS
                                    //velocity dof
                                    double * velocity_dof_u,
@@ -477,6 +485,9 @@ namespace proteus
 			   double c_1,
 			   double c_2,
 			   double c_e,
+			   double rho_0,
+			   double rho_1,
+			   int dissipation_model_flag,
 			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
@@ -489,6 +500,7 @@ namespace proteus
 			   double* velocity,
 			   double* phi_ls, //level set variable
 			   double* q_kappa, //kinetic energy
+			   double* q_grad_kappa,
 			   double* q_porosity, //VRANS
                            //velocity dof
                            double * velocity_dof_u,
@@ -1013,6 +1025,9 @@ namespace proteus
 			   double c_1,
 			   double c_2,
 			   double c_e,
+			   double rho_0,
+			   double rho_1,
+			   int dissipation_model_flag,
 			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
@@ -1024,6 +1039,7 @@ namespace proteus
 			   double* velocity,
 			   double* phi_ls, //level set variable
 			   double* q_kappa, //kinetic energy
+			   double* q_grad_kappa,
 			   double* q_porosity,//VRANS
                            //velocity dof
                            double * velocity_dof_u,

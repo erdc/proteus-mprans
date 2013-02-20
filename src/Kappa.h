@@ -310,7 +310,7 @@ namespace proteus
       beta = beta0*f_beta;
 
       double chi_k = grad_k[0]*grad_omega[0] + grad_k[1]*grad_omega[1] + grad_k[2]*grad_omega[2];
-      chi_k = chi_k/(omega*omega*omega);
+      chi_k = chi_k/(omega*omega*omega+div_eps);
       double f_beta_star = 1.0;
       if (chi_k > 0.0)
 	f_beta_star = (1.0 + 680.0*chi_k*chi_k)/(1.0 + 400.0*chi_k*chi_k);

@@ -76,7 +76,8 @@ NOTE: assumes 3d for now
     """
 
     from proteus.ctransportCoefficients import kEpsilon_k_3D_Evaluate_sd
-    def __init__(self,LS_model=None,V_model=0,RD_model=None,kappa_model=None,ME_model=6,
+    def __init__(self,LS_model=None,V_model=0,RD_model=None,kappa_model=None,ME_model=7,
+                 dissipation_model_flag=1, #default K-Epsilon, 2 --> K-Omega
                  c_mu   =0.09,c_1=0.126,c_2=1.92,c_e=0.07,
                  sigma_e=1.29,
                  rho_0=998.2,nu_0=1.004e-6,
@@ -206,11 +207,13 @@ NOTE: assumes 3d for now
             #assume have q,ebqe always
             self.q_kappa = modelList[self.kappa_modelIndex].q[('u',0)]
             self.ebqe_kappa = modelList[self.kappa_modelIndex].ebqe[('u',0)]
+            self.q_grad_kappa = modelList[self.kappa_modelIndex].q[('grad(u)',0)]
             if modelList[self.kappa_modelIndex].ebq.has_key(('u',0)):
                 self.ebq_kappa = modelList[self.kappa_modelIndex].ebq[('u',0)]
         else:
             self.q_kappa = numpy.zeros(self.model.q[('u',0)].shape,'d'); self.q_kappa.fill(self.default_kappa); 
             self.ebqe_kappa = numpy.zeros(self.model.ebqe[('u',0)].shape,'d'); self.ebqe_kappa.fill(self.default_kappa)
+            self.q_grad_kappa = numpy.zeros(self.model.q[('grad(u)',0)].shape,'d'); 
              
             if self.model.ebq.has_key(('u',0)):
                 self.ebq_kappa = numpy.zeros(self.model.ebq[('u',0)].shape,'d')
@@ -226,6 +229,7 @@ NOTE: assumes 3d for now
         if self.kappa_modelIndex == None:
             self.q_kappa = numpy.ones(cq[('u',0)].shape,'d')
             self.q_kappa.fill(self.default_kappa); 
+            self.q_grad_kappa = numpy.zeros(cq[('grad(u)',0)].shape,'d')
     def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
         if self.flowModelIndex == None:
             self.ebq_v = numpy.ones(cebq[('f',0)].shape,'d')
@@ -263,14 +267,14 @@ NOTE: assumes 3d for now
             grad_u = self.q_grad_u
             grad_v = self.q_grad_v
             grad_w = self.q_grad_w
-            epsilon = self.q_kappa
+            kappa = self.q_kappa
         elif c[('f',0)].shape == self.ebqe_v.shape:
             v = self.ebqe_v
             phi = self.ebqe_phi
             grad_u = self.ebqe_grad_u
             grad_v = self.ebqe_grad_v
             grad_w = self.ebqe_grad_w
-            epsilon = self.ebqe_kappa
+            kappa = self.ebqe_kappa
         elif ((self.ebq_v != None and self.ebq_phi != None and self.ebq_grad_u != None and self.ebq_grad_v != None and self.ebq_grad_w != None and self.ebq_kappa != None) and c[('f',0)].shape == self.ebq_v.shape):
             v = self.ebq_v
             phi = self.ebq_phi
@@ -754,6 +758,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.c_1,
             self.coefficients.c_2,
             self.coefficients.c_e,
+            self.coefficients.rho_0,
+            self.coefficients.rho_1,
+            self.coefficients.dissipation_model_flag,
             #end diffusion
 	    self.coefficients.useMetrics, 
             self.timeIntegration.alpha_bdf,
@@ -768,6 +775,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.q_v,
             self.coefficients.q_phi, #level set variable goes here
             self.coefficients.q_kappa, #dissipation rate variable
+            self.coefficients.q_grad_kappa, #dissipation rate variable
             self.coefficients.q_porosity, #dissipation rate variable
             #velocity dof
             self.coefficients.velocity_dof_u,
@@ -844,6 +852,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.c_1,
             self.coefficients.c_2,
             self.coefficients.c_e,
+            self.coefficients.rho_0,
+            self.coefficients.rho_1,
+            self.coefficients.dissipation_model_flag,
             #end diffusion
 	    self.coefficients.useMetrics, 
             self.timeIntegration.alpha_bdf,
@@ -855,6 +866,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.q_v,
             self.coefficients.q_phi,
             self.coefficients.q_kappa, #dissipation rate variable
+            self.coefficients.q_grad_kappa, #dissipation rate variable
             self.coefficients.q_porosity, #dissipation rate variable
             #velocity dof
             self.coefficients.velocity_dof_u,
