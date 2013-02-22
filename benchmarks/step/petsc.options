@@ -1,5 +1,5 @@
 -rans2p_ksp_type bcgsl -rans2p_pc_type asm -rans2p_pc_asm_type basic -rans2p_ksp_atol 1.0e-8 -rans2p_ksp_rtol 1.0e-8
 -ncls_ksp_type   bcgsl -ncls_pc_type   none -ncls_ksp_atol   1.0 -ncls_ksp_rtol   1.0 -ncls_ksp_max_it 0
 -rdls_ksp_type   bcgsl -rdls_pc_type   none -rdls_ksp_atol   1.0 -rdls_ksp_rtol   1.0 -rdls_ksp_max_it 0
--kappa_ksp_type bcgsl -kappa_pc_type asm -kappa_pc_asm_type basic -kappa_ksp_atol 1.0e-8 -kappa_ksp_rtol 1.0e-8
--epsilon_ksp_type bcgsl -epsilon_pc_type asm -epsilon_pc_asm_type basic -epsilon_ksp_atol 1.0e-8 -epsilon_ksp_rtol 1.0e-8
+-kappa_ksp_type bcgsl -kappa_pc_type asm -kappa_pc_asm_type basic -kappa_ksp_atol 0.0 -kappa_ksp_rtol 1.0e-8
+-epsilon_ksp_type bcgsl -epsilon_pc_type asm -epsilon_pc_asm_type basic -epsilon_ksp_atol 0.0 -epsilon_ksp_rtol 1.0e-8
