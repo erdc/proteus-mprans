@@ -86,7 +86,10 @@ NOTE: assumes 3d for now
                  nd=3,
                  epsFact=0.01,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,default_kappa=1.0e-3):
         self.useMetrics = useMetrics
+	self.dissipation_model_flag = dissipation_model_flag #default K-Epsilon, 2 ==> K-Omega
         self.variableNames=['epsilon']
+        if self.dissipation_model_flag == 2:
+            self.variableNames=['omega']
         nc=1
         self.nd = nd
         assert self.nd == 3, "Epsilon only implements 3d for now" #assume 3d for now
@@ -125,7 +128,6 @@ NOTE: assumes 3d for now
         self.RD_modelIndex=RD_model
         self.LS_modelIndex=LS_model
         self.kappa_modelIndex = kappa_model
-	
 	self.sc_uref=sc_uref
 	self.sc_beta=sc_beta	
         #for debugging model

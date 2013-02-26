@@ -204,7 +204,7 @@ namespace proteus
     {
       const double div_eps = 1.0e-6;
       double nu_t=0.0,dnu_t_dk=0.0,PiD4=0.0;
-      double gamma_k=0.0,F_k=0.0;
+      double gamma_k=0.0,F_k=0.0,sigma_a=sigma_k;
       //either K-Epsilon or K-Omega
       const double isKEpsilon = (dissipation_model_flag==2) ? 0.0 : 1.0;
       m = k*porosity;
@@ -225,9 +225,7 @@ namespace proteus
       nu_t     = fmax(nu_t,1.e-4*nu);
       dnu_t_dk = 0.0;
 
-      a = porosity*(nu_t/sigma_k + nu);
-      da_dk = porosity*dnu_t_dk/sigma_k;
-
+      //Production term
       PiD4 = 2.0*(grad_vx[0]*grad_vx[0] + 
 		  grad_vy[1]*grad_vy[1] + 
 		  grad_vz[2]*grad_vz[2]) 
@@ -238,12 +236,11 @@ namespace proteus
 	+
 	(grad_vy[2] + grad_vz[1])*(grad_vy[2] + grad_vz[1]);
 
-      //K-Epsilon
-      gamma_k = fmax(c_mu*k_old/nu_t,0.0);
-      //K-Omega
+       //K-Omega
       if (dissipation_model_flag==2)
 	{
-	  double sigma_k=1.,sigma_omega=1.,beta_star=1.,beta=1.,gamma=1.;
+	  //temporaries
+	  double sigma_omega=1.,beta_star=1.,beta=1.,gamma=1.;
 	  computeK_OmegaCoefficients(k_old,
 				     dissipation,
 				     grad_k_old,
@@ -251,13 +248,24 @@ namespace proteus
 				     grad_vx,
 				     grad_vy,
 				     grad_vz,
-				     sigma_k,
+				     sigma_a,
 				     sigma_omega,
 				     beta_star,
 				     beta,
 				     gamma);
-	  gamma_k=beta_star*dissipation;
+	  gamma_k=fmax(beta_star*dissipation,0.0);
 	}
+      else
+	{
+	  //K-Epsilon
+	  gamma_k = fmax(c_mu*k_old/nu_t,0.0);
+	  sigma_a = sigma_k;
+	}
+      //note sigma_a is calculated as inverse of what is in Wilcox's standard K-Omega formulation to 
+      //match standard K-Epsilon formulation where divide by sigma
+      a = porosity*(nu_t/sigma_a + nu);
+      da_dk = porosity*dnu_t_dk/sigma_a;
+
       F_k =  nu_t*PiD4;
       r = -porosity*F_k + porosity*gamma_k*k;
       dr_dk = porosity*gamma_k;
@@ -270,9 +278,9 @@ namespace proteus
 				    const double grad_omega[nSpace],
 				    const double grad_vx[nSpace], //gradient of x component of velocity
 				    const double grad_vy[nSpace], //gradient of x component of velocity
-				    const double grad_vz[nSpace], //gradient of x component of velocity				      
-				    double& sigma_k,
-				    double& sigma_omega,
+				    const double grad_vz[nSpace], //gradient of x component of velocity	
+				    double& inverse_sigma_k,
+				    double& inverse_sigma_omega,
 				    double& beta_star,
 				    double& beta,
 				    double& gamma)
@@ -280,7 +288,8 @@ namespace proteus
       const double div_eps = 1.0e-6;
       //take these from NASA Langley Turbulence Model page
       //brute force just to see if I can figure it out
-      sigma_k = 0.5; sigma_omega=0.5; gamma = 13.0/25.0;
+      //use inverse of sigma_k to match standard k-epsilon form
+      inverse_sigma_k = 2.0; inverse_sigma_omega=2.0; gamma = 13.0/25.0;
       const double beta0_star = 0.09; const double beta0 = 9.0/125.0;
       double Omega[nSpace][nSpace] = {{0.,0.,0,},
 				      {0.,0.,0.},

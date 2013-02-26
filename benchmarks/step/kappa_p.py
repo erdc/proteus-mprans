@@ -4,9 +4,11 @@ from step import *
 from proteus.mprans import Kappa
 
 LevelModelType = Kappa.LevelModel
-
+dissipation_model_flag = 1
+if use_KOmega == True:
+    dissipation_model_flag=2
 coefficients = Kappa.Coefficients(V_model=0,ME_model=3,LS_model=1,RD_model=None,dissipation_model=4,
-                                  dissipation_model_flag=1,#1 -- K-epsilon, 2 -- K-omega
+                                  dissipation_model_flag=dissipation_model_flag,#1 -- K-epsilon, 2 -- K-omega
                                   useMetrics=useMetrics,
                                   rho_0=rho_0,nu_0=nu_0,
                                   rho_1=rho_1,nu_1=nu_1,

@@ -992,7 +992,10 @@ namespace proteus
 	
       */
       assert (turbulenceClosureModel >=3);
-      double rho,nu,H_mu,eddy_viscosity,nu_t =0.0;
+      double rho,nu,H_mu,eddy_viscosity,nu_t=0.0,nu_t_keps =0.0, nu_t_komega=0.0;
+      double isKEpsilon = 1.0;
+      if (turbulenceClosureModel == 4)
+	isKEpsilon = 0.0;
       H_mu = (1.0-useVF)*smoothedHeaviside(eps_mu,phi)+useVF*fmin(1.0,fmax(0.0,vf));
       nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
       rho  = rho_0*(1.0-H_mu)+rho_1*H_mu;
@@ -1002,8 +1005,13 @@ namespace proteus
       mom_v_source += twoThirds*turb_grad_0[1];
       mom_w_source += twoThirds*turb_grad_0[2];
 
-      //--- k epsilon specific ---
-      nu_t = eddy_visc_coef_0*turb_var_0*turb_var_0/(turb_var_1 + div_zero);
+      //--- closure model specific ---
+      //k-epsilon
+      nu_t_keps = eddy_visc_coef_0*turb_var_0*turb_var_0/(turb_var_1 + div_zero);
+      //k-omega
+      nu_t_komega = turb_var_0/(turb_var_1 + div_zero);
+      //
+      nu_t = isKEpsilon*nu_t_keps + (1.0-isKEpsilon)*nu_t_komega;
       nu_t = fmax(nu_t,1.0e-4*nu); //limit according to Lew, Buscaglia etal 01
 #ifdef COMPRESSIBLE_FORM
       eddy_viscosity = nu_t*rho;

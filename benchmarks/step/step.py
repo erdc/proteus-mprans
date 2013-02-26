@@ -17,6 +17,7 @@ useMetrics = 0.0
 use_petsc4py=True
 quasi2D = True
 use_PlanePoiseuille = False
+use_KOmega = True
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -135,9 +136,9 @@ g = [0.0,0.0,0.0]
 #----------------------------------------------------
 
 residence_time = length/inflow
-T=2.0#10.0*length/inflow
+T=10.0#10.0*length/inflow
 #tnList = [0.0,0.1*residence_time,T]
-nDTout=2
+nDTout=100
 tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
 
 

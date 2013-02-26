@@ -5,7 +5,11 @@ from proteus.mprans import Epsilon
 
 LevelModelType = Epsilon.LevelModel
 
+dissipation_model_flag = 1
+if use_KOmega == True:
+    dissipation_model_flag=2
 coefficients = Epsilon.Coefficients(V_model=0,ME_model=4,LS_model=1,RD_model=None,kappa_model=3,
+                                    dissipation_model_flag=dissipation_model_flag,
                                     useMetrics=useMetrics,
                                     rho_0=rho_0,nu_0=nu_0,
                                     rho_1=rho_1,nu_1=nu_1,
@@ -14,7 +18,8 @@ coefficients = Epsilon.Coefficients(V_model=0,ME_model=4,LS_model=1,RD_model=Non
                                     sc_uref=epsilon_sc_uref,sc_beta=epsilon_sc_beta)
 
 epsilonInflow = coefficients.c_mu*kInflow**(1.5)/(0.03*upstream_height)
-
+if use_KOmega == True:
+    epsilonInflow = epsilonInflow/(kInflow+1.0e-12)
 def getDBC_epsilon(x,flag):
     if flag == boundaryTags['upstream']:
         return lambda x,t:epsilonInflow
