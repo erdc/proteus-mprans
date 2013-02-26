@@ -319,12 +319,13 @@ namespace proteus
 				     beta,
 				     gamma_production);
 	  gamma_e=fmax(beta*epsilon_old,0.0);
-	  F_e = fmax(PiD4*gamma_production/nu_t,0.0);
+	  //F_e = fmax(PiD4*gamma_production/(nu_t+div_eps),0.0);
+	  F_e = fmax(PiD4*gamma_production*epsilon_old/(k+div_eps),0.0);
 	}
       else
 	{
 	  //K-Epsilon
-	  gamma_e = fmax(c_2*epsilon_old/k,0.0);
+	  gamma_e = fmax(c_2*epsilon_old/(k+div_eps),0.0);
 	  F_e = fmax(c_1*k*PiD4,0.0);
 	  sigma_a = sigma_e;
 	}
