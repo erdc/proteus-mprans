@@ -204,7 +204,7 @@ namespace proteus
       double Omega[nSpace][nSpace] = {{0.,0.,0,},
 				      {0.,0.,0.},
 				      {0.,0.,0.}};
-      double S[nSpace][nSpace] = {{0.0,0.,0},
+      double S[nSpace][nSpace] = {{0.0,0.,0.},
 				  {0.,0.,0.},
 				  {0.,0.,0.}};
 
@@ -270,7 +270,8 @@ namespace proteus
     {
       const double div_eps = 1.0e-6;
       double nu_t=0.0,dnu_t_de=0.0,PiD4=0.0,disp=0.0,ddisp_de=0.0;
-      double gamma_e=0.0,F_e=0.0, gamma_production=0.0,sigma_a=sigma_e;
+      double gamma_e=0.0,F_e=0.0, gamma_production=0.0,sigma_a=sigma_e, 
+	dgamma_e_d_epsilon=0.0, dF_e_d_epsilon=0.0;
       //either K-Epsilon or K-Omega
       const double isKEpsilon = (dissipation_model_flag==2) ? 0.0 : 1.0;
       m = epsilon*porosity;
@@ -318,25 +319,32 @@ namespace proteus
 				     beta_star,
 				     beta,
 				     gamma_production);
+	  //--full lagging of Gamma_e
+	  dgamma_e_d_epsilon=0.0;
 	  gamma_e=fmax(beta*epsilon_old,0.0);
-	  //F_e = fmax(PiD4*gamma_production/(nu_t+div_eps),0.0);
-	  F_e = fmax(PiD4*gamma_production*epsilon_old/(k+div_eps),0.0);
+	  //--quadratic nonlinearity
+	  //dgamma_e_d_epsilon = fmax(beta,0.0);
+	  //gamma_e = dgamma_e_d_epsilon*epsilon;
+	  
+	  //-- full lagging of production
+	  dF_e_d_epsilon=0.0;
+	  F_e = fmax(PiD4*gamma_production,0.0);
 	}
       else
 	{
 	  //K-Epsilon
 	  gamma_e = fmax(c_2*epsilon_old/(k+div_eps),0.0);
+	  dgamma_e_d_epsilon = 0.0;
 	  F_e = fmax(c_1*k*PiD4,0.0);
+	  dF_e_d_epsilon=0.0;
 	  sigma_a = sigma_e;
 	}
+
       a = porosity*(nu_t/sigma_a + nu);
       da_de = porosity*dnu_t_de/sigma_a;
 
-
-
-
       r = -porosity*F_e + porosity*gamma_e*epsilon;
-      dr_de = porosity*gamma_e;
+      dr_de = -porosity*dF_e_d_epsilon + porosity*gamma_e + porosity*dgamma_e_d_epsilon;
     }
 
     inline
