@@ -15,7 +15,7 @@ def darpa2gen(npoints):
     (EXCEPT IN FIRST 0.5 FT, WHERE THEY ARE EVERY 6.01 FT)
 
     """
-    from math import sqrt
+    from math import sqrt,pow
     import numpy
     x = numpy.zeros((npoints,),'d'); y = numpy.zeros((npoints,),'d')
     #constants
@@ -46,6 +46,7 @@ def darpa2gen(npoints):
             a4= a3*a
             b = 1.2*xx + 1.0
             r = cb1*xx*a4 + cb2*xx*xx*a3 + 1.0 - a4*b
+            r = rmax*pow(r,cb3)
             x[i] = xx
             y[i] = r
         else: #goto 200
@@ -68,7 +69,7 @@ def darpa2gen(npoints):
                     c5 = (36.0  - 36.0*rh*rh - 4.0*rh*k0 - k1)*xipow
                     xipow *= xi #6
                     c6 = (-10.0 + 10.0*rh*rh +     rh*k0 + 0.333333*k1)*xipow
-                    r  = sqrt(rmax*(c1+c2+c3+c4+c5+c6))
+                    r  = rmax*sqrt((c1+c2+c3+c4+c5+c6))
                     x[i] = xx
                     y[i] = r
                 else: #goto 600
