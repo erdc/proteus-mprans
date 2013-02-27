@@ -106,7 +106,13 @@ if __name__ == '__main__':
     import matplotlib
     from matplotlib import pylab
     
-    pylab.figure(1)
+    fig = pylab.figure(1)
     pylab.plot(x[:np],y[:np])
+    fig.hold('on')
+    y *= -1.0
+    pylab.plot(x[:np],y[:np])
+    pylab.xlabel('x [ft]'); pylab.ylabel('y [ft]')
+    pylab.title('DARPA2 body')
+    pylab.axes().set_aspect('equal','datalim')
     pylab.savefig('darpa2.png')
     pylab.show()
