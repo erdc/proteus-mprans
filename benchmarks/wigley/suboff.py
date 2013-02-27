@@ -2,6 +2,10 @@
 import proteus
 from proteus import Domain
 
+import numpy
+def discretize_yz_plane(y,z,r,theta):
+        y[:] = r*numpy.cos(theta)
+        z[:] = r*numpy.sin(theta)
 def test_cylinder(nx,ntheta):
     """
     work on building mesh of a cylinder
@@ -22,9 +26,6 @@ def test_cylinder(nx,ntheta):
     dtheta = 2.0*pi/float(ntheta)
     theta = numpy.arange(ntheta,dtype='d')
     theta *= dtheta
-    def discretize_yz_plane(y,z,r,theta):
-        y[:] = r*numpy.cos(theta)
-        z[:] = r*numpy.sin(theta)
     #
     #build x,y,z points on cylinder
     for i in range(nx):
@@ -108,6 +109,99 @@ def test_cylinder(nx,ntheta):
 
     return x,y,z,domain
 
+def build_domain_from_axisymmetric_points(x,y,z,x_ll,L,include_front_and_back=1,ntheta_user=None,name='axi'):
+    """
+    basic code for building domain from point set generated as regular grid in x,y,z with x
+    as central axis
+    """
+    from math import sqrt,pow,pi    
+    import numpy
+    nx = x.shape[0]; 
+    if ntheta_user == None:
+        ntheta = numpy.zeros((nx,),'i')
+        ntheta.fill(x.shape[1])
+    else:
+        ntheta = ntheta_user
+    assert y.shape[0] == nx; assert z.shape[0] == nx
+    assert y.shape[1] == x.shape[1] ; assert z.shape[1] == x.shape[1]
+    #
+    boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
+    #build poly representation
+    #bounding box
+    vertices = [[x_ll[0],x_ll[1],x_ll[2]],#0
+              [x_ll[0]+L[0],x_ll[1],x_ll[2]],#1
+              [x_ll[0]+L[0],x_ll[1]+L[1],x_ll[2]],#2
+              [x_ll[0],x_ll[1]+L[1],x_ll[2]],#3
+              [x_ll[0],x_ll[1],x_ll[2]+L[2]],#4
+              [x_ll[0]+L[0],x_ll[1],x_ll[2]+L[2]],#5
+              [x_ll[0]+L[0],x_ll[1]+L[1],x_ll[2]+L[2]],#6
+              [x_ll[0],x_ll[1]+L[1],x_ll[2]+L[2]]]#7
+    vertexFlags=[boundaryTags['left'],
+                 boundaryTags['right'],
+                 boundaryTags['right'],
+                 boundaryTags['left'],
+                 boundaryTags['left'],
+                 boundaryTags['right'],
+                 boundaryTags['right'],
+                 boundaryTags['left']]
+    
+    facets=[[[0,1,2,3]],
+            [[0,1,5,4]],
+            [[1,2,6,5]],
+            [[2,3,7,6]],
+            [[3,0,4,7]],
+            [[4,5,6,7]]]
+    facetFlags=[boundaryTags['bottom'],
+                boundaryTags['front'],
+                boundaryTags['right'],
+                boundaryTags['back'],
+                boundaryTags['left'],
+                boundaryTags['top']]
+    regions=[[x_ll[0]+0.5*L[0],x_ll[1]+0.5*L[1],x_ll[2]+0.5*L[2]]]
+    regionFlags=[1.0]
+    holes=[]
+
+    #now loop through points and build facets on cylinder
+    #front face
+    def vN(i,j):
+        return 8 + i*ntheta[i] + (j % ntheta[i])
+
+    if include_front_and_back >= 1:
+        front_face = [[vN(0,j) for j in range(ntheta[0])]]
+        facets.append(front_face)
+        facetFlags.append(boundaryTags['obstacle'])
+    for i in range(nx-1):
+        for j in range(ntheta[i]):
+            vertices.append([x[i,j],y[i,j],z[i,j]])
+            vertexFlags.append(boundaryTags['obstacle'])
+            #
+            facets.append([[vN(i,j),vN(i+1,j),vN(i,j+1)]])
+            facetFlags.append(boundaryTags['obstacle'])
+            facets.append([[vN(i+1,j),vN(i+1,j+1),vN(i,j+1)]])
+            facetFlags.append(boundaryTags['obstacle'])
+    #
+    if include_front_and_back >= 2:
+        for j in range(ntheta[nx-1]):
+            vertices.append([x[nx-1,j],y[nx-1,j],z[nx-1,j]])
+            vertexFlags.append(boundaryTags['obstacle'])
+            back_face = [[vN(nx-1,j) for j in range(ntheta)]]
+            facets.append(back_face)
+            facetFlags.append(boundaryTags['obstacle'])
+    
+    domain = proteus.Domain.PiecewiseLinearComplexDomain(vertices=vertices,
+                                                         vertexFlags=vertexFlags,
+                                                         facets=facets,
+                                                         facetFlags=facetFlags,
+                                                         regions=regions,
+                                                         regionFlags=regionFlags,
+                                                         holes=holes)
+    #go ahead and add a boundary tags member 
+    domain.boundaryTags = boundaryTags
+    domain.writePLY(name)
+    domain.writePoly(name)
+
+    return domain
+
 def write_csv_file(x,y,z,name='xyz'):
     fout = open(name+'.csv','w')
     fout.write('#x,y,z,r\n')
@@ -140,17 +234,11 @@ def darpa2gen(nx,ntheta):
     """
     from math import sqrt,pow,pi
     
-    import numpy
     x = numpy.zeros((nx,ntheta),'d'); y = numpy.zeros((nx,ntheta),'d'); z = numpy.zeros((nx,ntheta),'d')
     dtheta = 2.0*pi/float(ntheta)
     theta = numpy.arange(ntheta,dtype='d')
     theta *= dtheta
-    def discretize_yz_plane(y,z,r,theta):
-        for j in range(ntheta-1):
-            y[j] = r*numpy.cos(theta)
-            z[j] = r*numpy.sin(theta)
-        #
-        y[-1]=y[0]; z[-1]=z[0]
+
     #constants
     rmax = 0.8333333
     xb   = 3.333333
@@ -163,11 +251,18 @@ def darpa2gen(nx,ntheta):
     rh   = 0.1175
     k0   = 10.0
     k1   = 44.6244
+    #bounding box info
+    x_ll = (-2.,-rmax*2.,-rmax*2.) #lower left for bounding box
+    L = [4.0+xc,4.0*rmax,4.0*rmax] #domain box
+
+    
     #
     xx = -0.01
     dx = 0.01
     i = 0
-    while (i < npoints and xx < xc):
+
+    
+    while (i < nx and xx < xc):
         np = i
         xx += dx
         if (xx >= 0.5): dx = 0.1
@@ -180,13 +275,13 @@ def darpa2gen(nx,ntheta):
             b = 1.2*xx + 1.0
             r = cb1*xx*a4 + cb2*xx*xx*a3 + 1.0 - a4*b
             r = rmax*pow(r,cb3)
-            x[i] = xx
-            y[i] = r
+            x[i].fill(xx)
+            discretize_yz_plane(y,z,r,theta)
         else: #goto 200
             if (xx < xm): #otherwise skip to 400
                 #parallel mid-body equation
-                x[i]=xx
-                y[i]=rmax
+                x[i].fill(xx)
+                discretize_yz_plane(y,z,rmax,theta)
             else: #goto 400
                 if (xx < xa): #otherwise goto 600
                     #afterbody equation
@@ -203,26 +298,31 @@ def darpa2gen(nx,ntheta):
                     xipow *= xi #6
                     c6 = (-10.0 + 10.0*rh*rh +     rh*k0 + 0.333333*k1)*xipow
                     r  = rmax*sqrt((c1+c2+c3+c4+c5+c6))
-                    x[i] = xx
-                    y[i] = r
+                    x[i].fill(xx)
+                    discretize_yz_plane(y,z,r,theta)
+
                 else: #goto 600
                     if (xx < xc): #otherwise goto 1100
                         #afterbody cap equation
                         r = 1.0 - (3.2*xx - 44.733333)*(3.2*xx - 44.733333)
                         assert r >= 0.0, "negative square root in afterbody cap equation"
                         r = rh*rmax*sqrt(r)
-                        x[i] = xx
-                        y[i] = r
+                        x[i].fill(xx)
+                        discretize_yz_plane(y,z,r,theta)
                     else:#1100
-                        x[np] = xc
-                        y[np] = 0.0
+                        x[np].fill(xc)
+                        y[np].fill(0.0)
+                        z[np].fill(0.0)
                     #end 1100 block
                 #end 600 block
             #end 400 block
         #end 200 block
         i += 1
     #end loop 
-    return x,y,np+1
+    ntheta_user = numpy.zeros(nx,'i')
+    ntheta_user.fill(ntheta)
+    ntheta_user[np]= 1
+    return x,y,z,ntheta_user,np+1,x_ll,L
 #end darpagen2
 
 def darpa2gen_orig(npoints):
@@ -320,11 +420,17 @@ def darpa2gen_orig(npoints):
 if __name__ == '__main__':
 
     nx = 300
-    try_cylinder = True
+    try_cylinder = False
+    try_new_darpa= True
     if try_cylinder:
         nx=11;ntheta=8
         x,y,z,domain=test_cylinder(nx,ntheta)
         write_csv_file(x,y,z,'cyl')
+    elif try_new_darpa:
+        ntheta = 8
+        x,y,z,ntheta_user,np,x_ll,L = darpa2gen(nx,ntheta)
+        write_csv_file(x[:np],y[:np],z[:np],'darpa2')
+        build_domain_from_axisymmetric_points(x[:np,:],y[:np,:],z[:np,:],x_ll,L,include_front_and_back=1,ntheta_user=ntheta_user[:np],name='darpa2')
     else:
         x,y,np = darpa2gen_orig(nx)
 
