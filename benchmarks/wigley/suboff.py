@@ -276,12 +276,12 @@ def darpa2gen(nx,ntheta):
             r = cb1*xx*a4 + cb2*xx*xx*a3 + 1.0 - a4*b
             r = rmax*pow(r,cb3)
             x[i].fill(xx)
-            discretize_yz_plane(y,z,r,theta)
+            discretize_yz_plane(y[i],z[i],r,theta)
         else: #goto 200
             if (xx < xm): #otherwise skip to 400
                 #parallel mid-body equation
                 x[i].fill(xx)
-                discretize_yz_plane(y,z,rmax,theta)
+                discretize_yz_plane(y[i],z[i],rmax,theta)
             else: #goto 400
                 if (xx < xa): #otherwise goto 600
                     #afterbody equation
@@ -299,7 +299,7 @@ def darpa2gen(nx,ntheta):
                     c6 = (-10.0 + 10.0*rh*rh +     rh*k0 + 0.333333*k1)*xipow
                     r  = rmax*sqrt((c1+c2+c3+c4+c5+c6))
                     x[i].fill(xx)
-                    discretize_yz_plane(y,z,r,theta)
+                    discretize_yz_plane(y[i],z[i],r,theta)
 
                 else: #goto 600
                     if (xx < xc): #otherwise goto 1100
@@ -308,7 +308,7 @@ def darpa2gen(nx,ntheta):
                         assert r >= 0.0, "negative square root in afterbody cap equation"
                         r = rh*rmax*sqrt(r)
                         x[i].fill(xx)
-                        discretize_yz_plane(y,z,r,theta)
+                        discretize_yz_plane(y[i],z[i],r,theta)
                     else:#1100
                         x[np].fill(xc)
                         y[np].fill(0.0)
@@ -430,7 +430,7 @@ if __name__ == '__main__':
         ntheta = 8
         x,y,z,ntheta_user,np,x_ll,L = darpa2gen(nx,ntheta)
         write_csv_file(x[:np],y[:np],z[:np],'darpa2')
-        build_domain_from_axisymmetric_points(x[:np,:],y[:np,:],z[:np,:],x_ll,L,include_front_and_back=1,ntheta_user=ntheta_user[:np],name='darpa2')
+        build_domain_from_axisymmetric_points(x[:np,:],y[:np,:],z[:np,:],x_ll,L,include_front_and_back=0,ntheta_user=ntheta_user[:np],name='darpa2')
     else:
         x,y,np = darpa2gen_orig(nx)
 
