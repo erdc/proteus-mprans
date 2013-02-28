@@ -76,7 +76,7 @@ else:
     #max number of points in x, need to get rid of this
     max_nx = 300
     #how much to pad bounding box
-    pad_x = 8.; pad_r_fact = 6.0
+    pad_x = 10.; pad_r_fact = 8.0
     #convert from feet to meters
     feet2meter = 0.3048
     #returns x,y,z points along hull, 
@@ -84,13 +84,13 @@ else:
     #total number of points used in x
     #start of bounding box
     #size of bounding box
-    x,y,z,ntheta_user,np,x_ll,L = suboff_domain.darpa2gen(max_nx,ntheta,
-                                                          pad_x=pad_x,pad_r_fact=pad_r_fact,
-                                                          length_conv=feet2meter)
+    x,y,z,theta_offset,np,x_ll,L = suboff_domain.darpa2gen(max_nx,ntheta,
+                                                           pad_x=pad_x,pad_r_fact=pad_r_fact,
+                                                           length_conv=feet2meter)
     #just the points
     suboff_domain.write_csv_file(x[:np],y[:np],z[:np],'darpa2')
     #get the domain
-    domain = suboff_domain.build_domain_from_axisymmetric_points(x[:np,:],y[:np,:],z[:np,:],x_ll,L,include_front_and_back=0,ntheta_user=ntheta_user[:np],name='darpa2')
+    domain = suboff_domain.build_domain_from_axisymmetric_points(x[:np,:],y[:np,:],z[:np,:],x_ll,L,include_front_and_back=0,theta_offset_user=theta_offset[:np+1],name='darpa2')
     boundaryTags = domain.boundaryTags
     
     upstream_height=L[2]
@@ -104,7 +104,9 @@ else:
     domain.writePLY('mesh_darpa2')
     domain.writePoly('mesh_darpa2')
     domain.writeAsymptote("mesh")
-    triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
+    #triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
+    #mwf hack
+    triangleOptions="VApq1.25ena"
 #
 nLevels = 1
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
@@ -169,7 +171,7 @@ def velRamp(t):
 
 def twpflowPressure(x,flag):
     if flag == boundaryTags['right']:#set pressure on outflow to hydrostatic
-        return lambda x,t: -(downstream_height-x[2])*rho_0*g[2]
+        return lambda x,t: -(L[2]-x[2])*rho_0*g[2]
 
 
 bottom = [boundaryTags['bottom']]

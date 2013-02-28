@@ -101,7 +101,7 @@ class Steady_p:
     def __init__(self):
         pass
     def uOfXT(self,x,t):
-        return -(downstream_height-x[1])*coefficients.rho*coefficients.g[1]
+        return -(L[2]-x[1])*coefficients.rho*coefficients.g[1]
 
 class Steady_u:
     def __init__(self):
