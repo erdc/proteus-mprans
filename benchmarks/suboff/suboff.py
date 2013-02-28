@@ -8,7 +8,7 @@ import suboff_domain
 #----------------------------------------------------
 #  Discretization -- input options    
 #----------------------------------------------------
-Refinement=4
+Refinement=1
 genMesh=True
 spaceOrder=1
 useHex=False
@@ -88,14 +88,16 @@ else:
                                                           pad_x=pad_x,pad_r_fact=pad_r_fact,
                                                           length_conv=feet2meter)
     #just the points
-    write_csv_file(x[:np],y[:np],z[:np],'darpa2')
+    suboff_domain.write_csv_file(x[:np],y[:np],z[:np],'darpa2')
     #get the domain
-    domain = build_domain_from_axisymmetric_points(x[:np,:],y[:np,:],z[:np,:],x_ll,L,include_front_and_back=0,ntheta_user=ntheta_user[:np],name='darpa2')
-
-
+    domain = suboff_domain.build_domain_from_axisymmetric_points(x[:np,:],y[:np,:],z[:np,:],x_ll,L,include_front_and_back=0,ntheta_user=ntheta_user[:np],name='darpa2')
+    boundaryTags = domain.boundaryTags
+    
     upstream_height=L[2]
     width = L[1]
-    he = (L[0]-pad_x)/float(6.5*Refinement)
+    length = L[0]
+    sub_length = L[0]-pad_x
+    he = (sub_length)/float(6.5*Refinement)
     if quasi2D:
         width = he
 
@@ -111,9 +113,9 @@ nLayersOfOverlapForParallel = 0
 #----------------------------------------------------
 # Physical coefficients
 #----------------------------------------------------
-Re = 3025.0
+Re = 302.5#3025.0
 inflow = 1.0
-nu = inflow*(downstream_height-upstream_height)/Re
+nu = inflow*sub_length/Re
 
 # Water
 rho_0 = 998.2
@@ -146,7 +148,7 @@ tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
 # Boundary conditions and other flags
 #----------------------------------------------------
 grad_p = -inflow/(upstream_height**2/(8.0*mu_0))
-upstream_start_z = downstream_height - upstream_height
+upstream_start_z = x_ll[2]
 kInflow = 0.003*inflow*inflow
 
 class u_flat:

@@ -17,7 +17,7 @@ def test_cylinder(nx,ntheta):
     r = 1.0 #cylinder
     xL   = 0.0 #starting point for cylinder
     cyl_length=10
-    x_ll = (-5.,-r-5,-r-5) #lower left for bounding box
+    x_ll = [-5.,-r-5,-r-5] #lower left for bounding box
     L = [10.0+cyl_length,2.0*r+10.,2.0*r+10.] #domain box
 
     x = numpy.zeros((nx,ntheta),'d'); y = numpy.zeros((nx,ntheta),'d'); z = numpy.zeros((nx,ntheta),'d')
@@ -109,7 +109,7 @@ def test_cylinder(nx,ntheta):
 
     return x,y,z,domain
 
-def build_domain_from_axisymmetric_points(x,y,z,x_ll,L,include_front_and_back=1,ntheta_user=None,name='axi'):
+def build_domain_from_axisymmetric_points(x,y,z,x_ll,L,include_front_and_back=1,theta_offset_user=None,name='axi'):
     """
     basic code for building domain from point set generated as regular grid in x,y,z with x
     as central axis
@@ -117,11 +117,10 @@ def build_domain_from_axisymmetric_points(x,y,z,x_ll,L,include_front_and_back=1,
     from math import sqrt,pow,pi    
     import numpy
     nx = x.shape[0]; 
-    if ntheta_user == None:
-        ntheta = numpy.zeros((nx,),'i')
-        ntheta.fill(x.shape[1])
+    if theta_offset_user == None:
+        theta_offset = numpy.arange(((nx+1)*x.shape[1],),'i',step=x.shape[1])
     else:
-        ntheta = ntheta_user
+        theta_offset = theta_offset_user
     assert y.shape[0] == nx; assert z.shape[0] == nx
     assert y.shape[1] == x.shape[1] ; assert z.shape[1] == x.shape[1]
     #
@@ -164,29 +163,52 @@ def build_domain_from_axisymmetric_points(x,y,z,x_ll,L,include_front_and_back=1,
     #now loop through points and build facets on cylinder
     #front face
     def vN(i,j):
-        return 8 + i*ntheta[i] + (j % ntheta[i])
+        offset = 8 + theta_offset[i]
+        return offset + (j % (theta_offset[i+1]-theta_offset[i]))
 
+    #mwf debug
+    #import pdb
+    #pdb.set_trace()
     if include_front_and_back >= 1:
-        front_face = [[vN(0,j) for j in range(ntheta[0])]]
+        front_face = [[vN(0,j) for j in range(theta_offset[1]-theta_offset[0])]]
         facets.append(front_face)
         facetFlags.append(boundaryTags['obstacle'])
-    for i in range(nx-1):
-        for j in range(ntheta[i]):
+    elif (theta_offset[1]-theta_offset[0]) == 1: #start of body is a single point
+        i=0; j=0
+        vertices.append([x[i,j],y[i,j],z[i,j]])
+        vertexFlags.append(boundaryTags['obstacle'])
+        for j in range(theta_offset[i+2]-theta_offset[i+1]): #connect all of next ring of points to start
+            if vN(i+1,j+1) != vN(i+1,j):
+	    	facets.append([[vN(i,j),vN(i+1,j),vN(i+1,j+1)]])
+		facetFlags.append(boundaryTags['obstacle'])
+            
+    for i in range(1,nx-1):
+        for j in range(theta_offset[i+1]-theta_offset[i]):
+            #if i == nx-2:
+            #   import pdb
+	    #	pdb.set_trace()
             vertices.append([x[i,j],y[i,j],z[i,j]])
             vertexFlags.append(boundaryTags['obstacle'])
             #
-            facets.append([[vN(i,j),vN(i+1,j),vN(i,j+1)]])
-            facetFlags.append(boundaryTags['obstacle'])
-            facets.append([[vN(i+1,j),vN(i+1,j+1),vN(i,j+1)]])
-            facetFlags.append(boundaryTags['obstacle'])
+            if vN(i,j+1) != vN(i,j):
+	    	facets.append([[vN(i,j),vN(i+1,j),vN(i,j+1)]])
+		facetFlags.append(boundaryTags['obstacle'])
+	    if vN(i+1,j) != vN(i+1,j+1):
+    	        facets.append([[vN(i+1,j),vN(i+1,j+1),vN(i,j+1)]])
+		facetFlags.append(boundaryTags['obstacle'])
+    #
+    #include last set of points regardless
+    for j in range(theta_offset[nx]-theta_offset[nx-1]):
+        vertices.append([x[nx-1,j],y[nx-1,j],z[nx-1,j]])
+        vertexFlags.append(boundaryTags['obstacle'])
     #
     if include_front_and_back >= 2:
-        for j in range(ntheta[nx-1]):
+        for j in range(theta_offset[nx]-theta_offset[nx-1]):
             vertices.append([x[nx-1,j],y[nx-1,j],z[nx-1,j]])
             vertexFlags.append(boundaryTags['obstacle'])
-            back_face = [[vN(nx-1,j) for j in range(ntheta)]]
-            facets.append(back_face)
-            facetFlags.append(boundaryTags['obstacle'])
+	back_face = [[vN(nx-1,j) for j in range(theta_offset[nx]-theta_offset[nx-1])]]
+	facets.append(back_face)
+	facetFlags.append(boundaryTags['obstacle'])
     
     domain = proteus.Domain.PiecewiseLinearComplexDomain(vertices=vertices,
                                                          vertexFlags=vertexFlags,
@@ -250,7 +272,7 @@ def darpa2gen(nx,ntheta,pad_x=4., pad_r_fact=4.,length_conv=1.0):
     k0   = 10.0
     k1   = 44.6244
     #bounding box info
-    x_ll = (-pad_x*0.5,-rmax*0.5*pad_r_fact,-rmax*0.5*pad_r_fact) #lower left for bounding box
+    x_ll = [-pad_x*0.5,-rmax*0.5*pad_r_fact,-rmax*0.5*pad_r_fact] #lower left for bounding box
     L = [pad_x+xc,pad_r_fact*rmax,pad_r_fact*rmax] #domain box
 
     
@@ -317,15 +339,18 @@ def darpa2gen(nx,ntheta,pad_x=4., pad_r_fact=4.,length_conv=1.0):
         #end 200 block
         i += 1
     #end loop 
-    ntheta_user = numpy.zeros(nx,'i')
-    ntheta_user.fill(ntheta)
-    ntheta_user[np]= 1
+    theta_offset = numpy.zeros((nx+1,),'i')
+    theta_offset[0]= 0
+    theta_offset[1]= 1
+    for i in range(1,np):
+        theta_offset[i+1]=theta_offset[i]+ntheta
+    theta_offset[np+1]= 1+theta_offset[np]
 
     #convert length units potentially
     x *= length_conv; y *= length_conv; z *= length_conv
     for i in range(3):
 	    x_ll[i] *= length_conv; L[i] *= length_conv 
-    return x,y,z,ntheta_user,np+1,x_ll,L
+    return x,y,z,theta_offset,np+1,x_ll,L
 #end darpagen2
 
 def darpa2gen_orig(npoints):
@@ -430,10 +455,10 @@ if __name__ == '__main__':
         x,y,z,domain=test_cylinder(nx,ntheta)
         write_csv_file(x,y,z,'cyl')
     elif try_new_darpa:
-        ntheta = 8
-        x,y,z,ntheta_user,np,x_ll,L = darpa2gen(nx,ntheta)
+        ntheta = 32
+        x,y,z,theta_offset,np,x_ll,L = darpa2gen(nx,ntheta)
         write_csv_file(x[:np],y[:np],z[:np],'darpa2')
-        domain = build_domain_from_axisymmetric_points(x[:np,:],y[:np,:],z[:np,:],x_ll,L,include_front_and_back=0,ntheta_user=ntheta_user[:np],name='darpa2')
+        domain = build_domain_from_axisymmetric_points(x[:np,:],y[:np,:],z[:np,:],x_ll,L,include_front_and_back=0,theta_offset_user=theta_offset[:np+1],name='darpa2')
 	domain.writePLY('darpa2')
 	domain.writePoly('darpa2')
 
