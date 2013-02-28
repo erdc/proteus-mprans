@@ -64,9 +64,9 @@ def test_cylinder(nx,ntheta):
                 boundaryTags['back'],
                 boundaryTags['left'],
                 boundaryTags['top']]
-    regions=[[x_ll[0]+0.5*L[0],x_ll[1]+0.5*L[1],x_ll[2]+0.5*L[2]]]
+    regions=[[x_ll[0]+0.001*L[0],x_ll[1]+0.5*r,x_ll[2]+0.5*r]]
     regionFlags=[1.0]
-    holes=[]
+    holes=[[x_ll[0]+0.5*L[0],x_ll[1]+0.5*L[1],x_ll[2]+0.5*L[2]]]
 
     #now loop through points and build facets on cylinder
     #front face
@@ -109,7 +109,7 @@ def test_cylinder(nx,ntheta):
 
     return x,y,z,domain
 
-def build_domain_from_axisymmetric_points(x,y,z,x_ll,L,include_front_and_back=1,theta_offset_user=None,name='axi'):
+def build_domain_from_axisymmetric_points(x,y,z,x_ll,L,regions=None,regionFlags=None,include_front_and_back=1,theta_offset_user=None,name='axi'):
     """
     basic code for building domain from point set generated as regular grid in x,y,z with x
     as central axis
@@ -156,9 +156,11 @@ def build_domain_from_axisymmetric_points(x,y,z,x_ll,L,include_front_and_back=1,
                 boundaryTags['back'],
                 boundaryTags['left'],
                 boundaryTags['top']]
-    regions=[[x_ll[0]+0.5*L[0],x_ll[1]+0.5*L[1],x_ll[2]+0.5*L[2]]]
-    regionFlags=[1.0]
-    holes=[]
+    if regions == None:
+	    regions=[[x_ll[0]+0.001*L[0],x_ll[1]+0.001*L[1],x_ll[2]+0.001*L[2]]]
+    if regionFlags == None:
+	    regionFlags=[1.0]
+    holes=[[x_ll[0]+0.5*L[0],x_ll[1]+0.5*L[1],x_ll[2]+0.5*L[2]]]
 
     #now loop through points and build facets on cylinder
     #front face
@@ -455,12 +457,13 @@ if __name__ == '__main__':
         x,y,z,domain=test_cylinder(nx,ntheta)
         write_csv_file(x,y,z,'cyl')
     elif try_new_darpa:
-        ntheta = 32
-        x,y,z,theta_offset,np,x_ll,L = darpa2gen(nx,ntheta)
+        ntheta = 8
+        x,y,z,theta_offset,np,x_ll,L = darpa2gen(nx,ntheta,pad_x=10.0, pad_r_fact=8.)
         write_csv_file(x[:np],y[:np],z[:np],'darpa2')
         domain = build_domain_from_axisymmetric_points(x[:np,:],y[:np,:],z[:np,:],x_ll,L,include_front_and_back=0,theta_offset_user=theta_offset[:np+1],name='darpa2')
 	domain.writePLY('darpa2')
 	domain.writePoly('darpa2')
+	domain.writeGeo('darpa2')
 
     else:
         x,y,np = darpa2gen_orig(nx)
