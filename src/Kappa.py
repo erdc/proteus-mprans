@@ -304,6 +304,8 @@ NOTE: assumes 3d for now
                                            c[('da',0,0,0)],
                                            c[('r',0)],
                                            c[('dr',0,0)])
+        else:
+            print "WARNING! dissipation_model_flag == 2 not implemented in Kappa.coefficients"
 class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
     def __init__(self,

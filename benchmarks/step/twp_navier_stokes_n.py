@@ -27,8 +27,8 @@ linearSmoother    = None
 matrix = SparseMatrix
 
 if not use_petsc4py:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver      = PETSc
+    multilevelLinearSolver = LU
+    levelLinearSolver      = LU
 else:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py

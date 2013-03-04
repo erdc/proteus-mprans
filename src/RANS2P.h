@@ -1011,7 +1011,9 @@ namespace proteus
       //k-omega
       nu_t_komega = turb_var_0/(turb_var_1 + div_zero);
       //
-      nu_t = isKEpsilon*nu_t_keps + (1.0-isKEpsilon)*nu_t_komega;
+      //mwf hack nu_t = isKEpsilon*nu_t_keps + (1.0-isKEpsilon)*nu_t_komega;
+      assert(isKEpsilon==1.0);
+      nu_t = nu_t_keps;
       nu_t = fmax(nu_t,1.0e-4*nu); //limit according to Lew, Buscaglia etal 01
 #ifdef COMPRESSIBLE_FORM
       eddy_viscosity = nu_t*rho;

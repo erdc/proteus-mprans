@@ -14,7 +14,7 @@ spaceOrder=1
 useHex=False
 useRBLES   = 0.0
 useMetrics = 0.0
-use_petsc4py=True
+use_petsc4py=False
 quasi2D = True
 use_PlanePoiseuille = False
 use_KOmega = True
@@ -138,9 +138,9 @@ g = [0.0,0.0,0.0]
 residence_time = length/inflow
 T=10.0#10.0*length/inflow
 #tnList = [0.0,0.1*residence_time,T]
-nDTout=100
+nDTout=10
 tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
-
+runCFL=0.9
 
 #----------------------------------------------------
 # Boundary conditions and other flags

@@ -221,7 +221,7 @@ namespace proteus
       //eddy viscosity 
       nu_t     = isKEpsilon*c_mu*k_old*k_old/(dissipation+div_eps)
 	+ (1.0-isKEpsilon)*k_old/(dissipation+div_eps); 
-      
+
       nu_t     = fmax(nu_t,1.e-4*nu);
       dnu_t_dk = 0.0;
 

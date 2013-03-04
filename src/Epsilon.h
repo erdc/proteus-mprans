@@ -333,7 +333,7 @@ namespace proteus
       else
 	{
 	  //K-Epsilon
-	  gamma_e = fmax(c_2*epsilon_old/(k+div_eps),0.0);
+	  gamma_e = fmax(c_2*epsilon_old/(k/*mwf hack +div_eps*/),0.0);
 	  dgamma_e_d_epsilon = 0.0;
 	  F_e = fmax(c_1*k*PiD4,0.0);
 	  dF_e_d_epsilon=0.0;
