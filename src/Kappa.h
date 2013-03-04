@@ -613,7 +613,6 @@ namespace proteus
     {
       //cek should this be read in?
       double Ct_sge = 4.0;
-
       //loop over elements to compute volume integrals and load them into element and global residual
       //
       //eN is the element index
