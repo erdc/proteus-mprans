@@ -232,9 +232,9 @@ kappa_shockCapturingFactor=0.9
 kappa_sc_uref = 1.0
 kappa_sc_beta = 1.5
 
-epsilon_shockCapturingFactor=0.9
-epsilon_sc_uref = 1.0
-epsilon_sc_beta = 1.5
+dissipation_shockCapturingFactor=0.9
+dissipation_sc_uref = 1.0
+dissipation_sc_beta = 1.5
 
 #----------------------------------------------------
 # Interface width
