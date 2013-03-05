@@ -5,7 +5,7 @@ from proteus.mprans import Kappa
 
 LevelModelType = Kappa.LevelModel
 
-coefficients = Kappa.Coefficients(V_model=0,ME_model=3,LS_model=1,RD_model=None,epsilon_model=4,
+coefficients = Kappa.Coefficients(V_model=0,ME_model=3,LS_model=1,RD_model=None,dissipation_model=4,
                                   useMetrics=useMetrics,
                                   rho_0=rho_0,nu_0=nu_0,
                                   rho_1=rho_1,nu_1=nu_1,

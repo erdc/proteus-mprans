@@ -5,7 +5,7 @@ pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
           ("ls_p",                "ls_n"),
           ("redist_p",            "redist_n"),
           ("kappa_p", "kappa_n"),
-          ("epsilon_p", "epsilon_n")]
+          ("dissipation_p", "dissipation_n")]
 
     
 name = "suboff_p"

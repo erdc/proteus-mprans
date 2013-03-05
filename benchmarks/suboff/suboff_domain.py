@@ -6,7 +6,7 @@ import numpy
 def discretize_yz_plane(y,z,r,theta):
         y[:] = r*numpy.cos(theta)
         z[:] = r*numpy.sin(theta)
-def test_cylinder(nx,ntheta):
+def build_cylinder(nx,ntheta,pad_x=5.0,pad_r_fact=2.0):
     """
     work on building mesh of a cylinder
     """
@@ -16,9 +16,9 @@ def test_cylinder(nx,ntheta):
     #surrounding domain
     r = 1.0 #cylinder
     xL   = 0.0 #starting point for cylinder
-    cyl_length=10
-    x_ll = [-5.,-r-5,-r-5] #lower left for bounding box
-    L = [10.0+cyl_length,2.0*r+10.,2.0*r+10.] #domain box
+    cyl_length=5.
+    x_ll = [-pad_x*0.5,-r - 0.5*pad_r_fact,-r - 0.5*pad_r_fact] #lower left for bounding box
+    L = [pad_x+cyl_length,2.0*r + pad_r_fact,2.0*r + pad_r_fact] #domain box
 
     x = numpy.zeros((nx,ntheta),'d'); y = numpy.zeros((nx,ntheta),'d'); z = numpy.zeros((nx,ntheta),'d')
 
@@ -30,7 +30,7 @@ def test_cylinder(nx,ntheta):
     #build x,y,z points on cylinder
     for i in range(nx):
         x[i].fill(xL+i*dx)
-        discretize_yz_plane(y,z,r,theta)
+        discretize_yz_plane(y[i],z[i],r,theta)
     #
     boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
     #build poly representation
@@ -71,7 +71,9 @@ def test_cylinder(nx,ntheta):
     #now loop through points and build facets on cylinder
     #front face
     def vN(i,j):
-        return 8 + i*ntheta + (j % ntheta)
+        offset = 8; 
+	if i > 0: offset += (i-1)*ntheta
+	return offset + (j % ntheta)
     #mwf debug
     #import pdb
     #pdb.set_trace()
@@ -104,10 +106,7 @@ def test_cylinder(nx,ntheta):
                                                          holes=holes)
     #go ahead and add a boundary tags member 
     domain.boundaryTags = boundaryTags
-    domain.writePLY("cyl")
-    domain.writePoly("cyl")
-
-    return x,y,z,domain
+    return x,y,z,domain,x_ll,L
 
 def build_domain_from_axisymmetric_points(x,y,z,x_ll,L,regions=None,regionFlags=None,include_front_and_back=1,theta_offset_user=None,name='axi'):
     """
@@ -274,8 +273,8 @@ def darpa2gen(nx,ntheta,pad_x=4., pad_r_fact=4.,length_conv=1.0):
     k0   = 10.0
     k1   = 44.6244
     #bounding box info
-    x_ll = [-pad_x*0.5,-rmax*0.5*pad_r_fact,-rmax*0.5*pad_r_fact] #lower left for bounding box
-    L = [pad_x+xc,pad_r_fact*rmax,pad_r_fact*rmax] #domain box
+    x_ll = [-pad_x*0.5,-rmax - 0.5*pad_r_fact,-rmax -0.5*pad_r_fact] #lower left for bounding box
+    L = [pad_x+xc,2.0*rmax + pad_r_fact, 2.0*rmax + pad_r_fact] #domain box
 
     
     #
@@ -450,11 +449,14 @@ def darpa2gen_orig(npoints):
 if __name__ == '__main__':
 
     nx = 300
-    try_cylinder = False
+    try_cylinder = True
     try_new_darpa= True
     if try_cylinder:
         nx=11;ntheta=8
-        x,y,z,domain=test_cylinder(nx,ntheta)
+        x,y,z,domain,x_ll,L =build_cylinder(nx,ntheta)
+	domain.writePLY("cyl")
+	domain.writePoly("cyl")
+ 
         write_csv_file(x,y,z,'cyl')
     elif try_new_darpa:
         ntheta = 8

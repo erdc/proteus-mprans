@@ -16,6 +16,7 @@ useRBLES   = 0.0
 useMetrics = 0.0
 use_petsc4py=True
 quasi2D = True
+test_cylinder = False
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -70,13 +71,31 @@ if useHex:
         failed = os.system("../../scripts/marinHexMesh")      
      
     domain = Domain.MeshHexDomain("marinHex") 
+elif test_cylinder:
+    nx = 11 ; ntheta = 8; pad_x=5.0; pad_r_fact=2.0
+    x,y,z,domain,x_ll,L = suboff_domain.build_cylinder(nx,ntheta,pad_x=pad_x,pad_r_fact=pad_r_fact)
+
+    boundaryTags = domain.boundaryTags
+
+    upstream_height=L[2]
+    width = L[1]
+    length = L[0]
+    sub_length = L[0]-pad_x
+    he = (sub_length)/float(6.5*Refinement)
+    if quasi2D:
+        width = he
+
+    domain.writePLY("mesh_cyl")
+    domain.writePoly("mesh_cyl")
+    triangleOptions="VApq1.25ena"
+
 else:
     #discretization size for theta in y,z plane
     ntheta = 8
     #max number of points in x, need to get rid of this
     max_nx = 300
     #how much to pad bounding box
-    pad_x = 10.; pad_r_fact = 8.0
+    pad_x = 10.; pad_r_fact = 4.0
     #convert from feet to meters
     feet2meter = 0.3048
     #returns x,y,z points along hull, 
@@ -140,9 +159,9 @@ g = [0.0,0.0,0.0]
 #----------------------------------------------------
 
 residence_time = length/inflow
-T=10.0#10.0*length/inflow
+T=1.0e-1#10.0*length/inflow
 #tnList = [0.0,0.1*residence_time,T]
-nDTout=10
+nDTout=1
 tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
 
 
