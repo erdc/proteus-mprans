@@ -4,8 +4,8 @@ from proteus import *
 from proteus.Transport import *
 from proteus.Transport import OneLevelTransport
 
-cdef extern from "Epsilon.h" namespace "proteus":
-    cdef cppclass Epsilon_base:
+cdef extern from "Dissipation.h" namespace "proteus":
+    cdef cppclass Dissipation_base:
         void calculateResidual(double* mesh_trial_ref,
                                double* mesh_grad_trial_ref,
                                double* mesh_dof,
@@ -150,7 +150,7 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double* ebqe_phi,double epsFact,
                                double* ebqe_kappa,#kinetic energy 
                                double* ebqe_porosity)#VRANS
-    Epsilon_base* newEpsilon(int nSpaceIn,
+    Dissipation_base* newDissipation(int nSpaceIn,
                        int nQuadraturePoints_elementIn,
                        int nDOF_mesh_trial_elementIn,
                        int nDOF_trial_elementIn,
@@ -158,8 +158,8 @@ cdef extern from "Epsilon.h" namespace "proteus":
                        int nQuadraturePoints_elementBoundaryIn,
                        int CompKernelFlag)
 
-cdef class cEpsilon_base:
-   cdef Epsilon_base* thisptr
+cdef class cDissipation_base:
+   cdef Dissipation_base* thisptr
    def __cinit__(self,
                  int nSpaceIn,
                  int nQuadraturePoints_elementIn,
@@ -168,7 +168,7 @@ cdef class cEpsilon_base:
                  int nDOF_test_elementIn,
                  int nQuadraturePoints_elementBoundaryIn,
                  int CompKernelFlag):
-       self.thisptr = newEpsilon(nSpaceIn,
+       self.thisptr = newDissipation(nSpaceIn,
                              nQuadraturePoints_elementIn,
                              nDOF_mesh_trial_elementIn,
                              nDOF_trial_elementIn,

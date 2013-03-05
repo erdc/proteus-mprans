@@ -1,14 +1,13 @@
 import proteus
-from proteus.mprans.cEpsilon import *
+from proteus.mprans.cDissipation import *
 
 """
 TODO:
-  just skip evaluate routine in Coefficients?
-  grab TWP velocity dofs and calculate gradients locally in getResidual routine 
+  Add k-omega equation
 NOTES:
   Hardwired Numerics include: 
-   lagging all terms from Navier-Stokes, Epsilon equations
-   same solution space for velocity from Navier-Stokes and Epsilon equations
+   lagging all terms from Navier-Stokes, Kappa equations
+   same solution space for velocity from Navier-Stokes and Dissipation equations
      This can be removed by saving gradient calculations in N-S and lagging
      rather than passing degrees of freedom between models
 
@@ -16,7 +15,7 @@ NOTES:
 class Coefficients(proteus.TransportCoefficients.TC_base):
     """
 Basic k-epsilon model for incompressible flow from Hutter etal Chaper 11
- but solves for just k assuming epsilon computed independently and lagged in time
+ or k-omega (Wilcox 1998). Solves for just dissipation variable (epsilon, or omega) assuming kappa (intensity) computed independently and lagged in time
 
 \bar{\vec v} = <\vec v> Reynolds-averaged (mean) velocity
 \vec v^{'}   = turbulent fluctuation 
@@ -92,7 +91,7 @@ NOTE: assumes 3d for now
             self.variableNames=['omega']
         nc=1
         self.nd = nd
-        assert self.nd == 3, "Epsilon only implements 3d for now" #assume 3d for now
+        assert self.nd == 3, "Dissipation only implements 3d for now" #assume 3d for now
         self.rho_0 = rho_0; self.nu_0 = nu_0
         self.rho_1 = rho_1; self.nu_1 = nu_1
         self.c_mu = c_mu;  self.c_1=c_1; self.c_2=c_2; self.c_e=c_e;
@@ -136,7 +135,7 @@ NOTE: assumes 3d for now
     def initializeMesh(self,mesh):
         self.eps = self.epsFact*mesh.h
     def attachModels(self,modelList):
-        assert self.modelIndex != None and self.modelIndex < len(modelList), "Epsilon: invalid index for self model allowed range: [0,%s]" % len(modelList)
+        assert self.modelIndex != None and self.modelIndex < len(modelList), "Dissipation: invalid index for self model allowed range: [0,%s]" % len(modelList)
         #self
         self.model = modelList[self.modelIndex]
 	
@@ -156,7 +155,7 @@ NOTE: assumes 3d for now
             else:
                 self.ebq_phi = None
         #flow model
-        assert self.flowModelIndex != None, "Epsilon: invalid index for flow model allowed range: [0,%s]" % len(modelList)
+        assert self.flowModelIndex != None, "Dissipation: invalid index for flow model allowed range: [0,%s]" % len(modelList)
         #print "flow model index------------",self.flowModelIndex,modelList[self.flowModelIndex].q.has_key(('velocity',0))
         if self.flowModelIndex != None: #keep for debugging for now
             if modelList[self.flowModelIndex].q.has_key(('velocity',0)):
@@ -204,7 +203,7 @@ NOTE: assumes 3d for now
             self.ebqe_porosity = numpy.ones(self.ebqe[('u',0)].shape,'d')
             
         #
-        #assert self.kappa_modelIndex != None and self.kappa_modelIndex < len(modelList), "Epsilon: invalid index for epsilon model allowed range: [0,%s]" % len(modelList) 
+        #assert self.kappa_modelIndex != None and self.kappa_modelIndex < len(modelList), "Dissipation: invalid index for dissipation model allowed range: [0,%s]" % len(modelList) 
         if self.kappa_modelIndex != None: #keep for debugging for now
             #assume have q,ebqe always
             self.q_kappa = modelList[self.kappa_modelIndex].q[('u',0)]
@@ -262,7 +261,7 @@ NOTE: assumes 3d for now
         pass
     def evaluate(self,t,c):
         #mwf debug
-        #print "Epsiloncoeficients eval t=%s " % t 
+        #print "Dissipationcoeficients eval t=%s " % t 
         if c[('f',0)].shape == self.q_v.shape:
             v = self.q_v
             phi = self.q_phi
@@ -668,7 +667,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #TODO how to handle redistancing calls for calculateCoefficients,calculateElementResidual etc
         self.globalResidualDummy = None
         compKernelFlag=0
-        self.epsilon = cEpsilon_base(self.nSpace_global,
+        self.dissipation = cDissipation_base(self.nSpace_global,
                              self.nQuadraturePoints_element,
                              self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
                              self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
@@ -728,7 +727,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #mwf debug
         #import pdb
         #pdb.set_trace()
-        self.epsilon.calculateResidual(#element
+        self.dissipation.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
@@ -823,7 +822,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def getJacobian(self,jacobian):
 	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
 				       jacobian)
-        self.epsilon.calculateJacobian(#element
+        self.dissipation.calculateJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,

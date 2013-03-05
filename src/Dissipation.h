@@ -1,5 +1,5 @@
-#ifndef Epsilon_H
-#define Epsilon_H
+#ifndef Dissipation_H
+#define Dissipation_H
 #include <cmath>
 #include <iostream>
 #include "CompKernel.h"
@@ -7,11 +7,11 @@
 
 namespace proteus
 {
-  class Epsilon_base
+  class Dissipation_base
   {
     //The base class defining the interface
   public:
-    virtual ~Epsilon_base(){}
+    virtual ~Dissipation_base(){}
     virtual void calculateResidual(//element
 				   double* mesh_trial_ref,
 				   double* mesh_grad_trial_ref,
@@ -171,12 +171,12 @@ namespace proteus
 	   int nDOF_trial_element,
 	   int nDOF_test_element,
 	   int nQuadraturePoints_elementBoundary>
-  class Epsilon : public Epsilon_base
+  class Dissipation : public Dissipation_base
   {
   public:
     const int nDOF_test_X_trial_element;
     CompKernelType ck;
-    Epsilon():
+    Dissipation():
       nDOF_test_X_trial_element(nDOF_test_element*nDOF_trial_element),
       ck()
     {}
@@ -252,13 +252,13 @@ namespace proteus
 			      const double grad_vx[nSpace], //gradient of x component of velocity
 			      const double grad_vy[nSpace], //gradient of x component of velocity
 			      const double grad_vz[nSpace], //gradient of x component of velocity
-			      const double& epsilon,
-			      const double& epsilon_old,
+			      const double& dissipation,
+			      const double& dissipation_old,
 			      const double& k,
 			      const double& porosity,
 			      int dissipation_model_flag,
 			      const double grad_k[nSpace],
-			      const double grad_epsilon_old[nSpace],
+			      const double grad_dissipation_old[nSpace],
 			      double& m,
 			      double& dm,
 			      double f[nSpace],
@@ -271,22 +271,22 @@ namespace proteus
       const double div_eps = 1.0e-6;
       double nu_t=0.0,dnu_t_de=0.0,PiD4=0.0,disp=0.0,ddisp_de=0.0;
       double gamma_e=0.0,F_e=0.0, gamma_production=0.0,sigma_a=sigma_e, 
-	dgamma_e_d_epsilon=0.0, dF_e_d_epsilon=0.0;
+	dgamma_e_d_dissipation=0.0, dF_e_d_dissipation=0.0;
       //either K-Epsilon or K-Omega
       const double isKEpsilon = (dissipation_model_flag==2) ? 0.0 : 1.0;
-      m = epsilon*porosity;
+      m = dissipation*porosity;
       dm = porosity;
 
       for (int I=0; I < nSpace; I++)
 	{
-	  f[I] = v[I]*porosity*epsilon;
+	  f[I] = v[I]*porosity*dissipation;
 	  df[I] = v[I]*porosity;
 	}
       const double H_mu = smoothedHeaviside(eps_mu,phi);
       const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
       //eddy viscosity 
-      nu_t     = isKEpsilon*c_mu*k*k/(epsilon_old+div_eps)
-	+ (1.0-isKEpsilon)*k/(epsilon_old+div_eps);
+      nu_t     = isKEpsilon*c_mu*k*k/(dissipation_old+div_eps)
+	+ (1.0-isKEpsilon)*k/(dissipation_old+div_eps);
 
       dnu_t_de = 0.0;
       nu_t = fmax(nu_t,1.e-4*nu);
@@ -308,9 +308,9 @@ namespace proteus
 	  //temporaries
 	  double sigma_k=1.,beta_star=1.,beta=1.0;
 	  computeK_OmegaCoefficients(k,
-				     epsilon_old,
+				     dissipation_old,
 				     grad_k,
-				     grad_epsilon_old,
+				     grad_dissipation_old,
 				     grad_vx,
 				     grad_vy,
 				     grad_vz,
@@ -320,31 +320,31 @@ namespace proteus
 				     beta,
 				     gamma_production);
 	  //--full lagging of Gamma_e
-	  dgamma_e_d_epsilon=0.0;
-	  gamma_e=fmax(beta*epsilon_old,0.0);
+	  dgamma_e_d_dissipation=0.0;
+	  gamma_e=fmax(beta*dissipation_old,0.0);
 	  //--quadratic nonlinearity
-	  //dgamma_e_d_epsilon = fmax(beta,0.0);
-	  //gamma_e = dgamma_e_d_epsilon*epsilon;
+	  //dgamma_e_d_dissipation = fmax(beta,0.0);
+	  //gamma_e = dgamma_e_d_dissipation*dissipation;
 	  
 	  //-- full lagging of production
-	  dF_e_d_epsilon=0.0;
+	  dF_e_d_dissipation=0.0;
 	  F_e = fmax(PiD4*gamma_production,0.0);
 	}
       else
 	{
 	  //K-Epsilon
-	  gamma_e = fmax(c_2*epsilon_old/(k+div_eps),0.0);
-	  dgamma_e_d_epsilon = 0.0;
+	  gamma_e = fmax(c_2*dissipation_old/(k+div_eps),0.0);
+	  dgamma_e_d_dissipation = 0.0;
 	  F_e = fmax(c_1*k*PiD4,0.0);
-	  dF_e_d_epsilon=0.0;
+	  dF_e_d_dissipation=0.0;
 	  sigma_a = sigma_e;
 	}
 
       a = porosity*(nu_t/sigma_a + nu);
       da_de = porosity*dnu_t_de/sigma_a;
 
-      r = -porosity*F_e + porosity*gamma_e*epsilon;
-      dr_de = -porosity*dF_e_d_epsilon + porosity*gamma_e + porosity*dgamma_e_d_epsilon;
+      r = -porosity*F_e + porosity*gamma_e*dissipation;
+      dr_de = -porosity*dF_e_d_dissipation + porosity*gamma_e + porosity*dgamma_e_d_dissipation;
     }
 
     inline
@@ -728,7 +728,7 @@ namespace proteus
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u);
 	      ck.gradFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u_old);
 	      //
-	      //compute velocity production terms, ***assumes same spaces for velocity dofs and Epsilon!***
+	      //compute velocity production terms, ***assumes same spaces for velocity dofs and Dissipation!***
 	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vx);
 	      ck.gradFromDOF(velocity_dof_v,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vy);
 	      ck.gradFromDOF(velocity_dof_w,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vz);
@@ -973,7 +973,7 @@ namespace proteus
 	      grad_kappa_ext_dummy[0] = 0.0; grad_kappa_ext_dummy[1] = 0.0; grad_kappa_ext_dummy[2] = 0.0;
 	      
 	      //
-	      //compute velocity production terms, ***assumes same spaces for velocity dofs and Epsilon!***
+	      //compute velocity production terms, ***assumes same spaces for velocity dofs and Dissipation!***
 	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vx_ext);
 	      ck.gradFromDOF(velocity_dof_v,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vy_ext);
 	      ck.gradFromDOF(velocity_dof_w,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vz_ext);
@@ -1268,7 +1268,7 @@ namespace proteus
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u);
 	      ck.gradFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u_old);
 	      //
-	      //compute velocity production terms, ***assumes same spaces for velocity dofs and Epsilon!***
+	      //compute velocity production terms, ***assumes same spaces for velocity dofs and Dissipation!***
 	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vx);
 	      ck.gradFromDOF(velocity_dof_v,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vy);
 	      ck.gradFromDOF(velocity_dof_w,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vz);
@@ -1523,7 +1523,7 @@ namespace proteus
 	      grad_kappa_ext_dummy[0] = 0.0; grad_kappa_ext_dummy[1] = 0.0; grad_kappa_ext_dummy[2] = 0.0;
 
 	      //
-	      //compute velocity production terms, ***assumes same spaces for velocity dofs and Epsilon!***
+	      //compute velocity production terms, ***assumes same spaces for velocity dofs and Dissipation!***
 	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vx_ext);
 	      ck.gradFromDOF(velocity_dof_v,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vy_ext);
 	      ck.gradFromDOF(velocity_dof_w,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vz_ext);
@@ -1651,9 +1651,9 @@ namespace proteus
 	    }//kb
 	}//ebNE
     }//computeJacobian
-  };//Epsilon
+  };//Dissipation
 
-  inline Epsilon_base* newEpsilon(int nSpaceIn,
+  inline Dissipation_base* newDissipation(int nSpaceIn,
 				int nQuadraturePoints_elementIn,
 				int nDOF_mesh_trial_elementIn,
 				int nDOF_trial_elementIn,
@@ -1661,7 +1661,7 @@ namespace proteus
 				int nQuadraturePoints_elementBoundaryIn,
 				int CompKernelFlag)
   {
-    return proteus::chooseAndAllocateDiscretization<Epsilon_base,Epsilon,CompKernel>(nSpaceIn,
+    return proteus::chooseAndAllocateDiscretization<Dissipation_base,Dissipation,CompKernel>(nSpaceIn,
 									     nQuadraturePoints_elementIn,
 									     nDOF_mesh_trial_elementIn,
 									     nDOF_trial_elementIn,
