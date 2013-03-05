@@ -17,7 +17,7 @@ useMetrics = 0.0
 use_petsc4py=True
 quasi2D = True
 use_PlanePoiseuille = False
-use_KOmega = True
+use_KOmega = False
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
