@@ -48,7 +48,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  epsFact_solid=1.0,
                  eb_adjoint_sigma=1.0,
                  forceStrongDirichlet=False,
-                 turbulenceClosureModel=0, #0=No Model 1=Smagorinksy 2=Dynamic Smagorinsky 3=K-Epsilon
+                 turbulenceClosureModel=0, #0=No Model, 1=Smagorinksy, 2=Dynamic Smagorinsky, 3=K-Epsilon, 4=K-Omega 
                  smagorinskyConstant=0.1,
                  barycenters=None):
         self.barycenters=barycenters

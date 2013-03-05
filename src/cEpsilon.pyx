@@ -35,6 +35,9 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double c_1,
                                double c_2,
                                double c_e,
+                               double rho_0,
+                               double rho_1,
+                               int dissipation_model_flag,
                                #end diffusion
 			       double useMetrics, 
                                double alphaBDF,
@@ -47,6 +50,7 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double* velocity,
                                double* phi_ls, #level set variable
                                double* q_kappa, #kinetic energy variable
+                               double* q_grad_kappa, 
                                double* q_porosity, #VRANS
                                #velocity dof
                                double * velocity_dof_u,
@@ -55,6 +59,7 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                #end velocity dof
                                double* q_m,
                                double* q_u,
+                               double* q_grad_u,
                                double* q_m_betaBDF,
                                double* cfl,
                                double* q_numDiff_u, 
@@ -105,6 +110,9 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double c_1,
                                double c_2,
                                double c_e,
+                               double rho_0,
+                               double rho_1,
+                               int dissipation_model_flag,
                                #end diffuion
 			       double useMetrics, 
                                double alphaBDF,
@@ -116,6 +124,7 @@ cdef extern from "Epsilon.h" namespace "proteus":
                                double* velocity,
                                double* phi_ls, #level set variable
                                double* q_kappa, #kinetic energy 
+                               double* q_grad_kappa, 
                                double* q_porosity, #VRANS
                                #velocity dof
                                double* velocity_dof_u,
@@ -198,6 +207,9 @@ cdef class cEpsilon_base:
                          double c_1,
                          double c_2,
                          double c_e,
+                         double rho_0,
+                         double rho_1,
+                         int dissipation_model_flag,
                          #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
@@ -211,6 +223,7 @@ cdef class cEpsilon_base:
                          numpy.ndarray velocity,
                          numpy.ndarray phi_ls, #level set variable
                          numpy.ndarray q_kappa, #kinetic energy 
+                         numpy.ndarray q_grad_kappa, 
                          numpy.ndarray q_porosity, #VRANS
                          #velocity dof
                          numpy.ndarray velocity_dof_u,
@@ -219,6 +232,7 @@ cdef class cEpsilon_base:
                          #end velocity dof
                          numpy.ndarray q_m,
                          numpy.ndarray q_u,
+                         numpy.ndarray q_grad_u,
                          numpy.ndarray q_m_betaBDF,
                          numpy.ndarray cfl,
                          numpy.ndarray q_numDiff_u, 
@@ -269,6 +283,9 @@ cdef class cEpsilon_base:
                                        c_1,
                                        c_2,
                                        c_e,
+                                       rho_0,
+                                       rho_1,
+                                       dissipation_model_flag,
                                        #end diffuion
 			               useMetrics, 
                                        alphaBDF,
@@ -282,6 +299,7 @@ cdef class cEpsilon_base:
                                        <double*> velocity.data,
                                        <double*> phi_ls.data,
                                        <double*> q_kappa.data,#kinetic energy 
+                                       <double*> q_grad_kappa.data,#kinetic energy 
                                        <double*> q_porosity.data,#kinetic energy 
                                        #velocity dof
                                        <double*> velocity_dof_u.data,
@@ -290,6 +308,7 @@ cdef class cEpsilon_base:
                                       #end velocity dof
                                        <double*> q_m.data,
                                        <double*> q_u.data,
+                                       <double*> q_grad_u.data,
                                        <double*> q_m_betaBDF.data,
                                        <double*> cfl.data,
                                        <double*> q_numDiff_u.data, 
@@ -342,6 +361,9 @@ cdef class cEpsilon_base:
                          double c_1,
                          double c_2,
                          double c_e,
+                         double rho_0,
+                         double rho_1,
+                         int dissipation_model_flag,
                          #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
@@ -353,6 +375,7 @@ cdef class cEpsilon_base:
                          numpy.ndarray velocity,
                          numpy.ndarray phi_ls, #level set variable
                          numpy.ndarray q_kappa, #kinetic energy 
+                         numpy.ndarray q_grad_kappa, #kinetic energy 
                          numpy.ndarray q_porosity, #VRANS
                          #velocity dof
                          numpy.ndarray velocity_dof_u,
@@ -411,6 +434,9 @@ cdef class cEpsilon_base:
                                        c_1,
                                        c_2,
                                        c_e,
+                                       rho_0,
+                                       rho_1,
+                                       dissipation_model_flag,
                                        #end diffusion
 			               useMetrics, 
                                        alphaBDF,
@@ -422,6 +448,7 @@ cdef class cEpsilon_base:
                                        <double*> velocity.data,
                                        <double*> phi_ls.data,
                                        <double*> q_kappa.data,
+                                       <double*> q_grad_kappa.data,
                                        <double*> q_porosity.data,
                                        #velocity dofs
                                        <double*> velocity_dof_u.data,

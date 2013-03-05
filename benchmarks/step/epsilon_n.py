@@ -28,10 +28,11 @@ else:
     levelLinearSolver      = LU
 
 linear_solver_options_prefix = 'epsilon_'
-levelNonlinearSolverConvergenceTest = 'rits'
-linearSolverConvergenceTest         = 'rits'
+levelNonlinearSolverConvergenceTest = 'r'#'rits'
+linearSolverConvergenceTest         = 'r'#'rits'
 
-tolFac = 0.
+tolFac = 0.0
+
 nl_atol_res = 1.0e-6
 nl_rtol_res = 0.0
 

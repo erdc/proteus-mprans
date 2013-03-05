@@ -44,6 +44,9 @@ namespace proteus
 				   double c_1,
 				   double c_2,
 				   double c_e,
+				   double rho_0,
+				   double rho_1,
+				   int dissipation_model_flag,
 				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
@@ -56,6 +59,7 @@ namespace proteus
 				   double* velocity,
 				   double* phi_ls, //level set variable
 				   double* q_kappa, //kinetic energy variable
+				   double* q_grad_kappa,
 				   double* q_porosity, //VRANS
                                    //velocity dof
                                    double * velocity_dof_u,
@@ -64,6 +68,7 @@ namespace proteus
                                    //end velocity dof
 				   double* q_m,
 				   double* q_u,
+				   double* q_grad_u,
 				   double* q_m_betaBDF,
 				   double* cfl,
 				   double* q_numDiff_u, 
@@ -117,6 +122,9 @@ namespace proteus
 				   double c_1,
 				   double c_2,
 				   double c_e,
+				   double rho_0,
+				   double rho_1,
+				   int dissipation_model_flag,
 				   //end diffusion
 			           double useMetrics, 
 				   double alphaBDF,
@@ -128,6 +136,7 @@ namespace proteus
 				   double* velocity,
 				   double* phi_ls, //level set variable
 				   double* q_kappa, //kinetic energy
+				   double* q_grad_kappa,
 				   double* q_porosity,//VRANS
                                    //velocity dof
                                    double * velocity_dof_u,
@@ -171,7 +180,64 @@ namespace proteus
       nDOF_test_X_trial_element(nDOF_test_element*nDOF_trial_element),
       ck()
     {}
-   //Try Lew, Buscaglia approximation
+
+    inline
+    void computeK_OmegaCoefficients(const double& k,
+				    const double& omega,
+				    const double grad_k[nSpace],
+				    const double grad_omega[nSpace],
+				    const double grad_vx[nSpace], //gradient of x component of velocity
+				    const double grad_vy[nSpace], //gradient of x component of velocity
+				    const double grad_vz[nSpace], //gradient of x component of velocity				      
+				    double& inverse_sigma_k,
+				    double& inverse_sigma_omega,
+				    double& beta_star,
+				    double& beta,
+				    double& gamma)
+    {
+      const double div_eps = 1.0e-6;
+      //take these from NASA Langley Turbulence Model page
+      //brute force just to see if I can figure it out
+      //use inverse of sigma_k to match standard k-epsilon form
+      inverse_sigma_k = 2.0; inverse_sigma_omega=2.0; gamma = 13.0/25.0;
+      const double beta0_star = 0.09; const double beta0 = 9.0/125.0;
+      double Omega[nSpace][nSpace] = {{0.,0.,0,},
+				      {0.,0.,0.},
+				      {0.,0.,0.}};
+      double S[nSpace][nSpace] = {{0.0,0.,0.},
+				  {0.,0.,0.},
+				  {0.,0.,0.}};
+
+      //Omega_ij = (\pd{u_i}{x_j} - \pd{u_j}{x_i})/2
+      Omega[0][1] = 0.5*(grad_vx[1]-grad_vy[0]); Omega[0][2] = 0.5*(grad_vx[2]-grad_vz[0]);
+      Omega[1][0] =-Omega[0][1]; Omega[1][2] = 0.5*(grad_vy[2]-grad_vz[1]);
+      Omega[2][0] =-Omega[0][2]; Omega[2][1] =-Omega[1][2];
+      //S_ij = (\pd{u_i}{x_j} + \pd{u_j}{x_i})/2
+      S[0][0] = grad_vx[0]; S[0][1] = 0.5*(grad_vx[1]+grad_vy[0]);  S[0][2] = 0.5*(grad_vx[2]+grad_vz[0]);
+      S[1][0] = S[0][1];    S[1][1] = grad_vy[1];                   S[1][2] = 0.5*(grad_vy[2] + grad_vz[1]);
+      S[2][0] = S[0][2];    S[2][1] = S[1][2];                      S[2][2] = grad_vz[2];
+      
+      double chi_omega = 0.0;
+      for (int i=0; i < nSpace; i++)
+	for (int k=0; k < nSpace; k++)
+	  for (int j=0; j < nSpace; j++)
+	    chi_omega += Omega[i][j]*Omega[j][k]*S[k][i];
+      
+      chi_omega = fabs(chi_omega/(div_eps + beta0_star*omega*beta0_star*omega*beta0_star*omega));
+
+      const double f_beta = (1.0+70.0*chi_omega)/(1.0 + 80.0*chi_omega);
+      beta = beta0*f_beta;
+
+      double chi_k = grad_k[0]*grad_omega[0] + grad_k[1]*grad_omega[1] + grad_k[2]*grad_omega[2];
+      chi_k = chi_k/(omega*omega*omega+div_eps);
+      double f_beta_star = 1.0;
+      if (chi_k > 0.0)
+	f_beta_star = (1.0 + 680.0*chi_k*chi_k)/(1.0 + 400.0*chi_k*chi_k);
+
+      beta_star = beta0_star*f_beta_star;
+    }
+
+    //Try Lew, Buscaglia approximation
     inline
     void evaluateCoefficients(const double v[nSpace],
 			      const double eps_mu,
@@ -190,6 +256,9 @@ namespace proteus
 			      const double& epsilon_old,
 			      const double& k,
 			      const double& porosity,
+			      int dissipation_model_flag,
+			      const double grad_k[nSpace],
+			      const double grad_epsilon_old[nSpace],
 			      double& m,
 			      double& dm,
 			      double f[nSpace],
@@ -201,7 +270,10 @@ namespace proteus
     {
       const double div_eps = 1.0e-6;
       double nu_t=0.0,dnu_t_de=0.0,PiD4=0.0,disp=0.0,ddisp_de=0.0;
-      double gamma_e=0.0,F_e=0.0;
+      double gamma_e=0.0,F_e=0.0, gamma_production=0.0,sigma_a=sigma_e, 
+	dgamma_e_d_epsilon=0.0, dF_e_d_epsilon=0.0;
+      //either K-Epsilon or K-Omega
+      const double isKEpsilon = (dissipation_model_flag==2) ? 0.0 : 1.0;
       m = epsilon*porosity;
       dm = porosity;
 
@@ -213,13 +285,13 @@ namespace proteus
       const double H_mu = smoothedHeaviside(eps_mu,phi);
       const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
       //eddy viscosity 
-      nu_t     = c_mu*k*k/(epsilon_old+div_eps);
+      nu_t     = isKEpsilon*c_mu*k*k/(epsilon_old+div_eps)
+	+ (1.0-isKEpsilon)*k/(epsilon_old+div_eps);
+
       dnu_t_de = 0.0;
       nu_t = fmax(nu_t,1.e-4*nu);
 
-      a = porosity*(nu_t/sigma_e + nu);
-      da_de = porosity*dnu_t_de/sigma_e;
-
+      //Production term
       PiD4 = 2.0*(grad_vx[0]*grad_vx[0] + 
 		  grad_vy[1]*grad_vy[1] + 
 		  grad_vz[2]*grad_vz[2]) 
@@ -230,11 +302,49 @@ namespace proteus
 	+
 	(grad_vy[2] + grad_vz[1])*(grad_vy[2] + grad_vz[1]);
 
-      gamma_e = fmax(c_2*epsilon_old/k,0.0);
-      F_e = fmax(c_1*k*PiD4,0.0);
+      //K-Omega
+      if (dissipation_model_flag==2)
+	{
+	  //temporaries
+	  double sigma_k=1.,beta_star=1.,beta=1.0;
+	  computeK_OmegaCoefficients(k,
+				     epsilon_old,
+				     grad_k,
+				     grad_epsilon_old,
+				     grad_vx,
+				     grad_vy,
+				     grad_vz,
+				     sigma_k,
+				     sigma_a,
+				     beta_star,
+				     beta,
+				     gamma_production);
+	  //--full lagging of Gamma_e
+	  dgamma_e_d_epsilon=0.0;
+	  gamma_e=fmax(beta*epsilon_old,0.0);
+	  //--quadratic nonlinearity
+	  //dgamma_e_d_epsilon = fmax(beta,0.0);
+	  //gamma_e = dgamma_e_d_epsilon*epsilon;
+	  
+	  //-- full lagging of production
+	  dF_e_d_epsilon=0.0;
+	  F_e = fmax(PiD4*gamma_production,0.0);
+	}
+      else
+	{
+	  //K-Epsilon
+	  gamma_e = fmax(c_2*epsilon_old/(k+div_eps),0.0);
+	  dgamma_e_d_epsilon = 0.0;
+	  F_e = fmax(c_1*k*PiD4,0.0);
+	  dF_e_d_epsilon=0.0;
+	  sigma_a = sigma_e;
+	}
+
+      a = porosity*(nu_t/sigma_a + nu);
+      da_de = porosity*dnu_t_de/sigma_a;
 
       r = -porosity*F_e + porosity*gamma_e*epsilon;
-      dr_de = porosity*gamma_e;
+      dr_de = -porosity*dF_e_d_epsilon + porosity*gamma_e + porosity*dgamma_e_d_epsilon;
     }
 
     inline
@@ -476,6 +586,9 @@ namespace proteus
 			   double c_1,
 			   double c_2,
 			   double c_e,
+			   double rho_0,
+			   double rho_1,
+			   int dissipation_model_flag,
 			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
@@ -488,6 +601,7 @@ namespace proteus
 			   double* velocity,
 			   double* phi_ls, //level set variable
 			   double* q_kappa, //kinetic energy
+			   double* q_grad_kappa,
 			   double* q_porosity, //VRANS
                            //velocity dof
                            double * velocity_dof_u,
@@ -496,6 +610,7 @@ namespace proteus
                            //end velocity dof
 			   double* q_m,
 			   double* q_u,
+			   double* q_grad_u,
 			   double* q_m_betaBDF,
 			   double* cfl,
 			   double* q_numDiff_u, 
@@ -649,6 +764,9 @@ namespace proteus
 				   u_old,
 				   q_kappa[eN_k],
 				   q_porosity[eN_k],
+				   dissipation_model_flag,
+				   &q_grad_kappa[eN_k_nSpace],
+				   grad_u_old,
 				   m,
 				   dm,
 				   f,
@@ -740,6 +858,8 @@ namespace proteus
 	      //
 	      q_u[eN_k] = u;
 	      q_m[eN_k] = m;
+	      for (int I=0; I < nSpace; I++)
+		q_grad_u[eN_k_nSpace+I] = grad_u[I];
 	    }
 	  //
 	  //load element into global residual and save element residual
@@ -776,6 +896,7 @@ namespace proteus
 		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
 	      register double u_ext=0.0,u_old_ext=0.0,
 		grad_u_ext[nSpace],grad_vx_ext[nSpace],grad_vy_ext[nSpace],grad_vz_ext[nSpace],
+		grad_u_old_ext[nSpace],grad_kappa_ext_dummy[nSpace],
 		m_ext=0.0,
 		dm_ext=0.0,
 		f_ext[nSpace],
@@ -846,7 +967,11 @@ namespace proteus
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_old_ext);
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_ext);
+	      ck.gradFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_old_ext);
 
+	      //mwf hack, skip on boundary for now
+	      grad_kappa_ext_dummy[0] = 0.0; grad_kappa_ext_dummy[1] = 0.0; grad_kappa_ext_dummy[2] = 0.0;
+	      
 	      //
 	      //compute velocity production terms, ***assumes same spaces for velocity dofs and Epsilon!***
 	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_vx_ext);
@@ -883,6 +1008,9 @@ namespace proteus
 				   u_old_ext,
 				   ebqe_kappa[ebNE_kb],
 				   ebqe_porosity[ebNE_kb],
+				   dissipation_model_flag,
+				   grad_kappa_ext_dummy,
+				   grad_u_old_ext,
 				   m_ext,
 				   dm_ext,
 				   f_ext,
@@ -908,6 +1036,9 @@ namespace proteus
 				   bc_u_ext,
 				   ebqe_kappa[ebNE_kb],
 				   ebqe_porosity[ebNE_kb],
+				   dissipation_model_flag,
+				   grad_kappa_ext_dummy,
+				   grad_u_old_ext,
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
@@ -1009,6 +1140,9 @@ namespace proteus
 			   double c_1,
 			   double c_2,
 			   double c_e,
+			   double rho_0,
+			   double rho_1,
+			   int dissipation_model_flag,
 			   //end diffusion
 			   double useMetrics, 
 			   double alphaBDF,
@@ -1020,6 +1154,7 @@ namespace proteus
 			   double* velocity,
 			   double* phi_ls, //level set variable
 			   double* q_kappa, //kinetic energy
+			   double* q_grad_kappa,
 			   double* q_porosity,//VRANS
                            //velocity dof
                            double * velocity_dof_u,
@@ -1067,7 +1202,7 @@ namespace proteus
 
 	      //declare local storage
 	      register double u=0.0,u_old=0.0,
-		grad_u[nSpace],grad_vx[nSpace],grad_vy[nSpace],grad_vz[nSpace],
+		grad_u[nSpace],grad_vx[nSpace],grad_vy[nSpace],grad_vz[nSpace],grad_u_old[nSpace],
 		m=0.0,dm=0.0,a=0.0,da=0.0,r=0.0,dr=0.0,
 		f[nSpace],df[nSpace],df_minus_da_grad_u[nSpace],
 		m_t=0.0,dm_t=0.0,
@@ -1131,6 +1266,7 @@ namespace proteus
 	      ck.valFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],&u_trial_ref[k*nDOF_trial_element],u_old);
 	      //get the solution gradients
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u);
+	      ck.gradFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_u_old);
 	      //
 	      //compute velocity production terms, ***assumes same spaces for velocity dofs and Epsilon!***
 	      ck.gradFromDOF(velocity_dof_u,&u_l2g[eN_nDOF_trial_element],u_grad_trial,grad_vx);
@@ -1167,6 +1303,9 @@ namespace proteus
 				   u_old,
 				   q_kappa[eN_k],
 				   q_porosity[eN_k],
+				   dissipation_model_flag,
+				   &q_grad_kappa[eN_k_nSpace],
+				   grad_u_old,
 				   m,
 				   dm,
 				   f,
@@ -1291,6 +1430,7 @@ namespace proteus
 	      register double u_ext=0.0,u_old_ext=0.0,
 		grad_u_ext[nSpace],
 		grad_vx_ext[nSpace],grad_vy_ext[nSpace],grad_vz_ext[nSpace],
+		grad_u_old_ext[nSpace],grad_kappa_ext_dummy[nSpace],
 		m_ext=0.0,
 		dm_ext=0.0,
 		f_ext[nSpace],
@@ -1377,6 +1517,10 @@ namespace proteus
 	      ck.valFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
 	      ck.valFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_old_ext);
 	      ck.gradFromDOF(u_dof,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_ext);
+	      ck.gradFromDOF(u_dof_old,&u_l2g[eN_nDOF_trial_element],u_grad_trial_trace,grad_u_old_ext);
+
+	      //mwf hack, skip on boundary for now
+	      grad_kappa_ext_dummy[0] = 0.0; grad_kappa_ext_dummy[1] = 0.0; grad_kappa_ext_dummy[2] = 0.0;
 
 	      //
 	      //compute velocity production terms, ***assumes same spaces for velocity dofs and Epsilon!***
@@ -1414,6 +1558,9 @@ namespace proteus
 				   u_old_ext,
 				   ebqe_kappa[ebNE_kb],
 				   ebqe_porosity[ebNE_kb],
+				   dissipation_model_flag,
+				   grad_kappa_ext_dummy,
+				   grad_u_old_ext,
 				   m_ext,
 				   dm_ext,
 				   f_ext,
@@ -1439,6 +1586,9 @@ namespace proteus
 				   bc_u_ext,
 				   ebqe_kappa[ebNE_kb],
 				   ebqe_porosity[ebNE_kb],
+				   dissipation_model_flag,
+				   grad_kappa_ext_dummy,
+				   grad_u_old_ext,
 				   bc_m_ext,
 				   bc_dm_ext,
 				   bc_f_ext,
