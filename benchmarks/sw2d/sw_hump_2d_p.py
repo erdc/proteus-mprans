@@ -16,10 +16,10 @@ shock=True
 useCV=False
 if useCV:
     LevelModelType = SW2DCV.LevelModel
-    coefficients = SW2DCV.Coefficients(nu=0.1,g=1.0)
+    coefficients = SW2DCV.Coefficients(nu=0.0,g=1.0)
 else:
     LevelModelType = SW2D.LevelModel
-    coefficients = SW2D.Coefficients(nu=0.1,g=1.0)
+    coefficients = SW2D.Coefficients(nu=0.0,g=1.0)
 
 #coefficients = SW2D.Coefficients(nu=0,g=1.0)
 

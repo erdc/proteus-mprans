@@ -23,7 +23,7 @@ class NumericalFluxType(NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_ext
         NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior.__init__(self,vt,getPointwiseBoundaryConditions,
                                                                                getAdvectiveFluxBoundaryConditions,
                                                                                getDiffusiveFluxBoundaryConditions,getPeriodicBoundaryConditions)
-        self.penalty_constant = 2.0
+        self.penalty_constant = 100.0
         self.includeBoundaryAdjoint=True
         self.boundaryAdjoint_sigma=1.0
         self.hasInterior=False

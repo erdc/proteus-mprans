@@ -15,7 +15,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    LS_model=1,
                                    Closure_0_model=3,
                                    Closure_1_model=4,
-                                   turbulenceClosureModel=3,
+                                   turbulenceClosureModel=0,#3
                                    epsFact_density=epsFact_density,
                                    stokes=False,
                                    useRBLES=useRBLES,

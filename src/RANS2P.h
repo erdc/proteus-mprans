@@ -44,6 +44,7 @@ namespace proteus
 				   //physics
 				   double eb_adjoint_sigma,
 				   double* elementDiameter,
+				   double* nodeDiametersArray,
 				   double hFactor,
 				   int nElements_global,
 				   double useRBLES,
@@ -61,6 +62,7 @@ namespace proteus
 				   double Ct_sge,
 				   double Cd_sge,
 				   double C_dc,
+				   double C_b,
 				   //VRANS
 				   double eps_solid,
 				   const double* phi_solid,
@@ -185,6 +187,7 @@ namespace proteus
 				   //physics
 				   double eb_adjoint_sigma,
 				   double* elementDiameter,
+				   double* nodeDiametersArray,
 				   double hFactor,
 				   int nElements_global,
 				   double useRBLES,
@@ -202,6 +205,7 @@ namespace proteus
 				   double Ct_sge,
 				   double Cd_sge,
 				   double C_dg,
+				   double C_b,
 				   //VRANS
 				   double eps_solid,
 				   const double* phi_solid,
@@ -334,6 +338,7 @@ namespace proteus
 				   double* boundaryJac_ref,
 				   //physics
 				   double* elementDiameter,
+				   double* nodeDiametersArray,
 				   double hFactor,
 				   int nElements_global,
 				   double useRBLES,
@@ -1664,6 +1669,7 @@ namespace proteus
 			   //physics
 			   double eb_adjoint_sigma,
 			   double* elementDiameter,
+			   double* nodeDiametersArray,
 			   double hFactor,
 			   int nElements_global,
 			   double useRBLES,
@@ -1681,6 +1687,7 @@ namespace proteus
 			   double Ct_sge,
 			   double Cd_sge,
 			   double C_dc,
+			   double C_b,
 			   //VRANS
 			   double eps_solid,
 			   const double* phi_solid,
@@ -1898,6 +1905,13 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateH_element(eN,
+				    k,
+				    nodeDiametersArray,
+				    mesh_l2g,
+				    mesh_trial_ref,
+				    h_phi);
+	      
 	      ck.calculateMappingVelocity_element(eN,
 						  k,
 						  mesh_velocity_dof,
@@ -1909,7 +1923,7 @@ namespace proteus
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
-	      ck.calculateGScale(G,&normal_phi[eN_k_nSpace],h_phi);
+	      //ck.calculateGScale(G,&normal_phi[eN_k_nSpace],h_phi);
 	      
 	      eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	      eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
@@ -2470,7 +2484,7 @@ namespace proteus
 		//VRANS
 		porosity_ext,
 		//
-		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty,
+		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty,penalty,
 		force_x,force_y,force_z,r_x,r_y,r_z;
 	      //compute information about mapping from reference element to physical element
 	      ck.calculateMapping_elementBoundary(eN,
@@ -2787,7 +2801,8 @@ namespace proteus
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
-	      //ck.calculateGScale(G,normal,h_penalty);
+	      ck.calculateGScale(G,normal,h_penalty);
+	      penalty = useMetrics*C_b*h_penalty + (1.0-useMetrics)*ebqe_penalty_ext[ebNE_kb];
 	      exteriorNumericalAdvectiveFlux(isDOFBoundary_p[ebNE_kb],
 					     isDOFBoundary_u[ebNE_kb],
 					     isDOFBoundary_v[ebNE_kb],
@@ -2846,7 +2861,7 @@ namespace proteus
 					     mom_uu_diff_ten_ext,
 					     grad_u_ext,
 					     u_ext,
-					     ebqe_penalty_ext[ebNE_kb],
+					     penalty,//ebqe_penalty_ext[ebNE_kb],
 					     flux_mom_uu_diff_ext);
 	      exteriorNumericalDiffusiveFlux(eps_rho,
 					     ebqe_phi_ext[ebNE_kb],
@@ -2861,7 +2876,7 @@ namespace proteus
 					     mom_uv_diff_ten_ext,
 					     grad_v_ext,
 					     v_ext,
-					     ebqe_penalty_ext[ebNE_kb],
+					     penalty,//ebqe_penalty_ext[ebNE_kb],
 					     flux_mom_uv_diff_ext);
 	      exteriorNumericalDiffusiveFlux(eps_rho,
 					     ebqe_phi_ext[ebNE_kb],
@@ -2876,7 +2891,7 @@ namespace proteus
 					     mom_uw_diff_ten_ext,
 					     grad_w_ext,
 					     w_ext,
-					     ebqe_penalty_ext[ebNE_kb],
+					     penalty,//ebqe_penalty_ext[ebNE_kb],
 					     flux_mom_uw_diff_ext);
 	      exteriorNumericalDiffusiveFlux(eps_rho,
 					     ebqe_phi_ext[ebNE_kb],
@@ -2891,7 +2906,7 @@ namespace proteus
 					     mom_vu_diff_ten_ext,
 					     grad_u_ext,
 					     u_ext,
-					     ebqe_penalty_ext[ebNE_kb],
+					     penalty,//ebqe_penalty_ext[ebNE_kb],
 					     flux_mom_vu_diff_ext);
 	      exteriorNumericalDiffusiveFlux(eps_rho,
 					     ebqe_phi_ext[ebNE_kb],
@@ -2906,7 +2921,7 @@ namespace proteus
 					     mom_vv_diff_ten_ext,
 					     grad_v_ext,
 					     v_ext,
-					     ebqe_penalty_ext[ebNE_kb],
+					     penalty,//ebqe_penalty_ext[ebNE_kb],
 					     flux_mom_vv_diff_ext);
 	      exteriorNumericalDiffusiveFlux(eps_rho,
 					     ebqe_phi_ext[ebNE_kb],
@@ -2921,7 +2936,7 @@ namespace proteus
 					     mom_vw_diff_ten_ext,
 					     grad_w_ext,
 					     w_ext,
-					     ebqe_penalty_ext[ebNE_kb],
+					     penalty,//ebqe_penalty_ext[ebNE_kb],
 					     flux_mom_vw_diff_ext);
 	      exteriorNumericalDiffusiveFlux(eps_rho,
 					     ebqe_phi_ext[ebNE_kb],
@@ -2936,7 +2951,7 @@ namespace proteus
 					     mom_wu_diff_ten_ext,
 					     grad_u_ext,
 					     u_ext,
-					     ebqe_penalty_ext[ebNE_kb],
+					     penalty,//ebqe_penalty_ext[ebNE_kb],
 					     flux_mom_wu_diff_ext);
 	      exteriorNumericalDiffusiveFlux(eps_rho,
 					     ebqe_phi_ext[ebNE_kb],
@@ -2951,7 +2966,7 @@ namespace proteus
 					     mom_wv_diff_ten_ext,
 					     grad_v_ext,
 					     v_ext,
-					     ebqe_penalty_ext[ebNE_kb],
+					     penalty,//ebqe_penalty_ext[ebNE_kb],
 					     flux_mom_wv_diff_ext);
 	      exteriorNumericalDiffusiveFlux(eps_rho,
 					     ebqe_phi_ext[ebNE_kb],
@@ -2966,7 +2981,7 @@ namespace proteus
 					     mom_ww_diff_ten_ext,
 					     grad_w_ext,
 					     w_ext,
-					     ebqe_penalty_ext[ebNE_kb],
+					     penalty,//ebqe_penalty_ext[ebNE_kb],
 					     flux_mom_ww_diff_ext);
 	      flux[ebN*nQuadraturePoints_elementBoundary+kb] = flux_mass_ext;
 	      // 
@@ -3154,6 +3169,7 @@ namespace proteus
 			   //physics
 			   double eb_adjoint_sigma,
 			   double* elementDiameter,
+			   double* nodeDiametersArray,
 			   double hFactor,
 			   int nElements_global,
 			   double useRBLES,
@@ -3171,6 +3187,7 @@ namespace proteus
 			   double Ct_sge,
 			   double Cd_sge,
 			   double C_dg,
+			   double C_b,
 			   //VRANS
 			   double eps_solid,
 			   const double* phi_solid,
@@ -3433,6 +3450,12 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateH_element(eN,
+				    k,
+				    nodeDiametersArray,
+				    mesh_l2g,
+				    mesh_trial_ref,
+				    h_phi);
 	      ck.calculateMappingVelocity_element(eN,
 						  k,
 						  mesh_velocity_dof,
@@ -3444,7 +3467,7 @@ namespace proteus
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
-	      ck.calculateGScale(G,&normal_phi[eN_k_nSpace],h_phi);
+	      //ck.calculateGScale(G,&normal_phi[eN_k_nSpace],h_phi);
 	
 	      eps_rho = epsFact_rho*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	      eps_mu  = epsFact_mu *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
@@ -4095,7 +4118,7 @@ namespace proteus
 		//VRANS
 		porosity_ext,
 		//
-		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty;
+		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty,penalty;
 	      ck.calculateMapping_elementBoundary(eN,
 						  ebN_local,
 						  kb,
@@ -4463,7 +4486,8 @@ namespace proteus
 	      //
 	      //calculate the flux jacobian
 	      //
-	      //ck.calculateGScale(G,normal,h_penalty);
+	      ck.calculateGScale(G,normal,h_penalty);
+	      penalty = useMetrics*C_b*h_penalty + (1.0-useMetrics)*ebqe_penalty_ext[ebNE_kb];
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
 		  register int j_nSpace = j*nSpace,ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
@@ -4484,7 +4508,7 @@ namespace proteus
 							   mom_uu_diff_ten_ext,
 							   vel_trial_trace_ref[ebN_local_kb_j],
 							   &vel_grad_trial_trace[j_nSpace],
-							   ebqe_penalty_ext[ebNE_kb]);
+							   penalty);//ebqe_penalty_ext[ebNE_kb]);
 		  fluxJacobian_u_v[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_u_adv_v_ext,vel_trial_trace_ref[ebN_local_kb_j]) +
 		    ExteriorNumericalDiffusiveFluxJacobian(eps_rho,
 							   ebqe_phi_ext[ebNE_kb],
@@ -4496,7 +4520,7 @@ namespace proteus
 							   mom_uv_diff_ten_ext,
 							   vel_trial_trace_ref[ebN_local_kb_j],
 							   &vel_grad_trial_trace[j_nSpace],
-							   ebqe_penalty_ext[ebNE_kb]);
+							   penalty);//ebqe_penalty_ext[ebNE_kb]);
 		  fluxJacobian_u_w[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_u_adv_w_ext,vel_trial_trace_ref[ebN_local_kb_j]) +
 		    ExteriorNumericalDiffusiveFluxJacobian(eps_rho,
 							   ebqe_phi_ext[ebNE_kb],
@@ -4508,7 +4532,7 @@ namespace proteus
 							   mom_uw_diff_ten_ext,
 							   vel_trial_trace_ref[ebN_local_kb_j],
 							   &vel_grad_trial_trace[j_nSpace],
-							   ebqe_penalty_ext[ebNE_kb]);
+							   penalty);//ebqe_penalty_ext[ebNE_kb]);
 
 		  fluxJacobian_v_p[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_v_adv_p_ext,p_trial_trace_ref[ebN_local_kb_j]);
 		  fluxJacobian_v_u[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_v_adv_u_ext,vel_trial_trace_ref[ebN_local_kb_j]) +
@@ -4522,7 +4546,7 @@ namespace proteus
 							   mom_vu_diff_ten_ext,
 							   vel_trial_trace_ref[ebN_local_kb_j],
 							   &vel_grad_trial_trace[j_nSpace],
-							   ebqe_penalty_ext[ebNE_kb]);
+							   penalty);//ebqe_penalty_ext[ebNE_kb]);
 		  fluxJacobian_v_v[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_v_adv_v_ext,vel_trial_trace_ref[ebN_local_kb_j]) +
 		    ExteriorNumericalDiffusiveFluxJacobian(eps_rho,
 							   ebqe_phi_ext[ebNE_kb],
@@ -4534,7 +4558,7 @@ namespace proteus
 							   mom_vv_diff_ten_ext,
 							   vel_trial_trace_ref[ebN_local_kb_j],
 							   &vel_grad_trial_trace[j_nSpace],
-							   ebqe_penalty_ext[ebNE_kb]);
+							   penalty);//ebqe_penalty_ext[ebNE_kb]);
 		  fluxJacobian_v_w[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_v_adv_w_ext,vel_trial_trace_ref[ebN_local_kb_j]) +
 		    ExteriorNumericalDiffusiveFluxJacobian(eps_rho,
 							   ebqe_phi_ext[ebNE_kb],
@@ -4546,7 +4570,7 @@ namespace proteus
 							   mom_vw_diff_ten_ext,
 							   vel_trial_trace_ref[ebN_local_kb_j],
 							   &vel_grad_trial_trace[j_nSpace],
-							   ebqe_penalty_ext[ebNE_kb]);
+							   penalty);//ebqe_penalty_ext[ebNE_kb]);
 
 		  fluxJacobian_w_p[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_w_adv_p_ext,p_trial_trace_ref[ebN_local_kb_j]);
 		  fluxJacobian_w_u[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_w_adv_u_ext,vel_trial_trace_ref[ebN_local_kb_j]) +
@@ -4560,7 +4584,7 @@ namespace proteus
 							   mom_wu_diff_ten_ext,
 							   vel_trial_trace_ref[ebN_local_kb_j],
 							   &vel_grad_trial_trace[j_nSpace],
-							   ebqe_penalty_ext[ebNE_kb]);
+							   penalty);//ebqe_penalty_ext[ebNE_kb]);
 		  fluxJacobian_w_v[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_w_adv_v_ext,vel_trial_trace_ref[ebN_local_kb_j]) +
 		    ExteriorNumericalDiffusiveFluxJacobian(eps_rho,
 							   ebqe_phi_ext[ebNE_kb],
@@ -4572,7 +4596,7 @@ namespace proteus
 							   mom_wv_diff_ten_ext,
 							   vel_trial_trace_ref[ebN_local_kb_j],
 							   &vel_grad_trial_trace[j_nSpace],
-							   ebqe_penalty_ext[ebNE_kb]);
+							   penalty);//ebqe_penalty_ext[ebNE_kb]);
 		  fluxJacobian_w_w[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_w_adv_w_ext,vel_trial_trace_ref[ebN_local_kb_j]) +
 		    ExteriorNumericalDiffusiveFluxJacobian(eps_rho,
 							   ebqe_phi_ext[ebNE_kb],
@@ -4584,7 +4608,7 @@ namespace proteus
 							   mom_ww_diff_ten_ext,
 							   vel_trial_trace_ref[ebN_local_kb_j],
 							   &vel_grad_trial_trace[j_nSpace],
-							   ebqe_penalty_ext[ebNE_kb]);
+							   penalty);//ebqe_penalty_ext[ebNE_kb]);
 		}//j
 	      //
 	      //update the global Jacobian from the flux Jacobian
@@ -4881,6 +4905,7 @@ namespace proteus
 			   double* boundaryJac_ref,
 			   //physics
 			   double* elementDiameter,
+			   double* nodeDiametersArray,
 			   double hFactor,
 			   int nElements_global,
 			   double useRBLES,
@@ -5135,8 +5160,8 @@ namespace proteus
 	        // 
 	        //calculate the  penalty 
 	        // 
-	        //ck.calculateGScale(G,normal,h_penalty);
-                penalty = 0.0;//  C_b*mu/h_penalty;
+	        ck.calculateGScale(G,normal,h_penalty);
+                penalty = C_b*mu/h_penalty;
 
                 // 
 		//calculate temporary values

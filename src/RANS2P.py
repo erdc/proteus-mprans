@@ -1048,7 +1048,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                         self.ebqe[('diffusiveFlux_bc_flag',ck,ci)][t[0],t[1]] = 1
         r.fill(0.0)
         self.Ct_sge = 4.0
-        self.Cd_sge = 144.0
+        self.Cd_sge = 36.0
         #TODO how to request problem specific evaluations from coefficient class
         if 'evaluateForcingTerms' in dir(self.coefficients):
             self.coefficients.evaluateForcingTerms(self.timeIntegration.t,self.q,self.mesh,
@@ -1093,6 +1093,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             #physics
             self.eb_adjoint_sigma,
             self.elementDiameter,#mesh.elementDiametersArray,
+            self.mesh.nodeDiametersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
@@ -1110,6 +1111,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
+            self.numericalFlux.penalty_constant,
             #VRANS start
             self.coefficients.epsFact_solid,
             self.coefficients.q_phi_solid,
@@ -1264,6 +1266,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             self.eb_adjoint_sigma,
             self.elementDiameter,#mesh.elementDiametersArray,
+            self.mesh.nodeDiametersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
@@ -1281,6 +1284,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
+            self.numericalFlux.penalty_constant,
             #VRANS start
             self.coefficients.epsFact_solid,
             self.coefficients.q_phi_solid,
@@ -1547,8 +1551,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 	#moment = numpy.zeros(3,'d')
 
         self.Ct_sge = 4.0
-        self.Cd_sge = 144.0
-	self.C_b    = 10.0
+        self.Cd_sge = 36.0
  
         self.rans2p.calculateForce(#element
             self.u[0].femSpace.elementMaps.psi,
@@ -1580,6 +1583,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.elementDiametersArray,
+            self.mesh.nodeDiamtersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
@@ -1597,7 +1601,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
-	    self.C_b,
+            self.numericalFlux.penalty_constant,
             self.u[0].femSpace.dofMap.l2g,
             self.u[1].femSpace.dofMap.l2g,
             self.u[0].dof,

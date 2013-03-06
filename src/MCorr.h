@@ -40,6 +40,7 @@ namespace proteus
 				   double epsFactDiffusion,
 				   int* u_l2g, 
 				   double* elementDiameter,
+				   double* nodeDiametersArray,
 				   double* u_dof,
 				   double* q_phi,
 				   double* q_normal_phi,
@@ -86,6 +87,7 @@ namespace proteus
 				   double epsFactDiffusion,
 				   int* u_l2g,
 				   double* elementDiameter,
+				   double* nodeDiametersArray,
 				   double* u_dof, 
 				   double* q_phi,
 				   double* q_normal_phi,
@@ -121,6 +123,7 @@ namespace proteus
 			       double epsFactDiffusion,
 			       int* u_l2g, 
 			       double* elementDiameter,
+			       double* nodeDiametersArray,
 			       double* u_dof,
 			       double* q_phi,
 			       double* q_normal_phi,
@@ -169,6 +172,7 @@ namespace proteus
 			       double epsFactDiffusion,
 			       int* u_l2g, 
 			       double* elementDiameter,
+			       double* nodeDiametersArray,
 			       double* u_dof,
 			       double* q_phi,
 			       double* q_normal_phi,
@@ -217,6 +221,7 @@ namespace proteus
 			       double epsFactDiffusion,
 			       int* u_l2g, 
 			       double* elementDiameter,
+			       double* nodeDiametersArray,
 			       double* u_dof,
 			       double* q_phi,
 			       double* q_normal_phi,
@@ -268,6 +273,7 @@ namespace proteus
 				   double epsFactDiffusion,
 				   int* u_l2g, 
 				   double* elementDiameter,
+				   double* nodeDiametersArray,
 				   double* u_dof,
 				   double* q_phi,
 				   double* q_normal_phi,
@@ -315,6 +321,7 @@ namespace proteus
 				   double epsFactDiffusion,
 				   int* phi_l2g, 
 				   double* elementDiameter,
+				   double* nodeDiametersArray,
 				   double* phi_dof,
 				   double* q_phi,
 				   double* q_normal_phi,
@@ -434,6 +441,7 @@ namespace proteus
 					 double epsFactDiffusion,
 					 int* u_l2g, 
 					 double* elementDiameter,
+					 double* nodeDiametersArray,
 					 double* u_dof,
 					 double* q_phi,
 					 double* q_normal_phi,
@@ -490,11 +498,24 @@ namespace proteus
 				      jacDet,
 				      jacInv,
 				      x,y,z);
+	  ck.calculateH_element(eN,
+				k,
+				nodeDiametersArray,
+				mesh_l2g,
+				mesh_trial_ref,
+				h_phi);
 	  //get the physical integration weight
 	  dV = fabs(jacDet)*dV_ref[k];
 	  ck.calculateG(jacInv,G,G_dd_G,tr_G);
-	  ck.calculateGScale(G,&q_normal_phi[eN_k_nSpace],h_phi);
-	  
+
+	  /* double dir[nSpace]; */
+	  /* double norm = 1.0e-8; */
+	  /* for (int I=0;I<nSpace;I++) */
+	  /*   norm += q_normal_phi[eN_k_nSpace+I]*q_normal_phi[eN_k_nSpace+I]; */
+	  /* norm = sqrt(norm);	   */
+	  /* for (int I=0;I<nSpace;I++) */
+	  /*   dir[I] = q_normal_phi[eN_k_nSpace+I]/norm; */
+	  /* ck.calculateGScale(G,dir,h_phi); */
 	  
 	  //get the trial function gradients
 	  ck.gradTrialFromRef(&u_grad_trial_ref[k*nDOF_trial_element*nSpace],jacInv,u_grad_trial);
@@ -517,9 +538,9 @@ namespace proteus
 	  //
 	  //calculate pde coefficients at quadrature points
 	  //
-	  epsHeaviside=epsFactHeaviside*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
-	  epsDirac    =epsFactDirac*    (useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
-	  epsDiffusion=epsFactDiffusion*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	  epsHeaviside = epsFactHeaviside*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	  epsDirac     = epsFactDirac*    (useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	  epsDiffusion = epsFactDiffusion*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	  // *(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);	      
 	  evaluateCoefficients(epsHeaviside,
 			       epsDirac,
@@ -550,13 +571,12 @@ namespace proteus
 	  q_u[eN_k] = u;
 	  
 	  
-	  norm = 1.0;//sqrt(grad_u[0]*grad_u[0]+grad_u[1]*grad_u[1]+grad_u[2]*grad_u[2]);	      
-	  
-	  
-	  q_n[eN_k_nSpace+0] = grad_u[0]/norm;
-	  q_n[eN_k_nSpace+1] = grad_u[1]/norm;
-	  q_n[eN_k_nSpace+2] = grad_u[2]/norm;
-	  
+	  norm = 1.0e-8;
+	  for (int I=0;I<nSpace;I++)
+	    norm += grad_u[I]*grad_u[I];
+	  norm = sqrt(norm);
+	  for(int I=0;I<nSpace;I++)
+	    q_n[eN_k_nSpace+I] = grad_u[I]/norm;
 	}
     }
     void calculateResidual(//element
@@ -587,6 +607,7 @@ namespace proteus
 			   double epsFactDiffusion,
 			   int* u_l2g, 
 			   double* elementDiameter,
+			   double* nodeDiametersArray,
 			   double* u_dof,
 			   double* q_phi,
 			   double* q_normal_phi,
@@ -650,6 +671,7 @@ namespace proteus
 				   epsFactDiffusion,
 				   u_l2g, 
 				   elementDiameter,
+				   nodeDiametersArray,
 				   u_dof,
 				   q_phi,
 				   q_normal_phi,
@@ -727,7 +749,7 @@ namespace proteus
 		dS,
 		//u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
-		normal[3],x_ext,y_ext,z_ext,
+		normal[nSpace],x_ext,y_ext,z_ext,
 		G[nSpace*nSpace],G_dd_G,tr_G,norm;
 	      // 
 	      //calculate the solution and gradients at quadrature points 
@@ -761,18 +783,13 @@ namespace proteus
 	      ck.valFromElementDOF(element_u,&u_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
 	      ck.gradFromElementDOF(element_u,u_grad_trial_trace,grad_u_ext);
 
-
-	      norm = 1.0;//sqrt(grad_u_ext[0]*grad_u_ext[0]+grad_u_ext[1]*grad_u_ext[1]+grad_u_ext[2]*grad_u_ext[2]);	      
-
-
 	      ebqe_u[ebNE_kb] = u_ext;
-	      
-	      
-	      ebqe_n[ebNE_kb_nSpace+0] = grad_u_ext[0]/norm;
-	      ebqe_n[ebNE_kb_nSpace+1] = grad_u_ext[1]/norm;
-	      ebqe_n[ebNE_kb_nSpace+2] = grad_u_ext[2]/norm;
-
-	 
+	      norm = 1.0e-8;
+	      for (int I=0;I<nSpace;I++)
+		norm += grad_u_ext[I]*grad_u_ext[I];
+	      norm = sqrt(norm);
+	      for (int I=0;I<nSpace;I++)
+		ebqe_n[ebNE_kb_nSpace+I] = grad_u_ext[I]/norm;
 	    }//kb
 	}//ebNE
 
@@ -807,6 +824,7 @@ namespace proteus
 					 double epsFactDiffusion,
 					 int* u_l2g,
 					 double* elementDiameter,
+					 double* nodeDiametersArray,
 					 double* u_dof, 
 					 // double* u_trial, 
 					 // double* u_grad_trial, 
@@ -858,11 +876,24 @@ namespace proteus
 				      jacDet,
 				      jacInv,
 				      x,y,z);
+	  ck.calculateH_element(eN,
+				k,
+				nodeDiametersArray,
+				mesh_l2g,
+				mesh_trial_ref,
+				h_phi);
 	  //get the physical integration weight
 	  dV = fabs(jacDet)*dV_ref[k];
 	  ck.calculateG(jacInv,G,G_dd_G,tr_G);
 	  
-	  ck.calculateGScale(G,&q_normal_phi[eN_k_nSpace],h_phi);
+	  /* double dir[nSpace]; */
+	  /* double norm = 1.0e-8; */
+	  /* for (int I=0;I<nSpace;I++) */
+	  /*   norm += q_normal_phi[eN_k_nSpace+I]*q_normal_phi[eN_k_nSpace+I]; */
+	  /* norm = sqrt(norm); */
+	  /* for (int I=0;I<nSpace;I++) */
+	  /*   dir[I] = q_normal_phi[eN_k_nSpace+I]/norm; */
+	  /* ck.calculateGScale(G,dir,h_phi); */
 	  
 	  
 	  //get the trial function gradients
@@ -940,6 +971,7 @@ namespace proteus
 			   double epsFactDiffusion,
 			   int* u_l2g,
 			   double* elementDiameter,
+			   double* nodeDiametersArray,
 			   double* u_dof, 
 			   // double* u_trial, 
 			   // double* u_grad_trial, 
@@ -988,6 +1020,7 @@ namespace proteus
 				   epsFactDiffusion,
 				   u_l2g,
 				   elementDiameter,
+				   nodeDiametersArray,
 				   u_dof, 
 				   q_phi,
 				   q_normal_phi,
@@ -1039,6 +1072,7 @@ namespace proteus
 			       double epsFactDiffusion,
 			       int* u_l2g, 
 			       double* elementDiameter,
+			       double* nodeDiametersArray,
 			       double* u_dof,
 			       double* q_phi,
 			       double* q_normal_phi,
@@ -1109,6 +1143,7 @@ namespace proteus
 				   epsFactDiffusion,
 				   u_l2g, 
 				   elementDiameter,
+				   nodeDiametersArray,
 				   u_dof,
 				   q_phi,
 				   q_normal_phi,
@@ -1168,6 +1203,7 @@ namespace proteus
 				       epsFactDiffusion,
 				       u_l2g,
 				       elementDiameter,
+				       nodeDiametersArray,
 				       u_dof, 
 				       q_phi,
 				       q_normal_phi,
@@ -1241,6 +1277,7 @@ namespace proteus
 					   epsFactDiffusion,
 					   u_l2g, 
 					   elementDiameter,
+					   nodeDiametersArray,
 					   u_dof,
 					   q_phi,
 					   q_normal_phi,
@@ -1306,6 +1343,7 @@ namespace proteus
 			       double epsFactDiffusion,
 			       int* u_l2g, 
 			       double* elementDiameter,
+			       double* nodeDiametersArray,
 			       double* u_dof,
 			       double* q_phi,
 			       double* q_normal_phi,
@@ -1363,6 +1401,7 @@ namespace proteus
 				   epsFactDiffusion,
 				   u_l2g, 
 				   elementDiameter,
+				   nodeDiametersArray,
 				   u_dof,
 				   q_phi,
 				   q_normal_phi,
@@ -1422,6 +1461,7 @@ namespace proteus
 				       epsFactDiffusion,
 				       u_l2g,
 				       elementDiameter,
+				       nodeDiametersArray,
 				       u_dof, 
 				       q_phi,
 				       q_normal_phi,
@@ -1471,6 +1511,7 @@ namespace proteus
 				       epsFactDiffusion,
 				       u_l2g, 
 				       elementDiameter,
+				       nodeDiametersArray,
 				       u_dof,
 				       q_phi,
 				       q_normal_phi,
@@ -1531,6 +1572,7 @@ namespace proteus
 			     double epsFactDiffusion,
 			     int* u_l2g, 
 			     double* elementDiameter,
+			     double* nodeDiametersArray,
 			     double* u_dof,
 			     double* q_phi,
 			     double* q_normal_phi,
@@ -1592,6 +1634,7 @@ namespace proteus
 				   epsFactDiffusion,
 				   u_l2g, 
 				   elementDiameter,
+				   nodeDiametersArray,
 				   u_dof,
 				   q_phi,
 				   q_normal_phi,
@@ -1642,6 +1685,7 @@ namespace proteus
 				   epsFactDiffusion,
 				   u_l2g,
 				   elementDiameter,
+				   nodeDiametersArray,
 				   u_dof, 
 				   q_phi,
 				   q_normal_phi,
@@ -1688,6 +1732,7 @@ namespace proteus
 		       double epsFactDiffusion,
 		       int* u_l2g, 
 		       double* elementDiameter,
+		       double* nodeDiametersArray,
 		       double* u_dof,
 		       double* q_phi,
 		       double* q_normal_phi,
@@ -1741,10 +1786,23 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateH_element(eN,
+				    k,
+				    nodeDiametersArray,
+				    mesh_l2g,
+				    mesh_trial_ref,
+				    h_phi);
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
-	      ck.calculateGScale(G,&q_normal_phi[eN_k_nSpace],h_phi);
+	      /* double dir[nSpace]; */
+	      /* double norm = 1.0e-8; */
+	      /* for (int I=0;I<nSpace;I++) */
+	      /* 	norm += q_normal_phi[eN_k_nSpace+I]*q_normal_phi[eN_k_nSpace+I]; */
+	      /* norm = sqrt(norm); */
+	      /* for (int I=0;I<nSpace;I++) */
+	      /* 	dir[I] = q_normal_phi[eN_k_nSpace+I]/norm; */
+	      /* ck.calculateGScale(G,dir,h_phi); */
 	      epsHeaviside=epsFactHeaviside*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	      *globalMass += smoothedHeaviside(epsHeaviside,q_phi[eN_k])*dV;
 	    }//k
@@ -1778,6 +1836,7 @@ namespace proteus
 			   double epsFactDiffusion,
 			   int* phi_l2g, 
 			   double* elementDiameter,
+			   double* nodeDiametersArray,
 			   double* phi_dof,
 			   double* q_phi,
 			   double* q_normal_phi,
@@ -1830,10 +1889,24 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateH_element(eN,
+				    k,
+				    nodeDiametersArray,
+				    mesh_l2g,
+				    mesh_trial_ref,
+				    h_phi);
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
-	      ck.calculateGScale(G,&q_normal_phi[eN_k_nSpace],h_phi);
+	      /* double dir[nSpace]; */
+	      /* double norm = 1.0e-8; */
+	      /* for (int I=0;I<nSpace;I++) */
+	      /* 	norm += q_normal_phi[eN_k_nSpace+I]*q_normal_phi[eN_k_nSpace+I]; */
+	      /* norm = sqrt(norm); */
+	      /* for (int I=0;I<nSpace;I++) */
+	      /* 	dir[I] = q_normal_phi[eN_k_nSpace+I]/norm; */
+	      
+	      /* ck.calculateGScale(G,dir,h_phi); */
 	      epsHeaviside=epsFactHeaviside*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	      q_H[eN_k] = q_porosity[eN_k]*smoothedHeaviside(epsHeaviside,q_phi[eN_k]);
 	    }//k
@@ -1843,6 +1916,8 @@ namespace proteus
 	      //here the value will be different depending on which element touches
 	      //the dof last
 	      int eN_i = eN*nDOF_trial_element + i;
+
+	      epsHeaviside = epsFactHeaviside*nodeDiametersArray[mesh_l2g[eN_i]];//cek hack, only works if isoparametric
 	      H_dof[phi_l2g[eN_i]] = smoothedHeaviside(epsHeaviside,phi_dof[phi_l2g[eN_i]]);//cek hack, only works if H and phi in same FEM space
 	    }
 	}//elements
@@ -1857,13 +1932,22 @@ namespace proteus
 			      int nQuadraturePoints_elementBoundaryIn,
 			      int CompKernelFlag)
   {
-    return proteus::chooseAndAllocateDiscretization<MCorr_base,MCorr,CompKernel>(nSpaceIn,
-										 nQuadraturePoints_elementIn,
-										 nDOF_mesh_trial_elementIn,
-										 nDOF_trial_elementIn,
-										 nDOF_test_elementIn,
-										 nQuadraturePoints_elementBoundaryIn,
-										 CompKernelFlag);
+    if (nSpaceIn == 2)
+      return proteus::chooseAndAllocateDiscretization2D<MCorr_base,MCorr,CompKernel>(nSpaceIn,
+										     nQuadraturePoints_elementIn,
+										     nDOF_mesh_trial_elementIn,
+										     nDOF_trial_elementIn,
+										     nDOF_test_elementIn,
+										     nQuadraturePoints_elementBoundaryIn,
+										     CompKernelFlag);
+    else
+      return proteus::chooseAndAllocateDiscretization<MCorr_base,MCorr,CompKernel>(nSpaceIn,
+										   nQuadraturePoints_elementIn,
+										   nDOF_mesh_trial_elementIn,
+										   nDOF_trial_elementIn,
+										   nDOF_test_elementIn,
+										   nQuadraturePoints_elementBoundaryIn,
+										   CompKernelFlag);
   }
 }//proteus
 #endif

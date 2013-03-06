@@ -4,15 +4,16 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options  
-Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
-#Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
+#Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
+Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
 useSuperlu=False
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
-useMetrics = 0.0
+useMetrics = 1.0
+applyCorrection=True
 useVF = 1.0
 useOnlyVF = False
 # Input checks
@@ -141,8 +142,8 @@ epsFact_density    = 1.5
 epsFact_viscosity  = 1.5
 epsFact_redistance = 0.33
 epsFact_curvature  = 1.5
-epsFact_consrv_heaviside = 1.5
-epsFact_consrv_dirac     = 1.5
+epsFact_consrv_heaviside = 1.0
+epsFact_consrv_dirac     = 1.0
 epsFact_consrv_diffusion = 10.0
 epsFact_vof = 1.5
 
