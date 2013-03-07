@@ -32,6 +32,9 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double nu_1,
                                double sigma_k,
                                double c_mu,
+                               double rho_0,
+                               double rho_1,
+                               int dissipation_model_flag,
                                #end diffusion
 			       double useMetrics, 
                                double alphaBDF,
@@ -43,7 +46,8 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* u_dof,double* u_dof_old,	
                                double* velocity,
                                double* phi_ls, #level set variable
-                               double* q_epsilon, #dissipation rate variable
+                               double* q_dissipation, #dissipation rate variable
+                               double* q_grad_dissipation,
                                double* q_porosity, #VRANS
                                #velocity dof
                                double * velocity_dof_u,
@@ -70,7 +74,7 @@ cdef extern from "Kappa.h" namespace "proteus":
                                int* isFluxBoundary_u,
                                double* ebqe_bc_flux_u_ext,
                                double* ebqe_phi,double epsFact,
-                               double* ebqe_epsilon, #dissipation rate
+                               double* ebqe_dissipation, #dissipation rate
                                double* ebqe_porosity, #VRANS
                                double* ebqe_u,
                                double* ebqe_flux)
@@ -100,6 +104,9 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double nu_1,
                                double sigma_k,
                                double c_mu,
+                               double rho_0,
+                               double rho_1,
+                               int dissipation_model_flag,
                                #end diffuion
 			       double useMetrics, 
                                double alphaBDF,
@@ -110,7 +117,8 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* u_dof, double* u_dof_old,
                                double* velocity,
                                double* phi_ls, #level set variable
-                               double* q_epsilon, #dissipation rate
+                               double* q_dissipation, #dissipation rate
+                               double* q_grad_dissipation,
                                double* q_porosity, #VRANS
                                #velocity dof
                                double* velocity_dof_u,
@@ -134,7 +142,7 @@ cdef extern from "Kappa.h" namespace "proteus":
                                double* ebqe_bc_flux_u_ext,
                                int* csrColumnOffsets_eb_u_u,
                                double* ebqe_phi,double epsFact,
-                               double* ebqe_epsilon,#dissipation rate
+                               double* ebqe_dissipation,#dissipation rate
                                double* ebqe_porosity)#VRANS
     Kappa_base* newKappa(int nSpaceIn,
                        int nQuadraturePoints_elementIn,
@@ -190,6 +198,9 @@ cdef class cKappa_base:
                          double nu_1,
                          double sigma_k,
                          double c_mu,
+                         double rho_0,
+                         double rho_1,
+                         int dissipation_model_flag,
                          #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
@@ -202,7 +213,8 @@ cdef class cKappa_base:
                          numpy.ndarray u_dof_old,
                          numpy.ndarray velocity,
                          numpy.ndarray phi_ls, #level set variable
-                         numpy.ndarray q_epsilon, #dissipation rate
+                         numpy.ndarray q_dissipation, #dissipation rate
+                         numpy.ndarray q_grad_dissipation,#VRANS
                          numpy.ndarray q_porosity,#VRANS
                          #velocity dof
                          numpy.ndarray velocity_dof_u,
@@ -229,7 +241,7 @@ cdef class cKappa_base:
                          numpy.ndarray isFluxBoundary_u,
                          numpy.ndarray ebqe_bc_flux_u_ext,
                          numpy.ndarray ebqe_phi,double epsFact,
-                         numpy.ndarray ebqe_epsilon,#dissipation rate
+                         numpy.ndarray ebqe_dissipation,#dissipation rate
                          numpy.ndarray ebqe_porosity, #VRANS
                          numpy.ndarray ebqe_u,
                          numpy.ndarray ebqe_flux):
@@ -259,6 +271,9 @@ cdef class cKappa_base:
                                        nu_1,
                                        sigma_k,
                                        c_mu,
+                                       rho_0,
+                                       rho_1,
+                                       dissipation_model_flag,
                                        #end diffuion
 			               useMetrics, 
                                        alphaBDF,
@@ -271,7 +286,8 @@ cdef class cKappa_base:
 				       <double*> u_dof_old.data,	
                                        <double*> velocity.data,
                                        <double*> phi_ls.data,
-                                       <double*> q_epsilon.data,#dissipation rate
+                                       <double*> q_dissipation.data,#dissipation rate
+                                       <double*> q_grad_dissipation.data, #VRANS
                                        <double*> q_porosity.data, #VRANS
                                        #velocity dof
                                        <double*> velocity_dof_u.data,
@@ -299,7 +315,7 @@ cdef class cKappa_base:
                                        <double*> ebqe_bc_flux_u_ext.data,
                                        <double*> ebqe_phi.data,
                                        epsFact,
-                                       <double*> ebqe_epsilon.data,#dissipation rate on boundary
+                                       <double*> ebqe_dissipation.data,#dissipation rate on boundary
                                        <double*> ebqe_porosity.data, #VRANS
                                        <double*> ebqe_u.data,
                                        <double*> ebqe_flux.data)
@@ -330,6 +346,9 @@ cdef class cKappa_base:
                          double nu_1,
                          double sigma_k,
                          double c_mu,
+                         double rho_0,
+                         double rho_1,
+                         int dissipation_model_flag,
                          #end diffusion
 			 double useMetrics, 
                          double alphaBDF,
@@ -340,7 +359,8 @@ cdef class cKappa_base:
                          numpy.ndarray u_dof, numpy.ndarray u_dof_old, 
                          numpy.ndarray velocity,
                          numpy.ndarray phi_ls, #level set variable
-                         numpy.ndarray q_epsilon, #dissipation rate
+                         numpy.ndarray q_dissipation, #dissipation rate
+                         numpy.ndarray q_grad_dissipation, #VRANS
                          numpy.ndarray q_porosity, #VRANS
                          #velocity dof
                          numpy.ndarray velocity_dof_u,
@@ -365,7 +385,7 @@ cdef class cKappa_base:
                          numpy.ndarray csrColumnOffsets_eb_u_u,
                          numpy.ndarray ebqe_phi,
                          double epsFact,
-                         numpy.ndarray ebqe_epsilon,#dissipation rate
+                         numpy.ndarray ebqe_dissipation,#dissipation rate
                          numpy.ndarray ebqe_porosity): #VRANS
 
        cdef numpy.ndarray rowptr,colind,globalJacobian_a
@@ -396,6 +416,9 @@ cdef class cKappa_base:
                                        nu_1,
                                        sigma_k,
                                        c_mu,
+                                       rho_0,
+                                       rho_1,
+                                       dissipation_model_flag,
                                        #end diffusion
 			               useMetrics, 
                                        alphaBDF,
@@ -406,7 +429,8 @@ cdef class cKappa_base:
                                        <double*> u_dof.data,<double*> u_dof_old.data, 
                                        <double*> velocity.data,
                                        <double*> phi_ls.data,
-                                       <double*> q_epsilon.data,
+                                       <double*> q_dissipation.data,
+                                       <double*> q_grad_dissipation.data,
                                        <double*> q_porosity.data,#VRANS
                                        #velocity dofs
                                        <double*> velocity_dof_u.data,
@@ -430,5 +454,5 @@ cdef class cKappa_base:
                                        <double*> ebqe_bc_flux_u_ext.data,
                                        <int*> csrColumnOffsets_eb_u_u.data,                      
                                        <double*> ebqe_phi.data,epsFact,
-                                       <double*> ebqe_epsilon.data,
+                                       <double*> ebqe_dissipation.data,
                                        <double*> ebqe_porosity.data)#VRANS

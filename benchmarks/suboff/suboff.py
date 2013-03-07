@@ -3,12 +3,12 @@ import proteus.MeshTools
 from proteus import Domain
 from proteus import AnalyticalSolutions
 from proteus.default_n import *   
-import step3d
+import suboff_domain
    
 #----------------------------------------------------
 #  Discretization -- input options    
 #----------------------------------------------------
-Refinement=16
+Refinement=1
 genMesh=True
 spaceOrder=1
 useHex=False
@@ -16,8 +16,7 @@ useRBLES   = 0.0
 useMetrics = 0.0
 use_petsc4py=True
 quasi2D = True
-use_PlanePoiseuille = False
-use_KOmega = False
+test_cylinder = False
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -60,7 +59,7 @@ elif spaceOrder == 2:
 #----------------------------------------------------
 
 if useHex: 
-    assert False, "useHex not enabled yet for step problem"
+    assert False, "useHex not enabled yet for suboff problem"
     hex=True 
 
     comm=Comm.get()	
@@ -72,37 +71,61 @@ if useHex:
         failed = os.system("../../scripts/marinHexMesh")      
      
     domain = Domain.MeshHexDomain("marinHex") 
-else:
-    upstream_height=0.5
-    width = 0.3*upstream_height
-    downstream_height=1.0
-    upstream_length = 1.0
-    downstream_length = 5.0
-    length = upstream_length+downstream_length
-    polyfile = "step3d"
-    he = length/float(6.5*Refinement)
+elif test_cylinder:
+    nx = 11 ; ntheta = 8; pad_x=5.0; pad_r_fact=2.0
+    x,y,z,domain,x_ll,L = suboff_domain.build_cylinder(nx,ntheta,pad_x=pad_x,pad_r_fact=pad_r_fact)
+
+    boundaryTags = domain.boundaryTags
+
+    upstream_height=L[2]
+    width = L[1]
+    length = L[0]
+    sub_length = L[0]-pad_x
+    he = (sub_length)/float(6.5*Refinement)
     if quasi2D:
         width = he
-    L      = [length,width,downstream_height]
-    
-    polyfile = "step3d"
-    boundaryTags = step3d.genPoly(fileprefix=polyfile,
-                                  width=width,
-                                  upstream_height=upstream_height,
-                                  downstream_height=downstream_height,
-                                  upstream_length=upstream_length,
-                                  downstream_length=downstream_length,
-                                  step_fun=step3d.linear_profile,
-                                  n_points_on_step=2,
-                                  step_length=0.0)
 
-    domain = Domain.PiecewiseLinearComplexDomain(fileprefix=polyfile)
-    #go ahead and add a boundary tags member 
-    domain.boundaryTags = boundaryTags
-    domain.writePoly("mesh")
-    domain.writePLY("mesh")
+    domain.writePLY("mesh_cyl")
+    domain.writePoly("mesh_cyl")
+    triangleOptions="VApq1.25ena"
+
+else:
+    #discretization size for theta in y,z plane
+    ntheta = 8
+    #max number of points in x, need to get rid of this
+    max_nx = 300
+    #how much to pad bounding box
+    pad_x = 10.; pad_r_fact = 4.0
+    #convert from feet to meters
+    feet2meter = 0.3048
+    #returns x,y,z points along hull, 
+    #number of poins along y,z plane for each x
+    #total number of points used in x
+    #start of bounding box
+    #size of bounding box
+    x,y,z,theta_offset,np,x_ll,L = suboff_domain.darpa2gen(max_nx,ntheta,
+                                                           pad_x=pad_x,pad_r_fact=pad_r_fact,
+                                                           length_conv=feet2meter)
+    #just the points
+    suboff_domain.write_csv_file(x[:np],y[:np],z[:np],'darpa2')
+    #get the domain
+    domain = suboff_domain.build_domain_from_axisymmetric_points(x[:np,:],y[:np,:],z[:np,:],x_ll,L,include_front_and_back=0,theta_offset_user=theta_offset[:np+1],name='darpa2')
+    boundaryTags = domain.boundaryTags
+    
+    upstream_height=L[2]
+    width = L[1]
+    length = L[0]
+    sub_length = L[0]-pad_x
+    he = (sub_length)/float(6.5*Refinement)
+    if quasi2D:
+        width = he
+
+    domain.writePLY('mesh_darpa2')
+    domain.writePoly('mesh_darpa2')
     domain.writeAsymptote("mesh")
-    triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
+    #triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
+    #mwf hack
+    triangleOptions="VApq1.25ena"
 #
 nLevels = 1
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
@@ -111,9 +134,9 @@ nLayersOfOverlapForParallel = 0
 #----------------------------------------------------
 # Physical coefficients
 #----------------------------------------------------
-Re = 3025.0
+Re = 302.5#3025.0
 inflow = 1.0
-nu = inflow*(downstream_height-upstream_height)/Re
+nu = inflow*sub_length/Re
 
 # Water
 rho_0 = 998.2
@@ -136,17 +159,17 @@ g = [0.0,0.0,0.0]
 #----------------------------------------------------
 
 residence_time = length/inflow
-T=10.0#10.0*length/inflow
+T=1.0e-1#10.0*length/inflow
 #tnList = [0.0,0.1*residence_time,T]
-nDTout=10
+nDTout=1
 tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
-runCFL=0.9
+
 
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
 grad_p = -inflow/(upstream_height**2/(8.0*mu_0))
-upstream_start_z = downstream_height - upstream_height
+upstream_start_z = x_ll[2]
 kInflow = 0.003*inflow*inflow
 
 class u_flat:
@@ -157,18 +180,7 @@ class u_flat:
         fact = exp(-(x[2]-self.zbot)*(self.ztop-x[2])/self.delta_z)
         return self.val*(1.0-fact)
 
-if use_PlanePoiseuille:
-    uProfile = AnalyticalSolutions.PlanePoiseuilleFlow_u2(plane_theta=0.0,
-                                                          plane_phi=0.0,
-                                                          v_theta=0.0,
-                                                          v_phi=math.pi/2.0,
-                                                          v_norm=0.0,
-                                                          mu=mu_0,
-                                                          grad_p=grad_p,
-                                                          L=[1.0,1.0,upstream_height])
-
-else:
-    uProfile = u_flat(val=inflow)
+uProfile = u_flat(val=inflow)
 
 def velRamp(t):
     if t < residence_time:
@@ -177,28 +189,28 @@ def velRamp(t):
         return 1.0
 
 def twpflowPressure(x,flag):
-    if flag == boundaryTags['downstream']:#set pressure on outflow to hydrostatic
-        return lambda x,t: -(downstream_height-x[2])*rho_0*g[2]
+    if flag == boundaryTags['right']:#set pressure on outflow to hydrostatic
+        return lambda x,t: -(L[2]-x[2])*rho_0*g[2]
 
 
-bottom = [boundaryTags['upstream_bottom'],boundaryTags['step_bottom'],boundaryTags['downstream_bottom']]
+bottom = [boundaryTags['bottom']]
 
 def twpflowVelocity_u(x,flag):
-    if flag == boundaryTags['upstream']:
+    if flag == boundaryTags['left']:
         return lambda x,t: uProfile.uOfX(x-[0.0,0.0,upstream_start_z])*velRamp(t)
     elif (flag == boundaryTags['top'] or
           flag in bottom):
         return lambda x,t: 0.0
 
 def twpflowVelocity_v(x,flag):
-    if flag == boundaryTags['upstream']:
+    if flag == boundaryTags['left']:
         return lambda x,t: 0.0
     if (flag == boundaryTags['top'] or
         flag in bottom):
         return lambda x,t: 0.0
 
 def twpflowVelocity_w(x,flag):
-    if flag == boundaryTags['upstream']:
+    if flag == boundaryTags['left']:
         return lambda x,t: 0.0
     if (flag == boundaryTags['top'] or
         flag in bottom):

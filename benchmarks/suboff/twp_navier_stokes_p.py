@@ -1,12 +1,9 @@
 from proteus import *
 from proteus.default_p import *
-from step import *
+from suboff import *
 from proteus.mprans import RANS2P
 
 LevelModelType = RANS2P.LevelModel
-turbulenceClosureModel=3
-if use_KOmega == True:
-    turbulenceClosureModel=4
 coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    sigma=0.0,
                                    rho_0 = rho_0,
@@ -18,7 +15,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    LS_model=1,
                                    Closure_0_model=3,
                                    Closure_1_model=4,
-                                   turbulenceClosureModel=turbulenceClosureModel,
+                                   turbulenceClosureModel=3,
                                    epsFact_density=epsFact_density,
                                    stokes=False,
                                    useRBLES=useRBLES,
@@ -46,7 +43,7 @@ fluxBoundaryConditions = {0:'outFlow',
 def getAFBC_p(x,flag):
     if flag == 0:
         return lambda x,t: 0.0
-    if flag == boundaryTags['upstream']:
+    if flag == boundaryTags['left']:
         return lambda x,t: -inflow*velRamp(t)
     if (flag in [boundaryTags['front'],boundaryTags['back'],boundaryTags['top']]+bottom):
         return lambda x,t: 0.0
@@ -76,7 +73,7 @@ advectiveFluxBoundaryConditions =  {0:getAFBC_p,
 def getDFBC_u(x,flag):
     if flag == 0:
         return lambda x,t: 0.0
-    if not (flag == boundaryTags['upstream'] or
+    if not (flag == boundaryTags['left'] or
             flag == boundaryTags['top'] or
             flag in bottom):
         return lambda x,t: 0.0
@@ -104,7 +101,7 @@ class Steady_p:
     def __init__(self):
         pass
     def uOfXT(self,x,t):
-        return -(downstream_height-x[1])*coefficients.rho*coefficients.g[1]
+        return -(L[2]-x[1])*coefficients.rho*coefficients.g[1]
 
 class Steady_u:
     def __init__(self):
