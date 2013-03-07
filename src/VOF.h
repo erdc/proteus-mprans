@@ -546,12 +546,11 @@ namespace proteus
 		  //register int eN_k_i=eN_k*nDOF_test_element+i,
 		    //eN_k_i_nSpace = eN_k_i*nSpace,
 		   register int i_nSpace=i*nSpace;
-
-		  elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
-		    ck.Advection_weak(f,&u_grad_test_dV[i_nSpace]) + 
-		    ck.SubgridError(subgridError_u,Lstar_u[i]) + 
-		    ck.NumericalDiffusion(q_numDiff_u_last[eN_k],grad_u,&u_grad_test_dV[i_nSpace]); 
-	      
+		   elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
+		     ck.Advection_weak(f,&u_grad_test_dV[i_nSpace]) + 
+		     ck.SubgridError(subgridError_u,Lstar_u[i]) + 
+		     ck.NumericalDiffusion(q_numDiff_u_last[eN_k],grad_u,&u_grad_test_dV[i_nSpace]); 
+		   
 		}//i
 	      //
 	      //cek/ido todo, get rid of m, since u=m

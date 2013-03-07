@@ -66,7 +66,8 @@ else:
 
 nnx=51
 nny=51
-nLevels = 1
+he = L[0]/float(nnx-1)
+triangleOptions="pAq30Dena%f"  % (0.5*he**2,)
 
 #subgridError = ShallowWater_CFL(coefficients,nd,g)
 subgridError = AdvectionDiffusionReaction_ASGS(coefficients,nd,lag=False)

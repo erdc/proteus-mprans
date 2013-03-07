@@ -1,14 +1,14 @@
 from proteus import *
 from proteus.default_n import *
-from ls_vortex_2d_p import *
-from vortex2D import *
-nd = 2
+from ls_vortex_3d_p import *
+from vortex import *
+nd = 3
 
 if timeIntegration_ls == "BE":
     timeIntegration = BackwardEuler_cfl
     stepController = Min_dt_controller
-    timeIntegration = VBDF
-    stepController = Min_dt_cfl_controller
+    #timeIntegration = VBDF
+    #stepController = Min_dt_cfl_controller
     #timeOrder =2
 elif timeIntegration_ls == "FLCBDF":
     timeIntegration = FLCBDF
@@ -57,17 +57,18 @@ numericalFluxType = DoNothing
 
 
 multilevelNonlinearSolver  = Newton
+
 levelNonlinearSolver = Newton
 
-nonlinearSolverConvergenceTest = 'rits'
-levelNonlinearSolverConvergenceTest = 'rits'
-nonlinearSmoother = None
+nonlinearSmoother = NLGaussSeidel
 
 fullNewtonFlag = True
 
 tolFac = 0.0
 
 nl_atol_res = atolLevelSet
+
+maxNonlinearIts = 50
 
 matrix = SparseMatrix
 
@@ -81,11 +82,11 @@ else:
     
     levelLinearSolver = LU
 
+linTolFac = 0.001
+
 conservativeFlux = {}
-maxNonlinearIts = 2
-maxLineSearches = 0
 
 #checkMass = True
 
 if not applyCorrection and checkMass:
-   auxiliaryVariables = [AuxiliaryVariables.ConservationHistoryLS("vortex2dnc"+`lRefinement`)]
+   auxiliaryVariables = [AuxiliaryVariables.ConservationHistoryLS("vortex3dnc"+`lRefinement`)]

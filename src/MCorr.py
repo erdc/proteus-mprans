@@ -549,7 +549,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.setUnknowns(u)
 	
 
-	
         #no flux boundary conditions
         self.mcorr.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,

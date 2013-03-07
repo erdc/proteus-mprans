@@ -1,7 +1,7 @@
 import math
 from proteus import Domain
 
-def tank2d(L=[1.0,1.0,1.0]):
+def tank2d(L=[1.0,1.0,1.0],fileprefix=None):
     boundaries=['left','right','bottom','top','front','back','obstacle']
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
     vertices=[[0.0,0.0],#0
@@ -22,7 +22,8 @@ def tank2d(L=[1.0,1.0,1.0]):
                   boundaryTags['left']]
     regions=[[0.5*L[0],0.5*L[1]]]
     regionFlags=[1.0]
-    domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
+    domain = Domain.PlanarStraightLineGraphDomain(fileprefix=fileprefix,
+                                                  vertices=vertices,
                                                   vertexFlags=vertexFlags,
                                                   segments=segments,
                                                   segmentFlags=segmentFlags,
@@ -35,7 +36,6 @@ def tank2d(L=[1.0,1.0,1.0]):
 if __name__=='__main__':
     import os
     domain = tank2d()
-    domain.writeAsymptote("tank2d")
     domain.writePoly("tank2d")
     domain.writePLY("tank2d")
     os.system("asy -V tank2d")

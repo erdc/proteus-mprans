@@ -1,7 +1,7 @@
 from proteus import *
 from proteus.default_n import *
-from vof_vortex_2d_p import *
-from vortex2D import *
+from vof_vortex_3d_p import *
+from vortex import *
 
 multilevelNonlinearSolver  = NLNI
 levelNonlinearSolver = Newton
@@ -10,8 +10,6 @@ fullNewtonFlag = True
 if timeIntegration_vof == "BE":
     timeIntegration = BackwardEuler_cfl
     stepController = Min_dt_controller
-    timeIntegration = VBDF
-    stepController = Min_dt_cfl_controller
 elif timeIntegration_vof == "FLCBDF":
     timeIntegration = FLCBDF
     stepController = FLCBDF_controller
