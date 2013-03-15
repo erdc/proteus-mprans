@@ -1,5 +1,28 @@
 import proteus
 from proteus.mprans.cRANS2P import *
+from proteus.mprans.cRANS2P2D import *
+
+class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
+    def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=True,nStepsToDelay=None):
+        proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
+        self.nStepsToDelay = nStepsToDelay
+        self.nSteps=0
+    def initializeElementQuadrature(self,mesh,t,cq):
+        self.mesh=mesh
+        self.numDiff={}
+        self.numDiff_last={}
+        for ci in range(1,4):
+            self.numDiff[ci] = cq[('numDiff',ci,ci)]
+            self.numDiff_last[ci] = cq[('numDiff',ci,ci)]
+    def updateShockCapturingHistory(self):
+        self.nSteps += 1
+        if self.lag:
+            for ci in range(1,4):
+                self.numDiff_last[ci][:] = self.numDiff[ci]
+        if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            self.lag = True
+            for ci in range(4):
+                self.numDiff_last[ci] = self.numDiff[ci].copy()
 
 class Coefficients(proteus.TransportCoefficients.TC_base):
     """
@@ -15,8 +38,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  sigma=72.8,
                  rho_0=998.2,nu_0=1.004e-6,
                  rho_1=1.205,nu_1=1.500e-5,
-                 g=[0.0,-9.8],
-                 nd=2,
+                 g=[0.0,0.0,-9.8],
+                 nd=3,
                  LS_model=None,
                  VF_model=None,
                  KN_model=None,
@@ -1014,13 +1037,43 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.elementDiameter[:] = max(self.mesh.elementDiametersArray)
         else:
             self.elementDiameter = self.mesh.elementDiametersArray
-        self.rans2p = cRANS2P_base(self.nSpace_global,
-                                   self.nQuadraturePoints_element,
-                                   self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
-                                   self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
-                                   self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
-                                   self.nElementBoundaryQuadraturePoints_elementBoundary,
-                                   compKernelFlag)
+        if self.nSpace_global == 2:
+            import copy
+            self.u[3] = self.u[2]
+            self.timeIntegration.m_tmp[3] = self.timeIntegration.m_tmp[2]
+            self.timeIntegration.beta_bdf[3] = self.timeIntegration.beta_bdf[2]
+            self.coefficients.sdInfo[(1,3)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.coefficients.sdInfo[(2,3)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.coefficients.sdInfo[(3,0)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.coefficients.sdInfo[(3,1)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.coefficients.sdInfo[(3,2)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.coefficients.sdInfo[(3,3)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.offset.append(self.offset[2])
+            self.stride.append(self.stride[2])
+            self.numericalFlux.isDOFBoundary[3] = self.numericalFlux.isDOFBoundary[2]
+            self.numericalFlux.ebqe[('u',3)] = self.numericalFlux.ebqe[('u',2)]
+            self.rans2p = cRANS2P2D_base(self.nSpace_global,
+                                         self.nQuadraturePoints_element,
+                                         self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
+                                         self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
+                                         self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
+                                         self.nElementBoundaryQuadraturePoints_elementBoundary,
+                                         compKernelFlag)
+        else:
+            self.rans2p = cRANS2P_base(self.nSpace_global,
+                                       self.nQuadraturePoints_element,
+                                       self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
+                                       self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
+                                       self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
+                                       self.nElementBoundaryQuadraturePoints_elementBoundary,
+                                       compKernelFlag)
+            
     def getResidual(self,u,r):
         """
         Calculate the element residuals and add in to the global residual
@@ -1234,6 +1287,29 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def getJacobian(self,jacobian):
 	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
 				       jacobian)
+        if self.nSpace_global == 2:
+            self.csrRowIndeces[(0,3)]  = self.csrRowIndeces[(0,2)]
+            self.csrColumnOffsets[(0,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrRowIndeces[(1,3)] = self.csrRowIndeces[(0,2)]
+            self.csrColumnOffsets[(1,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrRowIndeces[(2,3)] = self.csrRowIndeces[(0,2)]
+            self.csrColumnOffsets[(2,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrRowIndeces[(3,0)] = self.csrRowIndeces[(2,0)]
+            self.csrColumnOffsets[(3,0)] = self.csrColumnOffsets[(2,0)]
+            self.csrRowIndeces[(3,1)] = self.csrRowIndeces[(2,0)]
+            self.csrColumnOffsets[(3,1)] = self.csrColumnOffsets[(2,0)]
+            self.csrRowIndeces[(3,2)] = self.csrRowIndeces[(2,0)]
+            self.csrColumnOffsets[(3,2)] = self.csrColumnOffsets[(2,0)]
+            self.csrRowIndeces[(3,3)] = self.csrRowIndeces[(2,0)]
+            self.csrColumnOffsets[(3,3)] = self.csrColumnOffsets[(2,0)]
+            self.csrColumnOffsets_eb[(0,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(1,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(2,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(3,0)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(3,1)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(3,2)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(3,3)] = self.csrColumnOffsets[(0,2)]
+  
         self.rans2p.calculateJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,

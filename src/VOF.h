@@ -366,6 +366,9 @@ namespace proteus
 			   double* ebqe_u,
 			   double* ebqe_flux)
     {
+      //std::cout<<"numDiff address "<<q_numDiff_u<<std::endl
+      //       <<"ndlast  address "<<q_numDiff_u_last<<std::endl;
+
       //cek should this be read in?
       double Ct_sge = 4.0;
 
@@ -537,10 +540,18 @@ namespace proteus
 	      //ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u_old,numDiff1);
 	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,sc_uref, sc_alpha,G,G_dd_G,pdeResidual_u,grad_u,numDiff1);
 	      q_numDiff_u[eN_k] = useMetrics*numDiff1+(1.0-useMetrics)*numDiff0;
-              //std::cout<<tau<<"   "<<q_numDiff_u[eN_k]<<std::endl;
+              //std::cout<<tau<<"   "<<q_numDiff_u[eN_k]<<'\t'<<numDiff0<<'\t'<<numDiff1<<'\t'<<pdeResidual_u<<std::endl;
 	      // 
 	      //update element residual 
 	      // 
+	      /*	      std::cout<<m_t<<'\t'
+		       <<f[0]<<'\t'
+		       <<f[1]<<'\t'
+		       <<df[0]<<'\t'
+		       <<df[1]<<'\t'
+		       <<subgridError_u<<'\t'
+		       <<q_numDiff_u_last[eN_k]<<std::endl;*/
+	    
 	      for(int i=0;i<nDOF_test_element;i++) 
 		{ 
 		  //register int eN_k_i=eN_k*nDOF_test_element+i,
@@ -549,8 +560,7 @@ namespace proteus
 		   elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
 		     ck.Advection_weak(f,&u_grad_test_dV[i_nSpace]) + 
 		     ck.SubgridError(subgridError_u,Lstar_u[i]) + 
-		     ck.NumericalDiffusion(q_numDiff_u_last[eN_k],grad_u,&u_grad_test_dV[i_nSpace]); 
-		   
+		     ck.NumericalDiffusion(q_numDiff_u_last[eN_k],grad_u,&u_grad_test_dV[i_nSpace]);		   
 		}//i
 	      //
 	      //cek/ido todo, get rid of m, since u=m
@@ -801,6 +811,8 @@ namespace proteus
 			   double* ebqe_bc_flux_u_ext,
 			   int* csrColumnOffsets_eb_u_u)
     {
+      //std::cout<<"ndjaco  address "<<q_numDiff_u_last<<std::endl;
+
       double Ct_sge = 4.0;
     
       //
@@ -970,6 +982,7 @@ namespace proteus
 
 	      for(int j=0;j<nDOF_trial_element;j++)
 		dsubgridError_u_u[j] = -tau*dpdeResidual_u_u[j];
+
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
 		  //int eN_k_i=eN_k*nDOF_test_element+i;
@@ -980,10 +993,11 @@ namespace proteus
 		      //int eN_k_j_nSpace = eN_k_j*nSpace;
 		      int j_nSpace = j*nSpace;
 		      int i_nSpace = i*nSpace;
+		      //std::cout<<"jac "<<'\t'<<q_numDiff_u_last[eN_k]<<'\t'<<dm_t<<'\t'<<df[0]<<df[1]<<'\t'<<dsubgridError_u_u[j]<<std::endl;
 		      elementJacobian_u_u[i][j] += ck.MassJacobian_weak(dm_t,u_trial_ref[k*nDOF_trial_element+j],u_test_dV[i]) + 
 			ck.AdvectionJacobian_weak(df,u_trial_ref[k*nDOF_trial_element+j],&u_grad_test_dV[i_nSpace]) +
-			ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u[i]) + 
-			ck.NumericalDiffusionJacobian(q_numDiff_u_last[eN_k],&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]); 
+			ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u[i]) +
+		      	ck.NumericalDiffusionJacobian(q_numDiff_u_last[eN_k],&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]);
 		    }//j
 		}//i
 	    }//k

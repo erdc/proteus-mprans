@@ -1,5 +1,5 @@
 #if True uses PETSc solvers
-parallel = False
+parallel = True
 linearSmoother = None
 #compute mass balance statistics or not
 checkMass=False#True
@@ -14,7 +14,7 @@ atol_res = {0:1.0e-4}
 timeIntegration_vof = "BE"
 timeIntegration_ls = "BE"
 #if want bdf2 or bdf1
-timeOrder = 2
+timeOrder = 1
 runCFL = 0.3#0.3,0.185,0.125 for dgp1,dgp2,dgpk(3)
 #
 #spatial approximation orders
@@ -43,13 +43,13 @@ nnz=1
 he=1.0/(nnx-1.0)
 L=[1.0,1.0]
 
-unstructured=True#True for tetgen, false for tet or hex from rectangular grid
+unstructured=False#True for tetgen, false for tet or hex from rectangular grid
 if unstructured:
     from tank2dDomain import *
     domain = tank2d(L=L)
     bt = domain.boundaryTags
     domain.writePoly("tank2d")
-    triangleOptions="pAq30Dena%f"  % (0.5*he**2,)
+    triangleOptions="pAq30Dena%8.8f"  % (0.5*he**2,)
 else:
     from proteus.Domain import RectangularDomain
     domain = RectangularDomain(L)
@@ -69,9 +69,9 @@ epsFactDiffusion=10.0
 epsFactRedistance=0.33
 epsFact_vof=1.5
 #
-shockCapturingFactor_vof=0.33
-shockCapturingFactor_ls=0.33
-shockCapturingFactor_rd=0.99
+shockCapturingFactor_vof=0.1
+shockCapturingFactor_ls=0.1
+shockCapturingFactor_rd=0.1
 #use absolute tolerances on al models
 atolRedistance = 0.1*he
 atolConservation = 1.0e-6

@@ -1,5 +1,5 @@
 from proteus import *
-from marin import *
+from dambreak import *
 from vof_p import *
 
 timeIntegration = BackwardEuler_cfl
@@ -11,7 +11,7 @@ massLumping       = False
 numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
 conservativeFlux  = None
 subgridError      = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)
-shockCapturing    = ResGradQuadDelayLag_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)
+shockCapturing    = VOF.ShockCapturing(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)
 
 fullNewtonFlag = True
 multilevelNonlinearSolver = Newton
@@ -39,9 +39,9 @@ linearSolverConvergenceTest         = 'r-true'
 
 tolFac      = 0.0
 linTolFac   = 0.0
-nl_atol_res = 1.0e-5
 l_atol_res = 1.0e-5
+nl_atol_res = 100.0*l_atol_res
 useEisenstatWalker = False#True
 
-maxNonlinearIts = 2
+maxNonlinearIts = 25
 maxLineSearches = 0

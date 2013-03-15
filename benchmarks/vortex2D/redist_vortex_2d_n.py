@@ -6,6 +6,14 @@ from vortex2D import *
 timeIntegration = NoIntegration
 stepController = Newton_controller
 
+timeIntegration = BackwardEuler_cfl
+stepController = RDLS.PsiTC
+runCFL=0.33
+psitc['nStepsForce']=3
+psitc['nStepsMax']=15
+psitc['reduceRatio']=2.0
+psitc['startRatio']=1.0
+
 if cDegree_ls==0:
     if useHex:
         if pDegree_ls==1:
@@ -25,7 +33,7 @@ if cDegree_ls==0:
         subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=False)
     else:
         subgridError = HamiltonJacobi_ASGS(coefficients,nd,stabFlag='2',lag=False)
-    shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=shockCapturingFactor_rd,lag=False)
+    shockCapturing = RDLS.ShockCapturing(coefficients,nd,shockCapturingFactor=shockCapturingFactor_rd,lag=True)
     if parallel or LevelModelType == RDLS.LevelModel:
         numericalFluxType = DoNothing
 elif cDegree_ls==-1:
@@ -54,16 +62,17 @@ fullNewtonFlag = True
 tolFac = 0.0
 nl_atol_res = atolRedistance
 
-maxNonlinearIts = 10 #1 for PTC
-maxLineSearches = 5
+maxNonlinearIts = 1 #1 for PTC
+maxLineSearches = 0
 levelNonlinearSolverConvergenceTest='rits'
 nonlinearSolverConvergenceTest='rits'
+useEisenstatWalker = True
 
 matrix = SparseMatrix
 
 if parallel:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py#PETSc
+    levelLinearSolver = KSP_petsc4py#PETSc
     linear_solver_options_prefix = 'rdls_'
     linearSolverConvergenceTest = 'r-true'
 else:

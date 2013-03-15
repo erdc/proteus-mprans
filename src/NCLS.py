@@ -1,6 +1,29 @@
 import proteus
 from proteus.mprans.cNCLS import *
 
+class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
+    def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=True,nStepsToDelay=None):
+        proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
+        self.nStepsToDelay = nStepsToDelay
+        self.nSteps=0
+    def initializeElementQuadrature(self,mesh,t,cq):
+        self.mesh=mesh
+        self.numDiff=[]
+        self.numDiff_last=[]
+        for ci in range(self.nc):
+            self.numDiff.append(cq[('numDiff',ci,ci)])
+            self.numDiff_last.append(cq[('numDiff',ci,ci)])
+    def updateShockCapturingHistory(self):
+        self.nSteps += 1
+        if self.lag:
+            for ci in range(self.nc):
+                self.numDiff_last[ci][:] = self.numDiff[ci]
+        if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            self.lag = True
+            self.numDiff_last=[]
+            for ci in range(self.nc):
+                self.numDiff_last.append(self.numDiff[ci].copy())
+
 class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import ncLevelSetCoefficientsEvaluate
     from proteus.UnstructuredFMMandFSWsolvers import FMMEikonalSolver,FSWEikonalSolver

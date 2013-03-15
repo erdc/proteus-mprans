@@ -7,8 +7,8 @@ nd = 2
 if timeIntegration_ls == "BE":
     timeIntegration = BackwardEuler_cfl
     stepController = Min_dt_controller
-    timeIntegration = VBDF
-    stepController = Min_dt_cfl_controller
+    #timeIntegration = VBDF
+    #stepController = Min_dt_cfl_controller
     #timeOrder =2
 elif timeIntegration_ls == "FLCBDF":
     timeIntegration = FLCBDF
@@ -51,7 +51,7 @@ massLumping = False
 
 numericalFluxType = None
 
-shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=shockCapturingFactor_ls,lag=True)
+shockCapturing = NCLS.ShockCapturing(coefficients,nd,shockCapturingFactor=shockCapturingFactor_ls,lag=False,nStepsToDelay=3)
 
 numericalFluxType = DoNothing
 
@@ -68,12 +68,13 @@ fullNewtonFlag = True
 tolFac = 0.0
 
 nl_atol_res = atolLevelSet
+l_atol_res = atolLevelSet
 
 matrix = SparseMatrix
 
 if parallel:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py#PETSc
+    levelLinearSolver = KSP_petsc4py#PETSc
     linear_solver_options_prefix = 'ncls_'
     linearSolverConvergenceTest = 'r-true'
 else:
@@ -82,7 +83,7 @@ else:
     levelLinearSolver = LU
 
 conservativeFlux = {}
-maxNonlinearIts = 2
+maxNonlinearIts = 5
 maxLineSearches = 0
 
 #checkMass = True
