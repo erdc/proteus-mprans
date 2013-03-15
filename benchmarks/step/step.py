@@ -139,7 +139,9 @@ residence_time = length/inflow
 T=10.0#10.0*length/inflow
 #tnList = [0.0,0.1*residence_time,T]
 nDTout=10
-tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
+tnList = [0.0,0.001]
+#tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
+tnList.extend([i*T/float(nDTout) for i in range(1,nDTout+1)])#[0.0,0.5*T,T]
 runCFL=0.9
 
 #----------------------------------------------------

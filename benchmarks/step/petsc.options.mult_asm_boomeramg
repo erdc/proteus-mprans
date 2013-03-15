@@ -1,0 +1,17 @@
+-rans2p_ksp_type fgmres -rans2p_ksp_gmres_modifiedgramschmidt -rans2p_ksp_gmres_cgs_refinement_type REFINE_IFNEEDED
+-rans2p_ksp_atol 1.0e-4 -rans2p_ksp_rtol 0.0
+-rans2p_pc_type fieldsplit
+-rans2p_pc_fieldsplit_type multiplicative
+-rans2p_fieldsplit_velocity_ksp_type preonly 
+-rans2p_fieldsplit_velocity_pc_type asm -rans2p_fieldsplit_velocity_pc_asm_type basic -rans2p_fieldsplit_velocity_pc_asm_overlap 2
+-rans2p_fieldsplit_pressure_ksp_type preonly 
+-rans2p_fieldsplit_pressure_pc_type hypre -rans2p_fieldsplit_pressure_pc_hypre_type boomeramg
+-ncls_ksp_type   bcgsl -ncls_pc_type   none -ncls_ksp_atol   1.0 -ncls_ksp_rtol   1.0 -ncls_ksp_max_it 0
+-rdls_ksp_type   bcgsl -rdls_pc_type   none -rdls_ksp_atol   1.0 -rdls_ksp_rtol   1.0 -rdls_ksp_max_it 0
+-kappa_ksp_type    fgmres -kappa_pc_type    hypre -kappa_pc_hypre_type    boomeramg -kappa_ksp_atol   1.0e-8   -kappa_ksp_rtol   0.0 -kappa_ksp_monitor_true_residual
+-dissipation_ksp_type  fgmres     -dissipation_pc_type  hypre -dissipation_pc_hypre_type  boomeramg -dissipation_ksp_atol 1.0e-8   -dissipation_ksp_rtol 0.0 -dissipation_ksp_monitor_true_residual
+-log_summary
+
+
+
+
