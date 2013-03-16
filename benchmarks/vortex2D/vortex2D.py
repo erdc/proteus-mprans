@@ -1,5 +1,5 @@
 #if True uses PETSc solvers
-parallel = True
+parallel = False
 linearSmoother = None
 #compute mass balance statistics or not
 checkMass=False#True
@@ -35,7 +35,7 @@ else:
 from proteus import MeshTools
 partitioningType = MeshTools.MeshParallelPartitioningTypes.node
 #spatial mesh
-lRefinement=5
+lRefinement=3
 #tag simulation name to level of refinement
 #soname="vortexcgp2_bdf2_mc"+`lRefinement`
 nn=nnx=nny=(2**lRefinement)*10+1
@@ -72,6 +72,14 @@ epsFact_vof=1.5
 shockCapturingFactor_vof=0.1
 shockCapturingFactor_ls=0.1
 shockCapturingFactor_rd=0.1
+if useMetrics==0.0:
+    shockCapturingFactor_vof=0.9
+    shockCapturingFactor_ls=0.9
+    shockCapturingFactor_rd=0.9
+    lag_shockCapturing_vof=True
+    lag_shockCapturing_ls=True
+    lag_shockCapturing_rd=False
+
 #use absolute tolerances on al models
 atolRedistance = 0.1*he
 atolConservation = 1.0e-6

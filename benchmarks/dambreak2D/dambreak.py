@@ -12,7 +12,7 @@ useSuperlu=True#False
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
-useMetrics = 1.0
+useMetrics = 0.0
 applyCorrection=True
 useVF = 1.0
 useOnlyVF = False
@@ -60,46 +60,49 @@ nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
-
+unstructured=True
 if useHex:   
-    nnx=4*Refinement
-    nny=2*Refinement
+    nnx=4*Refinement+1
+    nny=2*Refinement+1
     hex=True    
     domain = Domain.RectangularDomain(L)
 else:
     boundaries=['left','right','bottom','top','front','back']
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
-    vertices=[[0.0,0.0],#0
-              [L[0],0.0],#1
-              [L[0],L[1]],#2
-              [0.0,L[1]]]#3
-    vertexFlags=[boundaryTags['left'],
-                 boundaryTags['right'],
-                 boundaryTags['right'],
-                 boundaryTags['left']]
-    segments=[[0,1],
-              [1,2],
-              [2,3],
-              [3,0]]
-    segmentFlags=[boundaryTags['bottom'],
-                  boundaryTags['right'],
-                  boundaryTags['top'],
-                  boundaryTags['left']]
-    regions=[[0.5*L[0],0.5*L[1]]]
-    regionFlags=[1]
-    print vertices
-    domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
-                                                  vertexFlags=vertexFlags,
-                                                  segments=segments,
-                                                  segmentFlags=segmentFlags,
-                                                  regions=regions,
-                                                  regionFlags=regionFlags)
-    #go ahead and add a boundary tags member 
-    domain.boundaryTags = boundaryTags
-    domain.writePoly("mesh")
-    domain.writePLY("mesh")
-    domain.writeAsymptote("mesh")
-    triangleOptions="pAq30Dena%8.8f" % ((he**2)/2.0,)
+    if unstructured:
+        nnx=4*Refinement
+        nny=2*Refinement
+    else:
+        vertices=[[0.0,0.0],#0
+                  [L[0],0.0],#1
+                  [L[0],L[1]],#2
+                  [0.0,L[1]]]#3
+        vertexFlags=[boundaryTags['bottom'],
+                     boundaryTags['bottom'],
+                     boundaryTags['top'],
+                     boundaryTags['top']]
+        segments=[[0,1],
+                  [1,2],
+                  [2,3],
+                  [3,0]]
+        segmentFlags=[boundaryTags['bottom'],
+                      boundaryTags['right'],
+                      boundaryTags['top'],
+                      boundaryTags['left']]
+        regions=[[0.5*L[0],0.5*L[1]]]
+        regionFlags=[1]
+        domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
+                                                      vertexFlags=vertexFlags,
+                                                      segments=segments,
+                                                      segmentFlags=segmentFlags,
+                                                      regions=regions,
+                                                      regionFlags=regionFlags)
+        #go ahead and add a boundary tags member 
+        domain.boundaryTags = boundaryTags
+        domain.writePoly("mesh")
+        domain.writePLY("mesh")
+        domain.writeAsymptote("mesh")
+        triangleOptions="pAq30Dena%8.8f" % ((he**2)/2.0,)
 
 # Time stepping
 T=1.0
@@ -109,11 +112,11 @@ runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.1
-ls_shockCapturingFactor  = 0.1
+ns_shockCapturingFactor  = 0.0
+ls_shockCapturingFactor  = 0.9
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.1
+vof_shockCapturingFactor = 0.9
 vof_sc_uref = 1.0
 vof_sc_beta = 1.0
 rd_shockCapturingFactor  = 0.9

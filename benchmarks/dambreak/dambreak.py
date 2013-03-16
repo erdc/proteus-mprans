@@ -8,11 +8,11 @@ from proteus.default_n import *
 Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
-useSuperlu=False
+useSuperlu=True#False
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
-useMetrics = 1.0
+useMetrics = 0.0
 applyCorrection=True
 useVF = 1.0
 useOnlyVF = False
@@ -39,8 +39,8 @@ if spaceOrder == 1:
          elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,2)     	 
     else:
     	 basis=C0_AffineLinearOnSimplexWithNodalBasis
-         elementQuadrature = SimplexGaussQuadrature(nd,2)
-         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,2) 	    
+         elementQuadrature = SimplexGaussQuadrature(nd,3)
+         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,3) 	    
 elif spaceOrder == 2:
     hFactor=0.5
     if useHex:    
@@ -74,7 +74,6 @@ if useHex:
     hex=True    
     domain = Domain.RectangularDomain(L)
 else:
-
     boundaries=['left','right','bottom','top','front','back']
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
     vertices=[[0.0,0.0,0.0],#0
@@ -129,7 +128,7 @@ runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.9
+ns_shockCapturingFactor  = 0.0
 ls_shockCapturingFactor  = 0.9
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
@@ -138,14 +137,14 @@ vof_sc_uref = 1.0
 vof_sc_beta = 1.0
 rd_shockCapturingFactor  = 0.9
 
-epsFact_density    = 1.5
-epsFact_viscosity  = 1.5
+epsFact_density    = 3.0
+epsFact_viscosity  = 3.0
 epsFact_redistance = 0.33
-epsFact_curvature  = 1.5
-epsFact_consrv_heaviside = 1.0
-epsFact_consrv_dirac     = 1.0
+epsFact_curvature  = 3.0
+epsFact_consrv_heaviside = 3.0
+epsFact_consrv_dirac     = 3.0
 epsFact_consrv_diffusion = 10.0
-epsFact_vof = 1.5
+epsFact_vof = 3.0
 
 # Water
 rho_0 = 998.2

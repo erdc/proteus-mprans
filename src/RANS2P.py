@@ -3,10 +3,14 @@ from proteus.mprans.cRANS2P import *
 from proteus.mprans.cRANS2P2D import *
 
 class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
-    def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=True,nStepsToDelay=None):
+    def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=False,nStepsToDelay=3):
         proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
         self.nStepsToDelay = nStepsToDelay
         self.nSteps=0
+        if self.lag:
+            log("RANS2P.ShockCapturing: lagging requested but must lag the first step; switching lagging off and delaying")
+            self.nStepsToDelay=1
+            self.lag=False
     def initializeElementQuadrature(self,mesh,t,cq):
         self.mesh=mesh
         self.numDiff={}
@@ -20,8 +24,9 @@ class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
             for ci in range(1,4):
                 self.numDiff_last[ci][:] = self.numDiff[ci]
         if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            log("RANS2P.ShockCapturing: switched to lagged shock capturing")
             self.lag = True
-            for ci in range(4):
+            for ci in range(1,4):
                 self.numDiff_last[ci] = self.numDiff[ci].copy()
 
 class Coefficients(proteus.TransportCoefficients.TC_base):
@@ -1039,9 +1044,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.elementDiameter = self.mesh.elementDiametersArray
         if self.nSpace_global == 2:
             import copy
-            self.u[3] = self.u[2]
-            self.timeIntegration.m_tmp[3] = self.timeIntegration.m_tmp[2]
-            self.timeIntegration.beta_bdf[3] = self.timeIntegration.beta_bdf[2]
+            self.u[3] = copy.deepcopy(self.u[2])
+            self.timeIntegration.m_tmp[3] = self.timeIntegration.m_tmp[2].copy()
+            self.timeIntegration.beta_bdf[3] = self.timeIntegration.beta_bdf[2].copy()
             self.coefficients.sdInfo[(1,3)] = (numpy.array([0,1,2],dtype='i'),
                                   numpy.array([0,1],dtype='i'))
             self.coefficients.sdInfo[(2,3)] = (numpy.array([0,1,2],dtype='i'),
@@ -1056,8 +1061,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                   numpy.array([0,1],dtype='i'))
             self.offset.append(self.offset[2])
             self.stride.append(self.stride[2])
-            self.numericalFlux.isDOFBoundary[3] = self.numericalFlux.isDOFBoundary[2]
-            self.numericalFlux.ebqe[('u',3)] = self.numericalFlux.ebqe[('u',2)]
+            self.numericalFlux.isDOFBoundary[3] = self.numericalFlux.isDOFBoundary[2].copy()
+            self.numericalFlux.ebqe[('u',3)] = self.numericalFlux.ebqe[('u',2)].copy()
             self.rans2p = cRANS2P2D_base(self.nSpace_global,
                                          self.nQuadraturePoints_element,
                                          self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
@@ -1113,6 +1118,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             for cj in range(len(self.dirichletConditionsForceDOF)):
                 for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
                     self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
+
         self.rans2p.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -1263,7 +1269,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.barycenters,
             self.coefficients.netForces,
             self.coefficients.netMoments)
-
 	from proteus.flcbdfWrappers import globalSum
         for i in range(self.coefficients.netForces.shape[0]):
             for I in range(3):

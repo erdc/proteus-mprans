@@ -8,15 +8,16 @@ from dambreak import *
 #timeIntegration = BackwardEuler
 #stepController = Osher_PsiTC_controller2	     
 
-timeIntegrator  = ForwardIntegrator
-timeIntegration = NoIntegration
+#timeIntegrator  = ForwardIntegrator
+#timeIntegration = NoIntegration
 
 timeIntegration = BackwardEuler_cfl
 stepController = RDLS.PsiTC
-runCFL=0.33
+
+runCFL=1.0
 psitc['nStepsForce']=3
 psitc['nStepsMax']=15
-psitc['reduceRatio']=2.0
+psitc['reduceRatio']=1.5
 psitc['startRatio']=1.0
 
 femSpaces = {0:basis}
@@ -49,13 +50,14 @@ if useSuperlu:
 
 linear_solver_options_prefix = 'rdls_'
 nonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest = 'r-true'
 
 rtol_res[0] = 0.0
 atol_res[0] = 0.1*he
 
-tolFac = 0.0
-nl_atol_res = 0.1*he
+tolFac = 0.01
+nl_atol_res = 0.01*he
 useEisenstatWalker = True
 
 maxNonlinearIts = 1

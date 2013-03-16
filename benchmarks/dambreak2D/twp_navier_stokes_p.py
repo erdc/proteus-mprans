@@ -25,7 +25,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
 				   useMetrics=useMetrics,
                                    eb_adjoint_sigma=1.0,
                                    forceStrongDirichlet=0,
-                                   turbulenceClosureModel=2)
+                                   turbulenceClosureModel=0)
 
 def getDBC_p(x,flag):
     if flag == boundaryTags['top']:
@@ -45,8 +45,7 @@ def getDBC_w(x,flag):
     
 dirichletConditions = {0:getDBC_p,
                        1:getDBC_u,
-                       2:getDBC_v,
-                       3:getDBC_w}
+                       2:getDBC_v}
 
 def getAFBC_p(x,flag):
     if flag != boundaryTags['top']:
@@ -75,13 +74,11 @@ def getDFBC_w(x,flag):
 
 advectiveFluxBoundaryConditions =  {0:getAFBC_p,
                                     1:getAFBC_u,
-                                    2:getAFBC_v,
-                                    3:getAFBC_w}
+                                    2:getAFBC_v}
 
 diffusiveFluxBoundaryConditions = {0:{},
                                    1:{1:getDFBC_u},
-                                   2:{2:getDFBC_v},
-                                   3:{3:getDFBC_w}}
+                                   2:{2:getDFBC_v}}
 
 class PerturbedSurface_p:
     def __init__(self,waterLevel):
@@ -100,5 +97,4 @@ class AtRest:
 
 initialConditions = {0:PerturbedSurface_p(waterLine_z),
                      1:AtRest(),
-                     2:AtRest(),
-                     3:AtRest()}
+                     2:AtRest()}

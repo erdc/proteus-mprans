@@ -25,9 +25,10 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
 				   useMetrics=useMetrics,
                                    eb_adjoint_sigma=1.0,
                                    forceStrongDirichlet=0,
-                                   turbulenceClosureModel=2)
+                                   turbulenceClosureModel=0)
 
 def getDBC_p(x,flag):
+    return None#cek hack
     if flag == boundaryTags['top']:
         return lambda x,t: 0.0
 

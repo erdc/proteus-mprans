@@ -28,7 +28,7 @@ class NumericalFluxType(NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_ext
         self.hasInterior=False
 
 numericalFluxType = NumericalFluxType
-subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=True,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=False)
+subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=True,delayLagSteps=3,hFactor=hFactor,noPressureStabilization=False)
 shockCapturing = RANS2P.ShockCapturing(coefficients,nd,ns_shockCapturingFactor,lag=True)
 
 fullNewtonFlag = True
@@ -36,7 +36,7 @@ multilevelNonlinearSolver = NewtonNS
 levelNonlinearSolver      = NewtonNS
 
 nonlinearSmoother = None
-linearSmoother    = SimpleNavierStokes3D
+linearSmoother    = SimpleNavierStokes2D
 
 matrix = SparseMatrix
 
@@ -55,7 +55,7 @@ linear_solver_options_prefix = 'rans2p_'
 levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest             = 'r-true'
 
-tolFac = 1.0e-3
+tolFac = 0.0
 nl_atol_res = 1.0e-4
 useEisenstatWalker = True
 maxNonlinearIts = 20

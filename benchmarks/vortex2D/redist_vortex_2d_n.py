@@ -33,7 +33,7 @@ if cDegree_ls==0:
         subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=False)
     else:
         subgridError = HamiltonJacobi_ASGS(coefficients,nd,stabFlag='2',lag=False)
-    shockCapturing = RDLS.ShockCapturing(coefficients,nd,shockCapturingFactor=shockCapturingFactor_rd,lag=True)
+    shockCapturing = RDLS.ShockCapturing(coefficients,nd,shockCapturingFactor=shockCapturingFactor_rd,lag=lag_shockCapturing_rd)
     if parallel or LevelModelType == RDLS.LevelModel:
         numericalFluxType = DoNothing
 elif cDegree_ls==-1:

@@ -51,7 +51,7 @@ massLumping = False
 
 numericalFluxType = None
 
-shockCapturing = NCLS.ShockCapturing(coefficients,nd,shockCapturingFactor=shockCapturingFactor_ls,lag=False,nStepsToDelay=3)
+shockCapturing = NCLS.ShockCapturing(coefficients,nd,shockCapturingFactor=shockCapturingFactor_ls,lag=lag_shockCapturing_ls)
 
 numericalFluxType = DoNothing
 

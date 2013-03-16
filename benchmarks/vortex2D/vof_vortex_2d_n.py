@@ -41,7 +41,7 @@ if cDegree_vof==0:
         elif pDegree_vof==2:
             femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
     subgridError = Advection_ASGS(coefficients,nd,lag=False)
-    shockCapturing = VOF.ShockCapturing(coefficients,nd,shockCapturingFactor=shockCapturingFactor_vof,lag=False,nStepsToDelay=None)
+    shockCapturing = VOF.ShockCapturing(coefficients,nd,shockCapturingFactor=shockCapturingFactor_vof,lag=lag_shockCapturing_vof)
     if parallel or LevelModelType == VOF.LevelModel:
         numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
 

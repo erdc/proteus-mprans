@@ -6,6 +6,10 @@ class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
         proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
         self.nStepsToDelay = nStepsToDelay
         self.nSteps=0
+        if self.lag:
+            log("NCLS.ShockCapturing: lagging requested but must lag the first step; switching lagging off and delaying")
+            self.nStepsToDelay=1
+            self.lag=False
     def initializeElementQuadrature(self,mesh,t,cq):
         self.mesh=mesh
         self.numDiff=[]
@@ -19,6 +23,7 @@ class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
             for ci in range(self.nc):
                 self.numDiff_last[ci][:] = self.numDiff[ci]
         if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            log("NCLS.ShockCapturing: switched to lagged shock capturing")
             self.lag = True
             self.numDiff_last=[]
             for ci in range(self.nc):
@@ -662,7 +667,7 @@ class LevelModel(OneLevelTransport):
             self.mesh.elementBoundaryLocalElementBoundariesArray,
             self.coefficients.ebqe_v,
             self.numericalFlux.isDOFBoundary[0],
-            self.numericalFlux.ebqe[('u',0)],
+            self.coefficients.rdModel.ebqe[('u',0)],#self.numericalFlux.ebqe[('u',0)],
             self.ebqe[('u',0)])
 
 	if self.forceStrongConditions:#

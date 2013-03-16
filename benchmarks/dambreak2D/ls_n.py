@@ -11,7 +11,7 @@ numericalFluxType = None
 conservativeFlux  = None
 numericalFluxType = DoNothing
 subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)
-shockCapturing    = NCLS.ShockCapturing(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=False)
+shockCapturing    = NCLS.ShockCapturing(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=True)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton

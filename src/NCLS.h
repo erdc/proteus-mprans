@@ -253,7 +253,7 @@ namespace proteus
 	}
       else
 	{
-	  flux = bc_u*flow_movingDomain;//cek hack - flow_fluid*(u-bc_u);
+	  flux = bc_u*flow_movingDomain - flow_fluid*(u-bc_u);
 	}
     }
     

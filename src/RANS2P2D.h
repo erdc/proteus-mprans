@@ -1106,6 +1106,7 @@ namespace proteus
       oneByAbsdt =  fabs(dmt);
       tau_v = 1.0/(4.0*viscosity/(h*h) + 2.0*nrm_df/h + oneByAbsdt);
       tau_p = (4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h)/pfac;
+      //std::cout<<"tau_v "<<tau_v<<" tau_p "<<tau_p<<std::endl;
     }
 
     inline
@@ -1354,6 +1355,14 @@ namespace proteus
       /* 	{ */
       /* 	  flux_wmom = bc_flux_wmom; */
       /* 	} */
+      /* if (fabs(flux_mass) > 1.0e-4) */
+      /* 	std::cout<<"flux_mass "<<flux_mass<<std::endl */
+      /* 		 <<"n_0       "<<n[0]<<std::endl */
+      /* 		 <<"n_1       "<<n[1]<<std::endl */
+      /* 		 <<"norm(n)   "<<sqrt(n[0]*n[0]+n[1]*n[1])<<std::endl */
+      /* 		 <<"v_0       "<<velocity[0]<<std::endl */
+      /* 		 <<"v_1       "<<velocity[1]<<std::endl */
+      /* 		 <<std::endl; */
     }
 
     inline
@@ -2249,8 +2258,8 @@ namespace proteus
 	      mom_v_adv[1] += dmom_u_acc_u*(useRBLES*subgridError_v*q_velocity_sge[eN_k_nSpace+1]); 
               /* mom_v_adv[2] += dmom_u_acc_u*(useRBLES*subgridError_w*q_velocity_sge[eN_k_nSpace+1]);  */
          
-	      mom_w_adv[0] += dmom_u_acc_u*(useRBLES*subgridError_u*q_velocity_sge[eN_k_nSpace+2]);   	   
-	      mom_w_adv[1] += dmom_u_acc_u*(useRBLES*subgridError_v*q_velocity_sge[eN_k_nSpace+2]); 
+	      /* mom_w_adv[0] += dmom_u_acc_u*(useRBLES*subgridError_u*q_velocity_sge[eN_k_nSpace+2]);   	    */
+	      /* mom_w_adv[1] += dmom_u_acc_u*(useRBLES*subgridError_v*q_velocity_sge[eN_k_nSpace+2]);  */
               /* mom_w_adv[2] += dmom_u_acc_u*(useRBLES*subgridError_w*q_velocity_sge[eN_k_nSpace+2]);  */
               
 	      // adjoint times the test functions 
@@ -2531,6 +2540,7 @@ namespace proteus
 							  integralScaling);
 	      //xt_ext=0.0;yt_ext=0.0;zt_ext=0.0;
 	      //std::cout<<"xt_ext "<<xt_ext<<'\t'<<yt_ext<<'\t'<<zt_ext<<std::endl;
+	      //std::cout<<"x_ext "<<x_ext<<'\t'<<y_ext<<'\t'<<z_ext<<std::endl;
 	      //std::cout<<"integralScaling - metricTensorDetSrt ==============================="<<integralScaling-metricTensorDetSqrt<<std::endl;
 	      dS = ((1.0-MOVING_DOMAIN)*metricTensorDetSqrt + MOVING_DOMAIN*integralScaling)*dS_ref[kb];
 	      //get the metric tensor
@@ -2996,6 +3006,10 @@ namespace proteus
 	      /* 				     penalty,//ebqe_penalty_ext[ebNE_kb], */
 	      /* 				     flux_mom_ww_diff_ext); */
 	      flux[ebN*nQuadraturePoints_elementBoundary+kb] = flux_mass_ext;
+	      /* std::cout<<"external u,v,u_n " */
+	      /* 	       <<ebqe_velocity[ebNE_kb_nSpace+0]<<'\t' */
+	      /* 	       <<ebqe_velocity[ebNE_kb_nSpace+1]<<'\t' */
+	      /* 	       <<flux[ebN*nQuadraturePoints_elementBoundary+kb]<<std::endl; */
 	      // 
 	      //integrate the net force and moment on flagged boundaries
 	      //
@@ -3607,7 +3621,7 @@ namespace proteus
 						phi_solid[eN_k],
 						q_velocity_solid[eN_k_nSpace+0],
 						q_velocity_solid[eN_k_nSpace+1],
-						q_velocity_solid[eN_k_nSpace+2],
+						q_velocity_solid[eN_k_nSpace+1],//cek hack, should not be used
 						mom_u_source,
 						mom_v_source,
 						mom_w_source,

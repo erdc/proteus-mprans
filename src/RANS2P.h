@@ -1106,6 +1106,7 @@ namespace proteus
       oneByAbsdt =  fabs(dmt);
       tau_v = 1.0/(4.0*viscosity/(h*h) + 2.0*nrm_df/h + oneByAbsdt);
       tau_p = (4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h)/pfac;
+      /* std::cout<<"tau_v "<<tau_v<<" tau_p "<<tau_p<<std::endl; */
     }
 
     inline
@@ -1127,7 +1128,7 @@ namespace proteus
          for (int J=0;J<nSpace;J++) 
            v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
     
-      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + Cd_sge*Kij*Kij*G_dd_G); 
+      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + Cd_sge*Kij*Kij*G_dd_G + 1.0e-12); 
       tau_p = 1.0/(pfac*tr_G*tau_v);     
     }
 
@@ -1354,6 +1355,16 @@ namespace proteus
 	{
 	  flux_wmom = bc_flux_wmom;
 	}
+      /* if (fabs(flux_mass) > 1.0e-4) */
+      /* 	std::cout<<"flux_mass "<<flux_mass<<std::endl */
+      /* 		 <<"n_0       "<<n[0]<<std::endl */
+      /* 		 <<"n_1       "<<n[1]<<std::endl */
+      /* 		 <<"n_2       "<<n[2]<<std::endl */
+      /* 		 <<"norm(n)   "<<sqrt(n[0]*n[0]+n[1]*n[1] + n[2]*n[2])<<std::endl */
+      /* 		 <<"v_0       "<<velocity[0]<<std::endl */
+      /* 		 <<"v_1       "<<velocity[1]<<std::endl */
+      /* 		 <<"v_2       "<<velocity[2]<<std::endl */
+      /* 		 <<std::endl; */
     }
 
     inline
@@ -2275,7 +2286,7 @@ namespace proteus
 		}
 
 	      norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v + pdeResidual_w*pdeResidual_w);
-	      q_numDiff_u[eN_k] = C_dc*norm_Rv*(useMetrics/sqrt(G_dd_G)  + 
+	      q_numDiff_u[eN_k] = C_dc*norm_Rv*(useMetrics/sqrt(G_dd_G+1.0e-12)  + 
 	                                        (1.0-useMetrics)*hFactor*hFactor*elementDiameter[eN]*elementDiameter[eN]);
 	      q_numDiff_v[eN_k] = q_numDiff_u[eN_k];
 	      q_numDiff_w[eN_k] = q_numDiff_u[eN_k];

@@ -113,6 +113,7 @@ class PsiTC(proteus.StepControl.SC_base):
         #physical time step
         self.t_model = self.substeps[0]
         self.setSubsteps([self.substeps[0]])
+        log("Osher-PsiTC choosing dt = %12.5e " %(self.dt_model,))
 
 class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import redistanceLevelSetCoefficientsEvaluate
