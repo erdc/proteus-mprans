@@ -23,7 +23,7 @@ cDegree_vof=0
 pDegree_ls=1 #level set 
 pDegree_vof=pDegree_ls #volume of fluid should match ls for now
 useHex=False#True
-useMetrics=0.0
+useMetrics=1.0
 #
 #spatial quadrature orders
 #2*max(pDegree_vof,pDegree_ls)+1
@@ -72,6 +72,9 @@ epsFact_vof=1.5
 shockCapturingFactor_vof=0.1
 shockCapturingFactor_ls=0.1
 shockCapturingFactor_rd=0.1
+lag_shockCapturing_vof=False
+lag_shockCapturing_ls=False
+lag_shockCapturing_rd=False
 if useMetrics==0.0:
     shockCapturingFactor_vof=0.9
     shockCapturingFactor_ls=0.9
