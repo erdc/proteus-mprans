@@ -182,7 +182,8 @@ namespace proteus
     {}
 
     inline
-    void computeK_OmegaCoefficients(const double& k,
+    void computeK_OmegaCoefficients(const double& div_eps,
+  			            const double& k,
 				    const double& omega,
 				    const double grad_k[nSpace],
 				    const double grad_omega[nSpace],
@@ -195,7 +196,6 @@ namespace proteus
 				    double& beta,
 				    double& gamma)
     {
-      const double div_eps = 1.0e-6;
       //take these from NASA Langley Turbulence Model page
       //brute force just to see if I can figure it out
       //use inverse of sigma_k to match standard k-epsilon form
@@ -222,19 +222,40 @@ namespace proteus
 	for (int k=0; k < nSpace; k++)
 	  for (int j=0; j < nSpace; j++)
 	    chi_omega += Omega[i][j]*Omega[j][k]*S[k][i];
+      if (fabs(omega) > div_eps)
+	{
+	  chi_omega = fabs(chi_omega/(beta0_star*omega*beta0_star*omega*beta0_star*omega));
       
-      chi_omega = fabs(chi_omega/(div_eps + beta0_star*omega*beta0_star*omega*beta0_star*omega));
-
-      const double f_beta = (1.0+70.0*chi_omega)/(1.0 + 80.0*chi_omega);
-      beta = beta0*f_beta;
-
+	  const double f_beta = (1.0+70.0*chi_omega)/(1.0 + 80.0*chi_omega);
+	  beta = beta0*f_beta;
+	}
+      else
+	{
+	  beta = beta0;
+	}
       double chi_k = grad_k[0]*grad_omega[0] + grad_k[1]*grad_omega[1] + grad_k[2]*grad_omega[2];
-      chi_k = chi_k/(omega*omega*omega+div_eps);
       double f_beta_star = 1.0;
-      if (chi_k > 0.0)
-	f_beta_star = (1.0 + 680.0*chi_k*chi_k)/(1.0 + 400.0*chi_k*chi_k);
+
+      const double omega3 = omega*omega*omega;
+      if (fabs(omega3) > div_eps)
+	{
+	  chi_k = chi_k/omega3;
+	  f_beta_star = (1.0 + 680.0*chi_k*chi_k)/(1.0 + 400.0*chi_k*chi_k);
+	}
+      else if (chi_k > 0.0)
+	f_beta_star = 680.0/400.0;
 
       beta_star = beta0_star*f_beta_star;
+      if (beta < 0.875*beta0 || beta > beta0)
+	{
+	  std::cout<<"Dissipation K-Omega coef problem k= "<<k<<" omega= "<<omega<<" beta= "<<beta<<" beta0= "<<beta0 <<" chi_omega= "<<chi_omega<<std::endl;
+	} 
+      if (beta_star < beta0_star || beta > (680.0+1.0e-4)/400.0*beta0_star)
+	{
+	  std::cout<<"Dissipation K-Omega coef problem k= "<<k<<" omega= "<<omega<<" beta_star= "<<beta_star<<" beta0_star= "<<beta0_star <<" chi_k= "<<chi_k<<std::endl;
+	} 
+      //mwf hack
+      //beta = beta0; beta_star = beta0_star;
     }
 
     //Try Lew, Buscaglia approximation
@@ -268,7 +289,6 @@ namespace proteus
 			      double& r,
 			      double& dr_de)
     {
-      const double div_eps = 1.0e-6;
       double nu_t=0.0,dnu_t_de=0.0,PiD4=0.0,disp=0.0,ddisp_de=0.0;
       double gamma_e=0.0,F_e=0.0, gamma_production=0.0,sigma_a=sigma_e, 
 	dgamma_e_d_dissipation=0.0, dF_e_d_dissipation=0.0;
@@ -284,9 +304,10 @@ namespace proteus
 	}
       const double H_mu = smoothedHeaviside(eps_mu,phi);
       const double nu = (1.0-H_mu)*nu_0 + H_mu*nu_1;
+      const double div_eps = 1.0e-2*fmin(nu_0,nu_1);
       //eddy viscosity 
-      nu_t     = isKEpsilon*c_mu*k*k/(dissipation_old+div_eps)
-	+ (1.0-isKEpsilon)*k/(dissipation_old+div_eps);
+      nu_t     = isKEpsilon*c_mu*k*k/(fabs(dissipation_old)+div_eps)
+	+ (1.0-isKEpsilon)*k/(fabs(dissipation_old)+div_eps);
 
       dnu_t_de = 0.0;
       nu_t = fmax(nu_t,1.e-4*nu);
@@ -307,7 +328,8 @@ namespace proteus
 	{
 	  //temporaries
 	  double sigma_k=1.,beta_star=1.,beta=1.0;
-	  computeK_OmegaCoefficients(k,
+	  computeK_OmegaCoefficients(div_eps,
+				     k,
 				     dissipation_old,
 				     grad_k,
 				     grad_dissipation_old,
@@ -320,8 +342,11 @@ namespace proteus
 				     beta,
 				     gamma_production);
 	  //--full lagging of Gamma_e
-	  dgamma_e_d_dissipation=0.0;
-	  gamma_e=fmax(beta*dissipation_old,0.0);
+	  //dgamma_e_d_dissipation=0.0;
+	  //gamma_e=fmax(beta*dissipation_old,0.0);
+	  //--try to couple to k
+	  dgamma_e_d_dissipation = 0.0;
+	  gamma_e = fmax(beta*k/nu_t,0.0);
 	  //--quadratic nonlinearity
 	  //dgamma_e_d_dissipation = fmax(beta,0.0);
 	  //gamma_e = dgamma_e_d_dissipation*dissipation;
@@ -329,6 +354,8 @@ namespace proteus
 	  //-- full lagging of production
 	  dF_e_d_dissipation=0.0;
 	  F_e = fmax(PiD4*gamma_production,0.0);
+	  //dF_e_d_dissipation = fmax(gamma_production*nu_t/(k+div_eps)*PiD4,0.0);
+	  //F_e = dF_e_d_dissipation*dissipation;
 	}
       else
 	{

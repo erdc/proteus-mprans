@@ -8,7 +8,7 @@ import step3d
 #----------------------------------------------------
 #  Discretization -- input options    
 #----------------------------------------------------
-Refinement=16
+Refinement=4
 genMesh=True
 spaceOrder=1
 useHex=False
@@ -17,7 +17,7 @@ useMetrics = 0.0
 use_petsc4py=True
 quasi2D = True
 use_PlanePoiseuille = False
-use_KOmega = False
+use_KOmega = True
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -111,10 +111,14 @@ nLayersOfOverlapForParallel = 0
 #----------------------------------------------------
 # Physical coefficients
 #----------------------------------------------------
-Re = 3025.0
+Re = 20000.0#3025.0
 inflow = 1.0
 nu = inflow*(downstream_height-upstream_height)/Re
 
+comm=Comm.get()
+if comm.isMaster():
+    print "step problem use_KOmega= %s Re= %12.5e nu =%12.5e " % (use_KOmega,Re,nu)
+#
 # Water
 rho_0 = 998.2
 nu_0  = nu
