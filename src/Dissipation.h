@@ -246,14 +246,16 @@ namespace proteus
 	f_beta_star = 680.0/400.0;
 
       beta_star = beta0_star*f_beta_star;
-      if (beta < 0.875*beta0 || beta > beta0)
-	{
-	  std::cout<<"Dissipation K-Omega coef problem k= "<<k<<" omega= "<<omega<<" beta= "<<beta<<" beta0= "<<beta0 <<" chi_omega= "<<chi_omega<<std::endl;
-	} 
-      if (beta_star < beta0_star || beta > (680.0+1.0e-4)/400.0*beta0_star)
-	{
-	  std::cout<<"Dissipation K-Omega coef problem k= "<<k<<" omega= "<<omega<<" beta_star= "<<beta_star<<" beta0_star= "<<beta0_star <<" chi_k= "<<chi_k<<std::endl;
-	} 
+      //if (beta < 0.875*beta0 || beta > beta0)
+      //	{
+      //  std::cout<<"Kappa K-Omega coef problem k= "<<k<<" omega= "<<omega<<" beta= "<<beta<<" beta0= "<<beta0 <<" chi_omega= "<<chi_omega<<std::endl;
+      //	} 
+      beta = fmax(0.875*beta0,fmin(beta,beta0));
+      //if (beta_star < beta0_star || beta_star > (680.0+1.0e-4)/400.0*beta0_star)
+      //{
+      //  std::cout<<"Kappa K-Omega coef problem k= "<<k<<" omega= "<<omega<<" beta_star= "<<beta_star<<" beta0_star= "<<beta0_star <<" chi_k= "<<chi_k<<std::endl;
+      //} 
+      beta_star = fmax(beta0_star,fmin(beta_star,(680.0/400.0)*beta0_star));
       //mwf hack
       //beta = beta0; beta_star = beta0_star;
     }
