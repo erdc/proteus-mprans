@@ -222,7 +222,14 @@ namespace proteus
       nu_t     = isKEpsilon*c_mu*k_old*k_old/(fabs(dissipation)+div_eps)
 	+ (1.0-isKEpsilon)*k_old/(fabs(dissipation)+div_eps); 
 
+      //if (nu_t > 1.e6*nu)
+      //{
+      //  std::cout<<"Kappa WARNING isKEpsilon = "<<isKEpsilon<<" nu_t = " <<nu_t<<" nu= "<<nu<<" k= "<<k<<" dissipation= "<<dissipation<<std::endl; 
+      //}
       nu_t     = fmax(nu_t,1.e-4*nu);
+      //mwf hack
+      nu_t     = fmin(nu_t,1.0e6*nu);
+
       dnu_t_dk = 0.0;
 
       //Production term

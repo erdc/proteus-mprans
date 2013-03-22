@@ -1017,7 +1017,16 @@ namespace proteus
       nu_t_komega = turb_var_0/(fabs(turb_var_1) + div_zero);
       //
       nu_t = isKEpsilon*nu_t_keps + (1.0-isKEpsilon)*nu_t_komega;
+      //mwf debug
+      //if (nu_t > 1.e6*nu)
+      //{
+      //  std::cout<<"RANS2P WARNING isKEpsilon = "<<isKEpsilon<<" nu_t = " <<nu_t<<" nu= "<<nu<<" k= "<<turb_var_0<<" turb_var_1= "<<turb_var_1<<std::endl; 
+      //}
+
       nu_t = fmax(nu_t,1.0e-4*nu); //limit according to Lew, Buscaglia etal 01
+      //mwf hack
+      nu_t     = fmin(nu_t,1.0e6*nu);
+
 #ifdef COMPRESSIBLE_FORM
       eddy_viscosity = nu_t*rho;
       //u momentum diffusion tensor

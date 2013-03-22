@@ -312,7 +312,13 @@ namespace proteus
 	+ (1.0-isKEpsilon)*k/(fabs(dissipation_old)+div_eps);
 
       dnu_t_de = 0.0;
+      //if (nu_t > 1.e6*nu)
+      //{
+      //  std::cout<<"Dissipation WARNING isKEpsilon = "<<isKEpsilon<<" nu_t = " <<nu_t<<" nu= "<<nu<<" k= "<<k<<" dissipation= "<<dissipation<<std::endl; 
+      //}
       nu_t = fmax(nu_t,1.e-4*nu);
+      //mwf hack
+      nu_t     = fmin(nu_t,1.0e6*nu);
 
       //Production term
       PiD4 = 2.0*(grad_vx[0]*grad_vx[0] + 
