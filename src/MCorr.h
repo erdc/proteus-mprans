@@ -1912,13 +1912,10 @@ namespace proteus
 	    }//k
 	  for (int i=0;i<nDOF_trial_element;i++)
 	    {
-	      //cek todo the inconsistency of a variable eps shows up
-	      //here the value will be different depending on which element touches
-	      //the dof last
 	      int eN_i = eN*nDOF_trial_element + i;
-
-	      epsHeaviside = epsFactHeaviside*nodeDiametersArray[mesh_l2g[eN_i]];//cek hack, only works if isoparametric
-	      H_dof[phi_l2g[eN_i]] = smoothedHeaviside(epsHeaviside,phi_dof[phi_l2g[eN_i]]);//cek hack, only works if H and phi in same FEM space
+	      
+	      epsHeaviside = epsFactHeaviside*nodeDiametersArray[mesh_l2g[eN_i]];//cek hack, only works if isoparametric, but we can fix by including interpolation points
+	      H_dof[phi_l2g[eN_i]] = smoothedHeaviside(epsHeaviside,phi_dof[phi_l2g[eN_i]]);//cek hack, only works if H and phi in same FEM space, but we can fix by passing in H_l2g
 	    }
 	}//elements
     }

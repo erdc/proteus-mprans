@@ -4,8 +4,8 @@ from proteus import *
 from proteus.Transport import *
 from proteus.Transport import OneLevelTransport
 
-cdef extern from "RANS2P.h" namespace "proteus":
-    cdef cppclass RANS2P_base:
+cdef extern from "RANS2P2D.h" namespace "proteus":
+    cdef cppclass RANS2P2D_base:
         void calculateResidual(double* mesh_trial_ref,
                                double* mesh_grad_trial_ref,
                                double* mesh_dof,
@@ -436,7 +436,7 @@ cdef extern from "RANS2P.h" namespace "proteus":
                                       double* vel_trial_trace_ref,
                                       double* ebqe_velocity,
                                       double* velocityAverage)
-    RANS2P_base* newRANS2P(int nSpaceIn,
+    RANS2P2D_base* newRANS2P2D(int nSpaceIn,
                            int nQuadraturePoints_elementIn,
                            int nDOF_mesh_trial_elementIn,
                            int nDOF_trial_elementIn,
@@ -444,8 +444,8 @@ cdef extern from "RANS2P.h" namespace "proteus":
                            int nQuadraturePoints_elementBoundaryIn,
                            int CompKernelFlag)
 
-cdef class cRANS2P_base:
-   cdef RANS2P_base* thisptr
+cdef class cRANS2P2D_base:
+   cdef RANS2P2D_base* thisptr
    def __cinit__(self,
                  int nSpaceIn,
                  int nQuadraturePoints_elementIn,
@@ -454,7 +454,7 @@ cdef class cRANS2P_base:
                  int nDOF_test_elementIn,
                  int nQuadraturePoints_elementBoundaryIn,
                  int CompKernelFlag):
-       self.thisptr = newRANS2P(nSpaceIn,
+       self.thisptr = newRANS2P2D(nSpaceIn,
                               nQuadraturePoints_elementIn,
                               nDOF_mesh_trial_elementIn,
                               nDOF_trial_elementIn,

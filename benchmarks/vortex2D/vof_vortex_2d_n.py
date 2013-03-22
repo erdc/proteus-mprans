@@ -10,8 +10,8 @@ fullNewtonFlag = True
 if timeIntegration_vof == "BE":
     timeIntegration = BackwardEuler_cfl
     stepController = Min_dt_controller
-    timeIntegration = VBDF
-    stepController = Min_dt_cfl_controller
+    #timeIntegration = VBDF
+    #stepController = Min_dt_cfl_controller
 elif timeIntegration_vof == "FLCBDF":
     timeIntegration = FLCBDF
     stepController = FLCBDF_controller
@@ -41,7 +41,7 @@ if cDegree_vof==0:
         elif pDegree_vof==2:
             femSpaces = {0:C0_AffineQuadraticOnSimplexWithNodalBasis}
     subgridError = Advection_ASGS(coefficients,nd,lag=False)
-    shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=shockCapturingFactor_vof,lag=True)
+    shockCapturing = VOF.ShockCapturing(coefficients,nd,shockCapturingFactor=shockCapturingFactor_vof,lag=lag_shockCapturing_vof)
     if parallel or LevelModelType == VOF.LevelModel:
         numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
 
@@ -68,26 +68,26 @@ else:
 #
 #elementBoundaryQuadrature = SimplexLobattoQuadrature(nd-1,1)
 
-nonlinearSmoother = NLGaussSeidel
+nonlinearSmoother = None#NLGaussSeidel
 
 tolFac = 0.0
+linTolFac = tolFac
 
-nl_atol_res = atolVolumeOfFluid
+nl_atol_res = 100*atolVolumeOfFluid
+l_atol_res = atolVolumeOfFluid
 
-maxNonlinearIts = 50
+maxNonlinearIts = 25
+maxLineSearches = 0
 
 matrix = SparseMatrix
 
 if parallel:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py#PETSc
+    levelLinearSolver = KSP_petsc4py#PETSc
     linear_solver_options_prefix = 'vof_'
     linearSolverConvergenceTest = 'r-true'
 else:
     multilevelLinearSolver = LU
-
     levelLinearSolver = LU
-
-linTolFac = 0.001
 
 conservativeFlux = {}

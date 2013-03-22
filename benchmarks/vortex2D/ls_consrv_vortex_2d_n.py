@@ -65,14 +65,15 @@ fullNewtonFlag = True
 tolFac = 0.0
 
 nl_atol_res = atolConservation
+useEisenstatWalker = True
 
 maxNonlinearIts = 100
 
 matrix = SparseMatrix
 
 if parallel:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py#PETSc
+    levelLinearSolver = KSP_petsc4py#PETSc
     linear_solver_options_prefix = 'mcorr_'
     linearSolverConvergenceTest = 'r-true'
 else:
@@ -80,7 +81,6 @@ else:
 
     levelLinearSolver = LU
 
-linTolFac = 1.0e-6
 
 conservativeFlux = {}
 if checkMass:

@@ -25,43 +25,42 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
 				   useMetrics=useMetrics,
                                    eb_adjoint_sigma=1.0,
                                    forceStrongDirichlet=0,
-                                   turbulenceClosureModel=0)
+                                   turbulenceClosureModel=ns_closure)
 
 def getDBC_p(x,flag):
-    if flag == boundaryTags['top']:
+    if flag == boundaryTags['top'] or x[1] >= L[1] - 1.0e-8:
         return lambda x,t: 0.0
 
 def getDBC_u(x,flag):
-    if flag == boundaryTags['top']:
+    if flag == boundaryTags['top'] or x[1] >= L[1] - 1.0e-8:
         return lambda x,t: 0.0
 
 def getDBC_v(x,flag):
-    if flag == boundaryTags['top']:
+    if flag == boundaryTags['top'] or x[1] >= L[1] - 1.0e-8:
         return lambda x,t: 0.0
 
 def getDBC_w(x,flag):
-    if flag == boundaryTags['top']:
+    if flag == boundaryTags['top'] or x[1] >= L[1] - 1.0e-8:
         return lambda x,t: 0.0
     
 dirichletConditions = {0:getDBC_p,
                        1:getDBC_u,
-                       2:getDBC_v,
-                       3:getDBC_w}
+                       2:getDBC_v}
 
 def getAFBC_p(x,flag):
-    if flag != boundaryTags['top']:
+    if flag != boundaryTags['top'] or x[1] < L[1] - 1.0e-8:
         return lambda x,t: 0.0
 
 def getAFBC_u(x,flag):
-    if flag != boundaryTags['top']:
+    if flag != boundaryTags['top'] or x[1] < L[1] - 1.0e-8:
         return lambda x,t: 0.0
 
 def getAFBC_v(x,flag):
-    if flag != boundaryTags['top']:
+    if flag != boundaryTags['top'] or x[1] < L[1] - 1.0e-8:
         return lambda x,t: 0.0
 
 def getAFBC_w(x,flag):
-    if flag != boundaryTags['top']:
+    if flag != boundaryTags['top'] or x[1] < L[1] - 1.0e-8:
         return lambda x,t: 0.0
 
 def getDFBC_u(x,flag):
@@ -75,22 +74,20 @@ def getDFBC_w(x,flag):
 
 advectiveFluxBoundaryConditions =  {0:getAFBC_p,
                                     1:getAFBC_u,
-                                    2:getAFBC_v,
-                                    3:getAFBC_w}
+                                    2:getAFBC_v}
 
 diffusiveFluxBoundaryConditions = {0:{},
                                    1:{1:getDFBC_u},
-                                   2:{2:getDFBC_v},
-                                   3:{3:getDFBC_w}}
+                                   2:{2:getDFBC_v}}
 
 class PerturbedSurface_p:
     def __init__(self,waterLevel):
         self.waterLevel=waterLevel
     def uOfXT(self,x,t):
         if signedDistance(x) < 0:
-            return -(L[2] - self.waterLevel)*rho_1*g[2] - (self.waterLevel - x[2])*rho_0*g[2]
+            return -(L[1] - self.waterLevel)*rho_1*g[1] - (self.waterLevel - x[1])*rho_0*g[1]
         else:
-            return -(L[2] - self.waterLevel)*rho_1*g[2]
+            return -(L[1] - self.waterLevel)*rho_1*g[1]
 
 class AtRest:
     def __init__(self):
@@ -100,5 +97,4 @@ class AtRest:
 
 initialConditions = {0:PerturbedSurface_p(waterLine_z),
                      1:AtRest(),
-                     2:AtRest(),
-                     3:AtRest()}
+                     2:AtRest()}

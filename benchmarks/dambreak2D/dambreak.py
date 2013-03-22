@@ -5,7 +5,7 @@ from proteus.default_n import *
    
 #  Discretization -- input options  
 #Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
-Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
+Refinement = 25#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
 useSuperlu=True#False
@@ -31,7 +31,7 @@ if useMetrics not in [0.0, 1.0]:
     sys.exit()
     
 #  Discretization   
-nd = 3
+nd = 2
 if spaceOrder == 1:
     hFactor=1.0
     if useHex:
@@ -54,12 +54,8 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (0.584,0.146,0.350)
+L = (0.584,0.350)
 he = L[0]/float(4*Refinement-1)
-quasi2D = True
-
-if quasi2D:
-    L = (L[0],he,L[2])
 
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
@@ -68,10 +64,7 @@ nLayersOfOverlapForParallel = 0
 structured=False
 if useHex:   
     nnx=4*Refinement+1
-    nny=1*Refinement+1
-    nnz=2*Refinement+1
-    if quas2D:
-        nny=2
+    nny=2*Refinement+1
     hex=True    
     domain = Domain.RectangularDomain(L)
 else:
@@ -81,49 +74,36 @@ else:
         nnx=4*Refinement
         nny=2*Refinement
     else:
-        vertices=[[0.0,0.0,0.0],#0
-                  [L[0],0.0,0.0],#1
-                  [L[0],L[1],0.0],#2
-                  [0.0,L[1],0.0],#3
-                  [0.0,0.0,L[2]],#4
-                  [L[0],0.0,L[2]],#5
-                  [L[0],L[1],L[2]],#6
-                  [0.0,L[1],L[2]]]#7
-        vertexFlags=[boundaryTags['left'],
-                     boundaryTags['right'],
-                     boundaryTags['right'],
-                     boundaryTags['left'],
-                     boundaryTags['left'],
-                     boundaryTags['right'],
-                     boundaryTags['right'],
-                     boundaryTags['left']]
-        facets=[[[0,1,2,3]],
-                [[0,1,5,4]],
-                [[1,2,6,5]],
-                [[2,3,7,6]],
-                [[3,0,4,7]],
-                [[4,5,6,7]]]
-        facetFlags=[boundaryTags['bottom'],
-                    boundaryTags['front'],
-                    boundaryTags['right'],
-                    boundaryTags['back'],
-                    boundaryTags['left'],
-                    boundaryTags['top']]
-        regions=[[0.5*L[0],0.5*L[1],0.5*L[2]]]
+        vertices=[[0.0,0.0],#0
+                  [L[0],0.0],#1
+                  [L[0],L[1]],#2
+                  [0.0,L[1]]]#3
+        vertexFlags=[boundaryTags['bottom'],
+                     boundaryTags['bottom'],
+                     boundaryTags['top'],
+                     boundaryTags['top']]
+        segments=[[0,1],
+                  [1,2],
+                  [2,3],
+                  [3,0]]
+        segmentFlags=[boundaryTags['bottom'],
+                      boundaryTags['right'],
+                      boundaryTags['top'],
+                      boundaryTags['left']]
+        regions=[[0.5*L[0],0.5*L[1]]]
         regionFlags=[1]
-        domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
-                                                     vertexFlags=vertexFlags,
-                                                     facets=facets,
-                                                     facetFlags=facetFlags,
-                                                     regions=regions,
-                                                     regionFlags=regionFlags)
+        domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
+                                                      vertexFlags=vertexFlags,
+                                                      segments=segments,
+                                                      segmentFlags=segmentFlags,
+                                                      regions=regions,
+                                                      regionFlags=regionFlags)
         #go ahead and add a boundary tags member 
         domain.boundaryTags = boundaryTags
         domain.writePoly("mesh")
         domain.writePLY("mesh")
         domain.writeAsymptote("mesh")
-        triangleOptions="VApq1.4q12ena%21.16e" % ((he**3)/6.0,)
-
+        triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
 
 # Time stepping
 T=1.0
@@ -133,33 +113,54 @@ runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
+ns_forceStrongDirichlet = False#True
 if useMetrics:
     ns_shockCapturingFactor  = 0.1
+    ns_lag_shockCapturing = True#False
+    ns_lag_subgridError = True
     ls_shockCapturingFactor  = 0.1
+    ls_lag_shockCapturing = True#False
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.0
     vof_shockCapturingFactor = 0.1
+    vof_lag_shockCapturing = True#False
     vof_sc_uref = 1.0
     vof_sc_beta = 1.0
     rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
     epsFact_density    = 1.5
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
+    redist_Newton = True#False
 else:
-    ns_shockCapturingFactor  = 0.1
-    ls_shockCapturingFactor  = 0.1
+    ns_shockCapturingFactor  = 0.9
+    ns_lag_shockCapturing = False
+    ns_lag_subgridError = True
+    ls_shockCapturingFactor  = 0.9
+    ls_lag_shockCapturing = True#False
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.0
-    vof_shockCapturingFactor = 0.1
+    vof_shockCapturingFactor = 0.9
+    vof_lag_shockCapturing = True#False
     vof_sc_uref  = 1.0
     vof_sc_beta  = 1.0
     rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
     epsFact_density    = 1.5
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    
+    redist_Newton = False
+
+ns_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+vof_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+ls_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+rd_nl_atol_res = max(1.0e-8,0.01*he)
+mcorr_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+
+#turbulence
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky
 # Water
 rho_0 = 998.2
 nu_0  = 1.004e-6
@@ -172,7 +173,7 @@ nu_1  = 1.500e-5
 sigma_01 = 0.0
 
 # Gravity
-g = [0.0,0.0,-9.8]
+g = [0.0,-9.8]
 
 # Initial condition
 waterLine_x = 0.146
@@ -180,7 +181,7 @@ waterLine_z = 0.292
 
 def signedDistance(x):
     phi_x = x[0]-waterLine_x
-    phi_z = x[2]-waterLine_z 
+    phi_z = x[1]-waterLine_z 
     if phi_x < 0.0:
         if phi_z < 0.0:
             return max(phi_x,phi_z)
@@ -191,6 +192,4 @@ def signedDistance(x):
             return phi_x
         else:
             return sqrt(phi_x**2 + phi_z**2)
-
-
 

@@ -1,6 +1,5 @@
 from proteus import *
-from marin import *
-from vof_p import *
+from ls_p import *
 
 timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_controller
@@ -8,12 +7,12 @@ stepController  = Min_dt_controller
 femSpaces = {0:basis}
 
 massLumping       = False
-numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
 conservativeFlux  = None
-subgridError      = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)
-shockCapturing    = ResGradQuadDelayLag_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)
+numericalFluxType = DoNothing
+subgridError      = NCLS.SubgridError(coefficients,nd)
+shockCapturing    = NCLS.ShockCapturing(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=ls_lag_shockCapturing)
 
-fullNewtonFlag = True
+fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton
 levelNonlinearSolver      = Newton
 
@@ -33,15 +32,16 @@ if useSuperlu:
     multilevelLinearSolver = LU
     levelLinearSolver      = LU
 
-linear_solver_options_prefix = 'vof_'
+linear_solver_options_prefix = 'ncls_'
 levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest         = 'r-true'
 
-tolFac      = 0.0
-linTolFac   = 0.0
-nl_atol_res = 1.0e-5
-l_atol_res = 1.0e-5
-useEisenstatWalker = False#True
+tolFac = 0.0
+linTolFac = 0.0
+l_atol_res = 0.001*ls_nl_atol_res
+nl_atol_res = ls_nl_atol_res
+useEisenstatWalker = True
 
-maxNonlinearIts = 2
+maxNonlinearIts = 25
 maxLineSearches = 0
+

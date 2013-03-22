@@ -3,8 +3,35 @@ from proteus.default_n import *
 from redist_vortex_2d_p import *
 from vortex2D import *
 
-timeIntegration = NoIntegration
-stepController = Newton_controller
+if redist_Newton:
+    timeIntegration = NoIntegration
+    stepController = Newton_controller
+    tolFac = 0.0
+    nl_atol_res = atolRedistance
+    maxNonlinearIts = 25
+    maxLineSearches = 0
+    useEisenstatWalker = True
+    linTolFac = 0.0
+    levelNonlinearSolverConvergenceTest='r'
+    nonlinearSolverConvergenceTest='r'
+else:
+    timeIntegration = BackwardEuler_cfl
+    stepController = RDLS.PsiTC
+    runCFL=0.33
+    psitc['nStepsForce']=3
+    psitc['nStepsMax']=15
+    psitc['reduceRatio']=2.0
+    psitc['startRatio']=1.
+    tolFac = 0.0
+    rtol_res[0] = 0.0
+    atol_res[0] = atolRedistance
+    nl_atol_res = 0.01*atolRedistance
+    maxNonlinearIts = 1
+    maxLineSearches = 0
+    useEisenstatWalker = True
+    linTolFac = 0.0
+    levelNonlinearSolverConvergenceTest='rits'
+    nonlinearSolverConvergenceTest='rits'
 
 if cDegree_ls==0:
     if useHex:
@@ -25,7 +52,7 @@ if cDegree_ls==0:
         subgridError = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=False)
     else:
         subgridError = HamiltonJacobi_ASGS(coefficients,nd,stabFlag='2',lag=False)
-    shockCapturing = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=shockCapturingFactor_rd,lag=False)
+    shockCapturing = RDLS.ShockCapturing(coefficients,nd,shockCapturingFactor=shockCapturingFactor_rd,lag=lag_shockCapturing_rd)
     if parallel or LevelModelType == RDLS.LevelModel:
         numericalFluxType = DoNothing
 elif cDegree_ls==-1:
@@ -50,20 +77,12 @@ nonlinearSmoother = None
 
 fullNewtonFlag = True
 
-#this needs to be set appropriately for pseudo-transient
-tolFac = 0.0
-nl_atol_res = atolRedistance
-
-maxNonlinearIts = 10 #1 for PTC
-maxLineSearches = 5
-levelNonlinearSolverConvergenceTest='rits'
-nonlinearSolverConvergenceTest='rits'
 
 matrix = SparseMatrix
 
 if parallel:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver = PETSc
+    multilevelLinearSolver = KSP_petsc4py#PETSc
+    levelLinearSolver = KSP_petsc4py#PETSc
     linear_solver_options_prefix = 'rdls_'
     linearSolverConvergenceTest = 'r-true'
 else:
@@ -71,6 +90,5 @@ else:
 
     levelLinearSolver = LU
 
-linTolFac = 0.001
 
 conservativeFlux = {}

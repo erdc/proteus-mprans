@@ -14,7 +14,7 @@ atol_res = {0:1.0e-4}
 timeIntegration_vof = "BE"
 timeIntegration_ls = "BE"
 #if want bdf2 or bdf1
-timeOrder = 2
+timeOrder = 1
 runCFL = 0.3#0.3,0.185,0.125 for dgp1,dgp2,dgpk(3)
 #
 #spatial approximation orders
@@ -23,7 +23,7 @@ cDegree_vof=0
 pDegree_ls=1 #level set 
 pDegree_vof=pDegree_ls #volume of fluid should match ls for now
 useHex=False#True
-useMetrics=0.0
+useMetrics=1.0
 #
 #spatial quadrature orders
 #2*max(pDegree_vof,pDegree_ls)+1
@@ -43,13 +43,13 @@ nnz=1
 he=1.0/(nnx-1.0)
 L=[1.0,1.0]
 
-unstructured=True#True for tetgen, false for tet or hex from rectangular grid
+unstructured=False#True for tetgen, false for tet or hex from rectangular grid
 if unstructured:
     from tank2dDomain import *
     domain = tank2d(L=L)
     bt = domain.boundaryTags
     domain.writePoly("tank2d")
-    triangleOptions="pAq30Dena%f"  % (0.5*he**2,)
+    triangleOptions="pAq30Dena%8.8f"  % (0.5*he**2,)
 else:
     from proteus.Domain import RectangularDomain
     domain = RectangularDomain(L)
@@ -60,18 +60,29 @@ nDTout = 80
 #mass correction
 applyCorrection=True
 applyRedistancing=True
+redist_Newton=False#True
 onlyVOF=False
 #smoothing factors
 #eps
-epsFactHeaviside=1.5
-epsFactDirac=1.5
-epsFactDiffusion=10.0
+epsFactHeaviside=epsFactDirac=epsFact_vof=1.5
 epsFactRedistance=0.33
-epsFact_vof=1.5
+epsFactDiffusion=10.0
 #
-shockCapturingFactor_vof=0.33
-shockCapturingFactor_ls=0.33
-shockCapturingFactor_rd=0.99
+if useMetrics==0.0:
+    shockCapturingFactor_vof=0.1
+    shockCapturingFactor_ls=0.1
+    shockCapturingFactor_rd=0.9
+    lag_shockCapturing_vof=True
+    lag_shockCapturing_ls=True
+    lag_shockCapturing_rd=False
+else:
+    shockCapturingFactor_vof=0.1
+    shockCapturingFactor_ls=0.1
+    shockCapturingFactor_rd=0.9
+    lag_shockCapturing_vof=False
+    lag_shockCapturing_ls=False
+    lag_shockCapturing_rd=False
+
 #use absolute tolerances on al models
 atolRedistance = 0.1*he
 atolConservation = 1.0e-6

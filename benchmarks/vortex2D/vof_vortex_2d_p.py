@@ -26,6 +26,7 @@ else:
     coefficients = VOF.Coefficients(RD_model=None,ME_model=0,checkMass=checkMass,
                                     epsFact=epsFact_vof,useMetrics=useMetrics)
 
+
 def Heaviside(phi):
     if phi > 0:
         return 1.0

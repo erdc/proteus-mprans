@@ -10,7 +10,7 @@ coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=2,
                                  epsFact=epsFact_consrv_heaviside,sc_uref=ls_sc_uref,sc_beta=ls_sc_beta)
  
 def getDBC_ls(x,flag):
-    if flag = boundaryTags['top']:
+    if flag == boundaryTags['top']:
         return lambda x,t: signedDistance(x)
 
 dirichletConditions = {0:getDBC_ls}
