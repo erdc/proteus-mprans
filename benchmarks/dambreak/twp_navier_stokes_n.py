@@ -23,7 +23,7 @@ class NumericalFluxType(NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_ext
         NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior.__init__(self,vt,getPointwiseBoundaryConditions,
                                                                                getAdvectiveFluxBoundaryConditions,
                                                                                getDiffusiveFluxBoundaryConditions,getPeriodicBoundaryConditions)
-        self.penalty_constant = 2.0
+        self.penalty_constant = 100.0
         self.includeBoundaryAdjoint=True
         self.boundaryAdjoint_sigma=1.0
         self.hasInterior=False
@@ -57,7 +57,7 @@ levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest             = 'r-true'
 
 tolFac = 1.0e-3
-nl_atol_res = 1.0e-4
+nl_atol_res = max(1.0e-6,0.1*he**3/6.0)
 useEisenstatWalker = True
 maxNonlinearIts = 20
 maxLineSearches = 0

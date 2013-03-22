@@ -3,8 +3,9 @@ import proteus.MeshTools
 from proteus import Domain
 from proteus.default_n import *   
    
-#  Discretization -- input options  
-Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
+#  Discretization -- input options
+Refinement = 30  
+#Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
 #Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False

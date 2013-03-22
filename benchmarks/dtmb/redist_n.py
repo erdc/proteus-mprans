@@ -20,7 +20,7 @@ subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=Fal
 shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=False)
 
 fullNewtonFlag = True
-multilevelNonlinearSolver  = NLNI
+multilevelNonlinearSolver  = Newton
 levelNonlinearSolver       = Newton
 
 nonlinearSmoother = NLGaussSeidel
@@ -41,6 +41,7 @@ if useSuperlu:
 
 linear_solver_options_prefix = 'rdls_'
 nonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest = 'r-true'
 
 runCFL=1.0
@@ -51,7 +52,7 @@ psitc['nStepsMax']=5
 psitc['reduceRatio']=1.0
 psitc['startRatio']=1.0 
 
-tolFac = 0.0
+tolFac = 0.1
 nl_atol_res = 0.1*he
 useEisenstatWalker = True
 

@@ -45,14 +45,14 @@ linearSolverConvergenceTest = 'r-true'
 
 runCFL=1.0
 rtol_res[0] = 0.0
-atol_res[0] = 0.1*he
+atol_res[0] = max(0.1*he,1.0e-6)
 psitc['nStepsForce']=3
 psitc['nStepsMax']=5
 psitc['reduceRatio']=1.0
 psitc['startRatio']=1.0 
 
 tolFac = 0.0
-nl_atol_res = 0.1*he
+nl_atol_res = max(0.1*he,1.0e-6)
 useEisenstatWalker = True
 
 maxNonlinearIts = 5

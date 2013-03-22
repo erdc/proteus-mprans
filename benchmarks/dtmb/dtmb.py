@@ -47,13 +47,16 @@ barycenters[7,:] = hull_cg
 
 nLevels = 1
 
-he = L[2]/11 #16 cores
+#he = L[2]/11 #16 cores
 #he *=0.5 #128 
 #he *=0.5 #1024
-#vessel = 5415
-#genMesh=False
-vessel = 'wigley'
+he = 2.0
+vessel = 5415
 genMesh=False
+#vessel = 'wigley'
+#genMesh=False
+#vessel = 'wigley'
+#genMesh=False
 #he = 3.0
 #he = 0.1
 #vessel = 'wigley'
@@ -209,7 +212,7 @@ freezeLevelSet=True
 # Time stepping and velocity
 #----------------------------------------------------
 Fr = 0.28
-Fr = 0.51
+#Fr = 0.51
 Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um*rho_0/nu_0
 

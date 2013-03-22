@@ -1,6 +1,6 @@
 from proteus import *
 from twp_navier_stokes_p import *
-from wigley import *
+from dtmb import *
 
 timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_controller
@@ -53,13 +53,14 @@ if useSuperlu:
     levelLinearSolver      = LU
 
 linear_solver_options_prefix = 'rans2p_'
-levelNonlinearSolverConvergenceTest = 'r'
+nonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest             = 'r-true'
 
-tolFac = 1.0e-3
+tolFac = 1.0e-4
 nl_atol_res = 1.0e-4
 useEisenstatWalker = True
-maxNonlinearIts = 20
+maxNonlinearIts = 10
 maxLineSearches = 0
 
 #auxiliaryVariables = [RelaxationZoneWaveGenerator(twpflowVelocity_w,twpflowVelocity_w,twpflowVelocity_w,xRelaxCenter)]

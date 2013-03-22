@@ -239,8 +239,8 @@ freezeLevelSet=True
 #----------------------------------------------------
 # Time stepping and velocity
 #----------------------------------------------------
-#Fr = 0.25
-Fr = 0.51
+Fr = 0.25
+#Fr = 0.51
 Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um*rho_0/nu_0
 

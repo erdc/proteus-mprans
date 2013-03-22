@@ -23,7 +23,7 @@ class NumericalFluxType(NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_ext
         NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior.__init__(self,vt,getPointwiseBoundaryConditions,
                                                                                getAdvectiveFluxBoundaryConditions,
                                                                                getDiffusiveFluxBoundaryConditions,getPeriodicBoundaryConditions)
-        self.penalty_constant = 2.0
+        self.penalty_constant = 10.0
         self.includeBoundaryAdjoint=True
         self.boundaryAdjoint_sigma=1.0
         self.hasInterior=False
@@ -53,13 +53,13 @@ if useSuperlu:
     levelLinearSolver      = LU
 
 linear_solver_options_prefix = 'rans2p_'
-levelNonlinearSolverConvergenceTest = 'r'
+levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest             = 'r-true'
 
-tolFac = 1.0e-3
+tolFac = 1.0e-4
 nl_atol_res = 1.0e-4
 useEisenstatWalker = True
-maxNonlinearIts = 20
+maxNonlinearIts = 25
 maxLineSearches = 0
 
 #auxiliaryVariables = [RelaxationZoneWaveGenerator(twpflowVelocity_w,twpflowVelocity_w,twpflowVelocity_w,xRelaxCenter)]
