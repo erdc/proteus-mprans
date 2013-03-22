@@ -35,6 +35,6 @@ tolFac = 0.0
 nl_atol_res = 1.0e-6
 nl_rtol_res = 0.0
 
-maxNonlinearIts = 10
+maxNonlinearIts = 15
 maxLineSearches = 0
 
