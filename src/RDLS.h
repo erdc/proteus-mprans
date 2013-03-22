@@ -45,6 +45,7 @@ namespace proteus
 			   double shockCapturingDiffusion,
 			   int* u_l2g, 
 			   double* elementDiameter,
+			   double* nodeDiametersArray,
 			   double* u_dof,
 			   double* phi_ls,
 			   double* q_m,
@@ -101,6 +102,7 @@ namespace proteus
 				double shockCapturingDiffusion,
 				int* u_l2g,
 				double* elementDiameter,
+				double* nodeDiametersArray,
 				double* u_dof, 
 				double* phi_ls,
 				double* q_m_betaBDF,
@@ -218,7 +220,7 @@ namespace proteus
          for (int J=0;J<nSpace;J++) 
            v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
     
-      tau_v = 1.0/(sqrt(v_d_Gv) + 10e-8);    
+      tau_v = 1.0/(sqrt(v_d_Gv) + 1.0e-8);    
     }
 
 #undef CKDEBUG
@@ -256,6 +258,7 @@ namespace proteus
 			   double shockCapturingDiffusion,
 			   int* u_l2g, 
 			   double* elementDiameter,
+			   double* nodeDiametersArray,
 			   double* u_dof,
 			   double* phi_ls,
 			   double* q_m,
@@ -355,6 +358,12 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateH_element(eN,
+				    k,
+				    nodeDiametersArray,
+				    mesh_l2g,
+				    mesh_trial_ref,
+				    h_phi);
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
@@ -379,17 +388,18 @@ namespace proteus
 	      //
 	      //calculate pde coefficients at quadrature points
 	      //
-	      norm = sqrt(grad_u[0]*grad_u[0] + grad_u[1]*grad_u[1] + grad_u[2]*grad_u[2]) + 1.0e-8;
+	      /* norm = 1.0e-8; */
+	      /* for (int I=0;I<nSpace;I++) */
+	      /* 	norm += grad_u[I]*grad_u[I]; */
+	      /* norm = sqrt(norm); */
 	      
-	      dir[0] = grad_u[0]/norm;
-	      dir[1] = grad_u[1]/norm;
-	      dir[2] = grad_u[2]/norm;
+	      /* for (int I=0;I<nSpace;I++) */
+	      /* 	dir[I] = grad_u[I]/norm; */
 	      
-	      ck.calculateGScale(G,dir,h_phi);
-	      
+	      /* ck.calculateGScale(G,dir,h_phi); */
+
 	      epsilon_redist = epsFact_redist*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
-	      
-	      
+	      	      
 	      evaluateCoefficients(epsilon_redist,
 				   phi_ls[eN_k],
 				   u,
@@ -426,9 +436,8 @@ namespace proteus
 	      //
 	      q_m[eN_k] = m;
 	      q_u[eN_k] = u;
-              q_n[eN_k_nSpace+0] = dir[0];
-              q_n[eN_k_nSpace+1] = dir[1];
-              q_n[eN_k_nSpace+2] = dir[2];
+	      for (int I=0;I<nSpace;I++)
+		q_n[eN_k_nSpace+I] = dir[I];
 
 	      for (int I=0;I<nSpace;I++)
 		{
@@ -495,6 +504,7 @@ namespace proteus
 	      //
 	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u,numDiff0);	      
 	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u,numDiff1);
+
 	      q_numDiff_u[eN_k] = useMetrics*numDiff1+(1.0-useMetrics)*numDiff0;	      
 	      
 #ifdef CKDEBUG
@@ -609,7 +619,7 @@ namespace proteus
 		dS,
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
-		normal[3],x_ext,y_ext,z_ext,
+		normal[nSpace],x_ext,y_ext,z_ext,
 		G[nSpace*nSpace],G_dd_G,tr_G, dir[nSpace],norm;
 	      ck.calculateMapping_elementBoundary(eN,
 						  ebN_local,
@@ -647,15 +657,15 @@ namespace proteus
 		  u_test_dS[j] = u_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
 		}
 
+	      norm = 1.0e-8;
+	      for (int I=0;I<nSpace;I++)
+		norm += grad_u_ext[I]*grad_u_ext[I];
+	      norm = sqrt(norm);
+	      for (int I=0;I<nSpace;I++)
+		dir[I] = grad_u_ext[I]/norm;
 
-	      norm = sqrt(grad_u_ext[0]*grad_u_ext[0] + grad_u_ext[1]*grad_u_ext[1] + grad_u_ext[2]*grad_u_ext[2]) + 1.0e-8;
-	      
-	      dir[0] = grad_u_ext[0]/norm;
-	      dir[1] = grad_u_ext[1]/norm;
-	      dir[2] = grad_u_ext[2]/norm;
-	      
+	      ck.calculateGScale(G,dir,h_phi);
 
-	      ck.calculateGScale(G,dir,h_phi);	     	      
 	      epsilon_redist = epsFact_redist*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 
 	      //
@@ -688,10 +698,8 @@ namespace proteus
 	      //save for other models?
 	      ebqe_u[ebNE_kb] = u_ext;
 
-              ebqe_n[ebNE_kb_nSpace+0] = dir[0];
-              ebqe_n[ebNE_kb_nSpace+2] = dir[1];
-              ebqe_n[ebNE_kb_nSpace+1] = dir[2];
-
+	      for (int I=0;I<nSpace;I++)
+		ebqe_n[ebNE_kb_nSpace+I] = dir[I];
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
@@ -760,6 +768,7 @@ namespace proteus
 				double shockCapturingDiffusion,
 				int* u_l2g,
 				double* elementDiameter,
+				double* nodeDiametersArray,
 				double* u_dof, 
 				double* phi_ls,
 				double* q_m_betaBDF,
@@ -840,6 +849,12 @@ namespace proteus
 					  jacDet,
 					  jacInv,
 					  x,y,z);
+	      ck.calculateH_element(eN,
+				    k,
+				    nodeDiametersArray,
+				    mesh_l2g,
+				    mesh_trial_ref,
+				    h_phi);
 	      //get the physical integration weight
 	      dV = fabs(jacDet)*dV_ref[k];
 	      ck.calculateG(jacInv,G,G_dd_G,tr_G);
@@ -861,14 +876,15 @@ namespace proteus
 	      //
 	      //calculate pde coefficients and derivatives at quadrature points
 	      //
-	      norm = sqrt(grad_u[0]*grad_u[0] + grad_u[1]*grad_u[1] + grad_u[2]*grad_u[2]) + 1.0e-8;
+	      /* norm = 1.0e-8; */
+	      /* for (int I=0;I<nSpace;I++) */
+	      /* 	norm += grad_u[I]*grad_u[I]; */
+	      /* norm = sqrt(norm); */
+	      /* for (int I=0;I<nSpace;I++) */
+	      /* 	dir[I] = grad_u[I]/norm; */
 	      
-	      dir[0] = grad_u[0]/norm;
-	      dir[1] = grad_u[1]/norm;
-	      dir[2] = grad_u[2]/norm;
-	      
-	      ck.calculateGScale(G,dir,h_phi);
-	      
+	      /* ck.calculateGScale(G,dir,h_phi); */
+
 	      epsilon_redist = epsFact_redist*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 	      
 	      evaluateCoefficients(epsilon_redist,
@@ -1057,7 +1073,7 @@ namespace proteus
 		dS,
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
-		normal[3],x_ext,y_ext,z_ext,
+		normal[nSpace],x_ext,y_ext,z_ext,
 		G[nSpace*nSpace],G_dd_G,tr_G, dir[nSpace],norm;
 	      // 
 	      //calculate the solution and gradients at quadrature points 
@@ -1094,14 +1110,14 @@ namespace proteus
 		  u_test_dS[j] = u_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
 		}
 
-	      norm = sqrt(grad_u_ext[0]*grad_u_ext[0] + grad_u_ext[1]*grad_u_ext[1] + grad_u_ext[2]*grad_u_ext[2]) + 1.0e-8;
-	      
-	      dir[0] = grad_u_ext[0]/norm;
-	      dir[1] = grad_u_ext[1]/norm;
-	      dir[2] = grad_u_ext[2]/norm;
-	      
+	      norm = 1.0e-8;
+	      for (int I=0;I<nSpace;I++)
+		norm += grad_u_ext[I]*grad_u_ext[I];
+	      norm = sqrt(norm);
+	      for(int I=0;I<nSpace;I++)
+		dir[I] = grad_u_ext[I]/norm;
 
-	      ck.calculateGScale(G,dir,h_phi);	     	      
+	      ck.calculateGScale(G,dir,h_phi);
 	      epsilon_redist = epsFact_redist*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
 
 	      //
@@ -1172,13 +1188,22 @@ namespace proteus
 				int nQuadraturePoints_elementBoundaryIn,
 				int CompKernelFlag)
   {
-    return proteus::chooseAndAllocateDiscretization<RDLS_base,RDLS,CompKernel>(nSpaceIn,
+    if (nSpaceIn == 2)
+      return proteus::chooseAndAllocateDiscretization2D<RDLS_base,RDLS,CompKernel>(nSpaceIn,
 										   nQuadraturePoints_elementIn,
 										   nDOF_mesh_trial_elementIn,
 										   nDOF_trial_elementIn,
 										   nDOF_test_elementIn,
 										   nQuadraturePoints_elementBoundaryIn,
 										   CompKernelFlag);
+    else
+      return proteus::chooseAndAllocateDiscretization<RDLS_base,RDLS,CompKernel>(nSpaceIn,
+										 nQuadraturePoints_elementIn,
+										 nDOF_mesh_trial_elementIn,
+										 nDOF_trial_elementIn,
+										 nDOF_test_elementIn,
+										 nQuadraturePoints_elementBoundaryIn,
+										 CompKernelFlag);
   }
   
 }//proteus

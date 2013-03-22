@@ -1,5 +1,5 @@
 from proteus import *
-from kappa_p import *
+from dissipation_p import *
 
 timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_cfl_controller
@@ -10,7 +10,7 @@ massLumping       = False
 numericalFluxType = Advection_DiagonalUpwind_Diffusion_IIPG_exterior
 conservativeFlux  = None
 subgridError      = Advection_ASGS(coefficients,nd,lag=False) #needs to be addressed or just skip because going to handle in optimized code anyway?
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=epsilon_shockCapturingFactor,lag=True)
+shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=dissipation_shockCapturingFactor,lag=True)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton
@@ -27,7 +27,7 @@ else:
     multilevelLinearSolver = LU
     levelLinearSolver      = LU
 
-linear_solver_options_prefix = 'epsilon_'
+linear_solver_options_prefix = 'dissipation_'
 levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest         = 'rits'
 

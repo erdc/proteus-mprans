@@ -24,7 +24,7 @@ else:
 if dtmb.useK_Epsilon:
     pnList.append(("kappa_p",
                    "kappa_n"))
-    pnList.append(("epsilon_p","epsilon_n"))
+    pnList.append(("dissipation_p","dissipation_n")
 
 if dtmb.movingDomain:
     pnList.append(("moveMesh_p","moveMesh_n"))

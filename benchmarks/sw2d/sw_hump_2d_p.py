@@ -10,6 +10,10 @@ g = 1.0
 H0=1.0
 HH=2.0
 shock=True
+from tank2dDomain import *
+domain = tank2d(L=L)
+bt = domain.boundaryTags
+domain.writePoly("tank2d")
 
 #coefficients = ShallowWater(g=g,
 #                            nd=nd)
@@ -60,14 +64,14 @@ def getDBC_h(x,flag):
 
 def getDBC_u(x,flag):
 #    return None
-   if x[0] in [0.0,L[0]]:
+   if (x[0] in [0.0,L[0]]) or flag in [bt['left'],bt['right']]:
        return lambda x,t: 0.0
    else:
        return None
 
 def getDBC_v(x,flag):
 #    return None
-   if x[1] in [0.0,L[1]]:
+   if x[1] in [0.0,L[1]] or flag in [bt['front'],bt['back']]:
        return lambda x,t: 0.0
    else:
        return None

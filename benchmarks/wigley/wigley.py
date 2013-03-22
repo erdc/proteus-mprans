@@ -52,20 +52,20 @@ hull_center = (0.0,
 
 
 #debug
-#L=(#2.5*hull_length,
-#   2.0*hull_length,
-#   #1.5*hull_length,
-#   0.5*hull_length,
-#   3.0*hull_draft)
-#x_ll = (-1.0*hull_length,
-#         -L[1]/2.0,
-#         0.0)
-#
-#waterLevel   = 1.5*hull_draft
-#
-#hull_center = (0.0,
-#               0.0,
-#               1.5*hull_draft)#cek todo, still not sure about where the waterline is
+L=(#2.5*hull_length,
+   2.0*hull_length,
+   #1.5*hull_length,
+   0.5*hull_length,
+   3.0*hull_draft)
+x_ll = (-1.0*hull_length,
+         -L[1]/2.0,
+         0.0)
+
+waterLevel   = 1.5*hull_draft
+
+hull_center = (0.0,
+               0.0,
+               1.5*hull_draft)#cek todo, still not sure about where the waterline is
 
 #set up barycenters for force calculation
 barycenters = numpy.zeros((8,3),'d')
@@ -85,14 +85,14 @@ nLevels = 1
 
 he = hull_draft/1.0 #16 cores
 he *=0.5 #128 
-he *=0.5 #512 (2048 8-way nodes)
+#he *=0.5 #512 (2048 8-way nodes)
 #he = hull_draft/1.5 #16 cores
 #he *=0.5 #128 but can run on 2 cores with 8G
 #he *=0.5 #1024
 #vessel = 'wigley-gmsh'
 #genMesh=False
 vessel = 'wigley'
-genMesh=False#True
+genMesh=True
 #vessel = None
 #genMesh=True
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
@@ -246,8 +246,8 @@ Re = hull_length*Um*rho_0/nu_0
 
 residence_time = hull_length/Um
 dt_init=0.001
-T = 4*residence_time
-nDTout=400
+T = 2*residence_time
+nDTout=100
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
 

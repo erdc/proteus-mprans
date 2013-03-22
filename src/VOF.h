@@ -192,7 +192,7 @@ namespace proteus
          for (int J=0;J<nSpace;J++) 
            v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
     
-      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv);    
+      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + 1.0e-8);    
     } 
  
  
@@ -366,6 +366,9 @@ namespace proteus
 			   double* ebqe_u,
 			   double* ebqe_flux)
     {
+      //std::cout<<"numDiff address "<<q_numDiff_u<<std::endl
+      //       <<"ndlast  address "<<q_numDiff_u_last<<std::endl;
+
       //cek should this be read in?
       double Ct_sge = 4.0;
 
@@ -485,12 +488,15 @@ namespace proteus
 	      //
 	      //moving mesh
 	      //
-	      f[0] -= MOVING_DOMAIN*m*xt;
-	      f[1] -= MOVING_DOMAIN*m*yt;
-	      f[2] -= MOVING_DOMAIN*m*zt;
-	      df[0] -= MOVING_DOMAIN*dm*xt;
-	      df[1] -= MOVING_DOMAIN*dm*yt;
-	      df[2] -= MOVING_DOMAIN*dm*zt;
+	      double mesh_velocity[3];
+	      mesh_velocity[0] = xt;
+	      mesh_velocity[1] = yt;
+	      mesh_velocity[2] = zt;
+	      for (int I=0;I<nSpace;I++)
+		{
+		  f[I] -= MOVING_DOMAIN*m*mesh_velocity[I];
+		  df[I] -= MOVING_DOMAIN*dm*mesh_velocity[I];
+		}
 	      //
 	      //calculate time derivative at quadrature points
 	      //
@@ -534,21 +540,27 @@ namespace proteus
 	      //ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u_old,numDiff1);
 	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,sc_uref, sc_alpha,G,G_dd_G,pdeResidual_u,grad_u,numDiff1);
 	      q_numDiff_u[eN_k] = useMetrics*numDiff1+(1.0-useMetrics)*numDiff0;
-              //std::cout<<tau<<"   "<<q_numDiff_u[eN_k]<<std::endl;
+              //std::cout<<tau<<"   "<<q_numDiff_u[eN_k]<<'\t'<<numDiff0<<'\t'<<numDiff1<<'\t'<<pdeResidual_u<<std::endl;
 	      // 
 	      //update element residual 
 	      // 
+	      /*	      std::cout<<m_t<<'\t'
+		       <<f[0]<<'\t'
+		       <<f[1]<<'\t'
+		       <<df[0]<<'\t'
+		       <<df[1]<<'\t'
+		       <<subgridError_u<<'\t'
+		       <<q_numDiff_u_last[eN_k]<<std::endl;*/
+	    
 	      for(int i=0;i<nDOF_test_element;i++) 
 		{ 
 		  //register int eN_k_i=eN_k*nDOF_test_element+i,
 		    //eN_k_i_nSpace = eN_k_i*nSpace,
 		   register int i_nSpace=i*nSpace;
-
-		  elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
-		    ck.Advection_weak(f,&u_grad_test_dV[i_nSpace]) + 
-		    ck.SubgridError(subgridError_u,Lstar_u[i]) + 
-		    ck.NumericalDiffusion(q_numDiff_u_last[eN_k],grad_u,&u_grad_test_dV[i_nSpace]); 
-	      
+		   elementResidual_u[i] += ck.Mass_weak(m_t,u_test_dV[i]) + 
+		     ck.Advection_weak(f,&u_grad_test_dV[i_nSpace]) + 
+		     ck.SubgridError(subgridError_u,Lstar_u[i]) + 
+		     ck.NumericalDiffusion(q_numDiff_u_last[eN_k],grad_u,&u_grad_test_dV[i_nSpace]);		   
 		}//i
 	      //
 	      //cek/ido todo, get rid of m, since u=m
@@ -613,7 +625,7 @@ namespace proteus
 		dS,
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
-		normal[3],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
+		normal[nSpace],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
 		//VRANS
 		porosity_ext,
 		//
@@ -699,9 +711,12 @@ namespace proteus
 	      //moving mesh
 	      //
 	      double velocity_ext[nSpace];
-	      velocity_ext[0] = ebqe_velocity_ext[ebNE_kb_nSpace+0] - MOVING_DOMAIN*xt_ext;
-	      velocity_ext[1] = ebqe_velocity_ext[ebNE_kb_nSpace+1] - MOVING_DOMAIN*yt_ext;
-	      velocity_ext[2] = ebqe_velocity_ext[ebNE_kb_nSpace+2] - MOVING_DOMAIN*zt_ext;
+	      double mesh_velocity[3];
+	      mesh_velocity[0] = xt_ext;
+	      mesh_velocity[1] = yt_ext;
+	      mesh_velocity[2] = zt_ext;
+	      for (int I=0;I<nSpace;I++)
+		velocity_ext[I] = ebqe_velocity_ext[ebNE_kb_nSpace+0] - MOVING_DOMAIN*mesh_velocity[I];
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
@@ -796,6 +811,8 @@ namespace proteus
 			   double* ebqe_bc_flux_u_ext,
 			   int* csrColumnOffsets_eb_u_u)
     {
+      //std::cout<<"ndjaco  address "<<q_numDiff_u_last<<std::endl;
+
       double Ct_sge = 4.0;
     
       //
@@ -910,12 +927,15 @@ namespace proteus
 	      //
 	      //moving mesh
 	      //
-	      f[0] -= MOVING_DOMAIN*m*xt;
-	      f[1] -= MOVING_DOMAIN*m*yt;
-	      f[2] -= MOVING_DOMAIN*m*zt;
-	      df[0] -= MOVING_DOMAIN*dm*xt;
-	      df[1] -= MOVING_DOMAIN*dm*yt;
-	      df[2] -= MOVING_DOMAIN*dm*zt;
+	      double mesh_velocity[3];
+	      mesh_velocity[0] = xt;
+	      mesh_velocity[1] = yt;
+	      mesh_velocity[2] = zt;
+	      for(int I=0;I<nSpace;I++)
+		{
+		  f[I] -= MOVING_DOMAIN*m*mesh_velocity[I];
+		  df[I] -= MOVING_DOMAIN*dm*mesh_velocity[I];
+		}
 	      //
 	      //calculate time derivatives
 	      //
@@ -962,6 +982,7 @@ namespace proteus
 
 	      for(int j=0;j<nDOF_trial_element;j++)
 		dsubgridError_u_u[j] = -tau*dpdeResidual_u_u[j];
+
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
 		  //int eN_k_i=eN_k*nDOF_test_element+i;
@@ -972,10 +993,11 @@ namespace proteus
 		      //int eN_k_j_nSpace = eN_k_j*nSpace;
 		      int j_nSpace = j*nSpace;
 		      int i_nSpace = i*nSpace;
+		      //std::cout<<"jac "<<'\t'<<q_numDiff_u_last[eN_k]<<'\t'<<dm_t<<'\t'<<df[0]<<df[1]<<'\t'<<dsubgridError_u_u[j]<<std::endl;
 		      elementJacobian_u_u[i][j] += ck.MassJacobian_weak(dm_t,u_trial_ref[k*nDOF_trial_element+j],u_test_dV[i]) + 
 			ck.AdvectionJacobian_weak(df,u_trial_ref[k*nDOF_trial_element+j],&u_grad_test_dV[i_nSpace]) +
-			ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u[i]) + 
-			ck.NumericalDiffusionJacobian(q_numDiff_u_last[eN_k],&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]); 
+			ck.SubgridErrorJacobian(dsubgridError_u_u[j],Lstar_u[i]) +
+		      	ck.NumericalDiffusionJacobian(q_numDiff_u_last[eN_k],&u_grad_trial[j_nSpace],&u_grad_test_dV[i_nSpace]);
 		    }//j
 		}//i
 	    }//k
@@ -1031,7 +1053,7 @@ namespace proteus
 		dS,
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
-		normal[3],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
+		normal[nSpace],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
 		//VRANS
 		porosity_ext,
 		//
@@ -1133,9 +1155,9 @@ namespace proteus
 	      //moving domain
 	      //
 	      double velocity_ext[nSpace];
-	      velocity_ext[0] = ebqe_velocity_ext[ebNE_kb_nSpace+0] - MOVING_DOMAIN*xt_ext;
-	      velocity_ext[1] = ebqe_velocity_ext[ebNE_kb_nSpace+1] - MOVING_DOMAIN*yt_ext;
-	      velocity_ext[2] = ebqe_velocity_ext[ebNE_kb_nSpace+2] - MOVING_DOMAIN*zt_ext;
+	      double mesh_velocity[3];
+	      for (int I=0;I<nSpace;I++)
+		velocity_ext[I] = ebqe_velocity_ext[ebNE_kb_nSpace+0] - MOVING_DOMAIN*mesh_velocity[I];
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
@@ -1181,13 +1203,22 @@ namespace proteus
 				int nQuadraturePoints_elementBoundaryIn,
 				int CompKernelFlag)
   {
-    return proteus::chooseAndAllocateDiscretization<VOF_base,VOF,CompKernel>(nSpaceIn,
-									     nQuadraturePoints_elementIn,
-									     nDOF_mesh_trial_elementIn,
-									     nDOF_trial_elementIn,
-									     nDOF_test_elementIn,
-									     nQuadraturePoints_elementBoundaryIn,
-									     CompKernelFlag);
+    if (nSpaceIn == 2)
+      return proteus::chooseAndAllocateDiscretization2D<VOF_base,VOF,CompKernel>(nSpaceIn,
+										 nQuadraturePoints_elementIn,
+										 nDOF_mesh_trial_elementIn,
+										 nDOF_trial_elementIn,
+										 nDOF_test_elementIn,
+										 nQuadraturePoints_elementBoundaryIn,
+										 CompKernelFlag);
+    else
+      return proteus::chooseAndAllocateDiscretization<VOF_base,VOF,CompKernel>(nSpaceIn,
+									       nQuadraturePoints_elementIn,
+									       nDOF_mesh_trial_elementIn,
+									       nDOF_trial_elementIn,
+									       nDOF_test_elementIn,
+									       nQuadraturePoints_elementBoundaryIn,
+									       CompKernelFlag);
   }
 }//proteus
 #endif

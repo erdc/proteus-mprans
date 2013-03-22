@@ -1,6 +1,53 @@
 import proteus
 from proteus.mprans.cVOF import *
 
+class SubgridError(proteus.SubgridError.SGE_base):
+    def __init__(self,coefficients,nd):
+        proteus.SubgridError.SGE_base.__init__(self,coefficients,nd,lag=False)
+    def initializeElementQuadrature(self,mesh,t,cq):
+        pass
+    def updateSubgridErrorHistory(self,initializationPhase=False):
+        pass
+    def calculateSubgridError(self,q):
+        pass
+
+class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
+    def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=True,nStepsToDelay=None):
+        proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
+        self.nStepsToDelay = nStepsToDelay
+        self.nSteps=0
+        if self.lag:
+            log("VOF.ShockCapturing: lagging requested but must lag the first step; switching lagging off and delaying")
+            self.nStepsToDelay=1
+            self.lag=False
+    def initializeElementQuadrature(self,mesh,t,cq):
+        self.mesh=mesh
+        self.numDiff=[]
+        self.numDiff_last=[]
+        for ci in range(self.nc):
+            self.numDiff.append(cq[('numDiff',ci,ci)])
+            self.numDiff_last.append(cq[('numDiff',ci,ci)])
+    def updateShockCapturingHistory(self):
+        self.nSteps += 1
+        if self.lag:
+            for ci in range(self.nc):
+                self.numDiff_last[ci][:] = self.numDiff[ci]
+        if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            log("VOF.ShockCapturing: switched to lagged shock capturing")
+            self.lag = True
+            self.numDiff_last=[]
+            for ci in range(self.nc):
+                self.numDiff_last.append(self.numDiff[ci].copy())
+        log("VOF: max numDiff %e" % (globalMax(self.numDiff_last[0].max()),))
+
+class NumericalFlux(proteus.NumericalFlux.Advection_DiagonalUpwind_Diffusion_IIPG_exterior):
+    def __init__(self,vt,getPointwiseBoundaryConditions,
+                 getAdvectiveFluxBoundaryConditions,
+                 getDiffusiveFluxBoundaryConditions):
+        proteus.NumericalFlux.Advection_DiagonalUpwind_Diffusion_IIPG_exterior.__init__(self,vt,getPointwiseBoundaryConditions,
+                                                                                        getAdvectiveFluxBoundaryConditions,
+                                                                                        getDiffusiveFluxBoundaryConditions)
+
 class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import VOFCoefficientsEvaluate
     from proteus.UnstructuredFMMandFSWsolvers import FMMEikonalSolver,FSWEikonalSolver
@@ -629,8 +676,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         for t,g in self.fluxBoundaryConditionsObjectsDict[0].advectiveFluxBoundaryConditionsDict.iteritems():
             self.ebqe[('advectiveFlux_bc',0)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
             self.ebqe[('advectiveFlux_bc_flag',0)][t[0],t[1]] = 1
-        self.shockCapturing.lag=True
-
 
         if self.forceStrongConditions:
               for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():

@@ -8,15 +8,16 @@ import step3d
 #----------------------------------------------------
 #  Discretization -- input options    
 #----------------------------------------------------
-Refinement=4
+Refinement=16
 genMesh=True
 spaceOrder=1
 useHex=False
 useRBLES   = 0.0
-useMetrics = 0.0
+useMetrics = 1.0
 use_petsc4py=True
 quasi2D = True
 use_PlanePoiseuille = False
+use_KOmega = True
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -110,10 +111,14 @@ nLayersOfOverlapForParallel = 0
 #----------------------------------------------------
 # Physical coefficients
 #----------------------------------------------------
-Re = 3025.0
+Re = 20000.0#3025.0
 inflow = 1.0
 nu = inflow*(downstream_height-upstream_height)/Re
 
+comm=Comm.get()
+if comm.isMaster():
+    print "step problem use_KOmega= %s Re= %12.5e nu =%12.5e " % (use_KOmega,Re,nu)
+#
 # Water
 rho_0 = 998.2
 nu_0  = nu
@@ -138,8 +143,10 @@ residence_time = length/inflow
 T=10.0#10.0*length/inflow
 #tnList = [0.0,0.1*residence_time,T]
 nDTout=10
-tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
-
+tnList = [0.0,0.001]
+#tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
+tnList.extend([i*T/float(nDTout) for i in range(1,nDTout+1)])#[0.0,0.5*T,T]
+runCFL=0.9
 
 #----------------------------------------------------
 # Boundary conditions and other flags
@@ -231,9 +238,9 @@ kappa_shockCapturingFactor=0.9
 kappa_sc_uref = 1.0
 kappa_sc_beta = 1.5
 
-epsilon_shockCapturingFactor=0.9
-epsilon_sc_uref = 1.0
-epsilon_sc_beta = 1.5
+dissipation_shockCapturingFactor=0.9
+dissipation_sc_uref = 1.0
+dissipation_sc_beta = 1.5
 
 #----------------------------------------------------
 # Interface width

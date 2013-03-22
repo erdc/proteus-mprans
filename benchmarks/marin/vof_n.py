@@ -11,7 +11,7 @@ massLumping       = False
 numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
 conservativeFlux  = None
 subgridError      = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)
+shockCapturing    = ResGradQuadDelayLag_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)
 
 fullNewtonFlag = True
 multilevelNonlinearSolver = Newton

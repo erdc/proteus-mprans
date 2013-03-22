@@ -230,7 +230,7 @@ namespace proteus
          for (int J=0;J<nSpace;J++) 
            v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
     
-      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv);    
+      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + 1.0e-8);    
     } 
  
     void exteriorNumericalFlux(const double n[nSpace],
@@ -417,9 +417,8 @@ namespace proteus
 		}
 	      //save solution at quadrature points for other models to use
 	      q_u[eN_k]=u;
-	      q_n[eN_k_nSpace+0]  = grad_u[0];
-	      q_n[eN_k_nSpace+1]  = grad_u[1];	      
-	      q_n[eN_k_nSpace+2]  = grad_u[2];	      
+	      for (int I=0;I<nSpace;I++)
+		q_n[eN_k_nSpace+I]  = grad_u[I];
 	      //
 	      //calculate pde coefficients at quadrature points
 	      //
@@ -433,12 +432,15 @@ namespace proteus
 	      //
 	      //moving mesh
 	      //
-	      f[0] = -MOVING_DOMAIN*m*xt;
-	      f[1] = -MOVING_DOMAIN*m*yt;
-	      f[2] = -MOVING_DOMAIN*m*zt;
-	      df[0] = -MOVING_DOMAIN*dm*xt;
-	      df[1] = -MOVING_DOMAIN*dm*yt;
-	      df[2] = -MOVING_DOMAIN*dm*zt;
+	      double mesh_velocity[3];
+	      mesh_velocity[0] = xt;
+	      mesh_velocity[1] = yt;
+	      mesh_velocity[2] = zt;
+	      for (int I=0;I<nSpace;I++)
+		{
+		  f[I] = -MOVING_DOMAIN*m*mesh_velocity[I];
+		  df[I] = -MOVING_DOMAIN*dm*mesh_velocity[I];
+		}
 	      //
 	      //calculate time derivative at quadrature points
 	      //
@@ -466,9 +468,9 @@ namespace proteus
 		}
 	      //calculate tau and tau*Res
 	      double subgridErrorVelocity[nSpace];
-	      subgridErrorVelocity[0] = dH[0] - MOVING_DOMAIN*df[0];
-	      subgridErrorVelocity[1] = dH[1] - MOVING_DOMAIN*df[1];
-	      subgridErrorVelocity[2] = dH[2] - MOVING_DOMAIN*df[2];
+	      for (int I=0;I<nSpace;I++)
+		subgridErrorVelocity[I] = dH[I] - MOVING_DOMAIN*df[I];
+
 	      calculateSubgridError_tau(elementDiameter[eN],
 					dm_t,
 					subgridErrorVelocity,//dH,
@@ -582,7 +584,7 @@ namespace proteus
 		dS,
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
-		normal[3],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
+		normal[nSpace],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
 		G[nSpace*nSpace],G_dd_G,tr_G,flux_ext;
 	      // 
 	      //calculate the solution and gradients at quadrature points 
@@ -658,9 +660,12 @@ namespace proteus
 	      //moving mesh
 	      //
 	      double velocity_ext[nSpace];
-	      velocity_ext[0] = - MOVING_DOMAIN*xt_ext;
-	      velocity_ext[1] = - MOVING_DOMAIN*yt_ext;
-	      velocity_ext[2] = - MOVING_DOMAIN*zt_ext;
+	      double mesh_velocity[3];
+	      mesh_velocity[0] = xt_ext;
+	      mesh_velocity[1] = yt_ext;
+	      mesh_velocity[2] = zt_ext;
+	      for (int I=0;I<nSpace;I++)
+		velocity_ext[I] = - MOVING_DOMAIN*mesh_velocity[I];
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
@@ -839,12 +844,15 @@ namespace proteus
 	      //
 	      //moving mesh
 	      //
-	      f[0] = -MOVING_DOMAIN*m*xt;
-	      f[1] = -MOVING_DOMAIN*m*yt;
-	      f[2] = -MOVING_DOMAIN*m*zt;
-	      df[0] = -MOVING_DOMAIN*dm*xt;
-	      df[1] = -MOVING_DOMAIN*dm*yt;
-	      df[2] = -MOVING_DOMAIN*dm*zt;
+	      double mesh_velocity[3];
+	      mesh_velocity[0] = xt;
+	      mesh_velocity[1] = yt;
+	      mesh_velocity[2] = zt;
+	      for (int I=0;I<nSpace;I++)
+		{
+		  f[I] = -MOVING_DOMAIN*m*mesh_velocity[I];
+		  df[I] = -MOVING_DOMAIN*dm*mesh_velocity[I];
+		}
 	      //
 	      //calculate time derivatives
 	      //
@@ -879,9 +887,9 @@ namespace proteus
 		}
 	      //tau and tau*Res
 	      double subgridErrorVelocity[nSpace];
-	      subgridErrorVelocity[0] = dH[0] - MOVING_DOMAIN*df[0];
-	      subgridErrorVelocity[1] = dH[1] - MOVING_DOMAIN*df[1];
-	      subgridErrorVelocity[2] = dH[2] - MOVING_DOMAIN*df[2];
+	      for (int I=0;I<nSpace;I++)
+		subgridErrorVelocity[I] = dH[I] - MOVING_DOMAIN*df[I];
+
 	      calculateSubgridError_tau(elementDiameter[eN],
 					dm_t,
 					subgridErrorVelocity,//dH,
@@ -973,7 +981,7 @@ namespace proteus
 		dS,
 		u_test_dS[nDOF_test_element],
 		u_grad_trial_trace[nDOF_trial_element*nSpace],
-		normal[3],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
+		normal[nSpace],x_ext,y_ext,z_ext,xt_ext,yt_ext,zt_ext,integralScaling,
 		G[nSpace*nSpace],G_dd_G,tr_G;
 	      // 
 	      //calculate the solution and gradients at quadrature points 
@@ -1065,9 +1073,14 @@ namespace proteus
 	      //moving domain
 	      //
 	      double velocity_ext[nSpace];
-	      velocity_ext[0] = - MOVING_DOMAIN*xt_ext;
-	      velocity_ext[1] = - MOVING_DOMAIN*yt_ext;
-	      velocity_ext[2] = - MOVING_DOMAIN*zt_ext;
+	      double mesh_velocity[3];
+	      mesh_velocity[0] = xt_ext;
+	      mesh_velocity[1] = yt_ext;
+	      mesh_velocity[2] = zt_ext;
+	      for (int I=0;I<nSpace;I++)
+		{
+		  velocity_ext[I] = - MOVING_DOMAIN*mesh_velocity[I];
+		}
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
@@ -1240,13 +1253,22 @@ namespace proteus
 			    int nQuadraturePoints_elementBoundaryIn,
 			    int CompKernelFlag)
   {
-    return proteus::chooseAndAllocateDiscretization<NCLS_base,NCLS,CompKernel>(nSpaceIn,
-    									       nQuadraturePoints_elementIn,
-    									       nDOF_mesh_trial_elementIn,
-    									       nDOF_trial_elementIn,
-    									       nDOF_test_elementIn,
-    									       nQuadraturePoints_elementBoundaryIn,
-    									       CompKernelFlag);
+    if (nSpaceIn == 2)
+      return proteus::chooseAndAllocateDiscretization2D<NCLS_base,NCLS,CompKernel>(nSpaceIn,
+										   nQuadraturePoints_elementIn,
+										   nDOF_mesh_trial_elementIn,
+										   nDOF_trial_elementIn,
+										   nDOF_test_elementIn,
+										   nQuadraturePoints_elementBoundaryIn,
+										   CompKernelFlag);
+    else
+      return proteus::chooseAndAllocateDiscretization<NCLS_base,NCLS,CompKernel>(nSpaceIn,
+										 nQuadraturePoints_elementIn,
+										 nDOF_mesh_trial_elementIn,
+										 nDOF_trial_elementIn,
+										 nDOF_test_elementIn,
+										 nQuadraturePoints_elementBoundaryIn,
+										 CompKernelFlag);
     /* return proteus::chooseAndAllocateDiscretization<NCLS_base,NCLS>(nSpaceIn, */
     /* 									       nQuadraturePoints_elementIn, */
     /* 									       nDOF_mesh_trial_elementIn, */

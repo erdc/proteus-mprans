@@ -1,5 +1,77 @@
 import proteus
 from proteus.mprans.cRANS2P import *
+from proteus.mprans.cRANS2P2D import *
+
+class SubgridError(proteus.SubgridError.SGE_base):
+    def __init__(self,coefficients,nd,lag=False,nStepsToDelay=0,hFactor=1.0,noPressureStabilization=False):
+        self.noPressureStabilization=noPressureStabilization
+        proteus.SubgridError.SGE_base.__init__(self,coefficients,nd,lag)
+        coefficients.stencil[0].add(0)
+        self.hFactor=hFactor
+        self.nStepsToDelay = nStepsToDelay
+        self.nSteps=0
+        if self.lag:
+            log("RANS2P.SubgridError: lagging requested but must lag the first step; switching lagging off and delaying")
+            self.nStepsToDelay=1
+            self.lag=False
+    def initializeElementQuadrature(self,mesh,t,cq):
+        import copy
+        self.cq=cq
+        self.v_last = self.cq[('velocity',0)]
+    def updateSubgridErrorHistory(self,initializationPhase=False):
+        self.nSteps += 1
+        if self.lag:
+            self.v_last[:] = self.cq[('velocity',0)]
+        if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            log("RANS2P.SubgridError: switched to lagged subgrid error")
+            self.lag = True
+            self.v_last = self.cq[('velocity',0)].copy()
+    def calculateSubgridError(self,q):
+        pass
+
+class NumericalFlux(proteus.NumericalFlux.NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior):
+    hasInterior=False
+    def __init__(self,vt,getPointwiseBoundaryConditions,
+                 getAdvectiveFluxBoundaryConditions,
+                 getDiffusiveFluxBoundaryConditions,
+                 getPeriodicBoundaryConditions=None):
+        proteus.NumericalFlux.NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior.__init__(self,vt,getPointwiseBoundaryConditions,
+                                                                               getAdvectiveFluxBoundaryConditions,
+                                                                               getDiffusiveFluxBoundaryConditions,getPeriodicBoundaryConditions)
+        self.penalty_constant = 2.0
+        self.includeBoundaryAdjoint=True
+        self.boundaryAdjoint_sigma=1.0
+        self.hasInterior=False
+
+class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
+    def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=False,nStepsToDelay=3):
+        proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
+        self.nStepsToDelay = nStepsToDelay
+        self.nSteps=0
+        if self.lag:
+            log("RANS2P.ShockCapturing: lagging requested but must lag the first step; switching lagging off and delaying")
+            self.nStepsToDelay=1
+            self.lag=False
+    def initializeElementQuadrature(self,mesh,t,cq):
+        self.mesh=mesh
+        self.numDiff={}
+        self.numDiff_last={}
+        for ci in range(1,4):
+            self.numDiff[ci] = cq[('numDiff',ci,ci)]
+            self.numDiff_last[ci] = cq[('numDiff',ci,ci)]
+    def updateShockCapturingHistory(self):
+        self.nSteps += 1
+        if self.lag:
+            for ci in range(1,4):
+                self.numDiff_last[ci][:] = self.numDiff[ci]
+        if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            log("RANS2P.ShockCapturing: switched to lagged shock capturing")
+            self.lag = True
+            for ci in range(1,4):
+                self.numDiff_last[ci] = self.numDiff[ci].copy()
+        log("RANS2P: max numDiff_1 %e numDiff_2 %e numDiff_3 %e" % (globalMax(self.numDiff_last[1].max()),
+                                                                    globalMax(self.numDiff_last[2].max()),
+                                                                    globalMax(self.numDiff_last[3].max())))
 
 class Coefficients(proteus.TransportCoefficients.TC_base):
     """
@@ -15,8 +87,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  sigma=72.8,
                  rho_0=998.2,nu_0=1.004e-6,
                  rho_1=1.205,nu_1=1.500e-5,
-                 g=[0.0,-9.8],
-                 nd=2,
+                 g=[0.0,0.0,-9.8],
+                 nd=3,
                  LS_model=None,
                  VF_model=None,
                  KN_model=None,
@@ -47,8 +119,9 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  epsFact_source=1.,
                  epsFact_solid=1.0,
                  eb_adjoint_sigma=1.0,
+                 eb_penalty_constant=10.0,
                  forceStrongDirichlet=False,
-                 turbulenceClosureModel=0, #0=No Model 1=Smagorinksy 2=Dynamic Smagorinsky 3=K-Epsilon
+                 turbulenceClosureModel=0, #0=No Model, 1=Smagorinksy, 2=Dynamic Smagorinsky, 3=K-Epsilon, 4=K-Omega 
                  smagorinskyConstant=0.1,
                  barycenters=None):
         self.barycenters=barycenters
@@ -56,6 +129,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.turbulenceClosureModel=turbulenceClosureModel
         self.forceStrongDirichlet=forceStrongDirichlet
         self.eb_adjoint_sigma=eb_adjoint_sigma
+        self.eb_penalty_constant=eb_penalty_constant
         self.movingDomain = movingDomain
         self.epsFact_solid = epsFact_solid
         self.useConstant_he = useConstant_he
@@ -946,6 +1020,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         else:
             self.numericalFlux = None
         #set penalty terms
+        self.numericalFlux.penalty_constant = self.coefficients.eb_penalty_constant
         #cek todo move into numerical flux initialization
         if self.ebq_global.has_key('penalty'):
             for ebN in range(self.mesh.nElementBoundaries_global):
@@ -1014,13 +1089,43 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.elementDiameter[:] = max(self.mesh.elementDiametersArray)
         else:
             self.elementDiameter = self.mesh.elementDiametersArray
-        self.rans2p = cRANS2P_base(self.nSpace_global,
-                                   self.nQuadraturePoints_element,
-                                   self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
-                                   self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
-                                   self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
-                                   self.nElementBoundaryQuadraturePoints_elementBoundary,
-                                   compKernelFlag)
+        if self.nSpace_global == 2:
+            import copy
+            self.u[3] = copy.deepcopy(self.u[2])
+            self.timeIntegration.m_tmp[3] = self.timeIntegration.m_tmp[2].copy()
+            self.timeIntegration.beta_bdf[3] = self.timeIntegration.beta_bdf[2].copy()
+            self.coefficients.sdInfo[(1,3)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.coefficients.sdInfo[(2,3)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.coefficients.sdInfo[(3,0)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.coefficients.sdInfo[(3,1)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.coefficients.sdInfo[(3,2)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.coefficients.sdInfo[(3,3)] = (numpy.array([0,1,2],dtype='i'),
+                                  numpy.array([0,1],dtype='i'))
+            self.offset.append(self.offset[2])
+            self.stride.append(self.stride[2])
+            self.numericalFlux.isDOFBoundary[3] = self.numericalFlux.isDOFBoundary[2].copy()
+            self.numericalFlux.ebqe[('u',3)] = self.numericalFlux.ebqe[('u',2)].copy()
+            self.rans2p = cRANS2P2D_base(self.nSpace_global,
+                                         self.nQuadraturePoints_element,
+                                         self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
+                                         self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
+                                         self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
+                                         self.nElementBoundaryQuadraturePoints_elementBoundary,
+                                         compKernelFlag)
+        else:
+            self.rans2p = cRANS2P_base(self.nSpace_global,
+                                       self.nQuadraturePoints_element,
+                                       self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
+                                       self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
+                                       self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
+                                       self.nElementBoundaryQuadraturePoints_elementBoundary,
+                                       compKernelFlag)
+            
     def getResidual(self,u,r):
         """
         Calculate the element residuals and add in to the global residual
@@ -1048,7 +1153,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                         self.ebqe[('diffusiveFlux_bc_flag',ck,ci)][t[0],t[1]] = 1
         r.fill(0.0)
         self.Ct_sge = 4.0
-        self.Cd_sge = 144.0
+        self.Cd_sge = 36.0
         #TODO how to request problem specific evaluations from coefficient class
         if 'evaluateForcingTerms' in dir(self.coefficients):
             self.coefficients.evaluateForcingTerms(self.timeIntegration.t,self.q,self.mesh,
@@ -1060,6 +1165,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             for cj in range(len(self.dirichletConditionsForceDOF)):
                 for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
                     self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
+
         self.rans2p.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -1093,6 +1199,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             #physics
             self.eb_adjoint_sigma,
             self.elementDiameter,#mesh.elementDiametersArray,
+            self.mesh.nodeDiametersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
@@ -1110,6 +1217,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
+            self.numericalFlux.penalty_constant,
             #VRANS start
             self.coefficients.epsFact_solid,
             self.coefficients.q_phi_solid,
@@ -1208,7 +1316,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.barycenters,
             self.coefficients.netForces,
             self.coefficients.netMoments)
-
 	from proteus.flcbdfWrappers import globalSum
         for i in range(self.coefficients.netForces.shape[0]):
             for I in range(3):
@@ -1232,6 +1339,29 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def getJacobian(self,jacobian):
 	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
 				       jacobian)
+        if self.nSpace_global == 2:
+            self.csrRowIndeces[(0,3)]  = self.csrRowIndeces[(0,2)]
+            self.csrColumnOffsets[(0,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrRowIndeces[(1,3)] = self.csrRowIndeces[(0,2)]
+            self.csrColumnOffsets[(1,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrRowIndeces[(2,3)] = self.csrRowIndeces[(0,2)]
+            self.csrColumnOffsets[(2,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrRowIndeces[(3,0)] = self.csrRowIndeces[(2,0)]
+            self.csrColumnOffsets[(3,0)] = self.csrColumnOffsets[(2,0)]
+            self.csrRowIndeces[(3,1)] = self.csrRowIndeces[(2,0)]
+            self.csrColumnOffsets[(3,1)] = self.csrColumnOffsets[(2,0)]
+            self.csrRowIndeces[(3,2)] = self.csrRowIndeces[(2,0)]
+            self.csrColumnOffsets[(3,2)] = self.csrColumnOffsets[(2,0)]
+            self.csrRowIndeces[(3,3)] = self.csrRowIndeces[(2,0)]
+            self.csrColumnOffsets[(3,3)] = self.csrColumnOffsets[(2,0)]
+            self.csrColumnOffsets_eb[(0,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(1,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(2,3)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(3,0)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(3,1)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(3,2)] = self.csrColumnOffsets[(0,2)]
+            self.csrColumnOffsets_eb[(3,3)] = self.csrColumnOffsets[(0,2)]
+  
         self.rans2p.calculateJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -1264,6 +1394,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             self.eb_adjoint_sigma,
             self.elementDiameter,#mesh.elementDiametersArray,
+            self.mesh.nodeDiametersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
@@ -1281,6 +1412,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
+            self.numericalFlux.penalty_constant,
             #VRANS start
             self.coefficients.epsFact_solid,
             self.coefficients.q_phi_solid,
@@ -1344,7 +1476,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.elementBoundaryElementsArray,
             self.mesh.elementBoundaryLocalElementBoundariesArray,
             self.coefficients.ebqe_vf,
+            self.coefficients.bc_ebqe_vf,
             self.coefficients.ebqe_phi,
+            self.coefficients.bc_ebqe_phi,
             self.coefficients.ebqe_n,
             self.coefficients.ebqe_kappa,
             #VRANS start
@@ -1547,8 +1681,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 	#moment = numpy.zeros(3,'d')
 
         self.Ct_sge = 4.0
-        self.Cd_sge = 144.0
-	self.C_b    = 10.0
+        self.Cd_sge = 36.0
  
         self.rans2p.calculateForce(#element
             self.u[0].femSpace.elementMaps.psi,
@@ -1580,6 +1713,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.elementDiametersArray,
+            self.mesh.nodeDiamtersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
@@ -1597,7 +1731,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.Ct_sge,
             self.Cd_sge,
             self.shockCapturing.shockCapturingFactor,
-	    self.C_b,
+            self.numericalFlux.penalty_constant,
             self.u[0].femSpace.dofMap.l2g,
             self.u[1].femSpace.dofMap.l2g,
             self.u[0].dof,
