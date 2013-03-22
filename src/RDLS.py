@@ -1,6 +1,17 @@
 import proteus
 from proteus.mprans.cRDLS import *
 
+class SubgridError(proteus.SubgridError.SGE_base):
+    def __init__(self,coefficients,nd):
+        proteus.SubgridError.SGE_base.__init__(self,coefficients,nd,False)
+    def initializeElementQuadrature(self,mesh,t,cq):
+        for ci in range(self.nc):
+            cq[('dH_sge',ci,ci)]=cq[('dH',ci,ci)]
+    def calculateSubgridError(self,q):
+        pass
+    def updateSubgridErrorHistory(self,initializationPhase=False):
+        pass
+
 class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
     def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=True,nStepsToDelay=None):
         proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
@@ -23,6 +34,7 @@ class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
             self.numDiff_last=[]
             for ci in range(self.nc):
                 self.numDiff_last.append(self.numDiff[ci].copy())
+        log("RDLS: max numDiff %e" % (globalMax(self.numDiff_last[0].max()),))
 
 class PsiTC(proteus.StepControl.SC_base):
     def __init__(self,model,nOptions):
@@ -96,9 +108,11 @@ class PsiTC(proteus.StepControl.SC_base):
             log("Osher-PsiTC iteration %d  dt = %12.5e  |res| = %12.5e %g  " %(self.nSteps,self.dt_model,res,(res/self.res0)*100.0),level=1)
         elif self.nSteps >= self.nStepsMax:
             log("Osher-PsiTC DID NOT Converge |res| = %12.5e but quitting anyway" %(res,))
+            log("Osher-PsiTC tolerance                %12.5e " % (self.res0*self.rtol + self.atol,))
             self.nSteps=0
         else:
             log("Osher-PsiTC converged |res| = %12.5e %12.5e" %(res,ssError*100.0))
+            log("Osher-PsiTC tolerance                %12.5e " % (self.res0*self.rtol + self.atol,))
             self.nSteps=0
     def choose_dt_model(self):
         #don't modify dt_model

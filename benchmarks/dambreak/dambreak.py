@@ -12,10 +12,11 @@ useSuperlu=True#False
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
-useMetrics = 0.0
+useMetrics = 1.0
 applyCorrection=True
 useVF = 1.0
 useOnlyVF = False
+redist_Newton = True
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -64,11 +65,11 @@ nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
-
+structured=False
 if useHex:   
-    nnx=4*Refinement
-    nny=1*Refinement
-    nnz=2*Refinement
+    nnx=4*Refinement+1
+    nny=1*Refinement+1
+    nnz=2*Refinement+1
     if quas2D:
         nny=2
     hex=True    
@@ -76,48 +77,52 @@ if useHex:
 else:
     boundaries=['left','right','bottom','top','front','back']
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
-    vertices=[[0.0,0.0,0.0],#0
-              [L[0],0.0,0.0],#1
-              [L[0],L[1],0.0],#2
-              [0.0,L[1],0.0],#3
-              [0.0,0.0,L[2]],#4
-              [L[0],0.0,L[2]],#5
-              [L[0],L[1],L[2]],#6
-              [0.0,L[1],L[2]]]#7
-    vertexFlags=[boundaryTags['left'],
-                 boundaryTags['right'],
-                 boundaryTags['right'],
-                 boundaryTags['left'],
-                 boundaryTags['left'],
-                 boundaryTags['right'],
-                 boundaryTags['right'],
-                 boundaryTags['left']]
-    facets=[[[0,1,2,3]],
-            [[0,1,5,4]],
-            [[1,2,6,5]],
-            [[2,3,7,6]],
-            [[3,0,4,7]],
-            [[4,5,6,7]]]
-    facetFlags=[boundaryTags['bottom'],
-                boundaryTags['front'],
-                boundaryTags['right'],
-                boundaryTags['back'],
-                boundaryTags['left'],
-                boundaryTags['top']]
-    regions=[[0.5*L[0],0.5*L[1],0.5*L[2]]]
-    regionFlags=[1]
-    domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
-                                                 vertexFlags=vertexFlags,
-                                                 facets=facets,
-                                                 facetFlags=facetFlags,
-                                                 regions=regions,
-                                                 regionFlags=regionFlags)
-    #go ahead and add a boundary tags member 
-    domain.boundaryTags = boundaryTags
-    domain.writePoly("mesh")
-    domain.writePLY("mesh")
-    domain.writeAsymptote("mesh")
-    triangleOptions="VApq1.4q12ena%21.16e" % ((he**3)/6.0,)
+    if structured:
+        nnx=4*Refinement
+        nny=2*Refinement
+    else:
+        vertices=[[0.0,0.0,0.0],#0
+                  [L[0],0.0,0.0],#1
+                  [L[0],L[1],0.0],#2
+                  [0.0,L[1],0.0],#3
+                  [0.0,0.0,L[2]],#4
+                  [L[0],0.0,L[2]],#5
+                  [L[0],L[1],L[2]],#6
+                  [0.0,L[1],L[2]]]#7
+        vertexFlags=[boundaryTags['left'],
+                     boundaryTags['right'],
+                     boundaryTags['right'],
+                     boundaryTags['left'],
+                     boundaryTags['left'],
+                     boundaryTags['right'],
+                     boundaryTags['right'],
+                     boundaryTags['left']]
+        facets=[[[0,1,2,3]],
+                [[0,1,5,4]],
+                [[1,2,6,5]],
+                [[2,3,7,6]],
+                [[3,0,4,7]],
+                [[4,5,6,7]]]
+        facetFlags=[boundaryTags['bottom'],
+                    boundaryTags['front'],
+                    boundaryTags['right'],
+                    boundaryTags['back'],
+                    boundaryTags['left'],
+                    boundaryTags['top']]
+        regions=[[0.5*L[0],0.5*L[1],0.5*L[2]]]
+        regionFlags=[1]
+        domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
+                                                     vertexFlags=vertexFlags,
+                                                     facets=facets,
+                                                     facetFlags=facetFlags,
+                                                     regions=regions,
+                                                     regionFlags=regionFlags)
+        #go ahead and add a boundary tags member 
+        domain.boundaryTags = boundaryTags
+        domain.writePoly("mesh")
+        domain.writePLY("mesh")
+        domain.writeAsymptote("mesh")
+        triangleOptions="VApq1.4q12ena%21.16e" % ((he**3)/6.0,)
 
 
 # Time stepping
@@ -128,24 +133,33 @@ runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.0
-ls_shockCapturingFactor  = 0.9
-ls_sc_uref  = 1.0
-ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.9
-vof_sc_uref = 1.0
-vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.9
-
-epsFact_density    = 3.0
-epsFact_viscosity  = 3.0
-epsFact_redistance = 0.33
-epsFact_curvature  = 3.0
-epsFact_consrv_heaviside = 3.0
-epsFact_consrv_dirac     = 3.0
-epsFact_consrv_diffusion = 10.0
-epsFact_vof = 3.0
-
+if useMetrics:
+    ns_shockCapturingFactor  = 0.1
+    ls_shockCapturingFactor  = 0.1
+    ls_sc_uref  = 1.0
+    ls_sc_beta  = 1.0
+    vof_shockCapturingFactor = 0.1
+    vof_sc_uref = 1.0
+    vof_sc_beta = 1.0
+    rd_shockCapturingFactor  = 0.9
+    epsFact_density    = 1.5
+    epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
+    epsFact_redistance = 0.33
+    epsFact_consrv_diffusion = 10.0
+else:
+    ns_shockCapturingFactor  = 0.1
+    ls_shockCapturingFactor  = 0.1
+    ls_sc_uref  = 1.0
+    ls_sc_beta  = 1.0
+    vof_shockCapturingFactor = 0.1
+    vof_sc_uref  = 1.0
+    vof_sc_beta  = 1.0
+    rd_shockCapturingFactor  = 0.9
+    epsFact_density    = 1.5
+    epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
+    epsFact_redistance = 0.33
+    epsFact_consrv_diffusion = 10.0
+    
 # Water
 rho_0 = 998.2
 nu_0  = 1.004e-6

@@ -33,8 +33,8 @@ subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=True
 shockCapturing = RANS2P.ShockCapturing(coefficients,nd,ns_shockCapturingFactor,lag=True)
 
 fullNewtonFlag = True
-multilevelNonlinearSolver = NewtonNS
-levelNonlinearSolver      = NewtonNS
+multilevelNonlinearSolver = Newton
+levelNonlinearSolver      = Newton
 
 nonlinearSmoother = None
 linearSmoother    = SimpleNavierStokes3D
@@ -56,7 +56,7 @@ linear_solver_options_prefix = 'rans2p_'
 levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest             = 'r-true'
 
-tolFac = 1.0e-3
+tolFac = 0.0
 nl_atol_res = 1.0e-4
 useEisenstatWalker = True
 maxNonlinearIts = 20

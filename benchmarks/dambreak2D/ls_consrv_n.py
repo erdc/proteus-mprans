@@ -38,8 +38,8 @@ linearSolverConvergenceTest  = 'r-true'
 
 tolFac = 0.0
 linTolFac = 0.0
-nl_atol_res = 1.0e-5
+nl_atol_res = mcorr_nl_atol_res
 useEisenstatWalker = True
 
-maxNonlinearIts = 10
+maxNonlinearIts = 25
 maxLineSearches = 0

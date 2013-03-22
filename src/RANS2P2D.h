@@ -261,7 +261,9 @@ namespace proteus
 				   int* elementBoundaryElementsArray,
 				   int* elementBoundaryLocalElementBoundariesArray,
 				   double* ebqe_vf_ext,
+				   double* bc_ebqe_vf_ext,
 				   double* ebqe_phi_ext,
+				   double* bc_ebqe_phi_ext,
 				   double* ebqe_normal_phi_ext,
 				   double* ebqe_kappa_phi_ext,
 				   //VRANS
@@ -3270,7 +3272,9 @@ namespace proteus
 			   int* elementBoundaryElementsArray,
 			   int* elementBoundaryLocalElementBoundariesArray,
 			   double* ebqe_vf_ext,
+			   double* bc_ebqe_vf_ext,
 			   double* ebqe_phi_ext,
+			   double* bc_ebqe_phi_ext,
 			   double* ebqe_normal_phi_ext,
 			   double* ebqe_kappa_phi_ext,
 			   //VRANS
@@ -4296,8 +4300,8 @@ namespace proteus
 				   turbulenceClosureModel,
 				   g,
 				   useVF,
-				   ebqe_vf_ext[ebNE_kb],
-				   ebqe_phi_ext[ebNE_kb],
+				   bc_ebqe_vf_ext[ebNE_kb],
+				   bc_ebqe_phi_ext[ebNE_kb],
 				   &ebqe_normal_phi_ext[ebNE_kb_nSpace],
 				   ebqe_kappa_phi_ext[ebNE_kb],
 				   //VRANS
@@ -4392,8 +4396,8 @@ namespace proteus
 					  rho_1,
 					  nu_1,
 					  useVF,
-					  ebqe_vf_ext[ebNE_kb],
-					  ebqe_phi_ext[ebNE_kb],
+					  bc_ebqe_vf_ext[ebNE_kb],
+					  bc_ebqe_phi_ext[ebNE_kb],
 					  porosity_ext,
 					  c_mu, //mwf hack
 					  ebqe_turb_var_0[ebNE_kb],

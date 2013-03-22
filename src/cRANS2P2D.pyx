@@ -252,7 +252,9 @@ cdef extern from "RANS2P2D.h" namespace "proteus":
 				   int* elementBoundaryElementsArray,
 				   int* elementBoundaryLocalElementBoundariesArray,
 				   double* ebqe_vf_ext,
+				   double* bc_ebqe_vf_ext,
 				   double* ebqe_phi_ext,
+				   double* bc_ebqe_phi_ext,
 				   double* ebqe_normal_phi_ext,
 				   double* ebqe_kappa_phi_ext,
 # VRANS start
@@ -851,7 +853,9 @@ cdef class cRANS2P2D_base:
                          numpy.ndarray elementBoundaryElementsArray,
                          numpy.ndarray elementBoundaryLocalElementBoundariesArray,
 			 numpy.ndarray ebqe_vf_ext,
+			 numpy.ndarray bc_ebqe_vf_ext,
                          numpy.ndarray ebqe_phi_ext,
+			 numpy.ndarray bc_ebqe_phi_ext,
                          numpy.ndarray ebqe_normal_phi_ext,
                          numpy.ndarray ebqe_kappa_phi_ext,
 # VRANS start
@@ -1005,7 +1009,9 @@ cdef class cRANS2P2D_base:
                                       <int*> elementBoundaryElementsArray.data,
                                       <int*> elementBoundaryLocalElementBoundariesArray.data,
 				      <double*> ebqe_vf_ext.data,
+				      <double*> bc_ebqe_vf_ext.data,
                                       <double*> ebqe_phi_ext.data,
+                                      <double*> bc_ebqe_phi_ext.data,
                                       <double*> ebqe_normal_phi_ext.data,
                                       <double*> ebqe_kappa_phi_ext.data,
 # VRANS start

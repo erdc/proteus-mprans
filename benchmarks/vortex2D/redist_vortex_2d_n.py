@@ -3,16 +3,35 @@ from proteus.default_n import *
 from redist_vortex_2d_p import *
 from vortex2D import *
 
-timeIntegration = NoIntegration
-stepController = Newton_controller
-
-timeIntegration = BackwardEuler_cfl
-stepController = RDLS.PsiTC
-runCFL=0.33
-psitc['nStepsForce']=3
-psitc['nStepsMax']=15
-psitc['reduceRatio']=2.0
-psitc['startRatio']=1.0
+if redist_Newton:
+    timeIntegration = NoIntegration
+    stepController = Newton_controller
+    tolFac = 0.0
+    nl_atol_res = atolRedistance
+    maxNonlinearIts = 25
+    maxLineSearches = 0
+    useEisenstatWalker = True
+    linTolFac = 0.0
+    levelNonlinearSolverConvergenceTest='r'
+    nonlinearSolverConvergenceTest='r'
+else:
+    timeIntegration = BackwardEuler_cfl
+    stepController = RDLS.PsiTC
+    runCFL=0.33
+    psitc['nStepsForce']=3
+    psitc['nStepsMax']=15
+    psitc['reduceRatio']=2.0
+    psitc['startRatio']=1.
+    tolFac = 0.0
+    rtol_res[0] = 0.0
+    atol_res[0] = atolRedistance
+    nl_atol_res = 0.01*atolRedistance
+    maxNonlinearIts = 1
+    maxLineSearches = 0
+    useEisenstatWalker = True
+    linTolFac = 0.0
+    levelNonlinearSolverConvergenceTest='rits'
+    nonlinearSolverConvergenceTest='rits'
 
 if cDegree_ls==0:
     if useHex:
@@ -58,15 +77,6 @@ nonlinearSmoother = None
 
 fullNewtonFlag = True
 
-#this needs to be set appropriately for pseudo-transient
-tolFac = 0.0
-nl_atol_res = atolRedistance
-
-maxNonlinearIts = 1 #1 for PTC
-maxLineSearches = 0
-levelNonlinearSolverConvergenceTest='rits'
-nonlinearSolverConvergenceTest='rits'
-useEisenstatWalker = True
 
 matrix = SparseMatrix
 
@@ -80,6 +90,5 @@ else:
 
     levelLinearSolver = LU
 
-linTolFac = 0.001
 
 conservativeFlux = {}

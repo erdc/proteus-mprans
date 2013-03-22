@@ -2,6 +2,47 @@ import proteus
 from proteus.mprans.cRANS2P import *
 from proteus.mprans.cRANS2P2D import *
 
+class SubgridError(proteus.SubgridError.SGE_base):
+    def __init__(self,coefficients,nd,lag=False,nStepsToDelay=0,hFactor=1.0,noPressureStabilization=False):
+        self.noPressureStabilization=noPressureStabilization
+        proteus.SubgridError.SGE_base.__init__(self,coefficients,nd,lag)
+        coefficients.stencil[0].add(0)
+        self.hFactor=hFactor
+        self.nStepsToDelay = nStepsToDelay
+        self.nSteps=0
+        if self.lag:
+            log("RANS2P.SubgridError: lagging requested but must lag the first step; switching lagging off and delaying")
+            self.nStepsToDelay=1
+            self.lag=False
+    def initializeElementQuadrature(self,mesh,t,cq):
+        import copy
+        self.cq=cq
+        self.v_last = self.cq[('velocity',0)]
+    def updateSubgridErrorHistory(self,initializationPhase=False):
+        self.nSteps += 1
+        if self.lag:
+            self.v_last[:] = self.cq[('velocity',0)]
+        if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            log("RANS2P.SubgridError: switched to lagged subgrid error")
+            self.lag = True
+            self.v_last = self.cq[('velocity',0)].copy()
+    def calculateSubgridError(self,q):
+        pass
+
+class NumericalFlux(proteus.NumericalFlux.NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior):
+    hasInterior=False
+    def __init__(self,vt,getPointwiseBoundaryConditions,
+                 getAdvectiveFluxBoundaryConditions,
+                 getDiffusiveFluxBoundaryConditions,
+                 getPeriodicBoundaryConditions=None):
+        proteus.NumericalFlux.NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior.__init__(self,vt,getPointwiseBoundaryConditions,
+                                                                               getAdvectiveFluxBoundaryConditions,
+                                                                               getDiffusiveFluxBoundaryConditions,getPeriodicBoundaryConditions)
+        self.penalty_constant = 2.0
+        self.includeBoundaryAdjoint=True
+        self.boundaryAdjoint_sigma=1.0
+        self.hasInterior=False
+
 class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
     def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=False,nStepsToDelay=3):
         proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
@@ -28,6 +69,9 @@ class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
             self.lag = True
             for ci in range(1,4):
                 self.numDiff_last[ci] = self.numDiff[ci].copy()
+        log("RANS2P: max numDiff_1 %e numDiff_2 %e numDiff_3 %e" % (globalMax(self.numDiff_last[1].max()),
+                                                                    globalMax(self.numDiff_last[2].max()),
+                                                                    globalMax(self.numDiff_last[3].max())))
 
 class Coefficients(proteus.TransportCoefficients.TC_base):
     """
@@ -75,6 +119,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  epsFact_source=1.,
                  epsFact_solid=1.0,
                  eb_adjoint_sigma=1.0,
+                 eb_penalty_constant=10.0,
                  forceStrongDirichlet=False,
                  turbulenceClosureModel=0, #0=No Model, 1=Smagorinksy, 2=Dynamic Smagorinsky, 3=K-Epsilon, 4=K-Omega 
                  smagorinskyConstant=0.1,
@@ -84,6 +129,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.turbulenceClosureModel=turbulenceClosureModel
         self.forceStrongDirichlet=forceStrongDirichlet
         self.eb_adjoint_sigma=eb_adjoint_sigma
+        self.eb_penalty_constant=eb_penalty_constant
         self.movingDomain = movingDomain
         self.epsFact_solid = epsFact_solid
         self.useConstant_he = useConstant_he
@@ -974,6 +1020,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         else:
             self.numericalFlux = None
         #set penalty terms
+        self.numericalFlux.penalty_constant = self.coefficients.eb_penalty_constant
         #cek todo move into numerical flux initialization
         if self.ebq_global.has_key('penalty'):
             for ebN in range(self.mesh.nElementBoundaries_global):
@@ -1429,7 +1476,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.elementBoundaryElementsArray,
             self.mesh.elementBoundaryLocalElementBoundariesArray,
             self.coefficients.ebqe_vf,
+            self.coefficients.bc_ebqe_vf,
             self.coefficients.ebqe_phi,
+            self.coefficients.bc_ebqe_phi,
             self.coefficients.ebqe_n,
             self.coefficients.ebqe_kappa,
             #VRANS start

@@ -35,7 +35,7 @@ else:
 from proteus import MeshTools
 partitioningType = MeshTools.MeshParallelPartitioningTypes.node
 #spatial mesh
-lRefinement=3
+lRefinement=5
 #tag simulation name to level of refinement
 #soname="vortexcgp2_bdf2_mc"+`lRefinement`
 nn=nnx=nny=(2**lRefinement)*10+1
@@ -60,27 +60,27 @@ nDTout = 80
 #mass correction
 applyCorrection=True
 applyRedistancing=True
+redist_Newton=False#True
 onlyVOF=False
 #smoothing factors
 #eps
-epsFactHeaviside=1.5
-epsFactDirac=1.5
-epsFactDiffusion=10.0
+epsFactHeaviside=epsFactDirac=epsFact_vof=1.5
 epsFactRedistance=0.33
-epsFact_vof=1.5
+epsFactDiffusion=10.0
 #
-shockCapturingFactor_vof=0.1
-shockCapturingFactor_ls=0.1
-shockCapturingFactor_rd=0.1
-lag_shockCapturing_vof=False
-lag_shockCapturing_ls=False
-lag_shockCapturing_rd=False
 if useMetrics==0.0:
-    shockCapturingFactor_vof=0.9
-    shockCapturingFactor_ls=0.9
+    shockCapturingFactor_vof=0.1
+    shockCapturingFactor_ls=0.1
     shockCapturingFactor_rd=0.9
     lag_shockCapturing_vof=True
     lag_shockCapturing_ls=True
+    lag_shockCapturing_rd=False
+else:
+    shockCapturingFactor_vof=0.1
+    shockCapturingFactor_ls=0.1
+    shockCapturingFactor_rd=0.9
+    lag_shockCapturing_vof=False
+    lag_shockCapturing_ls=False
     lag_shockCapturing_rd=False
 
 #use absolute tolerances on al models

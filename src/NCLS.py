@@ -1,6 +1,17 @@
 import proteus
 from proteus.mprans.cNCLS import *
 
+class SubgridError(proteus.SubgridError.SGE_base):
+    def __init__(self,coefficients,nd):
+        proteus.SubgridError.SGE_base.__init__(self,coefficients,nd,False)
+    def initializeElementQuadrature(self,mesh,t,cq):
+        for ci in range(self.nc):
+            cq[('dH_sge',ci,ci)]=cq[('dH',ci,ci)]
+    def calculateSubgridError(self,q):
+        pass
+    def updateSubgridErrorHistory(self,initializationPhase=False):
+        pass
+
 class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
     def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=True,nStepsToDelay=None):
         proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
@@ -28,6 +39,7 @@ class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
             self.numDiff_last=[]
             for ci in range(self.nc):
                 self.numDiff_last.append(self.numDiff[ci].copy())
+        log("NCLS: max numDiff %e" % (globalMax(self.numDiff_last[0].max()),))
 
 class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import ncLevelSetCoefficientsEvaluate
@@ -667,7 +679,8 @@ class LevelModel(OneLevelTransport):
             self.mesh.elementBoundaryLocalElementBoundariesArray,
             self.coefficients.ebqe_v,
             self.numericalFlux.isDOFBoundary[0],
-            self.coefficients.rdModel.ebqe[('u',0)],#self.numericalFlux.ebqe[('u',0)],
+            #self.coefficients.rdModel.ebqe[('u',0)],
+            self.numericalFlux.ebqe[('u',0)],
             self.ebqe[('u',0)])
 
 	if self.forceStrongConditions:#
@@ -736,7 +749,8 @@ class LevelModel(OneLevelTransport):
             self.mesh.elementBoundaryLocalElementBoundariesArray,
             self.coefficients.ebqe_v,
             self.numericalFlux.isDOFBoundary[0],
-            self.coefficients.rdModel.ebqe[('u',0)],#self.numericalFlux.ebqe[('u',0)],
+            #self.coefficients.rdModel.ebqe[('u',0)],
+            self.numericalFlux.ebqe[('u',0)],
             self.csrColumnOffsets_eb[(0,0)])
 
         #Load the Dirichlet conditions directly into residual

@@ -5,17 +5,18 @@ from proteus.default_n import *
    
 #  Discretization -- input options  
 #Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
-Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
+Refinement = 25#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
 useSuperlu=True#False
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
-useMetrics = 0.0
+useMetrics = 1.0
 applyCorrection=True
 useVF = 1.0
 useOnlyVF = False
+redist_Newton = True
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -60,7 +61,7 @@ nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
-unstructured=True
+structured=False
 if useHex:   
     nnx=4*Refinement+1
     nny=2*Refinement+1
@@ -69,7 +70,7 @@ if useHex:
 else:
     boundaries=['left','right','bottom','top','front','back']
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
-    if unstructured:
+    if structured:
         nnx=4*Refinement
         nny=2*Refinement
     else:
@@ -102,7 +103,7 @@ else:
         domain.writePoly("mesh")
         domain.writePLY("mesh")
         domain.writeAsymptote("mesh")
-        triangleOptions="pAq30Dena%8.8f" % ((he**2)/2.0,)
+        triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
 
 # Time stepping
 T=1.0
@@ -112,24 +113,54 @@ runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
-ns_shockCapturingFactor  = 0.0
-ls_shockCapturingFactor  = 0.9
-ls_sc_uref  = 1.0
-ls_sc_beta  = 1.0
-vof_shockCapturingFactor = 0.9
-vof_sc_uref = 1.0
-vof_sc_beta = 1.0
-rd_shockCapturingFactor  = 0.9
+ns_forceStrongDirichlet = False#True
+if useMetrics:
+    ns_shockCapturingFactor  = 0.1
+    ns_lag_shockCapturing = True#False
+    ns_lag_subgridError = True
+    ls_shockCapturingFactor  = 0.1
+    ls_lag_shockCapturing = True#False
+    ls_sc_uref  = 1.0
+    ls_sc_beta  = 1.0
+    vof_shockCapturingFactor = 0.1
+    vof_lag_shockCapturing = True#False
+    vof_sc_uref = 1.0
+    vof_sc_beta = 1.0
+    rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
+    epsFact_density    = 1.5
+    epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
+    epsFact_redistance = 0.33
+    epsFact_consrv_diffusion = 10.0
+    redist_Newton = True#False
+else:
+    ns_shockCapturingFactor  = 0.9
+    ns_lag_shockCapturing = False
+    ns_lag_subgridError = True
+    ls_shockCapturingFactor  = 0.9
+    ls_lag_shockCapturing = True#False
+    ls_sc_uref  = 1.0
+    ls_sc_beta  = 1.0
+    vof_shockCapturingFactor = 0.9
+    vof_lag_shockCapturing = True#False
+    vof_sc_uref  = 1.0
+    vof_sc_beta  = 1.0
+    rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
+    epsFact_density    = 1.5
+    epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
+    epsFact_redistance = 0.33
+    epsFact_consrv_diffusion = 10.0
+    redist_Newton = False
 
-epsFact_density    = 3.0
-epsFact_viscosity  = 3.0
-epsFact_redistance = 0.33
-epsFact_curvature  = 3.0
-epsFact_consrv_heaviside = 3.0
-epsFact_consrv_dirac     = 3.0
-epsFact_consrv_diffusion = 10.0
-epsFact_vof = 3.0
+ns_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+vof_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+ls_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+rd_nl_atol_res = max(1.0e-8,0.01*he)
+mcorr_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
 
+#turbulence
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky
 # Water
 rho_0 = 998.2
 nu_0  = 1.004e-6
