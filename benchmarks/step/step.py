@@ -8,12 +8,12 @@ import step3d
 #----------------------------------------------------
 #  Discretization -- input options    
 #----------------------------------------------------
-Refinement=4
+Refinement=16
 genMesh=True
 spaceOrder=1
 useHex=False
 useRBLES   = 0.0
-useMetrics = 0.0
+useMetrics = 1.0
 use_petsc4py=True
 quasi2D = True
 use_PlanePoiseuille = False

@@ -224,7 +224,7 @@ namespace proteus
 
       //if (nu_t > 1.e6*nu)
       //{
-      //  std::cout<<"Kappa WARNING isKEpsilon = "<<isKEpsilon<<" nu_t = " <<nu_t<<" nu= "<<nu<<" k= "<<k<<" dissipation= "<<dissipation<<std::endl; 
+      //  std::cout<<"Kappa WARNING isKEpsilon = "<<isKEpsilon<<" nu_t = " <<nu_t<<" nu= "<<nu<<" k= "<<k<<" k_old= "<<k_old<<" dissipation= "<<dissipation<<std::endl; 
       //}
       nu_t     = fmax(nu_t,1.e-4*nu);
       //mwf hack
@@ -262,8 +262,8 @@ namespace proteus
 				     beta,
 				     gamma);
 	  //straight forward lagging
-	  //gamma_k=fmax(beta_star*dissipation,0.0);
-	  gamma_k = fmax(beta_star*k_old/nu_t,0.0);
+	  gamma_k=fmax(beta_star*dissipation,0.0);
+	  //gamma_k = fmax(beta_star*k_old/nu_t,0.0);
 	}
       else
 	{
