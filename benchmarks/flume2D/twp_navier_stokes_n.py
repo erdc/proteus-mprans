@@ -1,6 +1,6 @@
 from proteus import *
 from twp_navier_stokes_p import *
-from dambreak import *
+from flume import *
 
 timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_controller
@@ -45,5 +45,5 @@ tolFac = 0.0
 l_atol_res = 0.001*vof_nl_atol_res
 nl_atol_res = ns_nl_atol_res
 useEisenstatWalker = True
-maxNonlinearIts = 50
+maxNonlinearIts = 25
 maxLineSearches = 0

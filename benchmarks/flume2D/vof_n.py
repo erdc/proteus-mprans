@@ -1,5 +1,5 @@
 from proteus import *
-from dambreak import *
+from flume import *
 from vof_p import *
 
 timeIntegration = BackwardEuler_cfl
@@ -43,5 +43,5 @@ l_atol_res = 0.001*vof_nl_atol_res
 nl_atol_res = vof_nl_atol_res
 useEisenstatWalker = True
 
-maxNonlinearIts = 50
+maxNonlinearIts = 25
 maxLineSearches = 0

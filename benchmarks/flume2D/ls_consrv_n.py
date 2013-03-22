@@ -1,5 +1,5 @@
 from proteus import *
-from dambreak import *
+from flume import *
 from ls_consrv_p import *
 
 timeIntegrator  = ForwardIntegrator
@@ -38,9 +38,8 @@ linearSolverConvergenceTest  = 'r-true'
 
 tolFac = 0.0
 linTolFac = 0.0
-l_atol_res = 0.001*mcorr_nl_atol_res
 nl_atol_res = mcorr_nl_atol_res
 useEisenstatWalker = True
 
-maxNonlinearIts = 50
+maxNonlinearIts = 25
 maxLineSearches = 0

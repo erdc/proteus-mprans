@@ -5,18 +5,17 @@ from proteus.default_n import *
    
 #  Discretization -- input options  
 #Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
-Refinement = 25#45min on a single core for spaceOrder=1, useHex=False
+Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
 useSuperlu=True#False
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
-useMetrics = 1.0
+useMetrics = 0.0
 applyCorrection=True
 useVF = 1.0
 useOnlyVF = False
-redist_Newton = True
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -56,7 +55,7 @@ elif spaceOrder == 2:
 # Domain and mesh
 L = (0.584,0.350)
 he = L[0]/float(4*Refinement-1)
-
+he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -132,7 +131,7 @@ if useMetrics:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = True#False
+    redist_Newton = False
 else:
     ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = False
