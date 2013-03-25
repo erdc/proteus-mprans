@@ -17,7 +17,7 @@ useMetrics = 1.0
 use_petsc4py=True
 quasi2D = True
 use_PlanePoiseuille = False
-use_KOmega = True
+use_KOmega = False
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -111,9 +111,12 @@ nLayersOfOverlapForParallel = 0
 #----------------------------------------------------
 # Physical coefficients
 #----------------------------------------------------
-Re = 20000.0#3025.0
-inflow = 1.0
-nu = inflow*(downstream_height-upstream_height)/Re
+Re = 2000000.0#3025.0
+nu_h20 = 1.004e-6
+#inflow = 1.0
+#nu = inflow*(downstream_height-upstream_height)/Re
+nu = nu_h20
+inflow = nu*Re/(downstream_height-upstream_height)
 
 comm=Comm.get()
 if comm.isMaster():
@@ -121,7 +124,7 @@ if comm.isMaster():
 #
 # Water
 rho_0 = 998.2
-nu_0  = nu
+nu_0  = 1.004e-6
 mu_0 = rho_0*nu_0
 
 # Air
@@ -143,7 +146,7 @@ residence_time = length/inflow
 T=10.0#10.0*length/inflow
 #tnList = [0.0,0.1*residence_time,T]
 nDTout=10
-tnList = [0.0,0.001]
+tnList = [0.0,0.00001]
 #tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
 tnList.extend([i*T/float(nDTout) for i in range(1,nDTout+1)])#[0.0,0.5*T,T]
 runCFL=0.9
@@ -223,7 +226,10 @@ def signedDistance(x):
 #----------------------------------------------------
 
 ns_shockCapturingFactor=0.3
-
+ns_lag_shockCapturing = True
+ns_lag_subgridError = True
+if useMetrics:
+    ns_shockCapturingFactor = 0.1
 ls_shockCapturingFactor=0.3
 ls_sc_uref = 1.0
 ls_sc_beta = 1.5
