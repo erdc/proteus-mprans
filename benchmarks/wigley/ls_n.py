@@ -43,6 +43,6 @@ nl_atol_res = 1.0e-5
 l_atol_res = 1.0e-5
 useEisenstatWalker = False#True
 
-maxNonlinearIts = 2
+maxNonlinearIts = 50
 maxLineSearches = 0
 
