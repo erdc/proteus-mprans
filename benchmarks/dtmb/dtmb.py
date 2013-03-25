@@ -228,18 +228,18 @@ runCFL = 0.3
 #----------------------------------------------------
 
 useRBLES   = 0.0
-useMetrics = 0.0
+useMetrics = 1.0
 useVF = 1.0
 useOnlyVF = False
 useK_Dissipation=False
+useK_Epsilon=False
+ns_shockCapturingFactor=0.1
 
-ns_shockCapturingFactor=0.9
-
-ls_shockCapturingFactor=0.9
+ls_shockCapturingFactor=0.1
 ls_sc_uref = 1.0
 ls_sc_beta = 1.5
 
-vof_shockCapturingFactor=0.9
+vof_shockCapturingFactor=0.1
 vof_sc_uref = 1.0
 vof_sc_beta = 1.5
 
@@ -256,7 +256,7 @@ dissipation_sc_beta = 1.5
 #----------------------------------------------------
 # Interface width
 #----------------------------------------------------
-epsFact = 3.0
+epsFact = 1.5
 
 epsFact_density          = epsFact 
 epsFact_viscosity        = epsFact 

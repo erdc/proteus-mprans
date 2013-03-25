@@ -12,12 +12,12 @@ coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=2,
 def getDBC_ls(x,flag):
     if flag == boundaryTags['left']:
         return wavePhi
-    elif flag == boundaryTags['right']:
-        return lambda x,t: x[2] - outflowHeight
-    elif openTop and flag == boundaryTags['top']:
-        return lambda x,t: x[2] - outflowHeight
-    elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
-        return lambda x,t: x[2] - outflowHeight
+    #elif flag == boundaryTags['right']:
+    #    return lambda x,t: x[2] - outflowHeight
+    #elif openTop and flag == boundaryTags['top']:
+    #    return lambda x,t: x[2] - outflowHeight
+    #elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
+    #    return lambda x,t: x[2] - outflowHeight
 
 dirichletConditions = {0:getDBC_ls}
 

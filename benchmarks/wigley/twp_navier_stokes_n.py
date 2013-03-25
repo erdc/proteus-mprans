@@ -59,7 +59,7 @@ linearSolverConvergenceTest             = 'r-true'
 tolFac = 1.0e-4
 nl_atol_res = 1.0e-4
 useEisenstatWalker = True
-maxNonlinearIts = 25
+maxNonlinearIts = 50
 maxLineSearches = 0
 
 #auxiliaryVariables = [RelaxationZoneWaveGenerator(twpflowVelocity_w,twpflowVelocity_w,twpflowVelocity_w,xRelaxCenter)]

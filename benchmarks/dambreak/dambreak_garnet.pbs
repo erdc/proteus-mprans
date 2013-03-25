@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -A ERDCV00898ENQ
-#PBS -l walltime=006:00:00
+#PBS -l walltime=008:00:00
 #PBS -l ncpus=32
 #PBS -q standard
 #PBS -N dambreak

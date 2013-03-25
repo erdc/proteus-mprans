@@ -1,5 +1,5 @@
 #if True uses PETSc solvers
-parallel = False
+parallel = True
 linearSmoother = None
 #compute mass balance statistics or not
 checkMass=False#True
@@ -35,7 +35,7 @@ else:
 from proteus import MeshTools
 partitioningType = MeshTools.MeshParallelPartitioningTypes.node
 #spatial mesh
-lRefinement=5
+lRefinement=7
 #tag simulation name to level of refinement
 #soname="vortexcgp2_bdf2_mc"+`lRefinement`
 nn=nnx=nny=(2**lRefinement)*10+1
@@ -43,7 +43,7 @@ nnz=1
 he=1.0/(nnx-1.0)
 L=[1.0,1.0]
 
-unstructured=False#True for tetgen, false for tet or hex from rectangular grid
+unstructured=True#True for tetgen, false for tet or hex from rectangular grid
 if unstructured:
     from tank2dDomain import *
     domain = tank2d(L=L)

@@ -8,11 +8,11 @@ from proteus.default_n import *
 Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
-useSuperlu=True#False
+useSuperlu=False
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
-useMetrics = 0.0
+useMetrics = 1.0
 applyCorrection=True
 useVF = 1.0
 useOnlyVF = False
@@ -55,6 +55,7 @@ elif spaceOrder == 2:
 # Domain and mesh
 L = (0.584,0.350)
 he = L[0]/float(4*Refinement-1)
+he*=0.5
 he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
@@ -133,14 +134,14 @@ if useMetrics:
     epsFact_consrv_diffusion = 10.0
     redist_Newton = False
 else:
-    ns_shockCapturingFactor  = 0.9
-    ns_lag_shockCapturing = False
+    ns_shockCapturingFactor  = 0.1
+    ns_lag_shockCapturing = True
     ns_lag_subgridError = True
-    ls_shockCapturingFactor  = 0.9
+    ls_shockCapturingFactor  = 0.1
     ls_lag_shockCapturing = True#False
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.0
-    vof_shockCapturingFactor = 0.9
+    vof_shockCapturingFactor = 0.1
     vof_lag_shockCapturing = True#False
     vof_sc_uref  = 1.0
     vof_sc_beta  = 1.0

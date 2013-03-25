@@ -41,5 +41,5 @@ linTolFac = 0.0
 nl_atol_res = 1.0e-5
 useEisenstatWalker = True
 
-maxNonlinearIts = 10
+maxNonlinearIts = 50
 maxLineSearches = 0
