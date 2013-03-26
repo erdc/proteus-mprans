@@ -17,7 +17,7 @@ useMetrics = 1.0
 use_petsc4py=True
 quasi2D = True
 use_PlanePoiseuille = False
-use_KOmega = False
+use_KOmega = True
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -111,7 +111,7 @@ nLayersOfOverlapForParallel = 0
 #----------------------------------------------------
 # Physical coefficients
 #----------------------------------------------------
-Re = 2000000.0#3025.0
+Re = 20000.0#3025.0
 nu_h20 = 1.004e-6
 #inflow = 1.0
 #nu = inflow*(downstream_height-upstream_height)/Re
@@ -143,9 +143,9 @@ g = [0.0,0.0,0.0]
 #----------------------------------------------------
 
 residence_time = length/inflow
-T=10.0#10.0*length/inflow
+T=60.0#10.0*length/inflow
 #tnList = [0.0,0.1*residence_time,T]
-nDTout=10
+nDTout=60
 tnList = [0.0,0.00001]
 #tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
 tnList.extend([i*T/float(nDTout) for i in range(1,nDTout+1)])#[0.0,0.5*T,T]

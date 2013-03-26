@@ -1,9 +1,8 @@
 import proteus
 from proteus.mprans.cDissipation import *
+from proteus.mprans.cDissipation2D import *
 
 """
-TODO:
-  Add k-omega equation
 NOTES:
   Hardwired Numerics include: 
    lagging all terms from Navier-Stokes, Kappa equations
@@ -12,6 +11,55 @@ NOTES:
      rather than passing degrees of freedom between models
 
 """
+
+class SubgridError(proteus.SubgridError.SGE_base):
+    def __init__(self,coefficients,nd):
+        proteus.SubgridError.SGE_base.__init__(self,coefficients,nd,lag=False)
+    def initializeElementQuadrature(self,mesh,t,cq):
+        pass
+    def updateSubgridErrorHistory(self,initializationPhase=False):
+        pass
+    def calculateSubgridError(self,q):
+        pass
+
+
+class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
+    def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=True,nStepsToDelay=None):
+        proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
+        self.nStepsToDelay = nStepsToDelay
+        self.nSteps=0
+        if self.lag:
+            log("Kappa.ShockCapturing: lagging requested but must lag the first step; switching lagging off and delaying")
+            self.nStepsToDelay=1
+            self.lag=False
+    def initializeElementQuadrature(self,mesh,t,cq):
+        self.mesh=mesh
+        self.numDiff=[]
+        self.numDiff_last=[]
+        for ci in range(self.nc):
+            self.numDiff.append(cq[('numDiff',ci,ci)])
+            self.numDiff_last.append(cq[('numDiff',ci,ci)])
+    def updateShockCapturingHistory(self):
+        self.nSteps += 1
+        if self.lag:
+            for ci in range(self.nc):
+                self.numDiff_last[ci][:] = self.numDiff[ci]
+        if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            log("Dissipation.ShockCapturing: switched to lagged shock capturing")
+            self.lag = True
+            self.numDiff_last=[]
+            for ci in range(self.nc):
+                self.numDiff_last.append(self.numDiff[ci].copy())
+        log("Dissipation: max numDiff %e" % (globalMax(self.numDiff_last[0].max()),))
+
+class NumericalFlux(proteus.NumericalFlux.Advection_DiagonalUpwind_Diffusion_IIPG_exterior):
+    def __init__(self,vt,getPointwiseBoundaryConditions,
+                 getAdvectiveFluxBoundaryConditions,
+                 getDiffusiveFluxBoundaryConditions):
+        proteus.NumericalFlux.Advection_DiagonalUpwind_Diffusion_IIPG_exterior.__init__(self,vt,getPointwiseBoundaryConditions,
+                                                                                        getAdvectiveFluxBoundaryConditions,
+                                                                                        getDiffusiveFluxBoundaryConditions)
+
 class Coefficients(proteus.TransportCoefficients.TC_base):
     """
 Basic k-epsilon model for incompressible flow from Hutter etal Chaper 11
@@ -71,10 +119,10 @@ k              -- turbulent kinetic energy = <\vec v^{'}\dot \vec v^{'}>
 c_{\mu} = 0.09, c_1 = 0.126, c_2 = 1.92, c_{\varepsilon} = 0.07
 
 
-NOTE: assumes 3d for now
     """
 
     from proteus.ctransportCoefficients import kEpsilon_k_3D_Evaluate_sd
+    from proteus.ctransportCoefficients import kEpsilon_k_2D_Evaluate_sd
     def __init__(self,LS_model=None,V_model=0,RD_model=None,kappa_model=None,ME_model=7,
                  dissipation_model_flag=1, #default K-Epsilon, 2 --> K-Omega
                  c_mu   =0.09,c_1=0.126,c_2=1.92,c_e=0.07,
@@ -169,24 +217,37 @@ NOTE: assumes 3d for now
             else:
                 if modelList[self.flowModelIndex].ebq.has_key(('f',0)):
                     self.ebq_v = modelList[self.flowModelIndex].ebq[('f',0)]
-            #assume 3d for now
+            #
+            import copy
             self.q_grad_u = modelList[self.flowModelIndex].q[('grad(u)',1)]
             self.q_grad_v = modelList[self.flowModelIndex].q[('grad(u)',2)]
-            self.q_grad_w = modelList[self.flowModelIndex].q[('grad(u)',3)]
             #
             self.ebqe_grad_u = modelList[self.flowModelIndex].ebqe[('grad(u)',1)]
             self.ebqe_grad_v = modelList[self.flowModelIndex].ebqe[('grad(u)',2)]
-            self.ebqe_grad_w = modelList[self.flowModelIndex].ebqe[('grad(u)',3)]
             if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',1)):
                 self.ebq_grad_u = modelList[self.flowModelIndex].ebq[('grad(u)',1)]
             if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',2)):
                 self.ebq_grad_v = modelList[self.flowModelIndex].ebq[('grad(u)',2)]
-            if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',3)):
-                self.ebq_grad_w = modelList[self.flowModelIndex].ebq[('grad(u)',3)]
             #
+            #now allocate the 3D variables
+            if self.nd == 2:
+                self.q_grad_w = self.q_grad_v.copy()
+                self.ebqe_grad_w = self.ebqe_grad_v.copy()
+                if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',2)):
+                    self.ebq_grad_w = self.ebq_grad_v.copy()
+            else:
+                self.q_grad_w = modelList[self.flowModelIndex].q[('grad(u)',3)]
+                self.ebqe_grad_w = modelList[self.flowModelIndex].ebqe[('grad(u)',3)]
+                if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',3)):
+                    self.ebq_grad_w = modelList[self.flowModelIndex].ebq[('grad(u)',3)]
+            #
+
             self.velocity_dof_u = modelList[self.flowModelIndex].u[1].dof
             self.velocity_dof_v = modelList[self.flowModelIndex].u[2].dof
-            self.velocity_dof_w = modelList[self.flowModelIndex].u[3].dof
+            if self.nd == 2:
+                self.velocity_dof_w = self.velocity_dof_v.copy()
+            else:
+                self.velocity_dof_w = modelList[self.flowModelIndex].u[3].dof
             if hasattr(modelList[self.flowModelIndex].coefficients,'q_porosity'): 
                 self.q_porosity = modelList[self.flowModelIndex].coefficients.q_porosity
             else:
@@ -198,7 +259,10 @@ NOTE: assumes 3d for now
         else:
             self.velocity_dof_u = numpy.zeros(self.model.u[0].dof.shape,'d')
             self.velocity_dof_v = numpy.zeros(self.model.u[0].dof.shape,'d')
-            self.velocity_dof_w = numpy.zeros(self.model.u[0].dof.shape,'d')
+            if self.nd == 2:
+                self.velocity_dof_w = self.velocity_dof_v.copy()
+            else:
+                self.velocity_dof_w = numpy.zeros(self.model.u[0].dof.shape,'d')
             self.q_porosity = numpy.ones(self.q[('u',0)].shape,'d')
             self.ebqe_porosity = numpy.ones(self.ebqe[('u',0)].shape,'d')
             
@@ -226,7 +290,10 @@ NOTE: assumes 3d for now
             self.q_v = numpy.ones(cq[('f',0)].shape,'d')
             self.q_grad_u = numpy.ones(cq[('grad(u)',0)].shape,'d')
             self.q_grad_v = numpy.ones(cq[('grad(u)',0)].shape,'d')
-            self.q_grad_w = numpy.ones(cq[('grad(u)',0)].shape,'d')
+            if self.nd == 2:
+                self.q_grad_w = self.q_grad_v.copy()
+            else:
+                self.q_grad_w = numpy.ones(cq[('grad(u)',0)].shape,'d')
         if self.kappa_modelIndex == None:
             self.q_kappa = numpy.ones(cq[('u',0)].shape,'d')
             self.q_kappa.fill(self.default_kappa); 
@@ -236,7 +303,10 @@ NOTE: assumes 3d for now
             self.ebq_v = numpy.ones(cebq[('f',0)].shape,'d')
             self.ebq_grad_u = numpy.ones(cebq[('grad(u)',0)].shape,'d')
             self.ebq_grad_v = numpy.ones(cebq[('grad(u)',0)].shape,'d')
-            self.ebq_grad_w = numpy.ones(cebq[('grad(u)',0)].shape,'d')
+            if self.nd == 2: 
+                self.ebq_grad_w = self.ebq_grad_v.copy()
+            else:
+                self.ebq_grad_w = numpy.ones(cebq[('grad(u)',0)].shape,'d')
         if self.kappa_modelIndex == None:
             self.ebq_kappa = numpy.ones(cebq[('u',0)].shape,'d')
             self.ebq_kappa.fill(self.default_kappa)
@@ -290,26 +360,47 @@ NOTE: assumes 3d for now
             grad_v = None
             grad_w = None
         if v != None:
-            self.kEpsilon_epsilon_3D_Evaluate_sd(self.sigma_e,
-                                                 self.c_1,
-                                                 self.c_2,
-                                                 self.c_mu,
-                                                 self.c_e,
-                                                 self.nu,
-                                                 velocity,
-                                                 gradu,
-                                                 gradv,
-                                                 gradw,
-                                                 c[('u',0)],
-                                                 kappa,
-                                                 c[('m',0)],
-                                                 c[('dm',0,0)],
-                                                 c[('f',0)],
-                                                 c[('df',0,0)],
-                                                 c[('a',0,0)],
-                                                 c[('da',0,0,0)],
-                                                 c[('r',0)],
-                                                 c[('dr',0,0)])
+            if self.nd == 2:
+                self.kEpsilon_epsilon_2D_Evaluate_sd(self.sigma_e,
+                                                     self.c_1,
+                                                     self.c_2,
+                                                     self.c_mu,
+                                                     self.c_e,
+                                                     self.nu,
+                                                     velocity,
+                                                     gradu,
+                                                     gradv,
+                                                     c[('u',0)],
+                                                     kappa,
+                                                     c[('m',0)],
+                                                     c[('dm',0,0)],
+                                                     c[('f',0)],
+                                                     c[('df',0,0)],
+                                                     c[('a',0,0)],
+                                                     c[('da',0,0,0)],
+                                                     c[('r',0)],
+                                                     c[('dr',0,0)])
+            else:
+                self.kEpsilon_epsilon_3D_Evaluate_sd(self.sigma_e,
+                                                     self.c_1,
+                                                     self.c_2,
+                                                     self.c_mu,
+                                                     self.c_e,
+                                                     self.nu,
+                                                     velocity,
+                                                     gradu,
+                                                     gradv,
+                                                     gradw,
+                                                     c[('u',0)],
+                                                     kappa,
+                                                     c[('m',0)],
+                                                     c[('dm',0,0)],
+                                                     c[('f',0)],
+                                                     c[('df',0,0)],
+                                                     c[('a',0,0)],
+                                                     c[('da',0,0,0)],
+                                                     c[('r',0)],
+                                                     c[('dr',0,0)])
 class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
     def __init__(self,
@@ -667,13 +758,22 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #TODO how to handle redistancing calls for calculateCoefficients,calculateElementResidual etc
         self.globalResidualDummy = None
         compKernelFlag=0
-        self.dissipation = cDissipation_base(self.nSpace_global,
-                             self.nQuadraturePoints_element,
-                             self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
-                             self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
-                             self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
-                             self.nElementBoundaryQuadraturePoints_elementBoundary,
-                             compKernelFlag)
+        if self.nSpace_global == 2:
+            self.dissipation = cDissipation2D_base(self.nSpace_global,
+                                                   self.nQuadraturePoints_element,
+                                                   self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
+                                                   self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
+                                                   self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
+                                                   self.nElementBoundaryQuadraturePoints_elementBoundary,
+                                                   compKernelFlag)
+        else:
+            self.dissipation = cDissipation_base(self.nSpace_global,
+                                                 self.nQuadraturePoints_element,
+                                                 self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
+                                                 self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
+                                                 self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
+                                                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                                                 compKernelFlag)
 
         self.forceStrongConditions=False
         if self.forceStrongConditions:
