@@ -23,6 +23,8 @@ if use_KOmega == True:
 def getDBC_dissipation(x,flag):
     if flag == boundaryTags['upstream']:
         return lambda x,t:dissipationInflow
+    if flag == boundaryTags['downstream']:
+        return lambda x,t:0.0
 
 dirichletConditions = {0:getDBC_dissipation}
 fluxBoundaryConditions = {0:'outFlow'}

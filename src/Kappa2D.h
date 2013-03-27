@@ -456,7 +456,7 @@ namespace proteus
 	    }
 	  else
 	    {
-	      std::cout<<"warning: open boundary with no external trace, setting to zero for inflow"<<std::endl;
+	      std::cout<<"warning: Kappa2D open boundary with no external trace, setting to zero for inflow"<<std::endl;
 	      flux = 0.0;
 	    }
 
@@ -1643,13 +1643,13 @@ namespace proteus
 				int nQuadraturePoints_elementBoundaryIn,
 				int CompKernelFlag)
   {
-    return proteus::chooseAndAllocateDiscretization<Kappa2D_base,Kappa2D,CompKernel>(nSpaceIn,
-									     nQuadraturePoints_elementIn,
-									     nDOF_mesh_trial_elementIn,
-									     nDOF_trial_elementIn,
-									     nDOF_test_elementIn,
-									     nQuadraturePoints_elementBoundaryIn,
-									     CompKernelFlag);
+    return proteus::chooseAndAllocateDiscretization2D<Kappa2D_base,Kappa2D,CompKernel>(nSpaceIn,
+										       nQuadraturePoints_elementIn,
+										       nDOF_mesh_trial_elementIn,
+										       nDOF_trial_elementIn,
+										       nDOF_test_elementIn,
+										       nQuadraturePoints_elementBoundaryIn,
+										       CompKernelFlag);
   }
 }//proteus
 #endif

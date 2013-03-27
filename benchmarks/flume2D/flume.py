@@ -15,7 +15,7 @@ applyCorrection=True
 useVF = 1.0
 useOnlyVF = False
 redist_Newton = False#True
-useRANS = 0 # 0 -- None
+useRANS = 1 # 0 -- None
             # 1 -- K-Epsilon
             # 2 -- K-Omega
 # Input checks
@@ -59,8 +59,8 @@ elif spaceOrder == 2:
 L = (2.0,1.0)
 he = L[1]/10
 he*=0.5
-he*=0.5
-he*=0.5
+#he*=0.5
+#he*=0.5
 #print he
 useObstacle=True#False
 nLevels = 1
@@ -218,8 +218,8 @@ vof_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
 ls_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
 rd_nl_atol_res = max(1.0e-8,0.1*he)
 mcorr_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-kappa_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-dissipation_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+kappa_nl_atol_res = 1.0e-9#max(1.0e-8,0.01*he**2/2.0)
+dissipation_nl_atol_res = 1.0e-9#max(1.0e-8,0.01*he**2/2.0)
 
 #turbulence
 ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
@@ -227,7 +227,6 @@ if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:
     ns_closure == 4
-
 # Water
 rho_0 = 998.2
 nu_0  = 1.004e-6
@@ -263,7 +262,7 @@ outflowVelocity = (Um,0.0)
 kInflow = 0.003*Um
 
 # Time stepping
-T=5.0*residence_time
+T=1.0*residence_time#5.0*residence_time
 dt_fixed = residence_time/40.0
 dt_init = min(0.1*dt_fixed,0.001)
 runCFL=0.33#33
