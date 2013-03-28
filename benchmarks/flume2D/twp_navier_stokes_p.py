@@ -8,6 +8,12 @@ if useOnlyVF:
     LS_model = None
 else:
     LS_model = 2
+if useRANS >= 1:
+    Closure_0_model = 5; Closure_1_model=6
+    if useOnlyVF:
+        Closure_0_model=2; Closure_1_model=3
+
+        
 coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    sigma=0.0,
                                    rho_0 = rho_0,
@@ -18,6 +24,8 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    nd=nd,
                                    VF_model=1,
                                    LS_model=LS_model,
+                                   Closure_0_model=Closure_0_model,
+                                   Closure_1_model=Closure_1_model,
                                    epsFact_density=epsFact_density,
                                    stokes=False,
                                    useVF=useVF,

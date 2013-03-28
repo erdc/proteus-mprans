@@ -1,10 +1,8 @@
 import proteus
 from proteus.mprans.cKappa import *
+from proteus.mprans.cKappa2D import *
 
 """
-TODO:
-  just skip evaluate routine in Coefficients?
-  grab TWP velocity dofs and calculate gradients locally in getResidual routine 
 NOTES:
   Hardwired Numerics include: 
    lagging all terms from Navier-Stokes, Epsilon equations
@@ -13,6 +11,55 @@ NOTES:
      rather than passing degrees of freedom between models
 
 """
+
+class SubgridError(proteus.SubgridError.SGE_base):
+    def __init__(self,coefficients,nd):
+        proteus.SubgridError.SGE_base.__init__(self,coefficients,nd,lag=False)
+    def initializeElementQuadrature(self,mesh,t,cq):
+        pass
+    def updateSubgridErrorHistory(self,initializationPhase=False):
+        pass
+    def calculateSubgridError(self,q):
+        pass
+
+
+class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
+    def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=True,nStepsToDelay=None):
+        proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
+        self.nStepsToDelay = nStepsToDelay
+        self.nSteps=0
+        if self.lag:
+            log("Kappa.ShockCapturing: lagging requested but must lag the first step; switching lagging off and delaying")
+            self.nStepsToDelay=1
+            self.lag=False
+    def initializeElementQuadrature(self,mesh,t,cq):
+        self.mesh=mesh
+        self.numDiff=[]
+        self.numDiff_last=[]
+        for ci in range(self.nc):
+            self.numDiff.append(cq[('numDiff',ci,ci)])
+            self.numDiff_last.append(cq[('numDiff',ci,ci)])
+    def updateShockCapturingHistory(self):
+        self.nSteps += 1
+        if self.lag:
+            for ci in range(self.nc):
+                self.numDiff_last[ci][:] = self.numDiff[ci]
+        if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            log("Kappa.ShockCapturing: switched to lagged shock capturing")
+            self.lag = True
+            self.numDiff_last=[]
+            for ci in range(self.nc):
+                self.numDiff_last.append(self.numDiff[ci].copy())
+        log("VOF: max numDiff %e" % (globalMax(self.numDiff_last[0].max()),))
+
+class NumericalFlux(proteus.NumericalFlux.Advection_DiagonalUpwind_Diffusion_IIPG_exterior):
+    def __init__(self,vt,getPointwiseBoundaryConditions,
+                 getAdvectiveFluxBoundaryConditions,
+                 getDiffusiveFluxBoundaryConditions):
+        proteus.NumericalFlux.Advection_DiagonalUpwind_Diffusion_IIPG_exterior.__init__(self,vt,getPointwiseBoundaryConditions,
+                                                                                        getAdvectiveFluxBoundaryConditions,
+                                                                                        getDiffusiveFluxBoundaryConditions)
+
 class Coefficients(proteus.TransportCoefficients.TC_base):
     """
 Basic k-epsilon model for incompressible flow from Hutter etal Chaper 11
@@ -72,10 +119,10 @@ k              -- turbulent kinetic energy = <\vec v^{'}\dot \vec v^{'}>
 c_{\mu} = 0.09, c_1 = 0.126, c_2 = 1.92, c_{\varepsilon} = 0.07
 
 
-NOTE: assumes 3d for now
     """
 
     from proteus.ctransportCoefficients import kEpsilon_k_3D_Evaluate_sd
+    from proteus.ctransportCoefficients import kEpsilon_k_2D_Evaluate_sd
     def __init__(self,LS_model=None,V_model=0,RD_model=None,dissipation_model=None,ME_model=6,
                  dissipation_model_flag=1, #default K-Epsilon, 2 --> K-Omega
                  c_mu   =0.09,    
@@ -166,24 +213,37 @@ NOTE: assumes 3d for now
             else:
                 if modelList[self.flowModelIndex].ebq.has_key(('f',0)):
                     self.ebq_v = modelList[self.flowModelIndex].ebq[('f',0)]
-            #assume 3d for now
+            #
+            import copy
             self.q_grad_u = modelList[self.flowModelIndex].q[('grad(u)',1)]
             self.q_grad_v = modelList[self.flowModelIndex].q[('grad(u)',2)]
-            self.q_grad_w = modelList[self.flowModelIndex].q[('grad(u)',3)]
             #
             self.ebqe_grad_u = modelList[self.flowModelIndex].ebqe[('grad(u)',1)]
             self.ebqe_grad_v = modelList[self.flowModelIndex].ebqe[('grad(u)',2)]
-            self.ebqe_grad_w = modelList[self.flowModelIndex].ebqe[('grad(u)',3)]
             if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',1)):
                 self.ebq_grad_u = modelList[self.flowModelIndex].ebq[('grad(u)',1)]
             if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',2)):
                 self.ebq_grad_v = modelList[self.flowModelIndex].ebq[('grad(u)',2)]
-            if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',3)):
-                self.ebq_grad_w = modelList[self.flowModelIndex].ebq[('grad(u)',3)]
             #
+            #now allocate the 3D variables
+            if self.nd == 2:
+                self.q_grad_w = self.q_grad_v.copy()
+                self.ebqe_grad_w = self.ebqe_grad_v.copy()
+                if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',2)):
+                    self.ebq_grad_w = self.ebq_grad_v.copy()
+            else:
+                self.q_grad_w = modelList[self.flowModelIndex].q[('grad(u)',3)]
+                self.ebqe_grad_w = modelList[self.flowModelIndex].ebqe[('grad(u)',3)]
+                if modelList[self.flowModelIndex].ebq.has_key(('grad(u)',3)):
+                    self.ebq_grad_w = modelList[self.flowModelIndex].ebq[('grad(u)',3)]
+            #
+
             self.velocity_dof_u = modelList[self.flowModelIndex].u[1].dof
             self.velocity_dof_v = modelList[self.flowModelIndex].u[2].dof
-            self.velocity_dof_w = modelList[self.flowModelIndex].u[3].dof
+            if self.nd == 2:
+                self.velocity_dof_w = self.velocity_dof_v.copy()
+            else:
+                self.velocity_dof_w = modelList[self.flowModelIndex].u[3].dof
             if hasattr(modelList[self.flowModelIndex].coefficients,'q_porosity'): 
                 self.q_porosity = modelList[self.flowModelIndex].coefficients.q_porosity
             else:
@@ -195,7 +255,10 @@ NOTE: assumes 3d for now
         else:
             self.velocity_dof_u = numpy.zeros(self.model.u[0].dof.shape,'d')
             self.velocity_dof_v = numpy.zeros(self.model.u[0].dof.shape,'d')
-            self.velocity_dof_w = numpy.zeros(self.model.u[0].dof.shape,'d')
+            if self.nd == 2:
+                self.velocity_dof_w = self.velocity_dof_v.copy()
+            else:
+                self.velocity_dof_w = numpy.zeros(self.model.u[0].dof.shape,'d')
             self.q_porosity = numpy.ones(self.q[('u',0)].shape,'d')
             self.ebqe_porosity = numpy.ones(self.ebqe[('u',0)].shape,'d')
             
@@ -223,7 +286,10 @@ NOTE: assumes 3d for now
             self.q_v = numpy.ones(cq[('f',0)].shape,'d')
             self.q_grad_u = numpy.ones(cq[('grad(u)',0)].shape,'d')
             self.q_grad_v = numpy.ones(cq[('grad(u)',0)].shape,'d')
-            self.q_grad_w = numpy.ones(cq[('grad(u)',0)].shape,'d')
+            if self.nd == 2:
+                self.q_grad_w = self.q_grad_v.copy()
+            else:
+                self.q_grad_w = numpy.ones(cq[('grad(u)',0)].shape,'d')
         if self.dissipation_modelIndex == None:
             self.q_dissipation = numpy.ones(cq[('u',0)].shape,'d')
             self.q_dissipation.fill(self.default_dissipation);
@@ -233,7 +299,10 @@ NOTE: assumes 3d for now
             self.ebq_v = numpy.ones(cebq[('f',0)].shape,'d')
             self.ebq_grad_u = numpy.ones(cebq[('grad(u)',0)].shape,'d')
             self.ebq_grad_v = numpy.ones(cebq[('grad(u)',0)].shape,'d')
-            self.ebq_grad_w = numpy.ones(cebq[('grad(u)',0)].shape,'d')
+            if self.nd == 2: 
+                self.ebq_grad_w = self.ebq_grad_v.copy()
+            else:
+                self.ebq_grad_w = numpy.ones(cebq[('grad(u)',0)].shape,'d')
         if self.dissipation_modelIndex == None:
             self.ebq_dissipation = numpy.ones(cebq[('u',0)].shape,'d')
             self.ebq_dissipation.fill(self.default_dissipation)
@@ -242,7 +311,10 @@ NOTE: assumes 3d for now
             self.ebqe_v = numpy.ones(cebqe[('f',0)].shape,'d')
             self.ebqe_grad_u = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
             self.ebqe_grad_v = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
-            self.ebqe_grad_w = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
+            if self.nd == 2: 
+                self.ebqe_grad_w = self.ebqe_grad_v.copy()
+            else:
+                self.ebqe_grad_w = numpy.ones(cebqe[('grad(u)',0)].shape,'d')
         if self.dissipation_modelIndex == None:
             self.ebqe_dissipation = numpy.ones(cebqe[('u',0)].shape,'d')
             self.ebqe_dissipation.fill(self.default_dissipation)
@@ -287,23 +359,42 @@ NOTE: assumes 3d for now
             grad_v = None
             grad_w = None
         if v != None and self.dissipation_model_flag != 2:
-            self.kEpsilon_k_3D_Evaluate_sd(self.sigma_k,
-                                           self.c_mu,
-                                           self.nu,
-                                           velocity,
-                                           gradu,
-                                           gradv,
-                                           gradw,
-                                           c[('u',0)],
-                                           dissipation,
-                                           c[('m',0)],
-                                           c[('dm',0,0)],
-                                           c[('f',0)],
-                                           c[('df',0,0)],
-                                           c[('a',0,0)],
-                                           c[('da',0,0,0)],
-                                           c[('r',0)],
-                                           c[('dr',0,0)])
+            if self.nd == 2:
+                self.kEpsilon_k_2D_Evaluate_sd(self.sigma_k,
+                                               self.c_mu,
+                                               self.nu,
+                                               velocity,
+                                               gradu,
+                                               gradv,
+                                               c[('u',0)],
+                                               dissipation,
+                                               c[('m',0)],
+                                               c[('dm',0,0)],
+                                               c[('f',0)],
+                                               c[('df',0,0)],
+                                               c[('a',0,0)],
+                                               c[('da',0,0,0)],
+                                               c[('r',0)],
+                                               c[('dr',0,0)])
+
+            else:
+                self.kEpsilon_k_3D_Evaluate_sd(self.sigma_k,
+                                               self.c_mu,
+                                               self.nu,
+                                               velocity,
+                                               gradu,
+                                               gradv,
+                                               gradw,
+                                               c[('u',0)],
+                                               dissipation,
+                                               c[('m',0)],
+                                               c[('dm',0,0)],
+                                               c[('f',0)],
+                                               c[('df',0,0)],
+                                               c[('a',0,0)],
+                                               c[('da',0,0,0)],
+                                               c[('r',0)],
+                                               c[('dr',0,0)])
         else:
             print "WARNING! dissipation_model_flag == 2 not implemented in Kappa.coefficients"
 class LevelModel(proteus.Transport.OneLevelTransport):
@@ -663,13 +754,23 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #TODO how to handle redistancing calls for calculateCoefficients,calculateElementResidual etc
         self.globalResidualDummy = None
         compKernelFlag=0
-        self.kappa = cKappa_base(self.nSpace_global,
-                             self.nQuadraturePoints_element,
-                             self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
-                             self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
-                             self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
-                             self.nElementBoundaryQuadraturePoints_elementBoundary,
-                             compKernelFlag)
+        if self.nSpace_global == 2:
+            self.kappa = cKappa2D_base(self.nSpace_global,
+                                       self.nQuadraturePoints_element,
+                                       self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
+                                       self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
+                                       self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
+                                       self.nElementBoundaryQuadraturePoints_elementBoundary,
+                                       compKernelFlag)
+            
+        else:
+            self.kappa = cKappa_base(self.nSpace_global,
+                                     self.nQuadraturePoints_element,
+                                     self.u[0].femSpace.elementMaps.localFunctionSpace.dim,
+                                     self.u[0].femSpace.referenceFiniteElement.localFunctionSpace.dim,
+                                     self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
+                                     self.nElementBoundaryQuadraturePoints_elementBoundary,
+                                     compKernelFlag)
 
         self.forceStrongConditions=False
         if self.forceStrongConditions:
@@ -713,7 +814,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         for t,g in self.fluxBoundaryConditionsObjectsDict[0].advectiveFluxBoundaryConditionsDict.iteritems():
             self.ebqe[('advectiveFlux_bc',0)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
             self.ebqe[('advectiveFlux_bc_flag',0)][t[0],t[1]] = 1
-        self.shockCapturing.lag=True
+        #self.shockCapturing.lag=True
 
 
         if self.forceStrongConditions:

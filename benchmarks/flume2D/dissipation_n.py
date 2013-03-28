@@ -7,14 +7,11 @@ stepController  = Min_dt_cfl_controller
 femSpaces = {0:basis}
 
 massLumping       = False
-conservativeFlux  = None
-#numericalFluxType = Advection_DiagonalUpwind_Diffusion_IIPG_exterior
-#subgridError      = Advection_ASGS(coefficients,nd,lag=False) #needs to be addressed or just skip because going to handle in optimized code anyway?
-#shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=dissipation_shockCapturingFactor,lag=True)
 numericalFluxType = Dissipation.NumericalFlux
+conservativeFlux  = None
 subgridError      = Dissipation.SubgridError(coefficients=coefficients,nd=nd)
 shockCapturing    = Dissipation.ShockCapturing(coefficients,nd,shockCapturingFactor=dissipation_shockCapturingFactor,
-                                         lag=True)
+                                         lag=dissipation_lag_shockCapturing)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton
@@ -24,7 +21,7 @@ nonlinearSmoother = None
 linearSmoother    = None
 #printNonlinearSolverInfo = True
 matrix = SparseMatrix
-if use_petsc4py:
+if not useOldPETSc and not useSuperlu:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
 else:
@@ -36,10 +33,11 @@ levelNonlinearSolverConvergenceTest = 'r'#'rits'
 linearSolverConvergenceTest         = 'r'#'rits'
 
 tolFac = 0.0
+linTolFac =0.0
+l_atol_res = 0.001*dissipation_nl_atol_res
+nl_atol_res = dissipation_nl_atol_res
+useEisenstatWalker = False
 
-nl_atol_res = 1.0e-6
-nl_rtol_res = 0.0
-
-maxNonlinearIts = 10
+maxNonlinearIts = 50
 maxLineSearches = 0
 

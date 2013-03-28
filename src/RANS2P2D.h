@@ -1007,21 +1007,27 @@ namespace proteus
       nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
       rho  = rho_0*(1.0-H_mu)+rho_1*H_mu;
 
-      const double twoThirds = 2.0/3.0; const double div_zero = 1.0e-6;
+      const double twoThirds = 2.0/3.0; const double div_zero = 1.0e-2*fmin(nu_0,nu_1);
       mom_u_source += twoThirds*turb_grad_0[0];
       mom_v_source += twoThirds*turb_grad_0[1];
       /* mom_w_source += twoThirds*turb_grad_0[2]; */
 
       //--- closure model specific ---
       //k-epsilon
-      nu_t_keps = eddy_visc_coef_0*turb_var_0*turb_var_0/(turb_var_1 + div_zero);
+      nu_t_keps = eddy_visc_coef_0*turb_var_0*turb_var_0/(fabs(turb_var_1) + div_zero);
       //k-omega
-      nu_t_komega = turb_var_0/(turb_var_1 + div_zero);
+      nu_t_komega = turb_var_0/(fabs(turb_var_1) + div_zero);
       //
       nu_t = isKEpsilon*nu_t_keps + (1.0-isKEpsilon)*nu_t_komega;
-      //mwf hack assert(isKEpsilon==1.0);
-      //mwf hack nu_t = nu_t_keps;
+      //mwf debug
+      //if (nu_t > 1.e6*nu)
+      //{
+      //  std::cout<<"RANS2P2D WARNING isKEpsilon = "<<isKEpsilon<<" nu_t = " <<nu_t<<" nu= "<<nu<<" k= "<<turb_var_0<<" turb_var_1= "<<turb_var_1<<std::endl; 
+      //}
+
       nu_t = fmax(nu_t,1.0e-4*nu); //limit according to Lew, Buscaglia etal 01
+     //mwf hack
+      nu_t     = fmin(nu_t,1.0e6*nu);
 #ifdef COMPRESSIBLE_FORM
       eddy_viscosity = nu_t*rho;
       //u momentum diffusion tensor

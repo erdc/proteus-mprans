@@ -15,6 +15,9 @@ applyCorrection=True
 useVF = 1.0
 useOnlyVF = False
 redist_Newton = False#True
+useRANS = 1 # 0 -- None
+            # 1 -- K-Epsilon
+            # 2 -- K-Omega
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -56,9 +59,7 @@ elif spaceOrder == 2:
 L = (2.0,1.0)
 he = L[1]/10
 he*=0.5
-he*=0.5
-he*=0.5
-he*=0.5
+#he*=0.5
 #print he
 useObstacle=True#False
 nLevels = 1
@@ -174,7 +175,15 @@ if useMetrics:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = True#False
+    redist_Newton = False
+    kappa_shockCapturingFactor = 0.1
+    kappa_lag_shockCapturing = True#False
+    kappa_sc_uref = 1.0
+    kappa_sc_beta = 1.0
+    dissipation_shockCapturingFactor = 0.1
+    dissipation_lag_shockCapturing = True#False
+    dissipation_sc_uref = 1.0
+    dissipation_sc_beta = 1.0
 else:
     ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = False
@@ -194,15 +203,29 @@ else:
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
     redist_Newton = False
+    kappa_shockCapturingFactor = 0.9
+    kappa_lag_shockCapturing = True#False
+    kappa_sc_uref  = 1.0
+    kappa_sc_beta  = 1.0
+    dissipation_shockCapturingFactor = 0.9
+    dissipation_lag_shockCapturing = True#False
+    dissipation_sc_uref  = 1.0
+    dissipation_sc_beta  = 1.0
 
 ns_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
 vof_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
 ls_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
 rd_nl_atol_res = max(1.0e-8,0.1*he)
-mcorr_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
+mcorr_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+kappa_nl_atol_res = 1.0e-9#max(1.0e-8,0.01*he**2/2.0)
+dissipation_nl_atol_res = 1.0e-9#max(1.0e-8,0.01*he**2/2.0)
 
 #turbulence
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky
+ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+if useRANS == 1:
+    ns_closure = 3
+elif useRANS == 2:
+    ns_closure == 4
 # Water
 rho_0 = 998.2
 nu_0  = 1.004e-6
@@ -234,8 +257,11 @@ Re_da = Um*inflowHeight/nu_1
 residence_time = L[0]/Um
 inflowVelocity = (Um,0.0)
 outflowVelocity = (Um,0.0)
+#for RANS
+kInflow = 0.003*Um
+
 # Time stepping
-T=5.0*residence_time
+T=1.0*residence_time#5.0*residence_time
 dt_fixed = residence_time/40.0
 dt_init = min(0.1*dt_fixed,0.001)
 runCFL=0.33#33

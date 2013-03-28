@@ -7,10 +7,14 @@ stepController  = Min_dt_cfl_controller
 femSpaces = {0:basis}
 
 massLumping       = False
-numericalFluxType = Advection_DiagonalUpwind_Diffusion_IIPG_exterior
 conservativeFlux  = None
-subgridError      = Advection_ASGS(coefficients,nd,lag=False) #needs to be addressed or just skip because going to handle in optimized code anyway?
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=dissipation_shockCapturingFactor,lag=True)
+#numericalFluxType = Advection_DiagonalUpwind_Diffusion_IIPG_exterior
+#subgridError      = Advection_ASGS(coefficients,nd,lag=False) #needs to be addressed or just skip because going to handle in optimized code anyway?
+#shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=dissipation_shockCapturingFactor,lag=True)
+numericalFluxType = Dissipation.NumericalFlux
+subgridError      = Dissipation.SubgridError(coefficients=coefficients,nd=nd)
+shockCapturing    = Dissipation.ShockCapturing(coefficients,nd,shockCapturingFactor=dissipation_shockCapturingFactor,
+                                         lag=True)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton
