@@ -57,6 +57,7 @@ L = (0.584,0.350)
 he = L[0]/float(4*Refinement-1)
 he*=0.5
 he*=0.5
+he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -132,7 +133,7 @@ if useMetrics:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = False
+    redist_Newton = True
 else:
     ns_shockCapturingFactor  = 0.1
     ns_lag_shockCapturing = True
@@ -153,11 +154,11 @@ else:
     epsFact_consrv_diffusion = 10.0
     redist_Newton = False
 
-ns_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-vof_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-ls_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-rd_nl_atol_res = max(1.0e-8,0.01*he)
-mcorr_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+ns_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
+vof_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
+ls_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
+rd_nl_atol_res = max(1.0e-8,0.1*he)
+mcorr_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
 
 #turbulence
 ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky

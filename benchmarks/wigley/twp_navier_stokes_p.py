@@ -24,8 +24,8 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
 				   useRBLES=useRBLES,
 				   useMetrics=useMetrics,
                                    eb_adjoint_sigma=1.0,
-                                   forceStrongDirichlet=1,
-                                   turbulenceClosureModel=2,
+                                   forceStrongDirichlet=ns_forceStrongDirichlet,
+                                   turbulenceClosureModel=ns_closure,
                                    barycenters=barycenters)
 
 def getDBC_p(x,flag):
@@ -54,6 +54,7 @@ def getDBC_u(x,flag):
 def getDBC_v(x,flag):
     if flag == boundaryTags['left']:
         return twpflowVelocity_v
+
 #    elif flag == boundaryTags['right']:
 #        return twpflowVelocity_v
 #    elif openTop and flag == boundaryTags['top']:
@@ -68,6 +69,7 @@ def getDBC_v(x,flag):
 def getDBC_w(x,flag):
     if flag == boundaryTags['left']:
         return twpflowVelocity_w
+
 #    elif flag == boundaryTags['right']:
 #        return twpflowVelocity_w
 #    elif openTop and flag == boundaryTags['top']:

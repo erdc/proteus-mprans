@@ -1,12 +1,14 @@
-#! /bin/bash
+#!/bin/csh
 #PBS -A ERDCV00898ENQ
-#PBS -l walltime=001:00:00
+#PBS -l walltime=018:00:00
 #PBS -N dambreak
-#PBS -q debug
+#PBS -q standard
 #PBS -j oe
 #PBS -l select=8:ncpus=8:mpiprocs=8
 #PBS -l place=scatter:excl
 #PBS -l application=proteus
+source /usr/share/modules/init/csh
+source ${PROTEUS}/envConfig/diamond.csh
 cd $PBS_O_WORKDIR
-mkdir $(WORKDIR)/dambreak.diamond.$(PBS_JOBID)
-mpirun -np 64 parun dambreak_so.py -l 7 -v -O petsc.options -D $(WORKDIR)/dambreak.diamond.$(PBS_JOBID)
+mkdir ${WORKDIR}/dambreak.diamond.${PBS_JOBID}
+${HOME}/BOB/mpirun -np 64 parun dambreak_so.py -l 7 -v -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D ${WORKDIR}/dambreak.diamond.${PBS_JOBID} -G

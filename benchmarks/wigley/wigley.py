@@ -52,20 +52,20 @@ hull_center = (0.0,
 
 
 #debug
-L=(#2.5*hull_length,
-   2.0*hull_length,
-   #1.5*hull_length,
-   0.5*hull_length,
-   3.0*hull_draft)
-x_ll = (-1.0*hull_length,
-         -L[1]/2.0,
-         0.0)
-
-waterLevel   = 1.5*hull_draft
-
-hull_center = (0.0,
-               0.0,
-               1.5*hull_draft)#cek todo, still not sure about where the waterline is
+#L=(#2.5*hull_length,
+#   2.0*hull_length,
+#   #1.5*hull_length,
+#   0.5*hull_length,
+#   3.0*hull_draft)
+#x_ll = (-1.0*hull_length,
+#         -L[1]/2.0,
+#         0.0)
+#
+#waterLevel   = 1.5*hull_draft
+#
+#hull_center = (0.0,
+#               0.0,
+#               1.5*hull_draft)#cek todo, still not sure about where the waterline is
 
 #set up barycenters for force calculation
 barycenters = numpy.zeros((8,3),'d')
@@ -83,9 +83,10 @@ RBR_angCons  = [1,0,1]
 
 nLevels = 1
 
-he = hull_draft/1.0 #16 cores
+he = hull_draft/1.5 #16 cores
 he *=0.5 #128 
 #he *=0.5 #512 (2048 8-way nodes)
+#he *= 0.5
 #he = hull_draft/1.5 #16 cores
 #he *=0.5 #128 but can run on 2 cores with 8G
 #he *=0.5 #1024
@@ -215,7 +216,7 @@ else:
     else:
         domain.writePoly("meshNoVessel")
     triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
-
+print triangleOptions
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
@@ -242,12 +243,12 @@ freezeLevelSet=True
 Fr = 0.25
 #Fr = 0.51
 Um = Fr*sqrt(fabs(g[2])*hull_length)
-Re = hull_length*Um*rho_0/nu_0
+Re = hull_length*Um/nu_0
 
 residence_time = hull_length/Um
 dt_init=0.001
 T = 2*residence_time
-nDTout=100
+nDTout=200
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
 
@@ -256,39 +257,38 @@ runCFL = 0.33
 #----------------------------------------------------
 
 useRBLES   = 0.0
-useMetrics = 0.0
+useMetrics = 1.0
 useVF = 1.0
 useOnlyVF = False
 
-ns_shockCapturingFactor=0.9
+ns_shockCapturingFactor=0.1
 
-ls_shockCapturingFactor=0.9
+ls_shockCapturingFactor=0.1
 ls_sc_uref = 1.0
 ls_sc_beta = 1.5
 
-vof_shockCapturingFactor=0.9
+vof_shockCapturingFactor=0.1
 vof_sc_uref = 1.0
 vof_sc_beta = 1.5
 
 rd_shockCapturingFactor=0.9
-
+redist_Newton = True
 
 #----------------------------------------------------
 # Interface width
 #----------------------------------------------------
-epsFact = 3.0
+epsFact = 1.5
 
 epsFact_density          = epsFact 
 epsFact_viscosity        = epsFact 
 epsFact_curvature        = epsFact 
-
-epsFact_redistance = 0.33
-
+epsFact_vof              = epsFact 
 epsFact_consrv_heaviside = epsFact 
 epsFact_consrv_dirac     = epsFact 
 epsFact_consrv_diffusion=10.0
 
-epsFact_vof              = epsFact 
+epsFact_redistance = 0.33
+
 
 #----------------------------------------------------
 # Airy wave functions
@@ -350,8 +350,21 @@ useOldPETSc=False
 useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
-useRBLES   = 0.0
-useMetrics = 0.0
+ns_forceStrongDirichlet = True
+ns_closure = 2
+ns_tolFac = 0.0
+ns_nl_atol_res = 0.1*he**2
+ns_lag_subgridError = True
+ns_lag_shockCapturing = True
+
+vof_lag_shockCapturing = True
+vof_nl_atol_res = 0.1*he**2
+
+ls_lag_shockCapturing = True
+ls_nl_atol_res = 0.1*he**2
+
+rd_lag_shockCapturing = False
+rd_nl_atol_res = 0.1*he
 
 # Input checks
 if spaceOrder not in [1,2]:

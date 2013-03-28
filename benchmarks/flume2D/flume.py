@@ -58,6 +58,7 @@ he = L[1]/10
 he*=0.5
 he*=0.5
 he*=0.5
+he*=0.5
 #print he
 useObstacle=True#False
 nLevels = 1
@@ -173,7 +174,7 @@ if useMetrics:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = False
+    redist_Newton = True#False
 else:
     ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = False
@@ -194,11 +195,11 @@ else:
     epsFact_consrv_diffusion = 10.0
     redist_Newton = False
 
-ns_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-vof_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-ls_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+ns_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
+vof_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
+ls_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
 rd_nl_atol_res = max(1.0e-8,0.1*he)
-mcorr_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+mcorr_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
 
 #turbulence
 ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky

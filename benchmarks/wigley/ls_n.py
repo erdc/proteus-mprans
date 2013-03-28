@@ -10,8 +10,8 @@ massLumping       = False
 numericalFluxType = None
 conservativeFlux  = None
 numericalFluxType = DoNothing
-subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=True)
+subgridError      = NCLS.SubgridError(coefficients,nd)
+shockCapturing    = NCLS.ShockCapturing(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=ls_lag_shockCapturing)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton
@@ -39,8 +39,8 @@ linearSolverConvergenceTest         = 'r-true'
 
 tolFac = 0.0
 linTolFac = 0.0
-nl_atol_res = 1.0e-5
-l_atol_res = 1.0e-5
+nl_atol_res = ls_nl_atol_res 
+l_atol_res = 0.001*nl_atol_res
 useEisenstatWalker = False#True
 
 maxNonlinearIts = 50
