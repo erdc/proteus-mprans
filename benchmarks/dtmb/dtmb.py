@@ -217,11 +217,11 @@ Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um*rho_0/nu_0
 
 residence_time = hull_length/Um
-dt_init=0.0001
-T = 4*residence_time
-nDTout=100
+dt_init=0.001
+T = 5*residence_time
+nDTout=500
 dt_out =  (T-dt_init)/nDTout
-runCFL = 0.3
+runCFL = 0.33
 
 #----------------------------------------------------
 # Numerical parameters
@@ -233,6 +233,7 @@ useVF = 1.0
 useOnlyVF = False
 useK_Dissipation=False
 useK_Epsilon=False
+
 ns_shockCapturingFactor=0.1
 
 ls_shockCapturingFactor=0.1

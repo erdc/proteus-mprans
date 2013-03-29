@@ -57,8 +57,9 @@ nonlinearSolverConvergenceTest = 'rits'
 levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest             = 'r-true'
 
-tolFac = 1.0e-4
-nl_atol_res = 1.0e-4
+tolFac = 0.0
+nl_atol_res = he**2
+l_atol_res = 0.001*nl_atol_res
 useEisenstatWalker = True
 maxNonlinearIts = 50
 maxLineSearches = 0
