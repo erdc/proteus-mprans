@@ -216,7 +216,7 @@ else:
     else:
         domain.writePoly("meshNoVessel")
     triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
-print triangleOptions
+logEvent("""Mesh generated using: tetgen %s %s"""  % (triangleOptions,domain.polyfile+".poly"))
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
