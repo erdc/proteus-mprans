@@ -83,8 +83,8 @@ RBR_angCons  = [1,0,1]
 
 nLevels = 1
 
-he = hull_draft/1.5 #16 cores
-he *=0.5 #128 
+he = hull_draft/2.0 #16 cores
+#he *=0.5 #128 
 #he *=0.5 #512 (2048 8-way nodes)
 #he *= 0.5
 #he = hull_draft/1.5 #16 cores
@@ -247,7 +247,7 @@ Re = hull_length*Um/nu_0
 
 residence_time = hull_length/Um
 dt_init=0.001
-T = 2*residence_time
+T = 10*residence_time
 nDTout=200
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33

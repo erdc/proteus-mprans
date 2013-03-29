@@ -1,10 +1,13 @@
 #!/bin/bash
 #PBS -A ERDCV00898ENQ
-#PBS -l walltime=120:00:00
-##PBS -l ncpus=5024
-#PBS -l ncpus=4864
-##PBS -l ncpus=10048
 #PBS -q R368598
+#PBS -l walltime=120:00:00
+#PBS -l ncpus=5024
+##PBS -l ncpus=4864
+##PBS -l ncpus=10048
+##PBS -l walltime=001:00:00
+##PBS -l ncpus=512
+##PBS -q debug
 #PBS -N wigley
 #PBS -j oe
 #PBS -l application=proteus
@@ -17,6 +20,7 @@ export MPICH_RANK_REORDER_METHOD=2
 mkdir $WORKDIR/wigley.$PBS_JOBID
 #aprun -n 312 -N 4 parun wigley_so.py -l 7 -v -O ../inputTemplates/petsc.options.asm -D $WORKDIR/wigley.$PBS_JOBID
 #aprun -n 628 -N 4 parun wigley_so.py -l 7 -v -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/wigley.$PBS_JOBID
-aprun -n 608 -N 4 parun wigley_so.py -l 7 -v -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/wigley.$PBS_JOBID
-#aprun -n 1256 -N 4 parun wigley_so.py -l 7 -v -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/wigley.$PBS_JOBID
+#aprun -n 608 -N 4 parun wigley_so.py -l 7 -v -M 16 -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/wigley.$PBS_JOBID
+#aprun -n 512 parun wigley_so.py -l 7 -v -M 2.0 -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/wigley.$PBS_JOBID
+aprun -n 1256 -N 8 parun wigley_so.py -l 7 -v -M 7.75 -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/wigley.$PBS_JOBID
 #aprun -n 512 -N 16 parun wigley_so.py -l 7 -v -O ../inputTemplates/petsc.options.asm -D $WORKDIR/wigley.$PBS_JOBID
