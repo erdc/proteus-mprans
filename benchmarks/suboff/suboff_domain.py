@@ -223,6 +223,77 @@ def build_domain_from_axisymmetric_points(x,y,z,x_ll,L,regions=None,regionFlags=
 
     return domain
 
+def build_2d_domain_from_axisymmetric_points(x,y,x_ll,L,regions=None,regionFlags=None,name='axi'):
+    """
+    basic code for building domain from point set generated as regular grid in x,y with x
+    as central axis
+    """
+    from math import sqrt,pow,pi    
+    import numpy
+    nx = x.shape[0];
+    assert 2 == x.shape[1], "assumes only 2 points in theta"
+    
+    assert y.shape[0] == nx; 
+    assert y.shape[1] == x.shape[1] ; 
+    #
+    boundaryTags = { 'bottom': 1, 'right':2, 'left':3, 'top':4, 'obstacle':5}
+    #build poly representation
+    #bounding box
+    vertices = [[x_ll[0],x_ll[1],x_ll[2]],#0
+                [x_ll[0]+L[0],x_ll[1],x_ll[2]],#1
+                [x_ll[0]+L[0],x_ll[1]+L[1],x_ll[2]],#2
+                [x_ll[0],x_ll[1]+L[1],x_ll[2]]]#3
+              
+    vertexFlags=[boundaryTags['left'],
+                 boundaryTags['right'],
+                 boundaryTags['right'],
+                 boundaryTags['left']]
+    
+    segments = [[0,1],
+                [1,2],
+                [2,3],
+                [3,0]]
+    segmentFlags = [boundaryTags['bottom'],
+                    boundaryTags['right'],
+                    boundaryTags['top'],
+                    boundaryTags['left']]
+
+    if regions == None:
+	    regions=[[x_ll[0]+0.001*L[0],x_ll[1]+0.001*L[1]]]
+    if regionFlags == None:
+	    regionFlags=[1.0]
+    holes=[[x_ll[0]+0.5*L[0],x_ll[1]+0.5*L[1]]]
+    #
+    offset = 4
+    vertices.append([x[0,0],y[0,0]])
+    vertexFlags.append(boundaryTags['obstacle'])
+    #bottom
+    for i in range(nx-1):
+        vertices.append([x[i+1,0],y[i+1,0]])
+        vertexFlags.append(boundaryTags['obstacle'])
+        segments.append([offset,offset+1])
+        segmentFlags.append(boundaryTags['obstacle'])
+        offset += 1
+    #top
+    for i in range(nx,0,-1):
+        vertices.append([x[i-1,1],y[i-1,1]])
+        vertexFlags.append(boundaryTags['obstacle'])
+        segments.append([offset,offset+1])
+        segmentFlags.append(boundaryTags['obstacle'])
+        offset += 1
+    
+    domain = proteus.Domain.PlanarStraightLineGraphDomain(vertices=vertices,
+                                                          vertexFlags=vertexFlags,
+                                                          segments=segments,
+                                                          segmentFlags=segmentFlags,
+                                                          regions=regions,
+                                                          regionFlags=regionFlags,
+                                                          holes=holes)
+    #go ahead and add a boundary tags member 
+    domain.boundaryTags = boundaryTags
+
+    return domain
+
 def write_csv_file(x,y,z,name='xyz'):
     fout = open(name+'.csv','w')
     fout.write('#x,y,z,r\n')
@@ -449,8 +520,9 @@ def darpa2gen_orig(npoints):
 if __name__ == '__main__':
 
     nx = 300
-    try_cylinder = True
-    try_new_darpa= True
+    try_cylinder = False
+    try_new_darpa= False
+    try_darpa_2d = True
     if try_cylinder:
         nx=11;ntheta=8
         x,y,z,domain,x_ll,L =build_cylinder(nx,ntheta)
@@ -466,6 +538,13 @@ if __name__ == '__main__':
 	domain.writePLY('darpa2')
 	domain.writePoly('darpa2')
 	domain.writeGeo('darpa2')
+
+    elif try_darpa_2d:
+        ntheta = 2
+        x,y,z,theta_offset,np,x_ll,L = darpa2gen(nx,ntheta,pad_x=10.0, pad_r_fact=8.)
+        write_csv_file(x[:np],y[:np],z[:np],'darpa2_2d')
+        domain = build_2d_domain_from_axisymmetric_points(x[:np,:],y[:np,:],x_ll,L,name='darpa2_2d')
+	domain.writePoly('darpa2_2d')
 
     else:
         x,y,np = darpa2gen_orig(nx)
