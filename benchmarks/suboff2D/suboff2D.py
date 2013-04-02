@@ -12,8 +12,8 @@ Refinement=1
 genMesh=True
 spaceOrder=1
 useRBLES   = 0.0
-useMetrics = 0.0
-use_petsc4py=True
+useMetrics = 1.0
+use_petsc4py=False
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -62,10 +62,11 @@ x,y,z,theta_offset,np,x_ll,L = suboff_domain.darpa2gen(max_nx,ntheta,
                                                        pad_x=pad_x,pad_r_fact=pad_r_fact,
                                                        length_conv=feet2meter)
 
+L[2] = 1.0
 #just the points
 suboff_domain.write_csv_file(x[:np],y[:np],z[:np],'darpa2_2d')
 #get the domain
-domain = suboff_domain.build_2d_domain_from_axisymmetric_points(x[:np,:],y[:np,:],x_ll,L,include_front_and_back=0,name='darpa2_2d')
+domain = suboff_domain.build_2d_domain_from_axisymmetric_points(x[:np,:],y[:np,:],x_ll,L,name='darpa2_2d')
 boundaryTags = domain.boundaryTags
     
 upstream_height=L[1]
@@ -73,10 +74,8 @@ length = L[0]
 sub_length = L[0]-pad_x
 he = (sub_length)/float(6.5*Refinement)
 
-domain.writePLY('mesh_darpa2_2d')
 domain.writePoly('mesh_darpa2_2d')
-domain.writeAsymptote("mesh")
-triangleOptions="q30DenA"
+triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
 #
 nLevels = 1
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
@@ -112,10 +111,10 @@ g = [0.0,-9.8]
 #----------------------------------------------------
 
 residence_time = length/inflow
-T=1.0e-1#10.0*length/inflow
-#tnList = [0.0,0.1*residence_time,T]
-nDTout=1
-tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
+T=1.0*residence_time
+tnList = [0.0,0.1]
+nDTout=10
+tnList.extend([max(i*T/float(nDTout),0.1) for i in range(1,nDTout+1)])#[0.0,0.5*T,T]
 
 
 #----------------------------------------------------
@@ -124,9 +123,10 @@ tnList = [i*T/float(nDTout) for i in range(nDTout+1)]#[0.0,0.5*T,T]
 grad_p = -inflow/(upstream_height**2/(8.0*mu_0))
 upstream_start_z = x_ll[1]
 kInflow = 0.003*inflow*inflow
+inflowVelocity = (inflow,0.0)
 
 class u_flat:
-    def __init__(self,val=inflow,ztop=upstream_height,zbot=0.0,delta_z=0.1):
+    def __init__(self,val=inflow,ztop=upstream_height,zbot=upstream_start_z,delta_z=0.1):
         self.val= val; self.ztop = ztop; self.zbot=zbot
         self.delta_z = delta_z
     def uOfX(self,x):
@@ -150,24 +150,19 @@ bottom = [boundaryTags['bottom']]
 
 def twpflowVelocity_u(x,flag):
     if flag == boundaryTags['left']:
-        return lambda x,t: uProfile.uOfX(x-[0.0,0.0,upstream_start_z])*velRamp(t)
+        return lambda x,t: uProfile.uOfX(x-[0.0,upstream_start_z,0.0])*velRamp(t)
     elif (flag == boundaryTags['top'] or
-          flag in bottom):
+          flag in bottom or
+          flag == boundaryTags['obstacle']):
         return lambda x,t: 0.0
-
 def twpflowVelocity_v(x,flag):
     if flag == boundaryTags['left']:
         return lambda x,t: 0.0
     if (flag == boundaryTags['top'] or
-        flag in bottom):
+        flag in bottom or
+        flag == boundaryTags['obstacle']):
         return lambda x,t: 0.0
 
-def twpflowVelocity_w(x,flag):
-    if flag == boundaryTags['left']:
-        return lambda x,t: 0.0
-    if (flag == boundaryTags['top'] or
-        flag in bottom):
-        return lambda x,t: 0.0
 
 #----------------------------------------------------
 # Initial condition
@@ -180,41 +175,62 @@ def signedDistance(x):
 #----------------------------------------------------
 # Numerical parameters
 #----------------------------------------------------
+# Numerical parameters
+ns_forceStrongDirichlet = False
+if useMetrics:
+    ns_shockCapturingFactor  = 0.1
+    ns_lag_shockCapturing = True#False
+    ns_lag_subgridError = True
+    ls_shockCapturingFactor  = 0.1
+    ls_lag_shockCapturing = True#False
+    ls_sc_uref  = 1.0
+    ls_sc_beta  = 1.0
+    vof_shockCapturingFactor = 0.1
+    vof_lag_shockCapturing = True#False
+    vof_sc_uref = 1.0
+    vof_sc_beta = 1.0
+    rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
+    epsFact_density    = 1.5
+    epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
+    epsFact_redistance = 0.33
+    epsFact_consrv_diffusion = 10.0
+    redist_Newton = False
+    kappa_shockCapturingFactor = 0.1
+    kappa_lag_shockCapturing = True#False
+    kappa_sc_uref = 1.0
+    kappa_sc_beta = 1.0
+    dissipation_shockCapturingFactor = 0.1
+    dissipation_lag_shockCapturing = True#False
+    dissipation_sc_uref = 1.0
+    dissipation_sc_beta = 1.0
+else:
+    ns_shockCapturingFactor  = 0.9
+    ns_lag_shockCapturing = False
+    ns_lag_subgridError = True
+    ls_shockCapturingFactor  = 0.9
+    ls_lag_shockCapturing = True#False
+    ls_sc_uref  = 1.0
+    ls_sc_beta  = 1.0
+    rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
+    epsFact_density    = 1.5
+    epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
+    epsFact_redistance = 0.33
+    epsFact_consrv_diffusion = 10.0
+    redist_Newton = False
+    kappa_shockCapturingFactor = 0.9
+    kappa_lag_shockCapturing = True#False
+    kappa_sc_uref  = 1.0
+    kappa_sc_beta  = 1.0
+    dissipation_shockCapturingFactor = 0.9
+    dissipation_lag_shockCapturing = True#False
+    dissipation_sc_uref  = 1.0
+    dissipation_sc_beta  = 1.0
 
-ns_shockCapturingFactor=0.3
-
-ls_shockCapturingFactor=0.3
-ls_sc_uref = 1.0
-ls_sc_beta = 1.5
-
-vof_shockCapturingFactor=0.3
-vof_sc_uref = 1.0
-vof_sc_beta = 1.5
-
-rd_shockCapturingFactor=0.3
-
-kappa_shockCapturingFactor=0.9
-kappa_sc_uref = 1.0
-kappa_sc_beta = 1.5
-
-dissipation_shockCapturingFactor=0.9
-dissipation_sc_uref = 1.0
-dissipation_sc_beta = 1.5
-
-#----------------------------------------------------
-# Interface width
-#----------------------------------------------------
-epsFact = 1.5
-
-epsFact_redistance = 0.33
-
-epsFact_density          = epsFact 
-epsFact_viscosity        = epsFact 
-epsFact_redistance       = epsFact 
-epsFact_curvature        = epsFact 
-epsFact_consrv_heaviside = epsFact 
-epsFact_consrv_dirac     = epsFact 
-epsFact_consrv_diffusion=10.0
-epsFact_vof              = epsFact 
-
+ns_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
+ls_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
+rd_nl_atol_res = max(1.0e-8,0.1*he)
+kappa_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+dissipation_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
 

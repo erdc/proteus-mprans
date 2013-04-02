@@ -223,7 +223,8 @@ def build_domain_from_axisymmetric_points(x,y,z,x_ll,L,regions=None,regionFlags=
 
     return domain
 
-def build_2d_domain_from_axisymmetric_points(x,y,x_ll,L,regions=None,regionFlags=None,name='axi'):
+def build_2d_domain_from_axisymmetric_points(x,y,x_ll,L,regions=None,regionFlags=None,
+                                             has_duplicate_endpoints=True,name='axi'):
     """
     basic code for building domain from point set generated as regular grid in x,y with x
     as central axis
@@ -264,7 +265,7 @@ def build_2d_domain_from_axisymmetric_points(x,y,x_ll,L,regions=None,regionFlags
 	    regionFlags=[1.0]
     holes=[[x_ll[0]+0.5*L[0],x_ll[1]+0.5*L[1]]]
     #
-    offset = 4
+    offset = 4; obstacle_start=offset
     vertices.append([x[0,0],y[0,0]])
     vertexFlags.append(boundaryTags['obstacle'])
     #bottom
@@ -275,13 +276,17 @@ def build_2d_domain_from_axisymmetric_points(x,y,x_ll,L,regions=None,regionFlags
         segmentFlags.append(boundaryTags['obstacle'])
         offset += 1
     #top
-    for i in range(nx,0,-1):
+    start = nx; end = 0
+    if has_duplicate_endpoints:
+        start = nx-1; end = 1
+    for i in range(start,end,-1):
         vertices.append([x[i-1,1],y[i-1,1]])
         vertexFlags.append(boundaryTags['obstacle'])
         segments.append([offset,offset+1])
         segmentFlags.append(boundaryTags['obstacle'])
         offset += 1
-    
+    segments.append([offset-1,obstacle_start])
+    segmentFlags.append(boundaryTags['obstacle'])
     domain = proteus.Domain.PlanarStraightLineGraphDomain(vertices=vertices,
                                                           vertexFlags=vertexFlags,
                                                           segments=segments,
