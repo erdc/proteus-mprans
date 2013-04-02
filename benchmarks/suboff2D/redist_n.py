@@ -30,7 +30,7 @@ else:
 
 linear_solver_options_prefix = 'rdls_'
 nonlinearSolverConvergenceTest = 'rits'
-linearSolverConvergenceTest = 'r-true'
+linearSolverConvergenceTest = 'rits'
 
 runCFL=1.0
 rtol_res[0] = 0.001

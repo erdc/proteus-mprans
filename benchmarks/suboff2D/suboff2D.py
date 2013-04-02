@@ -84,7 +84,7 @@ nLayersOfOverlapForParallel = 0
 #----------------------------------------------------
 # Physical coefficients
 #----------------------------------------------------
-Re = 302.5#3025.0
+Re = 302500.0
 nu_h20 = 1.004e-6
 nu = nu_h20
 inflow = nu*Re/upstream_height
