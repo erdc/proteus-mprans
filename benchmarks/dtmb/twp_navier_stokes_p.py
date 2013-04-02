@@ -51,7 +51,7 @@ else:
                                        useRBLES=useRBLES,
                                        useMetrics=useMetrics,
                                        eb_adjoint_sigma=1.0,
-                                       forceStrongDirichlet=0,
+                                       forceStrongDirichlet=1,
                                        turbulenceClosureModel=2,
                                        barycenters=barycenters)
 

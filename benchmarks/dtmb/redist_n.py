@@ -44,16 +44,17 @@ nonlinearSolverConvergenceTest = 'rits'
 levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest = 'r-true'
 
-runCFL=1.0
+runCFL=0.33
 rtol_res[0] = 0.0
 atol_res[0] = 0.1*he
-psitc['nStepsForce']=3
-psitc['nStepsMax']=5
-psitc['reduceRatio']=1.0
+psitc['nStepsForce']=6
+psitc['nStepsMax']=25
+psitc['reduceRatio']=1.5
 psitc['startRatio']=1.0 
 
-tolFac = 0.1
+tolFac = 0.0
 nl_atol_res = 0.1*he
+l_atol_res = 0.001*nl_atol_res
 useEisenstatWalker = True
 
 maxNonlinearIts = 50

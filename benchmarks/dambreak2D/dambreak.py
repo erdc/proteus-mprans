@@ -117,14 +117,14 @@ nDTout = int(round(T/dt_fixed))
 ns_forceStrongDirichlet = False#True
 if useMetrics:
     ns_shockCapturingFactor  = 0.1
-    ns_lag_shockCapturing = True#False
+    ns_lag_shockCapturing = False
     ns_lag_subgridError = True
     ls_shockCapturingFactor  = 0.1
-    ls_lag_shockCapturing = True#False
+    ls_lag_shockCapturing = False
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.0
     vof_shockCapturingFactor = 0.1
-    vof_lag_shockCapturing = True#False
+    vof_lag_shockCapturing = False
     vof_sc_uref = 1.0
     vof_sc_beta = 1.0
     rd_shockCapturingFactor  = 0.9
@@ -161,7 +161,7 @@ rd_nl_atol_res = max(1.0e-8,0.1*he)
 mcorr_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
 
 #turbulence
-ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky
+ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky
 # Water
 rho_0 = 998.2
 nu_0  = 1.004e-6

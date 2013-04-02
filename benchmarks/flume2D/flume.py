@@ -59,7 +59,7 @@ elif spaceOrder == 2:
 L = (2.0,1.0)
 he = L[1]/10
 he*=0.5
-#he*=0.5
+he*=0.5
 #print he
 useObstacle=True#False
 nLevels = 1
@@ -246,8 +246,8 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 
 inflowHeight = L[1]/2.0
 
-#Fr = 2.0#1.25
-Fr = 0.25
+Fr = 2.0#1.25
+#Fr = 0.25
 Um = Fr*sqrt(fabs(g[1])*2*obstacle_radius)
 Re = 2*obstacle_radius*Um/nu_0
 Frd = Um/sqrt(fabs(g[1])*inflowHeight)
