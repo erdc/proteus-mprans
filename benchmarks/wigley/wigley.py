@@ -195,7 +195,7 @@ else:
         topFacet=[]
         for i in range(n_points_length):
             topFacet.append(vN_right(i,n_points_draft-1))
-        for i in range(n_points_length-1,0,-1):
+        for i in range(n_points_length-2,0,-1):
             topFacet.append(vN_left(i,n_points_draft-1))
         facets.append([topFacet])
         facetFlags.append(boundaryTags['obstacle'])
@@ -215,8 +215,8 @@ else:
         domain.writePoly("mesh_"+vessel)
     else:
         domain.writePoly("meshNoVessel")
-    triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
-logEvent("""Mesh generated using: tetgen %s %s"""  % (triangleOptions,domain.polyfile+".poly"))
+    triangleOptions="VApq1.4q10ena%e" % ((he**3)/6.0,)
+logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
@@ -261,13 +261,13 @@ useMetrics = 1.0
 useVF = 1.0
 useOnlyVF = False
 
-ns_shockCapturingFactor=0.1
+ns_shockCapturingFactor=0.9
 
-ls_shockCapturingFactor=0.1
+ls_shockCapturingFactor=0.9
 ls_sc_uref = 1.0
 ls_sc_beta = 1.5
 
-vof_shockCapturingFactor=0.1
+vof_shockCapturingFactor=0.9
 vof_sc_uref = 1.0
 vof_sc_beta = 1.5
 
@@ -350,7 +350,7 @@ useOldPETSc=False
 useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
-ns_forceStrongDirichlet = True
+ns_forceStrongDirichlet = False#True
 ns_closure = 2
 ns_tolFac = 0.0
 ns_nl_atol_res = 0.1*he**2
@@ -364,7 +364,7 @@ ls_lag_shockCapturing = True
 ls_nl_atol_res = 0.1*he**2
 
 rd_lag_shockCapturing = False
-rd_nl_atol_res = 0.1*he
+rd_nl_atol_res = 0.01*he
 
 # Input checks
 if spaceOrder not in [1,2]:
