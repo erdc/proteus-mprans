@@ -21,7 +21,7 @@ nonlinearSmoother = None
 linearSmoother    = None
 #printNonlinearSolverInfo = True
 matrix = SparseMatrix
-if not useOldPETSc and not useSuperlu:
+if use_petsc4py:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
 else:

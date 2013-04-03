@@ -6,7 +6,7 @@ from proteus.default_n import *
 #  Discretization -- input options  
 genMesh=True
 useOldPETSc=False
-useSuperlu=False
+useSuperlu=True
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -217,8 +217,8 @@ vof_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
 ls_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
 rd_nl_atol_res = max(1.0e-8,0.1*he)
 mcorr_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-kappa_nl_atol_res = 1.0e-9#max(1.0e-8,0.01*he**2/2.0)
-dissipation_nl_atol_res = 1.0e-9#max(1.0e-8,0.01*he**2/2.0)
+kappa_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+dissipation_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
 
 #turbulence
 ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
