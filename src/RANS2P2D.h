@@ -4794,6 +4794,7 @@ namespace proteus
     		ebNE_kb_nSpace = ebNE*nQuadraturePoints_elementBoundary*nSpace+kb*nSpace;
     	      velocityAverage[ebN_kb_nSpace+0]=ebqe_velocity[ebNE_kb_nSpace+0];
     	      velocityAverage[ebN_kb_nSpace+1]=ebqe_velocity[ebNE_kb_nSpace+1];
+	      //std::cout<<"v ext"<<velocityAverage[ebN_kb_nSpace+0]<<'\t'<<velocityAverage[ebN_kb_nSpace+1]<<std::endl;
     	      /* velocityAverage[ebN_kb_nSpace+2]=ebqe_velocity[ebNE_kb_nSpace+2]; */
     	    }//ebNE
     	}
@@ -4821,7 +4822,7 @@ namespace proteus
     	      ck.calculateMapping_elementBoundary(left_eN_global,
     						  left_ebN_element,
     						  kb,
-    						  left_ebN_element*kb,
+    						  left_ebN_element*nQuadraturePoints_elementBoundary+kb,
     						  mesh_dof,
     						  mesh_l2g,
     						  mesh_trial_trace_ref,
@@ -4842,7 +4843,7 @@ namespace proteus
     	      ck.calculateMapping_elementBoundary(right_eN_global,
     						  right_ebN_element,
     						  kb,
-    						  right_ebN_element*kb,
+    						  right_ebN_element*nQuadraturePoints_elementBoundary+kb,
     						  mesh_dof,
     						  mesh_l2g,
     						  mesh_trial_trace_ref,
@@ -4880,6 +4881,8 @@ namespace proteus
     		    }
     		}
     	    }
+	  //for (int i;i<nQuadraturePoints_elementBoundary;i++)
+	  //  std::cout<<"perm "<<i<<'\t'<<permutations[i]<<std::endl;
     	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++)
     	    {
     	      register int ebN_kb_nSpace = ebN*nQuadraturePoints_elementBoundary*nSpace+kb*nSpace;
@@ -4891,8 +4894,8 @@ namespace proteus
     		w_right=0.0;
     	      register int left_kb = kb,
     		right_kb = permutations[kb],
-    		left_ebN_element_kb_nDOF_test_element=left_ebN_element*left_kb*nDOF_test_element,
-    		right_ebN_element_kb_nDOF_test_element=right_ebN_element*right_kb*nDOF_test_element;
+    		left_ebN_element_kb_nDOF_test_element=(left_ebN_element*nQuadraturePoints_elementBoundary+left_kb)*nDOF_test_element,
+    		right_ebN_element_kb_nDOF_test_element=(right_ebN_element*nQuadraturePoints_elementBoundary+right_kb)*nDOF_test_element;
     	      //
     	      //calculate the velocity solution at quadrature points on left and right
     	      //
@@ -4906,6 +4909,7 @@ namespace proteus
     	      //
     	      velocityAverage[ebN_kb_nSpace+0]=0.5*(u_left + u_right);
     	      velocityAverage[ebN_kb_nSpace+1]=0.5*(v_left + v_right);
+	      //std::cout<<"v int"<<velocityAverage[ebN_kb_nSpace+0]<<'\t'<<velocityAverage[ebN_kb_nSpace+1]<<'\t'<<u_left<<'\t'<<v_left<<'\t'<<u_right<<'\t'<<v_right<<std::endl;
     	      /* velocityAverage[ebN_kb_nSpace+2]=0.5*(w_left + w_right); */
     	    }//ebNI
     	}

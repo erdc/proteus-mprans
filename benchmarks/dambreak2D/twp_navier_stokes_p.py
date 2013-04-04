@@ -12,7 +12,9 @@ if useRANS >= 1:
     Closure_0_model = 5; Closure_1_model=6
     if useOnlyVF:
         Closure_0_model=2; Closure_1_model=3
-
+else:
+    Closure_0_model = None
+    Closure_1_model = None
         
 coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    sigma=0.0,
