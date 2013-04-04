@@ -4781,6 +4781,8 @@ namespace proteus
       int permutations[nQuadraturePoints_elementBoundary];
       double xArray_left[nQuadraturePoints_elementBoundary*3],
     	xArray_right[nQuadraturePoints_elementBoundary*3];
+      for (int i=0;i<nQuadraturePoints_elementBoundary;i++)
+	permutations[i]=i;//just to initialize
       for (int ebNE = 0; ebNE < nExteriorElementBoundaries_global; ebNE++)
     	{
     	  register int ebN = exteriorElementBoundariesArray[ebNE];
@@ -4810,7 +4812,6 @@ namespace proteus
     	    metricTensorDetSqrt,
     	    normal[3],
     	    x,y,z;
-    	  //double G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty;
 	  
     	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++)
     	    {

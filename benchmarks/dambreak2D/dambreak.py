@@ -8,7 +8,8 @@ from proteus.default_n import *
 Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
-useSuperlu=False
+useSuperlu=True#False
+timeDiscretization='vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -174,13 +175,13 @@ else:
     dissipation_sc_uref  = 1.0
     dissipation_sc_beta  = 1.0
 
-ns_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
-vof_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
-ls_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
-rd_nl_atol_res = max(1.0e-8,0.1*he)
-mcorr_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-kappa_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-dissipation_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+ns_nl_atol_res = max(1.0e-8,0.1*he**2)
+vof_nl_atol_res = max(1.0e-8,0.1*he**2)
+ls_nl_atol_res = max(1.0e-8,0.1*he**2)
+rd_nl_atol_res = max(1.0e-8,0.01*he)
+mcorr_nl_atol_res = max(1.0e-8,0.01*he**2)
+kappa_nl_atol_res = max(1.0e-8,0.1*he**2)
+dissipation_nl_atol_res = max(1.0e-8,0.1*he**2)
 
 #turbulence
 ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
