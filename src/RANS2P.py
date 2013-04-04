@@ -393,10 +393,10 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         #
     def initializeElementBoundaryQuadrature(self,t,cebq,cebq_global):
         #VRANS
-        self.ebq_porosity = numpy.ones(cebq[('u',1)].shape,'d')
-        self.ebq_dragAlpha= numpy.ones(cebq[('u',1)].shape,'d')
+        self.ebq_porosity = numpy.ones(cebq['det(J)'].shape,'d')
+        self.ebq_dragAlpha= numpy.ones(cebq['det(J)'].shape,'d')
         self.ebq_dragAlpha.fill(self.dragAlpha)
-        self.ebq_dragBeta= numpy.ones(cebq[('u',1)].shape,'d')
+        self.ebq_dragBeta= numpy.ones(cebq['det(J)'].shape,'d')
         self.ebq_dragBeta.fill(self.dragBeta)
         if self.setParamsFunc != None:
             self.setParamsFunc(cebq['x'],self.ebq_porosity,self.ebq_dragAlpha,self.ebq_dragBeta)
@@ -662,34 +662,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  movingDomain=False):
         self.eb_adjoint_sigma = coefficients.eb_adjoint_sigma
         useConstant_he=coefficients.useConstant_he#this is a hack to test the effect of using a constant smoothing width
-        self.postProcessing = False#this is a hack to test the effect of post-processing
-        if self.postProcessing:
-            from proteus import RANS2P as oldRANS2P
-            self.tmpvt = oldRANS2P.OneLevelRANS2P(uDict,
-                 phiDict,
-                 testSpaceDict,
-                 matType,
-                 dofBoundaryConditionsDict,
-                 dofBoundaryConditionsSetterDict,
-                 coefficients,
-                 elementQuadrature,
-                 elementBoundaryQuadrature,
-                 fluxBoundaryConditionsDict,
-                 advectiveFluxBoundaryConditionsSetterDict,
-                 diffusiveFluxBoundaryConditionsSetterDictDict,
-                 stressTraceBoundaryConditionsSetterDictDict,
-                 stabilization,
-                 shockCapturing,
-                 conservativeFluxDict,
-                 numericalFluxType,
-                 TimeIntegrationClass,
-                 massLumping,
-                 reactionLumping,
-                 options,
-                 name,
-                 reuse_trial_and_test_quadrature,
-                 sd,
-                 movingDomain)
+        self.postProcessing = True#this is a hack to test the effect of post-processing
         #
         #set the objects describing the method and boundary conditions
         #
@@ -925,6 +898,142 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.scalars_elementBoundaryQuadrature= set([('u',ci) for ci in range(self.nc)])
         self.vectors_elementBoundaryQuadrature= set()
         self.tensors_elementBoundaryQuadrature= set()
+        #use post processing tools to get conservative fluxes, None by default
+        if self.postProcessing:
+            self.q[('v',0)] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.nQuadraturePoints_element,
+                 self.nDOF_trial_element[0]),
+                'd')
+            self.q['J'] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.nQuadraturePoints_element,
+                 self.nSpace_global,
+                 self.nSpace_global),
+                'd')
+            self.q['det(J)'] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.nQuadraturePoints_element),
+                'd')
+            self.q['inverse(J)'] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.nQuadraturePoints_element,
+                 self.nSpace_global,
+                 self.nSpace_global),
+                'd')
+            self.ebq[('v',0)] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.mesh.nElementBoundaries_element,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 self.nDOF_trial_element[0]),
+                'd')
+            self.ebq[('w',0)] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.mesh.nElementBoundaries_element,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 self.nDOF_trial_element[0]),
+                'd')
+            self.ebq['x'] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.mesh.nElementBoundaries_element,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 3),
+                'd')
+            self.ebq['hat(x)'] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.mesh.nElementBoundaries_element,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 3),
+                'd')
+            self.ebq['J'] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.mesh.nElementBoundaries_element,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 self.nSpace_global,
+                 self.nSpace_global),
+                'd')
+            self.ebq['inverse(J)'] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.mesh.nElementBoundaries_element,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 self.nSpace_global,
+                 self.nSpace_global),
+                'd')
+            self.ebq['g'] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.mesh.nElementBoundaries_element,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 self.nSpace_global-1,
+                 self.nSpace_global-1),
+                'd')
+            self.ebq['det(J)'] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.mesh.nElementBoundaries_element,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary),
+                'd')
+            self.ebq['sqrt(det(g))'] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.mesh.nElementBoundaries_element,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary),
+                'd')
+            self.ebq['n'] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.mesh.nElementBoundaries_element,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 self.nSpace_global),
+                'd')
+            self.ebq[('dS_u',0)] = numpy.zeros(
+                (self.mesh.nElements_global,
+                 self.mesh.nElementBoundaries_element,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary),
+                'd')
+            self.ebqe['dS'] = numpy.zeros(
+                (self.mesh.nExteriorElementBoundaries_global,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary),
+                'd')
+            self.ebqe['n'] = numpy.zeros(
+                (self.mesh.nExteriorElementBoundaries_global,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 self.nSpace_global),
+                'd')
+            self.ebqe['J'] = numpy.zeros(
+                (self.mesh.nExteriorElementBoundaries_global,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 self.nSpace_global,
+                 self.nSpace_global),
+                'd')
+            self.ebqe['det(J)'] = numpy.zeros(
+                (self.mesh.nExteriorElementBoundaries_global,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary),
+                'd')
+            self.ebqe['inverse(J)'] = numpy.zeros(
+                (self.mesh.nExteriorElementBoundaries_global,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 self.nSpace_global,
+                 self.nSpace_global),
+                'd')
+            self.ebqe['g'] = numpy.zeros(
+                (self.mesh.nExteriorElementBoundaries_global,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 self.nSpace_global-1,
+                 self.nSpace_global-1),
+                'd')
+            self.ebqe['sqrt(det(g))'] = numpy.zeros(
+                (self.mesh.nExteriorElementBoundaries_global,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary),
+                'd')
+            self.ebq_global['n'] = numpy.zeros(
+                (self.mesh.nElementBoundaries_global,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 self.nSpace_global),
+                'd')
+            self.ebq_global['x'] = numpy.zeros(
+                (self.mesh.nElementBoundaries_global,
+                 self.nElementBoundaryQuadraturePoints_elementBoundary,
+                 3),
+                'd')
+            self.stressFluxBoundaryConditionsSetterDict = {}
+            self.elementBoundaryIntegralKeys=[]
         #
         #show quadrature
         #
@@ -1035,18 +1144,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                     self.ebqe['penalty'][ebNE,k] = self.numericalFlux.penalty_constant/self.mesh.elementBoundaryDiametersArray[ebN]**self.numericalFlux.penalty_power
         log(memory("numericalFlux","OneLevelTransport"),level=4)
         self.elementEffectiveDiametersArray  = self.mesh.elementInnerDiametersArray
-        #use post processing tools to get conservative fluxes, None by default
-        if self.postProcessing:
-            self.q[('v',0)] = self.tmpvt.q[('v',0)]
-            self.ebq[('v',0)] = self.tmpvt.ebq[('v',0)]  
-            self.ebq[('w',0)] = self.tmpvt.ebq[('w',0)]
-            self.ebq['sqrt(det(g))'] = self.tmpvt.ebq['sqrt(det(g))']
-            self.ebq['n'] = self.tmpvt.ebq['n']
-            self.ebq[('dS_u',0)] = self.tmpvt.ebq[('dS_u',0)]
-            self.ebqe['dS'] = self.tmpvt.ebqe['dS']
-            self.ebqe['n'] = self.tmpvt.ebqe['n']
-            self.ebq_global['n'] = self.tmpvt.ebq_global['n']
-            self.ebq_global['x'] = self.tmpvt.ebq_global['x']
         from proteus import PostProcessingTools
         self.velocityPostProcessor = PostProcessingTools.VelocityPostProcessingChooser(self)  
         log(memory("velocity postprocessor","OneLevelTransport"),level=4)
@@ -1551,7 +1648,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         This function should be called only when the mesh changes.
         """
         if self.postProcessing:
-            self.tmpvt.calculateElementQuadrature()
+            OneLevelTransport.calculateElementQuadrature(self)
         self.u[0].femSpace.elementMaps.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.elementMaps.getBasisGradientValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.getBasisValuesRef(self.elementQuadraturePoints)
@@ -1572,8 +1669,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         This function should be called only when the mesh changes.
         """
         if self.postProcessing:
-            self.tmpvt.calculateElementBoundaryQuadrature()
-        pass
+            OneLevelTransport.calculateElementBoundaryQuadrature(self)
     def calculateExteriorElementBoundaryQuadrature(self):
         """
         Calculate the physical location and weights of the quadrature rules
@@ -1582,7 +1678,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         This function should be called only when the mesh changes.
         """
         if self.postProcessing:
-            self.tmpvt.calculateExteriorElementBoundaryQuadrature()
+            OneLevelTransport.calculateExteriorElementBoundaryQuadrature(self)
         #
         #get physical locations of element boundary quadrature points
         #
@@ -1608,39 +1704,25 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         pass
     def calculateAuxiliaryQuantitiesAfterStep(self):
         if self.postProcessing:
-            from proteus.cRANS2P import calculateVelocityAverage as cva
-            cva(self.mesh.nExteriorElementBoundaries_global,
-                self.mesh.exteriorElementBoundariesArray,
-                self.mesh.nInteriorElementBoundaries_global,
-                self.mesh.interiorElementBoundariesArray,
-                self.mesh.elementBoundaryElementsArray,
-                self.mesh.elementBoundaryLocalElementBoundariesArray,
-                self.u[1].femSpace.dofMap.l2g,
-                self.u[1].dof,
-                self.u[2].dof,
-                self.u[3].dof,
-                self.ebq[('v',0)], 
-                self.ebqe[('velocity',0)],
-                self.ebq_global[('velocityAverage',0)])
-        # self.rans2p.calculateVelocityAverage(self.mesh.nExteriorElementBoundaries_global,
-        #                                      self.mesh.exteriorElementBoundariesArray,
-        #                                      self.mesh.nInteriorElementBoundaries_global,
-        #                                      self.mesh.interiorElementBoundariesArray,
-        #                                      self.mesh.elementBoundaryElementsArray,
-        #                                      self.mesh.elementBoundaryLocalElementBoundariesArray,
-        #                                      self.mesh.nodeArray,
-        #                                      self.mesh.elementNodesArray,
-        #                                      self.u[0].femSpace.elementMaps.psi_trace,
-        #                                      self.u[0].femSpace.elementMaps.grad_psi_trace,
-        #                                      self.u[0].femSpace.elementMaps.boundaryNormals,
-        #                                      self.u[0].femSpace.elementMaps.boundaryJacobians,
-        #                                      self.u[1].femSpace.dofMap.l2g,
-        #                                      self.u[1].dof,
-        #                                      self.u[2].dof,
-        #                                      self.u[3].dof,
-        #                                      self.u[1].femSpace.psi_trace,
-        #                                      self.ebqe[('velocity',0)],
-        #                                      self.ebq_global[('velocityAverage',0)])
+            self.rans2p.calculateVelocityAverage(self.mesh.nExteriorElementBoundaries_global,
+                                                 self.mesh.exteriorElementBoundariesArray,
+                                                 self.mesh.nInteriorElementBoundaries_global,
+                                                 self.mesh.interiorElementBoundariesArray,
+                                                 self.mesh.elementBoundaryElementsArray,
+                                                 self.mesh.elementBoundaryLocalElementBoundariesArray,
+                                                 self.mesh.nodeArray,
+                                                 self.mesh.elementNodesArray,
+                                                 self.u[0].femSpace.elementMaps.psi_trace,
+                                                 self.u[0].femSpace.elementMaps.grad_psi_trace,
+                                                 self.u[0].femSpace.elementMaps.boundaryNormals,
+                                                 self.u[0].femSpace.elementMaps.boundaryJacobians,
+                                                 self.u[1].femSpace.dofMap.l2g,
+                                                 self.u[1].dof,
+                                                 self.u[2].dof,
+                                                 self.u[3].dof,
+                                                 self.u[1].femSpace.psi_trace,
+                                                 self.ebqe[('velocity',0)],
+                                                 self.ebq_global[('velocityAverage',0)])
         OneLevelTransport.calculateAuxiliaryQuantitiesAfterStep(self)
 
     def getForce(self,cg,forceExtractionFaces,force,moment):

@@ -2,32 +2,31 @@ from proteus import *
 from redist_p import *
 from dambreak import *
 
+nl_atol_res = rd_nl_atol_res
+tolFac = 0.0
+linTolFac = 0.0
+l_atol_res = 0.001*rd_nl_atol_res
+useEisenstatWalker = True
+
 if redist_Newton:
     timeIntegration = NoIntegration
     stepController = Newton_controller
-    tolFac = 0.0
-    nl_atol_res = 0.1*he
-    useEisenstatWalker = True
-    linTolFac = 0.0
-    maxNonlinearIts = 10
-    maxLineSearches = 0
+    maxNonlinearIts = 25
+    maxLineSearches = 10
     nonlinearSolverConvergenceTest = 'r'
     levelNonlinearSolverConvergenceTest = 'r'
     linearSolverConvergenceTest = 'r-true'
 else:
     timeIntegration = BackwardEuler_cfl
     stepController = RDLS.PsiTC
-    runCFL=0.33
-    psitc['nStepsForce']=3
-    psitc['nStepsMax']=15
+    runCFL=0.5
+    psitc['nStepsForce']=6
+    psitc['nStepsMax']=25
     psitc['reduceRatio']=2.0
     psitc['startRatio']=1.0
     rtol_res[0] = 0.0
-    atol_res[0] = 0.1*he
-    tolFac = 0.0
-    nl_atol_res = 0.01*he
+    atol_res[0] = rd_nl_atol_res
     useEisenstatWalker = True
-    linTolFac = 0.0
     maxNonlinearIts = 1
     maxLineSearches = 0
     nonlinearSolverConvergenceTest = 'rits'
@@ -39,8 +38,8 @@ femSpaces = {0:basis}
 massLumping       = False
 numericalFluxType = DoNothing    
 conservativeFlux  = None
-subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=False)
-shockCapturing    = RDLS.ShockCapturing(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=False)
+subgridError      = RDLS.SubgridError(coefficients,nd)
+shockCapturing    = RDLS.ShockCapturing(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=rd_lag_shockCapturing)
 
 fullNewtonFlag = True
 multilevelNonlinearSolver  = Newton
@@ -63,3 +62,4 @@ if useSuperlu:
     levelLinearSolver      = LU
 
 linear_solver_options_prefix = 'rdls_'
+

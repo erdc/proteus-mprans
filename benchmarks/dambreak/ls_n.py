@@ -7,11 +7,10 @@ stepController  = Min_dt_controller
 femSpaces = {0:basis}
 
 massLumping       = False
-numericalFluxType = None
 conservativeFlux  = None
 numericalFluxType = DoNothing
-subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=True)
+subgridError      = NCLS.SubgridError(coefficients,nd)
+shockCapturing    = NCLS.ShockCapturing(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=ls_lag_shockCapturing)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton
@@ -39,10 +38,10 @@ linearSolverConvergenceTest         = 'r-true'
 
 tolFac = 0.0
 linTolFac = 0.0
-nl_atol_res = max(1.0e-8,0.1*he**3/6.0)
-l_atol_res = max(1.0e-8,0.1*he**3/6.0)
-useEisenstatWalker = False#True
+l_atol_res = 0.001*ls_nl_atol_res
+nl_atol_res = ls_nl_atol_res
+useEisenstatWalker = True
 
-maxNonlinearIts = 2
+maxNonlinearIts = 50
 maxLineSearches = 0
 

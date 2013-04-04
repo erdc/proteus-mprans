@@ -186,14 +186,14 @@ if useMetrics:
     dissipation_sc_beta = 1.0
 else:
     ns_shockCapturingFactor  = 0.9
-    ns_lag_shockCapturing = False
+    ns_lag_shockCapturing = True
     ns_lag_subgridError = True
     ls_shockCapturingFactor  = 0.9
-    ls_lag_shockCapturing = True#False
+    ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.0
     vof_shockCapturingFactor = 0.9
-    vof_lag_shockCapturing = True#False
+    vof_lag_shockCapturing = True
     vof_sc_uref  = 1.0
     vof_sc_beta  = 1.0
     rd_shockCapturingFactor  = 0.9
