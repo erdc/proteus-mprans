@@ -20,9 +20,6 @@ nu_0 =1.004e-6
 rho_1=1.205
 nu_1 =1.500e-5
 
-#cek debug
-#rho_1 = rho_0
-#nu_1 = nu_0
 sigma_01=0.0
 
 g=[0.0,0.0,-9.81]
@@ -52,20 +49,20 @@ hull_center = (0.0,
 
 
 #debug
-#L=(#2.5*hull_length,
-#   2.0*hull_length,
-#   #1.5*hull_length,
-#   0.5*hull_length,
-#   3.0*hull_draft)
-#x_ll = (-1.0*hull_length,
-#         -L[1]/2.0,
-#         0.0)
-#
-#waterLevel   = 1.5*hull_draft
-#
-#hull_center = (0.0,
-#               0.0,
-#               1.5*hull_draft)#cek todo, still not sure about where the waterline is
+L=(#2.5*hull_length,
+  2.0*hull_length,
+  #1.5*hull_length,
+  0.5*hull_length,
+  3.0*hull_draft)
+x_ll = (-1.0*hull_length,
+        -L[1]/2.0,
+        0.0)
+
+waterLevel   = 1.5*hull_draft
+
+hull_center = (0.0,
+              0.0,
+              1.5*hull_draft)#cek todo, still not sure about where the waterline is
 
 #set up barycenters for force calculation
 barycenters = numpy.zeros((8,3),'d')
@@ -226,8 +223,8 @@ quad_order = 3
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
-openTop = False
-openSides = False#True
+openTop = True
+openSides = True
 smoothBottom = False
 smoothObstacle = False
 rampInitialConditions = False
@@ -251,44 +248,6 @@ T = 10*residence_time
 nDTout=200
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
-
-#----------------------------------------------------
-# Numerical parameters
-#----------------------------------------------------
-
-useRBLES   = 0.0
-useMetrics = 1.0
-useVF = 1.0
-useOnlyVF = False
-
-ns_shockCapturingFactor=0.9
-
-ls_shockCapturingFactor=0.9
-ls_sc_uref = 1.0
-ls_sc_beta = 1.5
-
-vof_shockCapturingFactor=0.9
-vof_sc_uref = 1.0
-vof_sc_beta = 1.5
-
-rd_shockCapturingFactor=0.9
-redist_Newton = True
-
-#----------------------------------------------------
-# Interface width
-#----------------------------------------------------
-epsFact = 1.5
-
-epsFact_density          = epsFact 
-epsFact_viscosity        = epsFact 
-epsFact_curvature        = epsFact 
-epsFact_vof              = epsFact 
-epsFact_consrv_heaviside = epsFact 
-epsFact_consrv_dirac     = epsFact 
-epsFact_consrv_diffusion=10.0
-
-epsFact_redistance = 0.33
-
 
 #----------------------------------------------------
 # Airy wave functions
@@ -350,22 +309,13 @@ useOldPETSc=False
 useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
-ns_forceStrongDirichlet = False#True
-ns_closure = 2
-ns_tolFac = 0.0
-ns_nl_atol_res = 0.1*he**2
-ns_lag_subgridError = True
-ns_lag_shockCapturing = True
-
-vof_lag_shockCapturing = True
-vof_nl_atol_res = 0.1*he**2
-
-ls_lag_shockCapturing = True
-ls_nl_atol_res = 0.1*he**2
-
-rd_lag_shockCapturing = False
-rd_nl_atol_res = 0.01*he
-
+useRBLES   = 0.0
+useMetrics = 1.0
+useVF = 1.0
+useOnlyVF = False
+useRANS = 0 # 0 -- None
+            # 1 -- K-Epsilon
+            # 2 -- K-Omega
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -403,6 +353,78 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 
+# Numerical parameters
+ns_forceStrongDirichlet = True#False
+if useMetrics:
+    ns_shockCapturingFactor  = 0.3
+    ns_lag_shockCapturing = False#True
+    ns_lag_subgridError = True
+    ls_shockCapturingFactor  = 0.3
+    ls_lag_shockCapturing = False#True
+    ls_sc_uref  = 1.0
+    ls_sc_beta  = 1.5
+    vof_shockCapturingFactor = 0.3
+    vof_lag_shockCapturing = False#True
+    vof_sc_uref = 1.0
+    vof_sc_beta = 1.5
+    rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
+    epsFact_density    = 1.5
+    epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
+    epsFact_redistance = 0.33
+    epsFact_consrv_diffusion = 10.0
+    redist_Newton = False
+    kappa_shockCapturingFactor = 0.9
+    kappa_lag_shockCapturing = True#False
+    kappa_sc_uref = 1.0
+    kappa_sc_beta = 1.0
+    dissipation_shockCapturingFactor = 0.9
+    dissipation_lag_shockCapturing = True#False
+    dissipation_sc_uref = 1.0
+    dissipation_sc_beta = 1.0
+else:
+    ns_shockCapturingFactor  = 0.9
+    ns_lag_shockCapturing = True
+    ns_lag_subgridError = True
+    ls_shockCapturingFactor  = 0.9
+    ls_lag_shockCapturing = True
+    ls_sc_uref  = 1.0
+    ls_sc_beta  = 1.0
+    vof_shockCapturingFactor = 0.9
+    vof_lag_shockCapturing = True
+    vof_sc_uref  = 1.0
+    vof_sc_beta  = 1.0
+    rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
+    epsFact_density    = 1.5
+    epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
+    epsFact_redistance = 0.33
+    epsFact_consrv_diffusion = 10.0
+    redist_Newton = False#True
+    kappa_shockCapturingFactor = 0.9
+    kappa_lag_shockCapturing = True#False
+    kappa_sc_uref  = 1.0
+    kappa_sc_beta  = 1.0
+    dissipation_shockCapturingFactor = 0.9
+    dissipation_lag_shockCapturing = True#False
+    dissipation_sc_uref  = 1.0
+    dissipation_sc_beta  = 1.0
+
+ns_nl_atol_res = max(1.0e-12,0.1*he**2)
+vof_nl_atol_res = max(1.0e-12,0.1*he**2)
+ls_nl_atol_res = max(1.0e-12,0.1*he**2)
+mcorr_nl_atol_res = max(1.0e-12,0.1*he**2)
+rd_nl_atol_res = max(1.0e-12,0.01*he)
+kappa_nl_atol_res = max(1.0e-12,0.01*he**2)
+dissipation_nl_atol_res = max(1.0e-12,0.01*he**2)
+
+#turbulence
+ns_closure=1 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+if useRANS == 1:
+    ns_closure = 3
+elif useRANS == 2:
+    ns_closure == 4
+
 #wave/current properties
 windspeed_u = Um
 windspeed_v = 0.0
@@ -418,7 +440,10 @@ def waveHeight(x,t):
     return waterLevel
 
 def waveVelocity_u(x,t):
-    return Um
+    if rampInitialConditions:
+        return min(1.0,0.5*t/residence_time)*Um
+    else:
+        return Um
 
 def waveVelocity_v(x,t):
     return 0.0
@@ -442,7 +467,10 @@ def twpflowVelocity_u(x,t):
 #    waterspeed = waveVelocity_u(x,t)
 #    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
 #    return H*windspeed_u + (1.0-H)*waterspeed
-    return Um
+    if rampInitialConditions:
+        return Um*min(1.0,0.5*t/residence_time)
+    else:
+        return Um
 
 def twpflowVelocity_v(x,t):
 #    waterspeed = waveVelocity_v(x,t)
@@ -470,7 +498,6 @@ def twpflowFlux(x,t):
 
 def outflowVF(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,x[2] - outflowHeight)
-
 
 def twpflowPressure(x,t):
     p_L = L[2]*rho_1*g[2]

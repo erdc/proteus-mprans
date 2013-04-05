@@ -11,8 +11,10 @@ femSpaces = {0:basis,
 	     3:basis}
 
 massLumping       = False
-numericalFluxType = RANS2P.NumericalFlux
+numericalFluxType = None
 conservativeFlux  = None
+
+numericalFluxType = RANS2P.NumericalFlux
 subgridError = RANS2P.SubgridError(coefficients,nd,lag=ns_lag_subgridError,hFactor=hFactor)
 shockCapturing = RANS2P.ShockCapturing(coefficients,nd,ns_shockCapturingFactor,lag=ns_lag_shockCapturing)
 
@@ -37,14 +39,13 @@ if useSuperlu:
     levelLinearSolver      = LU
 
 linear_solver_options_prefix = 'rans2p_'
-levelNonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest             = 'r-true'
 
-tolFac = ns_tolFac
+tolFac = 0.0
+l_atol_res = 0.001*vof_nl_atol_res
 nl_atol_res = ns_nl_atol_res
-l_atol_res = 0.001*ns_nl_atol_res
 useEisenstatWalker = True
 maxNonlinearIts = 50
 maxLineSearches = 0
-
-#auxiliaryVariables = [RelaxationZoneWaveGenerator(twpflowVelocity_w,twpflowVelocity_w,twpflowVelocity_w,xRelaxCenter)]
+conservativeFlux = {0:'pwl-bdm-opt'}

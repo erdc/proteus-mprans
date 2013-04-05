@@ -7,7 +7,6 @@ stepController  = Min_dt_controller
 femSpaces = {0:basis}
 
 massLumping       = False
-numericalFluxType = None
 conservativeFlux  = None
 numericalFluxType = DoNothing
 subgridError      = NCLS.SubgridError(coefficients,nd)
@@ -39,9 +38,9 @@ linearSolverConvergenceTest         = 'r-true'
 
 tolFac = 0.0
 linTolFac = 0.0
-nl_atol_res = ls_nl_atol_res 
-l_atol_res = 0.001*nl_atol_res
-useEisenstatWalker = False#True
+l_atol_res = 0.001*ls_nl_atol_res
+nl_atol_res = ls_nl_atol_res
+useEisenstatWalker = True
 
 maxNonlinearIts = 50
 maxLineSearches = 0
