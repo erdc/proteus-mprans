@@ -49,20 +49,19 @@ hull_center = (0.0,
 
 
 #debug
-#L=(#2.5*hull_length,
-#  2.0*hull_length,
-#  #1.5*hull_length,
-#  0.5*hull_length,
-#  3.0*hull_draft)
-#x_ll = (-1.0*hull_length,
-#        -L[1]/2.0,
-#        0.0)
+L=(1.5*hull_length,
+   3.0*hull_beam, 
+   3.0*hull_draft)
 
-#waterLevel   = 1.5*hull_draft#
+x_ll = (-0.75*hull_length,
+         -L[1]/2.0,
+         0.0)
 
-#hull_center = (0.0,
-#              0.0,
-#              1.5*hull_draft)#cek todo, still not sure about where the waterline is
+waterLevel   = 1.5*hull_draft
+
+hull_center = (0.0,
+               0.0,
+               waterLevel)
 
 #set up barycenters for force calculation
 barycenters = numpy.zeros((8,3),'d')
@@ -80,8 +79,8 @@ RBR_angCons  = [1,0,1]
 
 nLevels = 1
 
-he = hull_draft/2.0 #16 cores
-#he *=0.5 #128 
+he = hull_draft/1.0 #16 cores
+he *=0.5 #128 
 #he *=0.5 #512 (2048 8-way nodes)
 #he *= 0.5
 #he = hull_draft/1.5 #16 cores
@@ -306,7 +305,7 @@ nDTout             = %i
 
 #  Discretization -- input options  
 useOldPETSc=False
-useSuperlu = False # set to False if running in parallel with petsc.options
+useSuperlu = True # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -354,7 +353,7 @@ elif spaceOrder == 2:
     
 
 # Numerical parameters
-ns_forceStrongDirichlet = False
+ns_forceStrongDirichlet = True#False
 if useMetrics:
     ns_shockCapturingFactor  = 0.3
     ns_lag_shockCapturing = False#True

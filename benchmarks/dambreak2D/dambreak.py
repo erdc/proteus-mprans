@@ -61,8 +61,8 @@ elif spaceOrder == 2:
 L = (0.584,0.350)
 he = L[0]/float(4*Refinement-1)
 he*=0.5
-he*=0.5
-he*=0.5
+#he*=0.5
+#he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node

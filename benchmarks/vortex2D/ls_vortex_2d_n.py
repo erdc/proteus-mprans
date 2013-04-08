@@ -10,7 +10,6 @@ if timeIntegration_ls == "be":
 elif timeIntegration_ls == "vbdf":
     timeIntegration = VBDF
     stepController = Min_dt_cfl_controller
-    timeOrder =2
 elif timeIntegration_ls == "flcbdf":
     timeIntegration = FLCBDF
     stepController = FLCBDF_controller_sys
