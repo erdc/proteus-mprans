@@ -12,7 +12,7 @@ else:
               ("ls_consrv_p",         "ls_consrv_n")]
     
     
-if flume.useRANS > 0:
+if dambreak.useRANS > 0:
     pnList.append(("kappa_p",
                    "kappa_n"))
     pnList.append(("dissipation_p",

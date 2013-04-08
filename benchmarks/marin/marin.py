@@ -4,9 +4,9 @@ from proteus import Domain
 from proteus.default_n import *   
    
 #  Discretization -- input options    
-Refinement=8#4-32 cores
+#Refinement=8#4-32 cores
 #Refinement=12
-#Refinement=24
+Refinement=24
 genMesh=True
 useOldPETSc=False
 useSuperlu=False

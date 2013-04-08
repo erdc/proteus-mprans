@@ -49,20 +49,20 @@ hull_center = (0.0,
 
 
 #debug
-L=(#2.5*hull_length,
-  2.0*hull_length,
-  #1.5*hull_length,
-  0.5*hull_length,
-  3.0*hull_draft)
-x_ll = (-1.0*hull_length,
-        -L[1]/2.0,
-        0.0)
+#L=(#2.5*hull_length,
+#  2.0*hull_length,
+#  #1.5*hull_length,
+#  0.5*hull_length,
+#  3.0*hull_draft)
+#x_ll = (-1.0*hull_length,
+#        -L[1]/2.0,
+#        0.0)
 
-waterLevel   = 1.5*hull_draft
+#waterLevel   = 1.5*hull_draft#
 
-hull_center = (0.0,
-              0.0,
-              1.5*hull_draft)#cek todo, still not sure about where the waterline is
+#hull_center = (0.0,
+#              0.0,
+#              1.5*hull_draft)#cek todo, still not sure about where the waterline is
 
 #set up barycenters for force calculation
 barycenters = numpy.zeros((8,3),'d')
@@ -354,7 +354,7 @@ elif spaceOrder == 2:
     
 
 # Numerical parameters
-ns_forceStrongDirichlet = True#False
+ns_forceStrongDirichlet = False
 if useMetrics:
     ns_shockCapturingFactor  = 0.3
     ns_lag_shockCapturing = False#True
@@ -419,7 +419,7 @@ kappa_nl_atol_res = max(1.0e-12,0.01*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.01*he**2)
 
 #turbulence
-ns_closure=1 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:

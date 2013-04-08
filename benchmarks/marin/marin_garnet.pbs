@@ -16,4 +16,4 @@ cd $PBS_O_WORKDIR
 mkdir $WORKDIR/marin.$PBS_JOBID
 # n = N*nnodes = N*ncpus/32
 #aprun -n 512 parun marin_so.py -l 7 -v --cacheArchive -O petsc.options --profile -D $WORKDIR/marin.$PBS_JOBID
-aprun -n 720 -N 16 parun marin_so.py -l 7 -v -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg --profile -D $WORKDIR/marin.$PBS_JOBID
+aprun -n 720 -N 16 -M 3.75 parun marin_so.py -l 7 -v -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg --profile -B -D $WORKDIR/marin.$PBS_JOBID
