@@ -21,15 +21,14 @@ else:
               ("ls_consrv_p" ,#4 
                "ls_consrv_n")]
 
-if dtmb.useK_Epsilon:
+if dtmb.movingDomain:
+    pnList.append(("moveMesh_p","moveMesh_n"))
+
+if dtmb.useRANS > 0:
     pnList.append(("kappa_p",
                    "kappa_n"))
     pnList.append(("dissipation_p",
                    "dissipation_n"))
-
-if dtmb.movingDomain:
-    pnList.append(("moveMesh_p","moveMesh_n"))
-
 name = "dtmb"
 
 systemStepControllerType = Sequential_MinAdaptiveModelStep

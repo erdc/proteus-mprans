@@ -81,7 +81,7 @@ nLevels = 1
 
 he = hull_draft/1.7 #16 cores
 he *=0.5 #128 
-he *=0.5 #512 (2048 8-way nodes)
+#he *=0.5 #512 (2048 8-way nodes)
 #he *=0.5
 #he = hull_draft/1.5 #16 cores
 #he *=0.5 #128 but can run on 2 cores with 8G
@@ -360,14 +360,14 @@ ns_forceStrongDirichlet = False
 weak_bc_penalty_constant = 1000.0
 if useMetrics:
     ns_shockCapturingFactor  = 0.3
-    ns_lag_shockCapturing = False#True
+    ns_lag_shockCapturing = True
     ns_lag_subgridError = True
     ls_shockCapturingFactor  = 0.3
-    ls_lag_shockCapturing = False#True
+    ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.5
     vof_shockCapturingFactor = 0.3
-    vof_lag_shockCapturing = False#True
+    vof_lag_shockCapturing = True
     vof_sc_uref = 1.0
     vof_sc_beta = 1.5
     rd_shockCapturingFactor  = 0.9
@@ -378,11 +378,11 @@ if useMetrics:
     epsFact_consrv_diffusion = 10.0
     redist_Newton = False
     kappa_shockCapturingFactor = 0.9
-    kappa_lag_shockCapturing = True#False
+    kappa_lag_shockCapturing = True
     kappa_sc_uref = 1.0
     kappa_sc_beta = 1.0
     dissipation_shockCapturingFactor = 0.9
-    dissipation_lag_shockCapturing = True#False
+    dissipation_lag_shockCapturing = True
     dissipation_sc_uref = 1.0
     dissipation_sc_beta = 1.0
 else:
@@ -413,13 +413,13 @@ else:
     dissipation_sc_uref  = 1.0
     dissipation_sc_beta  = 1.0
 
-ns_nl_atol_res = max(1.0e-12,0.1*he**2)
-vof_nl_atol_res = max(1.0e-12,0.1*he**2)
-ls_nl_atol_res = max(1.0e-12,0.1*he**2)
-mcorr_nl_atol_res = max(1.0e-12,0.1*he**2)
+ns_nl_atol_res = max(1.0e-12,0.001*he**2)
+vof_nl_atol_res = max(1.0e-12,0.001*he**2)
+ls_nl_atol_res = max(1.0e-12,0.001*he**2)
+mcorr_nl_atol_res = max(1.0e-12,0.001*he**2)
 rd_nl_atol_res = max(1.0e-12,0.01*he)
-kappa_nl_atol_res = max(1.0e-12,0.01*he**2)
-dissipation_nl_atol_res = max(1.0e-12,0.01*he**2)
+kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
+dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 
 #turbulence
 ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega

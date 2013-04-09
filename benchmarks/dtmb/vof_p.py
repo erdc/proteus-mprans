@@ -11,36 +11,41 @@ if useOnlyVF:
 else:
     RD_model = 3
     LS_model = 2
+
 coefficients = VOF.Coefficients(LS_model=LS_model,V_model=0,RD_model=RD_model,ME_model=1,
                                 checkMass=False,useMetrics=useMetrics,
                                 epsFact=epsFact_vof,sc_uref=vof_sc_uref,sc_beta=vof_sc_beta)
 
 def getDBC_vof(x,flag):
-    #if openTop and flag == boundaryTags['top']:
-    #    return lambda x,t: 1.0
-    #elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
-    #    return outflowVF
-    #elif flag == boundaryTags['right']:
-    #    return outflowVF
-    if flag == boundaryTags['left']:
+    if openTop and flag == boundaryTags['top']:
+        return outflowVF
+    elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
+        return outflowVF
+    elif flag == boundaryTags['right']:
+        return outflowVF
+    elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
+        return outflowVF
+    elif flag == boundaryTags['left']:
         return waveVF
 
 dirichletConditions = {0:getDBC_vof}
 
 def getAFBC_vof(x,flag):
-    #if flag == boundaryTags['top']:
-    #	if openTop:
-    #        return None
-    #	else:
-    #        return lambda x,t: 0.0
-    #elif flag == boundaryTags['front'] or flag == boundaryTags['back']:
-    #    if openSides:
-    #        return None
-    #    else:
-    #        return lambda x,t: 0.0
-    #elif flag == boundaryTags['right']:
-    #    return None
-    if flag == boundaryTags['left']:
+    if flag == boundaryTags['top']:
+    	if openTop:
+            return None
+    	else:
+            return lambda x,t: 0.0
+    elif (flag == boundaryTags['front'] or flag == boundaryTags['back']):
+        if openSides:
+            return None
+        else:
+            return lambda x,t: 0.0
+    elif flag == boundaryTags['right']:
+        return None
+    elif flag == boundaryTags['left']:
+        return None
+    elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
         return None
     else:
     	return lambda x,t: 0.0
