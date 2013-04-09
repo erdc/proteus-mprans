@@ -34,6 +34,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
 				   useRBLES=useRBLES,
 				   useMetrics=useMetrics,
                                    eb_adjoint_sigma=1.0,
+                                   eb_penalty_constant=weak_bc_penalty_constant,
                                    forceStrongDirichlet=ns_forceStrongDirichlet,
                                    turbulenceClosureModel=ns_closure)
 
@@ -44,7 +45,7 @@ def getDBC_p(x,flag):
         return outflowPressure#outflow
     elif flag == boundaryTags['right']:
         return outflowPressure#outflow
-    
+
 def getDBC_u(x,flag):
     if flag == boundaryTags['left']:
         return twpflowVelocity_u#inflow

@@ -81,7 +81,7 @@ nLevels = 1
 
 he = hull_draft/1.0 #16 cores
 he *=0.5 #128 
-#he *=0.5 #512 (2048 8-way nodes)
+he *=0.5 #512 (2048 8-way nodes)
 #he *= 0.5
 #he = hull_draft/1.5 #16 cores
 #he *=0.5 #128 but can run on 2 cores with 8G
@@ -211,8 +211,9 @@ else:
         domain.writePoly("mesh_"+vessel)
     else:
         domain.writePoly("meshNoVessel")
-    triangleOptions="VApq1.4q10ena%e" % ((he**3)/6.0,)
-logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
+    triangleOptions="VApq1.45q10ena%e" % ((he**3)/6.0,)
+logEvent("""Mesh generated using: tetgen %s %s"""  % (triangleOptions,domain.polyfile+".poly"))
+
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
@@ -305,7 +306,7 @@ nDTout             = %i
 
 #  Discretization -- input options  
 useOldPETSc=False
-useSuperlu = True # set to False if running in parallel with petsc.options
+useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -353,7 +354,8 @@ elif spaceOrder == 2:
     
 
 # Numerical parameters
-ns_forceStrongDirichlet = True#False
+ns_forceStrongDirichlet = False
+weak_bc_penalty_constant = 1000.0
 if useMetrics:
     ns_shockCapturingFactor  = 0.3
     ns_lag_shockCapturing = False#True
