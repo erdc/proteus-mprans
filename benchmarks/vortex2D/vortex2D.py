@@ -11,9 +11,9 @@ atol_u = {0:1.0e-4}
 rtol_res = {0:1.0e-4}
 atol_res = {0:1.0e-4}
 #
-timeIntegration_vof = "vbdf"#be,flcbdf,rk
-timeIntegration_ls = "vbdf"#be,flcbdf,rk
-timeOrder = 2
+timeIntegration_vof = "be"#be,flcbdf,rk
+timeIntegration_ls = "be"#be,flcbdf,rk
+timeOrder = 1
 
 runCFL = 0.3#0.3,0.185,0.125 for dgp1,dgp2,dgpk(3)
 #
@@ -35,7 +35,7 @@ else:
 from proteus import MeshTools
 partitioningType = MeshTools.MeshParallelPartitioningTypes.node
 #spatial mesh
-lRefinement=4
+lRefinement=3
 #tag simulation name to level of refinement
 #soname="vortexcgp2_bdf2_mc"+`lRefinement`
 nn=nnx=nny=(2**lRefinement)*10+1
@@ -59,9 +59,9 @@ T = 8.0#8.0#
 nDTout = 80
 #mass correction
 applyCorrection=True
-applyRedistancing=True
+applyRedistancing=False#True
 redist_Newton=False#True
-onlyVOF=True
+onlyVOF=False#True
 #smoothing factors
 #eps
 epsFactHeaviside=epsFactDirac=epsFact_vof=1.5
@@ -72,12 +72,12 @@ if useMetrics:
     shockCapturingFactor_vof=0.2
     shockCapturingFactor_ls=0.2
     shockCapturingFactor_rd=0.9
-    lag_shockCapturing_vof=False#True
-    lag_shockCapturing_ls=False#True
+    lag_shockCapturing_vof=True
+    lag_shockCapturing_ls=True
     lag_shockCapturing_rd=False
 else:
-    shockCapturingFactor_vof=0.1
-    shockCapturingFactor_ls=0.1
+    shockCapturingFactor_vof=0.2
+    shockCapturingFactor_ls=0.2
     shockCapturingFactor_rd=0.9
     lag_shockCapturing_vof=True
     lag_shockCapturing_ls=True
@@ -85,9 +85,9 @@ else:
 
 #use absolute tolerances on al models
 atolRedistance = max(1.0e-12,0.01*he)
-atolConservation = max(1.0e-12,he**2)
-atolVolumeOfFluid= max(1.0e-12,he**2)
-atolLevelSet     = max(1.0e-12,he**2)
+atolConservation = max(1.0e-12,0.001*he**2)
+atolVolumeOfFluid= max(1.0e-12,0.001*he**2)
+atolLevelSet     = max(1.0e-12,0.001*he**2)
 #controls 
 linearSolverConvergenceTest = 'r-true' #rits is do a set number of iterations, r-true uses true residual, PETSc default is preconditioned residual
 #redist solver

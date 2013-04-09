@@ -7,14 +7,11 @@ stepController  = Min_dt_cfl_controller
 femSpaces = {0:basis}
 
 massLumping       = False
-conservativeFlux  = None
-#numericalFluxType = Advection_DiagonalUpwind_Diffusion_IIPG_exterior
-#subgridError      = Advection_ASGS(coefficients,nd,lag=False) #needs to be addressed or just skip because going to handle in optimized code anyway?
-#shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=kappa_shockCapturingFactor,lag=True)
 numericalFluxType = Kappa.NumericalFlux
+conservativeFlux  = None
 subgridError      = Kappa.SubgridError(coefficients=coefficients,nd=nd)
 shockCapturing    = Kappa.ShockCapturing(coefficients,nd,shockCapturingFactor=kappa_shockCapturingFactor,
-                                         lag=True)
+                                         lag=kappa_lag_shockCapturing)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton
@@ -24,7 +21,7 @@ nonlinearSmoother = None
 linearSmoother    = None
 #printNonlinearSolverInfo = True
 matrix = SparseMatrix
-if not useSuperlu:
+if not useOldPETSc and not useSuperlu:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
 else:
@@ -32,12 +29,15 @@ else:
     levelLinearSolver      = LU
 
 linear_solver_options_prefix = 'kappa_'
-levelNonlinearSolverConvergenceTest = 'rits'
-linearSolverConvergenceTest         = 'rits'
+levelNonlinearSolverConvergenceTest = 'r'#'rits'
+linearSolverConvergenceTest         = 'r'#'rits'
 
-tolFac = 1e-3
-nl_atol_res = 1.0e-8
+tolFac = 0.0
+linTolFac =0.0
+l_atol_res = 0.001*kappa_nl_atol_res
+nl_atol_res = kappa_nl_atol_res
+useEisenstatWalker = True
 
-maxNonlinearIts = 10
+maxNonlinearIts = 50
 maxLineSearches = 0
 

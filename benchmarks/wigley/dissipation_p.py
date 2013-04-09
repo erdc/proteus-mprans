@@ -1,6 +1,6 @@
 from proteus import *
 from proteus.default_p import *
-from dambreak import *
+from wigley import *
 from proteus.mprans import Dissipation
 
 LevelModelType = Dissipation.LevelModel
