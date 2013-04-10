@@ -45,22 +45,26 @@ waterLevel   = 0.241984
 barycenters = numpy.zeros((8,3),'d')
 barycenters[7,:] = hull_cg
 
-L = (20.0,3.0,5.75)
-x_ll = (-5.0,-L[1]/2.0,-3.25)
+vessel = 5415
+genMesh=False
+#he=10.0
+he=5.0
 
 #debug
-
-
-nLevels = 1
 
 #he = hull_length/11
 #vessel = 'wigley'
 #genMesh=True
-vessel = 5415
-genMesh=False
-he=5.0
+#L = (20.0,3.0,5.75)
+#x_ll = (-5.0,-L[1]/2.0,-3.25)
+
 #vessel = None
 #genMesh=True
+
+
+
+nLevels = 1
+
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
 if vessel is 5415:
     domain = Domain.MeshTetgenDomain(fileprefix="mesh")
@@ -326,18 +330,18 @@ elif spaceOrder == 2:
     
 
 # Numerical parameters
-ns_forceStrongDirichlet = False
+ns_forceStrongDirichlet = True
 weak_bc_penalty_constant = 1000.0
 if useMetrics:
     ns_shockCapturingFactor  = 0.3
-    ns_lag_shockCapturing = True
+    ns_lag_shockCapturing = False#True
     ns_lag_subgridError = True
     ls_shockCapturingFactor  = 0.3
-    ls_lag_shockCapturing = True
+    ls_lag_shockCapturing = False#True
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.5
     vof_shockCapturingFactor = 0.3
-    vof_lag_shockCapturing = True
+    vof_lag_shockCapturing = False#True
     vof_sc_uref = 1.0
     vof_sc_beta = 1.5
     rd_shockCapturingFactor  = 0.9
@@ -392,7 +396,7 @@ kappa_nl_atol_res = max(1.0e-12,0.01*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.01*he**2)
 
 #turbulence
-ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:
@@ -474,20 +478,20 @@ def outflowVF(x,t):
 
 def twpflowPressure(x,t):
     p_L = L[2]*rho_1*g[2]
-    phi_L = wavePhi((x[0],x[1],L[2]),t) 
+    phi_L = wavePhi((x[0],x[1],x_ll[2]+L[2]),t) 
     phi = wavePhi(x,t)
     return p_L - g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 def twpflowPressure_init(x,t):
     p_L = L[2]*rho_1*g[2]
-    phi_L = L[2] - inflowHeightMean
+    phi_L = (x_ll[2]+L[2]) - inflowHeightMean
     phi = x[2] - inflowHeightMean
     return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 def outflowPressure(x,t):
     p_L = L[2]*rho_1*g[2]
-    phi_L = L[2] - outflowHeight
+    phi_L = (x_ll[2]+L[2]) - outflowHeight
     phi = x[2] - outflowHeight
     return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
