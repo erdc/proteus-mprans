@@ -24,6 +24,11 @@ else:
 if wigley.movingDomain:
     pnList.append(("moveMesh_p","moveMesh_n"))
 
+if wigley.useRANS > 0:
+    pnList.append(("kappa_p",
+                   "kappa_n"))
+    pnList.append(("dissipation_p",
+                   "dissipation_n"))
 name = "wigley"
 
 systemStepControllerType = Sequential_MinAdaptiveModelStep

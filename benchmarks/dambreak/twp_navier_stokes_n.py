@@ -14,27 +14,13 @@ massLumping       = False
 numericalFluxType = None
 conservativeFlux  = None
 
-class NumericalFluxType(NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior):
-    hasInterior=False
-    def __init__(self,vt,getPointwiseBoundaryConditions,
-                 getAdvectiveFluxBoundaryConditions,
-                 getDiffusiveFluxBoundaryConditions,
-                 getPeriodicBoundaryConditions=None):
-        NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior.__init__(self,vt,getPointwiseBoundaryConditions,
-                                                                               getAdvectiveFluxBoundaryConditions,
-                                                                               getDiffusiveFluxBoundaryConditions,getPeriodicBoundaryConditions)
-        self.penalty_constant = 100.0
-        self.includeBoundaryAdjoint=True
-        self.boundaryAdjoint_sigma=1.0
-        self.hasInterior=False
-
-numericalFluxType = NumericalFluxType
-subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=True,delayLagSteps=3,hFactor=hFactor,noPressureStabilization=False)
-shockCapturing = RANS2P.ShockCapturing(coefficients,nd,ns_shockCapturingFactor,lag=True)
+numericalFluxType = RANS2P.NumericalFlux
+subgridError = RANS2P.SubgridError(coefficients,nd,lag=ns_lag_subgridError,hFactor=hFactor)
+shockCapturing = RANS2P.ShockCapturing(coefficients,nd,ns_shockCapturingFactor,lag=ns_lag_shockCapturing)
 
 fullNewtonFlag = True
-multilevelNonlinearSolver = Newton
-levelNonlinearSolver      = Newton
+multilevelNonlinearSolver = NewtonNS
+levelNonlinearSolver      = NewtonNS
 
 nonlinearSmoother = None
 linearSmoother    = SimpleNavierStokes3D
@@ -56,9 +42,10 @@ linear_solver_options_prefix = 'rans2p_'
 levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest             = 'r-true'
 
-tolFac = 1.0e-3
-nl_atol_res = max(1.0e-6,0.1*he**3/6.0)
-
+tolFac = 0.0
+l_atol_res = 0.001*vof_nl_atol_res
+nl_atol_res = ns_nl_atol_res
 useEisenstatWalker = True
-maxNonlinearIts = 20
+maxNonlinearIts = 50
 maxLineSearches = 0
+conservativeFlux = {0:'pwl-bdm-opt'}

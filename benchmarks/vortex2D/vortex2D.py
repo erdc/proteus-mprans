@@ -1,5 +1,5 @@
 #if True uses PETSc solvers
-parallel = True
+parallel = False
 linearSmoother = None
 #compute mass balance statistics or not
 checkMass=False#True
@@ -11,10 +11,10 @@ atol_u = {0:1.0e-4}
 rtol_res = {0:1.0e-4}
 atol_res = {0:1.0e-4}
 #
-timeIntegration_vof = "BE"
-timeIntegration_ls = "BE"
-#if want bdf2 or bdf1
-timeOrder = 1
+timeIntegration_vof = "flcbdf"#vbdf,be,flcbdf,rk
+timeIntegration_ls = "flcbdf"#vbdf,be,flcbdf,rk
+timeOrder = 2
+
 runCFL = 0.3#0.3,0.185,0.125 for dgp1,dgp2,dgpk(3)
 #
 #spatial approximation orders
@@ -35,7 +35,7 @@ else:
 from proteus import MeshTools
 partitioningType = MeshTools.MeshParallelPartitioningTypes.node
 #spatial mesh
-lRefinement=7
+lRefinement=3
 #tag simulation name to level of refinement
 #soname="vortexcgp2_bdf2_mc"+`lRefinement`
 nn=nnx=nny=(2**lRefinement)*10+1
@@ -59,35 +59,35 @@ T = 8.0#8.0#
 nDTout = 80
 #mass correction
 applyCorrection=True
-applyRedistancing=True
+applyRedistancing=False#True
 redist_Newton=False#True
-onlyVOF=False
+onlyVOF=False#True
 #smoothing factors
 #eps
 epsFactHeaviside=epsFactDirac=epsFact_vof=1.5
 epsFactRedistance=0.33
 epsFactDiffusion=10.0
 #
-if useMetrics==0.0:
-    shockCapturingFactor_vof=0.1
-    shockCapturingFactor_ls=0.1
+if useMetrics:
+    shockCapturingFactor_vof=0.2
+    shockCapturingFactor_ls=0.2
     shockCapturingFactor_rd=0.9
     lag_shockCapturing_vof=True
     lag_shockCapturing_ls=True
     lag_shockCapturing_rd=False
 else:
-    shockCapturingFactor_vof=0.1
-    shockCapturingFactor_ls=0.1
+    shockCapturingFactor_vof=0.2
+    shockCapturingFactor_ls=0.2
     shockCapturingFactor_rd=0.9
-    lag_shockCapturing_vof=False
-    lag_shockCapturing_ls=False
+    lag_shockCapturing_vof=True
+    lag_shockCapturing_ls=True
     lag_shockCapturing_rd=False
 
 #use absolute tolerances on al models
-atolRedistance = 0.1*he
-atolConservation = 1.0e-6
-atolVolumeOfFluid= 1.0e-6
-atolLevelSet     = 1.0e-6
+atolRedistance = max(1.0e-12,0.01*he)
+atolConservation = max(1.0e-12,0.001*he**2)
+atolVolumeOfFluid= max(1.0e-12,0.001*he**2)
+atolLevelSet     = max(1.0e-12,0.001*he**2)
 #controls 
 linearSolverConvergenceTest = 'r-true' #rits is do a set number of iterations, r-true uses true residual, PETSc default is preconditioned residual
 #redist solver
@@ -100,6 +100,6 @@ correctionType = 'cg'
 #correctionType = 'none'
 if useHex:
     hex=True
-    soname="vortex_c0q"+`pDegree_ls`+correctionType+"_bdf_"+`timeOrder`+"_level_"+`lRefinement`
+    soname="vortex_c0q"+`pDegree_ls`+correctionType+"_"+timeIntegration_vof+"_"+`timeOrder`+"_level_"+`lRefinement`
 else:
-    soname="vortex_c0p"+`pDegree_ls`+correctionType+"_bdf_"+`timeOrder`+"_level_"+`lRefinement`
+    soname="vortex_c0p"+`pDegree_ls`+correctionType+"_"+timeIntegration_vof+"_"+`timeOrder`+"_level_"+`lRefinement`

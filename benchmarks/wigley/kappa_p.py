@@ -1,6 +1,6 @@
 from proteus import *
 from proteus.default_p import *
-from dtmb import *
+from wigley import *
 from proteus.mprans import Kappa
 
 LevelModelType = Kappa.LevelModel

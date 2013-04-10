@@ -16,6 +16,6 @@ mkdir $WORKDIR/dambreak.$PBS_JOBID
 #aprun -N 8 -S 2 -n <procs>    when putting 8 processes on the node
 #aprun -N 4 -S 1 -n <procs>    when putting 4 processes on the node
 #aprun -n 32 parun dambreak_so.py -l 7 -v -G -O ../inputTemplates/petsc.options.asm -D $WORKDIR/dambreak.$PBS_JOBID
-aprun -n 32 parun dambreak_so.py -l 7 -v -G -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dambreak.$PBS_JOBID
+aprun -n 32 parun dambreak_so.py -l 7 -v -G -M 1.9 -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dambreak.$PBS_JOBID
 #aprun -n 32 parun dambreak_so.py -l 7 -v -G -O ../inputTemplates/petsc.options.mumps -D $WORKDIR/dambreak.$PBS_JOBID
 #aprun -n 128 parun dambreak_so.py -l 7 -v -G -O ../inputTemplates/petsc.options.asm -D $WORKDIR/dambreak.$PBS_JOBID

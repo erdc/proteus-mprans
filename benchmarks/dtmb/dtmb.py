@@ -45,25 +45,22 @@ waterLevel   = 0.241984
 barycenters = numpy.zeros((8,3),'d')
 barycenters[7,:] = hull_cg
 
+L = (20.0,3.0,5.75)
+x_ll = (-5.0,-L[1]/2.0,-3.25)
+
+#debug
+
+
 nLevels = 1
 
-#he = L[2]/11 #16 cores
-#he *=0.5 #128 
-#he *=0.5 #1024
-he = 2.0
+#he = hull_length/11
+#vessel = 'wigley'
+#genMesh=True
 vessel = 5415
 genMesh=False
-#vessel = 'wigley'
-#genMesh=False
-#vessel = 'wigley'
-#genMesh=False
-#he = 3.0
-#he = 0.1
-#vessel = 'wigley'
-#genMesh=False
+he=5.0
 #vessel = None
 #genMesh=True
-
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
 if vessel is 5415:
     domain = Domain.MeshTetgenDomain(fileprefix="mesh")
@@ -101,25 +98,23 @@ else:
     regionFlags=[1.0]
     holes=[]
     if vessel is 'wigley':
-        hull_length = 5.8 - (-0.5)
-        hull_beam = 0.5 - (-0.5)
-        hull_draft = 0.7 - (-0.1)
-        hull_center = (-0.5+0.5*hull_length,
-                       -0.5+0.5*hull_beam,
-                       -0.1+0.5*hull_draft)
+        hull_beam   = hull_length/10.0
+        hull_draft  = hull_length/16.0
+        hull_center = (hull_cg[0],0.0,waterLevel)
         n_points_length = int(ceil(hull_length/he))
-        n_points_draft = int(ceil(hull_draft/he))
+        n_points_draft  = 2*int(ceil(hull_draft/he))+1
         dx = hull_length/float(n_points_length-1)
-        dz = hull_draft/float(n_points_draft-1)
+        dz = 2.0*hull_draft/float(n_points_draft-1)
         #grid on right half of hull
         for i in range(n_points_length):
             for j in range(n_points_draft):
-                x = i*dx 
-                z = j*dz
-                y = 0.5*hull_beam*(1.0 - (2.0*(x-0.5*hull_length)/hull_length)**2) * (1.0 - ((hull_draft-z)/hull_draft)**2)
-                vertices.append([x+hull_center[0]-0.5*hull_length,
+                x = i*dx - 0.5*hull_length
+                z = j*dz - hull_draft
+                zStar = min(0.0,z)
+                y = 0.5*hull_beam*(1.0 - 4.0*(x/hull_length)**2) * (1.0 - (zStar/hull_draft)**2)
+                vertices.append([x+hull_center[0],
                                  y+hull_center[1],
-                                 z+hull_center[2]-0.5*hull_draft])
+                                 z+hull_center[2]])
                 vertexFlags.append(boundaryTags['obstacle'])
         def vN_right(i,j):
             return 8 + i*n_points_draft+j
@@ -138,12 +133,13 @@ else:
         #grid on left half of hull
         for i in range(1,n_points_length-1):
             for j in range(1,n_points_draft):
-                x = i*dx
-                z = j*dz
-                y = 0.5*hull_beam*(1.0 - (2.0*(x-0.5*hull_length)/hull_length)**2)*(1.0 - ((hull_draft-z)/hull_draft)**2)
-                vertices.append([x+hull_center[0]-0.5*hull_length,
-                                 hull_center[1]-y,
-                                 z+hull_center[2]-0.5*hull_draft])
+                x = i*dx - 0.5*hull_length
+                z = j*dz - hull_draft
+                zStar = min(0.0,z)
+                y = 0.5*hull_beam*(1.0 - 4.0*(x/hull_length)**2) * (1.0 - (zStar/hull_draft)**2)
+                vertices.append([x+hull_center[0],
+                                 hull_center[1] - y,
+                                 z+hull_center[2]])
                 vertexFlags.append(boundaryTags['obstacle'])
         def vN_left(i,j):
             if i== 0 or j==0:
@@ -163,11 +159,11 @@ else:
                     facets.append([[vN_left(i,j),vN_left(i,j+1),vN_left(i+1,j)]])
                     facetFlags.append(boundaryTags['obstacle'])
                     facets.append([[vN_left(i,j+1),vN_left(i+1,j+1),vN_left(i+1,j)]])
-                    facetFlags.append(boundaryTags['obstacle'])                
+                    facetFlags.append(boundaryTags['obstacle'])
         topFacet=[]
         for i in range(n_points_length):
             topFacet.append(vN_right(i,n_points_draft-1))
-        for i in range(n_points_length-1,0,-1):
+        for i in range(n_points_length-2,0,-1):
             topFacet.append(vN_left(i,n_points_draft-1))
         facets.append([topFacet])
         facetFlags.append(boundaryTags['obstacle'])
@@ -187,7 +183,9 @@ else:
         domain.writePoly("mesh_"+vessel)
     else:
         domain.writePoly("meshNoVessel")
-    triangleOptions="VApq1.25q12ena%e" % ((he**3)/6.0,)
+    triangleOptions="VApq1.45q10ena%e" % ((he**3)/6.0,)
+    logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
+
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
@@ -197,8 +195,8 @@ quad_order = 3
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
-openTop = False
-openSides = False#True
+openTop = True
+openSides = True
 smoothBottom = False
 smoothObstacle = False
 rampInitialConditions = False
@@ -214,62 +212,14 @@ freezeLevelSet=True
 Fr = 0.28
 #Fr = 0.51
 Um = Fr*sqrt(fabs(g[2])*hull_length)
-Re = hull_length*Um*rho_0/nu_0
+Re = hull_length*Um/nu_0
 
 residence_time = hull_length/Um
 dt_init=0.001
-T = 5*residence_time
-nDTout=500
+T = 10*residence_time
+nDTout=200
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
-
-#----------------------------------------------------
-# Numerical parameters
-#----------------------------------------------------
-
-useRBLES   = 0.0
-useMetrics = 1.0
-useVF = 1.0
-useOnlyVF = False
-useK_Dissipation=False
-useK_Epsilon=False
-
-ns_shockCapturingFactor=0.1
-
-ls_shockCapturingFactor=0.1
-ls_sc_uref = 1.0
-ls_sc_beta = 1.5
-
-vof_shockCapturingFactor=0.1
-vof_sc_uref = 1.0
-vof_sc_beta = 1.5
-
-rd_shockCapturingFactor=0.9
-
-kappa_shockCapturingFactor=0.9
-kappa_sc_uref = 1.0
-kappa_sc_beta = 1.5
-
-dissipation_shockCapturingFactor=0.9
-dissipation_sc_uref = 1.0
-dissipation_sc_beta = 1.5
-
-#----------------------------------------------------
-# Interface width
-#----------------------------------------------------
-epsFact = 1.5
-
-epsFact_density          = epsFact 
-epsFact_viscosity        = epsFact 
-epsFact_curvature        = epsFact 
-
-epsFact_redistance = 0.33
-
-epsFact_consrv_heaviside = epsFact 
-epsFact_consrv_dirac     = epsFact 
-epsFact_consrv_diffusion=10.0
-
-epsFact_vof              = epsFact 
 
 #----------------------------------------------------
 # Airy wave functions
@@ -281,7 +231,7 @@ wave_angle  = 0.0     * pi/180.0
 #----------------------------------------------------
 water_depth  = waterLevel-x_ll[2]
 wave_length  = 2.0*pi/wave_length      
-wave_periode = sqrt(-g[2]*wave_length*tanh(wave_length/waterLevel))   
+wave_periode = sqrt(-g[2]*wave_length*tanh(wave_length/water_depth))   
 wave_vel_amp = wave_periode*(wave_height/sinh(wave_length*water_depth))       
 
 xy   = lambda x:   cos(wave_angle)*x[0] + sin(wave_angle)*x[1]
@@ -332,8 +282,12 @@ useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
-useMetrics = 0.0
-
+useMetrics = 1.0
+useVF = 1.0
+useOnlyVF = False
+useRANS = 0 # 0 -- None
+            # 1 -- K-Epsilon
+            # 2 -- K-Omega
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -371,6 +325,79 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 
+# Numerical parameters
+ns_forceStrongDirichlet = False
+weak_bc_penalty_constant = 1000.0
+if useMetrics:
+    ns_shockCapturingFactor  = 0.3
+    ns_lag_shockCapturing = True
+    ns_lag_subgridError = True
+    ls_shockCapturingFactor  = 0.3
+    ls_lag_shockCapturing = True
+    ls_sc_uref  = 1.0
+    ls_sc_beta  = 1.5
+    vof_shockCapturingFactor = 0.3
+    vof_lag_shockCapturing = True
+    vof_sc_uref = 1.0
+    vof_sc_beta = 1.5
+    rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
+    epsFact_density    = 1.5
+    epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
+    epsFact_redistance = 0.33
+    epsFact_consrv_diffusion = 10.0
+    redist_Newton = False
+    kappa_shockCapturingFactor = 0.9
+    kappa_lag_shockCapturing = True
+    kappa_sc_uref = 1.0
+    kappa_sc_beta = 1.0
+    dissipation_shockCapturingFactor = 0.9
+    dissipation_lag_shockCapturing = True
+    dissipation_sc_uref = 1.0
+    dissipation_sc_beta = 1.0
+else:
+    ns_shockCapturingFactor  = 0.9
+    ns_lag_shockCapturing = True
+    ns_lag_subgridError = True
+    ls_shockCapturingFactor  = 0.9
+    ls_lag_shockCapturing = True
+    ls_sc_uref  = 1.0
+    ls_sc_beta  = 1.0
+    vof_shockCapturingFactor = 0.9
+    vof_lag_shockCapturing = True
+    vof_sc_uref  = 1.0
+    vof_sc_beta  = 1.0
+    rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
+    epsFact_density    = 1.5
+    epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
+    epsFact_redistance = 0.33
+    epsFact_consrv_diffusion = 10.0
+    redist_Newton = False#True
+    kappa_shockCapturingFactor = 0.9
+    kappa_lag_shockCapturing = True#False
+    kappa_sc_uref  = 1.0
+    kappa_sc_beta  = 1.0
+    dissipation_shockCapturingFactor = 0.9
+    dissipation_lag_shockCapturing = True#False
+    dissipation_sc_uref  = 1.0
+    dissipation_sc_beta  = 1.0
+
+ns_nl_atol_res = max(1.0e-12,0.001*he**2)
+vof_nl_atol_res = max(1.0e-12,0.001*he**2)
+ls_nl_atol_res = max(1.0e-12,0.001*he**2)
+mcorr_nl_atol_res = max(1.0e-12,0.001*he**2)
+rd_nl_atol_res = max(1.0e-12,0.01*he)
+kappa_nl_atol_res = max(1.0e-12,0.01*he**2)
+dissipation_nl_atol_res = max(1.0e-12,0.01*he**2)
+
+#turbulence
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+if useRANS == 1:
+    ns_closure = 3
+elif useRANS == 2:
+    ns_closure == 4
+
 #wave/current properties
 windspeed_u = Um
 windspeed_v = 0.0
@@ -382,13 +409,14 @@ outflowVelocity = (Um,0.0,0.0)
 inflowHeightMean = waterLevel
 inflowVelocityMean = (Um,0.0,0.0)
 
-kInflow = 0.003*Um*Um
-
 def waveHeight(x,t):
     return waterLevel
 
 def waveVelocity_u(x,t):
-    return Um
+    if rampInitialConditions:
+        return min(1.0,0.5*t/residence_time)*Um
+    else:
+        return Um
 
 def waveVelocity_v(x,t):
     return 0.0
@@ -412,7 +440,10 @@ def twpflowVelocity_u(x,t):
 #    waterspeed = waveVelocity_u(x,t)
 #    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
 #    return H*windspeed_u + (1.0-H)*waterspeed
-    return Um
+    if rampInitialConditions:
+        return Um*min(1.0,0.5*t/residence_time)
+    else:
+        return Um
 
 def twpflowVelocity_v(x,t):
 #    waterspeed = waveVelocity_v(x,t)
@@ -440,7 +471,6 @@ def twpflowFlux(x,t):
 
 def outflowVF(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,x[2] - outflowHeight)
-
 
 def twpflowPressure(x,t):
     p_L = L[2]*rho_1*g[2]

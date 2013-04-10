@@ -4781,6 +4781,8 @@ namespace proteus
       int permutations[nQuadraturePoints_elementBoundary];
       double xArray_left[nQuadraturePoints_elementBoundary*3],
     	xArray_right[nQuadraturePoints_elementBoundary*3];
+      for (int i=0;i<nQuadraturePoints_elementBoundary;i++)
+	permutations[i]=i;//just to initialize
       for (int ebNE = 0; ebNE < nExteriorElementBoundaries_global; ebNE++)
     	{
     	  register int ebN = exteriorElementBoundariesArray[ebNE];
@@ -4810,14 +4812,13 @@ namespace proteus
     	    metricTensorDetSqrt,
     	    normal[3],
     	    x,y,z;
-    	  //double G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty;
 	  
     	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++)
     	    {
     	      ck.calculateMapping_elementBoundary(left_eN_global,
     						  left_ebN_element,
     						  kb,
-    						  left_ebN_element*kb,
+    						  left_ebN_element*nQuadraturePoints_elementBoundary+kb,
     						  mesh_dof,
     						  mesh_l2g,
     						  mesh_trial_trace_ref,
@@ -4838,7 +4839,7 @@ namespace proteus
     	      ck.calculateMapping_elementBoundary(right_eN_global,
     						  right_ebN_element,
     						  kb,
-    						  right_ebN_element*kb,
+    						  right_ebN_element*nQuadraturePoints_elementBoundary+kb,
     						  mesh_dof,
     						  mesh_l2g,
     						  mesh_trial_trace_ref,
@@ -4887,8 +4888,8 @@ namespace proteus
     		w_right=0.0;
     	      register int left_kb = kb,
     		right_kb = permutations[kb],
-    		left_ebN_element_kb_nDOF_test_element=left_ebN_element*left_kb*nDOF_test_element,
-    		right_ebN_element_kb_nDOF_test_element=right_ebN_element*right_kb*nDOF_test_element;
+    		left_ebN_element_kb_nDOF_test_element=(left_ebN_element*nQuadraturePoints_elementBoundary+left_kb)*nDOF_test_element,
+		right_ebN_element_kb_nDOF_test_element=(right_ebN_element*nQuadraturePoints_elementBoundary+right_kb)*nDOF_test_element;
     	      //
     	      //calculate the velocity solution at quadrature points on left and right
     	      //

@@ -47,3 +47,4 @@ nl_atol_res = ns_nl_atol_res
 useEisenstatWalker = True
 maxNonlinearIts = 50
 maxLineSearches = 0
+conservativeFlux = {0:'pwl-bdm-opt'}

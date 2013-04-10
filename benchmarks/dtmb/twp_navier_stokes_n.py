@@ -14,23 +14,9 @@ massLumping       = False
 numericalFluxType = None
 conservativeFlux  = None
 
-class NumericalFluxType(NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior):
-    hasInterior=False
-    def __init__(self,vt,getPointwiseBoundaryConditions,
-                 getAdvectiveFluxBoundaryConditions,
-                 getDiffusiveFluxBoundaryConditions,
-                 getPeriodicBoundaryConditions=None):
-        NavierStokes_Advection_DiagonalUpwind_Diffusion_SIPG_exterior.__init__(self,vt,getPointwiseBoundaryConditions,
-                                                                               getAdvectiveFluxBoundaryConditions,
-                                                                               getDiffusiveFluxBoundaryConditions,getPeriodicBoundaryConditions)
-        self.penalty_constant = 100.0
-        self.includeBoundaryAdjoint=True
-        self.boundaryAdjoint_sigma=1.0
-        self.hasInterior=False
-
-numericalFluxType = NumericalFluxType
-subgridError = NavierStokesASGS_velocity_pressure_optV2(coefficients,nd,lag=True,delayLagSteps=1,hFactor=hFactor,noPressureStabilization=False)
-shockCapturing = NavierStokes_SC_opt(coefficients,nd,ns_shockCapturingFactor,lag=True)
+numericalFluxType = RANS2P.NumericalFlux
+subgridError = RANS2P.SubgridError(coefficients,nd,lag=ns_lag_subgridError,hFactor=hFactor)
+shockCapturing = RANS2P.ShockCapturing(coefficients,nd,ns_shockCapturingFactor,lag=ns_lag_shockCapturing)
 
 fullNewtonFlag = True
 multilevelNonlinearSolver = NewtonNS
@@ -53,15 +39,13 @@ if useSuperlu:
     levelLinearSolver      = LU
 
 linear_solver_options_prefix = 'rans2p_'
-nonlinearSolverConvergenceTest = 'rits'
-levelNonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest             = 'r-true'
 
 tolFac = 0.0
-nl_atol_res = he**2
-l_atol_res = 0.001*nl_atol_res
+l_atol_res = 0.001*vof_nl_atol_res
+nl_atol_res = ns_nl_atol_res
 useEisenstatWalker = True
 maxNonlinearIts = 50
 maxLineSearches = 0
-
-#auxiliaryVariables = [RelaxationZoneWaveGenerator(twpflowVelocity_w,twpflowVelocity_w,twpflowVelocity_w,xRelaxCenter)]
+conservativeFlux = {0:'pwl-bdm-opt'}

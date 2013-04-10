@@ -1,8 +1,15 @@
 from proteus import *
 from ls_p import *
 
-timeIntegration = BackwardEuler_cfl
-stepController  = Min_dt_controller
+if timeDiscretization=='vbdf':
+    timeIntegration = VBDF
+    timeOrder=2
+elif timeDiscretization=='flcbdf':
+    timeIntegration = FLCBDF
+else:
+    timeIntegration = BackwardEuler_cfl
+
+stepController  = Min_dt_cfl_controller
 
 femSpaces = {0:basis}
 

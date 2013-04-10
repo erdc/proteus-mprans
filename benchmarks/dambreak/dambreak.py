@@ -5,7 +5,7 @@ from proteus.default_n import *
    
 #  Discretization -- input options  
 #Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
-Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
+Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
 useSuperlu=False
@@ -16,7 +16,10 @@ useMetrics = 1.0
 applyCorrection=True
 useVF = 1.0
 useOnlyVF = False
-redist_Newton = True
+redist_Newton = False#True
+useRANS = 0 # 0 -- None
+            # 1 -- K-Epsilon
+            # 2 -- K-Omega
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -56,11 +59,13 @@ elif spaceOrder == 2:
 # Domain and mesh
 L = (0.584,0.146,0.350)
 he = L[0]/float(4*Refinement-1)
+he*=0.5
 quasi2D = True
 
 if quasi2D:
     L = (L[0],he,L[2])
 
+# Domain and mesh
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -133,33 +138,68 @@ runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
+ns_forceStrongDirichlet = False#True
 if useMetrics:
-    ns_shockCapturingFactor  = 0.1
-    ls_shockCapturingFactor  = 0.1
+    ns_shockCapturingFactor  = 0.9
+    ns_lag_shockCapturing = True
+    ns_lag_subgridError = True
+    ls_shockCapturingFactor  = 0.9
+    ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
-    ls_sc_beta  = 1.0
-    vof_shockCapturingFactor = 0.1
+    ls_sc_beta  = 1.5
+    vof_shockCapturingFactor = 0.9
+    vof_lag_shockCapturing = True
     vof_sc_uref = 1.0
-    vof_sc_beta = 1.0
+    vof_sc_beta = 1.5
     rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
     epsFact_density    = 1.5
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
+    redist_Newton = False
 else:
-    ns_shockCapturingFactor  = 0.1
-    ls_shockCapturingFactor  = 0.1
+    ns_shockCapturingFactor  = 0.9
+    ns_lag_shockCapturing = True
+    ns_lag_subgridError = True
+    ls_shockCapturingFactor  = 0.9
+    ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.0
-    vof_shockCapturingFactor = 0.1
+    vof_shockCapturingFactor = 0.9
+    vof_lag_shockCapturing = True
     vof_sc_uref  = 1.0
     vof_sc_beta  = 1.0
     rd_shockCapturingFactor  = 0.9
+    rd_lag_shockCapturing = False
     epsFact_density    = 1.5
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    
+    redist_Newton = False
+    kappa_shockCapturingFactor = 0.9
+    kappa_lag_shockCapturing = True#False
+    kappa_sc_uref  = 1.0
+    kappa_sc_beta  = 1.0
+    dissipation_shockCapturingFactor = 0.9
+    dissipation_lag_shockCapturing = True#False
+    dissipation_sc_uref  = 1.0
+    dissipation_sc_beta  = 1.0
+
+ns_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
+vof_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
+ls_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
+rd_nl_atol_res = max(1.0e-8,0.1*he)
+mcorr_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+kappa_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+dissipation_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+
+#turbulence
+ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+if useRANS == 1:
+    ns_closure = 3
+elif useRANS == 2:
+    ns_closure == 4
 # Water
 rho_0 = 998.2
 nu_0  = 1.004e-6
@@ -191,6 +231,4 @@ def signedDistance(x):
             return phi_x
         else:
             return sqrt(phi_x**2 + phi_z**2)
-
-
 

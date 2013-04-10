@@ -1026,8 +1026,9 @@ namespace proteus
       //}
 
       nu_t = fmax(nu_t,1.0e-4*nu); //limit according to Lew, Buscaglia etal 01
-     //mwf hack
+      //mwf hack
       nu_t     = fmin(nu_t,1.0e6*nu);
+
 #ifdef COMPRESSIBLE_FORM
       eddy_viscosity = nu_t*rho;
       //u momentum diffusion tensor
@@ -1114,7 +1115,7 @@ namespace proteus
       oneByAbsdt =  fabs(dmt);
       tau_v = 1.0/(4.0*viscosity/(h*h) + 2.0*nrm_df/h + oneByAbsdt);
       tau_p = (4.0*viscosity + 2.0*nrm_df*h + oneByAbsdt*h*h)/pfac;
-      //std::cout<<"tau_v "<<tau_v<<" tau_p "<<tau_p<<std::endl;
+      /* std::cout<<"tau_v "<<tau_v<<" tau_p "<<tau_p<<std::endl; */
     }
 
     inline
@@ -1136,7 +1137,7 @@ namespace proteus
          for (int J=0;J<nSpace;J++) 
            v_d_Gv += Ai[I]*G[I*nSpace+J]*Ai[J];     
     
-      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + Cd_sge*Kij*Kij*G_dd_G); 
+      tau_v = 1.0/sqrt(Ct_sge*A0*A0 + v_d_Gv + Cd_sge*Kij*Kij*G_dd_G + 1.0e-12); 
       tau_p = 1.0/(pfac*tr_G*tau_v);     
     }
 
@@ -2293,7 +2294,7 @@ namespace proteus
 		}
 
 	      norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v);// + pdeResidual_w*pdeResidual_w);
-	      q_numDiff_u[eN_k] = C_dc*norm_Rv*(useMetrics/sqrt(G_dd_G)  + 
+	      q_numDiff_u[eN_k] = C_dc*norm_Rv*(useMetrics/sqrt(G_dd_G+1.0e-12)  + 
 	                                        (1.0-useMetrics)*hFactor*hFactor*elementDiameter[eN]*elementDiameter[eN]);
 	      q_numDiff_v[eN_k] = q_numDiff_u[eN_k];
 	      q_numDiff_w[eN_k] = q_numDiff_u[eN_k];
@@ -4402,8 +4403,8 @@ namespace proteus
 					  rho_1,
 					  nu_1,
 					  useVF,
-					  bc_ebqe_vf_ext[ebNE_kb],
-					  bc_ebqe_phi_ext[ebNE_kb],
+					  ebqe_vf_ext[ebNE_kb],
+					  ebqe_phi_ext[ebNE_kb],
 					  porosity_ext,
 					  c_mu, //mwf hack
 					  ebqe_turb_var_0[ebNE_kb],
@@ -4785,6 +4786,8 @@ namespace proteus
       int permutations[nQuadraturePoints_elementBoundary];
       double xArray_left[nQuadraturePoints_elementBoundary*2],
     	xArray_right[nQuadraturePoints_elementBoundary*2];
+      for (int i=0;i<nQuadraturePoints_elementBoundary;i++)
+	permutations[i]=i;//just to initialize
       for (int ebNE = 0; ebNE < nExteriorElementBoundaries_global; ebNE++)
     	{
     	  register int ebN = exteriorElementBoundariesArray[ebNE];
@@ -4794,7 +4797,6 @@ namespace proteus
     		ebNE_kb_nSpace = ebNE*nQuadraturePoints_elementBoundary*nSpace+kb*nSpace;
     	      velocityAverage[ebN_kb_nSpace+0]=ebqe_velocity[ebNE_kb_nSpace+0];
     	      velocityAverage[ebN_kb_nSpace+1]=ebqe_velocity[ebNE_kb_nSpace+1];
-    	      /* velocityAverage[ebN_kb_nSpace+2]=ebqe_velocity[ebNE_kb_nSpace+2]; */
     	    }//ebNE
     	}
       for (int ebNI = 0; ebNI < nInteriorElementBoundaries_global; ebNI++)
@@ -4814,14 +4816,13 @@ namespace proteus
     	    metricTensorDetSqrt,
     	    normal[2],
     	    x,y,z;
-    	  //double G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty;
 	  
     	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++)
     	    {
     	      ck.calculateMapping_elementBoundary(left_eN_global,
     						  left_ebN_element,
     						  kb,
-    						  left_ebN_element*kb,
+    						  left_ebN_element*nQuadraturePoints_elementBoundary+kb,
     						  mesh_dof,
     						  mesh_l2g,
     						  mesh_trial_trace_ref,
@@ -4842,7 +4843,7 @@ namespace proteus
     	      ck.calculateMapping_elementBoundary(right_eN_global,
     						  right_ebN_element,
     						  kb,
-    						  right_ebN_element*kb,
+    						  right_ebN_element*nQuadraturePoints_elementBoundary+kb,
     						  mesh_dof,
     						  mesh_l2g,
     						  mesh_trial_trace_ref,
@@ -4891,8 +4892,8 @@ namespace proteus
     		w_right=0.0;
     	      register int left_kb = kb,
     		right_kb = permutations[kb],
-    		left_ebN_element_kb_nDOF_test_element=left_ebN_element*left_kb*nDOF_test_element,
-    		right_ebN_element_kb_nDOF_test_element=right_ebN_element*right_kb*nDOF_test_element;
+    		left_ebN_element_kb_nDOF_test_element=(left_ebN_element*nQuadraturePoints_elementBoundary+left_kb)*nDOF_test_element,
+		right_ebN_element_kb_nDOF_test_element=(right_ebN_element*nQuadraturePoints_elementBoundary+right_kb)*nDOF_test_element;
     	      //
     	      //calculate the velocity solution at quadrature points on left and right
     	      //

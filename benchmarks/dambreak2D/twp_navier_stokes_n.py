@@ -2,8 +2,15 @@ from proteus import *
 from twp_navier_stokes_p import *
 from dambreak import *
 
-timeIntegration = BackwardEuler_cfl
-stepController  = Min_dt_controller
+if timeDiscretization=='vbdf':
+    timeIntegration = VBDF
+    timeOrder=2
+elif timeDiscretization=='flcbdf':
+    timeIntegration = FLCBDF
+else:
+    timeIntegration = BackwardEuler_cfl
+
+stepController  = Min_dt_cfl_controller
 
 femSpaces = {0:basis,
 	     1:basis,
@@ -47,3 +54,4 @@ nl_atol_res = ns_nl_atol_res
 useEisenstatWalker = True
 maxNonlinearIts = 50
 maxLineSearches = 0
+conservativeFlux = {0:'pwl-bdm-opt'}

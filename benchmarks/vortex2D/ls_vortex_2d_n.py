@@ -4,16 +4,16 @@ from ls_vortex_2d_p import *
 from vortex2D import *
 nd = 2
 
-if timeIntegration_ls == "BE":
+if timeIntegration_ls == "be":
     timeIntegration = BackwardEuler_cfl
     stepController = Min_dt_controller
-    #timeIntegration = VBDF
-    #stepController = Min_dt_cfl_controller
-    #timeOrder =2
-elif timeIntegration_ls == "FLCBDF":
+elif timeIntegration_ls == "vbdf":
+    timeIntegration = VBDF
+    stepController = Min_dt_cfl_controller
+elif timeIntegration_ls == "flcbdf":
     timeIntegration = FLCBDF
-    stepController = FLCBDF_controller
-elif timeIntegration_ls == "RK":
+    stepController = FLCBDF_controller_sys
+elif timeIntegration_ls == "rk":
     if cDegree_ls == -1:
         timeIntegration = LinearSSPRKPIintegration
     else:

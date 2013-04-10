@@ -20,7 +20,7 @@ else:
     runCFL=0.33
     psitc['nStepsForce']=3
     psitc['nStepsMax']=15
-    psitc['reduceRatio']=2.0
+    psitc['reduceRatio']=3.0
     psitc['startRatio']=1.
     tolFac = 0.0
     rtol_res[0] = 0.0

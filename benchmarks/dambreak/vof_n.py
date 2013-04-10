@@ -8,10 +8,10 @@ stepController  = Min_dt_controller
 femSpaces = {0:basis}
 
 massLumping       = False
-numericalFluxType = Advection_DiagonalUpwind_IIPG_exterior
+numericalFluxType = VOF.NumericalFlux
 conservativeFlux  = None
-subgridError      = Advection_ASGS(coefficients=coefficients,nd=nd,lag=False)
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=True)
+subgridError      = VOF.SubgridError(coefficients=coefficients,nd=nd)
+shockCapturing    = VOF.ShockCapturing(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=vof_lag_shockCapturing)
 
 fullNewtonFlag = True
 multilevelNonlinearSolver = Newton
@@ -39,9 +39,9 @@ linearSolverConvergenceTest         = 'r-true'
 
 tolFac      = 0.0
 linTolFac   = 0.0
-nl_atol_res = max(1.0e-8,0.1*he**3/6.0)
-l_atol_res = max(1.0e-8,0.1*he**3/6.0)
-useEisenstatWalker = False#True
+l_atol_res = 0.001*vof_nl_atol_res
+nl_atol_res = vof_nl_atol_res
+useEisenstatWalker = True
 
-maxNonlinearIts = 2
+maxNonlinearIts = 50
 maxLineSearches = 0

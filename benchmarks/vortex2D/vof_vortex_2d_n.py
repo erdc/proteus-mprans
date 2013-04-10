@@ -7,15 +7,16 @@ multilevelNonlinearSolver  = NLNI
 levelNonlinearSolver = Newton
 fullNewtonFlag = True
 
-if timeIntegration_vof == "BE":
+if timeIntegration_vof == "be":
     timeIntegration = BackwardEuler_cfl
     stepController = Min_dt_controller
-    #timeIntegration = VBDF
-    #stepController = Min_dt_cfl_controller
-elif timeIntegration_vof == "FLCBDF":
+elif timeIntegration_vof == "vbdf":
+    timeIntegration = VBDF
+    stepController = Min_dt_cfl_controller
+elif timeIntegration_vof == "flcbdf":
     timeIntegration = FLCBDF
-    stepController = FLCBDF_controller
-elif timeIntegration_vof == "RK":
+    stepController = FLCBDF_controller_sys
+elif timeIntegration_vof == "rk":
     if cDegree_vof == -1:
         timeIntegration = LinearSSPRKPIintegration
     else:
