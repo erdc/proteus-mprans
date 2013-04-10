@@ -11,9 +11,9 @@ atol_u = {0:1.0e-4}
 rtol_res = {0:1.0e-4}
 atol_res = {0:1.0e-4}
 #
-timeIntegration_vof = "be"#be,flcbdf,rk
-timeIntegration_ls = "be"#be,flcbdf,rk
-timeOrder = 1
+timeIntegration_vof = "flcbdf"#vbdf,be,flcbdf,rk
+timeIntegration_ls = "flcbdf"#vbdf,be,flcbdf,rk
+timeOrder = 2
 
 runCFL = 0.3#0.3,0.185,0.125 for dgp1,dgp2,dgpk(3)
 #

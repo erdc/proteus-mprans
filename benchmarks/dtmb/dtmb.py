@@ -53,11 +53,12 @@ x_ll = (-5.0,-L[1]/2.0,-3.25)
 
 nLevels = 1
 
-he = hull_length/11
-#vessel = 5415
-#genMesh=False
-vessel = 'wigley'
-genMesh=True
+#he = hull_length/11
+#vessel = 'wigley'
+#genMesh=True
+vessel = 5415
+genMesh=False
+he=5.0
 #vessel = None
 #genMesh=True
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
@@ -183,7 +184,7 @@ else:
     else:
         domain.writePoly("meshNoVessel")
     triangleOptions="VApq1.45q10ena%e" % ((he**3)/6.0,)
-logEvent("""Mesh generated using: tetgen %s %s"""  % (triangleOptions,domain.polyfile+".poly"))
+    logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
 
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
