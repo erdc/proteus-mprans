@@ -1,0 +1,16 @@
+#!/bin/bash
+#PBS -A ERDCV00898ENQ
+#PBS -l walltime=001:00:00
+#PBS -l ncpus=32
+#PBS -q debug
+#PBS -N dtmb
+#PBS -j oe
+#PBS -l application=proteus
+#PBS -m eba
+#PBS -M cekees@gmail.com
+source /opt/modules/default/etc/modules.sh
+source ${PROTEUS}/envConfig/garnet.gnu.bash
+cd $PBS_O_WORKDIR
+export MPICH_RANK_REORDER_METHOD=2
+mkdir $WORKDIR/dtmb.$PBS_JOBID
+aprun -n 32  -N 32 parun dtmb_so.py -l 7 -v -M 1.875 -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dtmb.$PBS_JOBID

@@ -45,7 +45,7 @@ waterLevel   = 0.241984
 barycenters = numpy.zeros((8,3),'d')
 barycenters[7,:] = hull_cg
 
-L = (20.0,1.0,5.75)
+L = (20.0,3.0,5.75)
 x_ll = (-5.0,-L[1]/2.0,-3.25)
 
 #debug
@@ -278,7 +278,7 @@ nDTout             = %i
 
 #  Discretization -- input options  
 useOldPETSc=False
-useSuperlu = True # set to False if running in parallel with petsc.options
+useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0

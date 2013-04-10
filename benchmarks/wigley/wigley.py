@@ -79,10 +79,10 @@ RBR_angCons  = [1,0,1]
 
 nLevels = 1
 
-he = hull_draft/1.0 #16 cores
+he = hull_draft/1.7 #16 cores
 he *=0.5 #128 
 #he *=0.5 #512 (2048 8-way nodes)
-#he *= 0.5
+#he *=0.5
 #he = hull_draft/1.5 #16 cores
 #he *=0.5 #128 but can run on 2 cores with 8G
 #he *=0.5 #1024
@@ -129,10 +129,12 @@ else:
     regionFlags=[1.0]
     holes=[]
     if vessel is 'wigley':
-        n_points_length = int(ceil(hull_length/he))
+        n_points_length = int(ceil(hull_length/he))+1
         n_points_draft  = 2*int(ceil(hull_draft/he))+1
+        #print "points",n_points_length,n_points_draft
         dx = hull_length/float(n_points_length-1)
         dz = 2.0*hull_draft/float(n_points_draft-1)
+        #print "he",he,dx,dz
         #grid on right half of hull
         for i in range(n_points_length):
             for j in range(n_points_draft):
