@@ -14,6 +14,9 @@ else:
     LS_model = 2
     ME_model = 5
     dissipation_model = 6
+if movingDomain:
+    dissipation_model += 1
+    ME_model += 1
 #
 dissipation_model_flag = 1
 if useRANS == 2:

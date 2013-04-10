@@ -80,7 +80,7 @@ RBR_angCons  = [1,0,1]
 nLevels = 1
 
 he = hull_draft/1.7 #16 cores
-he *=0.5 #128 
+#he *=0.5 #128 
 #he *=0.5 #512 (2048 8-way nodes)
 #he *=0.5
 #he = hull_draft/1.5 #16 cores
@@ -251,6 +251,8 @@ nDTout=200
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
 
+#RANS bc info
+kInflow = 0.003*Um*Um
 #----------------------------------------------------
 # Airy wave functions
 #----------------------------------------------------
@@ -315,7 +317,7 @@ useRBLES   = 0.0
 useMetrics = 1.0
 useVF = 1.0
 useOnlyVF = False
-useRANS = 0 # 0 -- None
+useRANS = 1 # 0 -- None
             # 1 -- K-Epsilon
             # 2 -- K-Omega
 # Input checks

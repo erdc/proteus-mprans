@@ -238,6 +238,9 @@ nDTout=200
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
 
+#RANS bc info
+kInflow = 0.003*Um*Um
+
 #----------------------------------------------------
 # Airy wave functions
 #----------------------------------------------------
