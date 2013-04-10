@@ -48,8 +48,21 @@ barycenters[7,:] = hull_cg
 vessel = 5415
 genMesh=False
 #he=10.0
-he=5.0
+he=1.0
+he=0.5
 
+if he == 1.0:
+    src_dir = 'mesh8490'
+elif he == 0.5:
+    src_dir = 'mesh28144'
+elif he == 0.25:
+    src_dir = 'mesh196331'
+import os
+import shutil
+import glob
+for filename in glob.glob(os.path.join('./mesh/'+src_dir, 'mesh.*')):
+    shutil.copy(filename,'.')
+    
 #debug
 
 #he = hull_length/11
@@ -282,7 +295,7 @@ nDTout             = %i
 
 #  Discretization -- input options  
 useOldPETSc=False
-useSuperlu = False # set to False if running in parallel with petsc.options
+useSuperlu = True # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
