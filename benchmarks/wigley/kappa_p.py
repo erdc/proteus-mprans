@@ -14,8 +14,11 @@ else:
     LS_model = 2
     ME_model = 5
     dissipation_model = 6
+if movingDomain:
+    dissipation_model += 1
+    ME_model += 1
 #
-dissipation_model_flag = 1
+dissipation_model_flag = 1 
 if useRANS == 2:
     dissipation_model_flag=2
 coefficients = Kappa.Coefficients(V_model=0,ME_model=ME_model,LS_model=LS_model,RD_model=RD_model,dissipation_model=dissipation_model,
@@ -32,23 +35,34 @@ coefficients = Kappa.Coefficients(V_model=0,ME_model=ME_model,LS_model=LS_model,
 def getDBC_k(x,flag):
     if flag == boundaryTags['left']:
         return lambda x,t:kInflow
-    if flag == boundaryTags['right']:
+    if flag == boundaryTags['obstacle']:
         return lambda x,t:0.0
-
 dirichletConditions = {0:getDBC_k}
 #fluxBoundaryConditions = {0:'outFlow'}
 
 def getAFBC_k(x,flag):
     if flag == boundaryTags['right']:
-        return None
-    if flag != boundaryTags['left']:
-        return lambda x,t: 0.0
+        return None#outflow
+    elif flag == boundaryTags['top']:
+        if openTop:
+            return None#outflow
+        else:
+            return lambda x,t: 0.0
+    elif flag in [boundaryTags['front'], boundaryTags['back']]:
+        if openSides:
+            return None#outflow
+        else:
+            return lambda x,t: 0.0
+    elif flag == boundaryTags['bottom']:
+        return None#outflow
 def getDFBC_k(x,flag):
-    if flag == boundaryTags['right']:
-        return lambda x,t: 0.0
-    if flag != boundaryTags['left']:
-        return lambda x,t: 0.0
-    
+    if flag == boundaryTags['left']:
+        return None#weak Dirichlet
+    elif flag == boundaryTags['right']:
+        return lambda x,t: 0.0 #outflow
+    elif flag in [boundaryTags['front'],boundaryTags['back'],boundaryTags['top'],boundaryTags['bottom']]:
+        return lambda x,t: 0.0#outflow or no flow
+
 
 advectiveFluxBoundaryConditions =  {0:getAFBC_k}
 diffusiveFluxBoundaryConditions = {0:{0:getDFBC_k}}

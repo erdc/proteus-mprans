@@ -130,7 +130,7 @@ class u_flat:
         self.val= val; self.ztop = ztop; self.zbot=zbot
         self.delta_z = delta_z
     def uOfX(self,x):
-        fact = 0.0; #exp(-(x[1]-self.zbot)*(self.ztop-x[1])/self.delta_z)
+        fact = 0.0#exp(-(x[1]-self.zbot)*(self.ztop-x[1])/self.delta_z)
         return self.val*(1.0-fact)
 
 uProfile = u_flat(val=inflow)
