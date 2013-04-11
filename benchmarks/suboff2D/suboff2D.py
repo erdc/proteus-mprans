@@ -14,6 +14,11 @@ spaceOrder=1
 useRBLES   = 0.0
 useMetrics = 1.0
 use_petsc4py=False
+#type of 2 equation turbulence model to use
+#1 K-Epsilon
+#2 Wilcox K-Omega, 1998
+#3 Wilcox K-Omega, 1988
+dissipation_model_flag = 3
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder

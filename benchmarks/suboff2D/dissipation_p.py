@@ -6,6 +6,7 @@ from proteus.mprans import Dissipation
 LevelModelType = Dissipation.LevelModel
 
 coefficients = Dissipation.Coefficients(V_model=0,ME_model=4,LS_model=1,RD_model=None,kappa_model=3,
+                                        dissipation_model_flag=dissipation_model_flag,
                                         useMetrics=useMetrics,
                                         rho_0=rho_0,nu_0=nu_0,
                                         rho_1=rho_1,nu_1=nu_1,
@@ -14,6 +15,8 @@ coefficients = Dissipation.Coefficients(V_model=0,ME_model=4,LS_model=1,RD_model
                                         sc_uref=dissipation_sc_uref,sc_beta=dissipation_sc_beta)
 
 dissipationInflow = coefficients.c_mu*kInflow**(1.5)/(0.03*upstream_height)
+if dissipation_model_flag >= 2:
+    dissipationInflow = dissipationInflow/(kInflow+1.0e-12)
 
 def getDBC_dissipation(x,flag):
     if flag == boundaryTags['left']:

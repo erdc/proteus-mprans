@@ -206,7 +206,7 @@ namespace proteus
       double nu_t=0.0,dnu_t_dk=0.0,PiD4=0.0;
       double gamma_k=0.0,F_k=0.0,sigma_a=sigma_k;
       //either K-Epsilon or K-Omega
-      const double isKEpsilon = (dissipation_model_flag==2) ? 0.0 : 1.0;
+      const double isKEpsilon = (dissipation_model_flag>=2) ? 0.0 : 1.0;
       m = k*porosity;
       dm = porosity;
 
@@ -238,7 +238,7 @@ namespace proteus
 	+
 	(grad_vx[1] + grad_vy[0])*(grad_vx[1] + grad_vy[0]);
 
-       //K-Omega
+       //K-Omega, 1998
       if (dissipation_model_flag==2)
 	{
 	  //temporaries
@@ -260,6 +260,12 @@ namespace proteus
 	  gamma_k=fmax(beta_star*dissipation,0.0);
 	  //gamma_k = fmax(beta_star*k_old/nu_t,0.0);
 	}
+      else if (dissipation_model_flag==3) //K-Omega 1988
+        {
+          sigma_a=2.0; //1/sigma_k, 
+          double beta_star = 0.09;
+          gamma_k=fmax(beta_star*dissipation,0.0); 
+        }
       else
 	{
 	  //K-Epsilon

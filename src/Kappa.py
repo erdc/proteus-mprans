@@ -124,7 +124,7 @@ c_{\mu} = 0.09, c_1 = 0.126, c_2 = 1.92, c_{\varepsilon} = 0.07
     from proteus.ctransportCoefficients import kEpsilon_k_3D_Evaluate_sd
     from proteus.ctransportCoefficients import kEpsilon_k_2D_Evaluate_sd
     def __init__(self,LS_model=None,V_model=0,RD_model=None,dissipation_model=None,ME_model=6,
-                 dissipation_model_flag=1, #default K-Epsilon, 2 --> K-Omega
+                 dissipation_model_flag=1, #default K-Epsilon, 2 --> K-Omega, 1998, 3 --> K-Omega 1988
                  c_mu   =0.09,    
                  sigma_k=1.0,#Prandtl Number
                  rho_0=998.2,nu_0=1.004e-6,
@@ -170,7 +170,7 @@ c_{\mu} = 0.09, c_1 = 0.126, c_2 = 1.92, c_{\varepsilon} = 0.07
         self.RD_modelIndex=RD_model
         self.LS_modelIndex=LS_model
         self.dissipation_modelIndex = dissipation_model
-	self.dissipation_model_flag = dissipation_model_flag #default K-Epsilon, 2 --> K-Omega
+	self.dissipation_model_flag = dissipation_model_flag #default K-Epsilon, 2 --> K-Omega, 1998, 3 --> K-Omega 1988
 	self.sc_uref=sc_uref
 	self.sc_beta=sc_beta	
         #for debugging model
@@ -358,7 +358,7 @@ c_{\mu} = 0.09, c_1 = 0.126, c_2 = 1.92, c_{\varepsilon} = 0.07
             grad_u = None
             grad_v = None
             grad_w = None
-        if v != None and self.dissipation_model_flag != 2:
+        if v != None and self.dissipation_model_flag < 2:
             if self.nd == 2:
                 self.kEpsilon_k_2D_Evaluate_sd(self.sigma_k,
                                                self.c_mu,
@@ -396,7 +396,7 @@ c_{\mu} = 0.09, c_1 = 0.126, c_2 = 1.92, c_{\varepsilon} = 0.07
                                                c[('r',0)],
                                                c[('dr',0,0)])
         else:
-            print "WARNING! dissipation_model_flag == 2 not implemented in Kappa.coefficients"
+            print "WARNING! dissipation_model_flag != 1 not implemented in Kappa.coefficients"
 class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
     def __init__(self,
