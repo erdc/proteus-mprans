@@ -475,7 +475,7 @@ namespace proteus
 	    }
 	  else
 	    {
-	      std::cout<<"warning: Dissipation2D: open boundary with no external trace, setting to zero for inflow"<<std::endl;
+	      //std::cout<<"warning: Dissipation2D: open boundary with no external trace, setting to zero for inflow"<<std::endl;
 	      flux = 0.0;
 	    }
 
