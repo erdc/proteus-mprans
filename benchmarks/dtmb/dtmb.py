@@ -48,21 +48,28 @@ barycenters[7,:] = hull_cg
 vessel = 5415
 genMesh=False
 #he=10.0
-he=1.0
-he=0.5
-
+#he=1.0
+#he=0.5
+#he=0.25
+he=0.125
 if he == 1.0:
     src_dir = 'mesh8490'
 elif he == 0.5:
     src_dir = 'mesh28144'
 elif he == 0.25:
     src_dir = 'mesh196331'
+elif he == 0.125:
+    src_dir = 'mesh1487782'
 import os
 import shutil
 import glob
-for filename in glob.glob(os.path.join('./mesh/'+src_dir, 'mesh.*')):
-    shutil.copy(filename,'.')
-    
+from proteus import Comm
+comm = Comm.get()
+if comm.isMaster():
+    logEvent("Reading Mesh: ./mesh/"+src_dir)
+    for filename in glob.glob(os.path.join('./mesh/'+src_dir, 'mesh.*')):
+        shutil.copy(filename,'.')
+comm.barrier()
 #debug
 
 #he = hull_length/11
@@ -295,7 +302,7 @@ nDTout             = %i
 
 #  Discretization -- input options  
 useOldPETSc=False
-useSuperlu = True # set to False if running in parallel with petsc.options
+useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
