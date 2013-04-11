@@ -28,14 +28,16 @@ fluxBoundaryConditions = {0:'outFlow'}
 def getAFBC_dissipation(x,flag):
     if flag == boundaryTags['right']:
         return None
-    if flag != boundaryTags['left']:
-        return lambda x,t: 0.0
+    if flag == boundaryTags['obstacle']:
+        return lambda x,t: 0.0#no flux
+    if flag != boundaryTags['left']: #top and bottom
+        return None#outflow
+        #return lambda x,t: 0.0 #no flux 
 def getDFBC_dissipation(x,flag):
-    pass
-#    if flag == boundaryTags['right']:
-#        return lambda x,t: 0.0
-#    if flag != boundaryTags['left']:
-#        return lambda x,t: 0.0
+    if flag == boundaryTags['right']:
+        return lambda x,t: 0.0#outflow
+    if flag != boundaryTags['left']:
+        return lambda x,t: 0.0#outflow or no flux
     
 
 advectiveFluxBoundaryConditions =  {0:getAFBC_dissipation}
