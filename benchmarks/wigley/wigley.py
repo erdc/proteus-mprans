@@ -319,7 +319,8 @@ useVF = 1.0
 useOnlyVF = False
 useRANS = 1 # 0 -- None
             # 1 -- K-Epsilon
-            # 2 -- K-Omega
+            # 2 -- K-Omega, 1998
+            # 3 -- K-Omega, 1988
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -406,11 +407,11 @@ else:
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
     redist_Newton = False#True
-    kappa_shockCapturingFactor = 0.9
+    kappa_shockCapturingFactor = 0.0#0.9
     kappa_lag_shockCapturing = True#False
     kappa_sc_uref  = 1.0
     kappa_sc_beta  = 1.0
-    dissipation_shockCapturingFactor = 0.9
+    dissipation_shockCapturingFactor = 0.0#0.9
     dissipation_lag_shockCapturing = True#False
     dissipation_sc_uref  = 1.0
     dissipation_sc_beta  = 1.0
@@ -427,7 +428,7 @@ dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
-elif useRANS == 2:
+elif useRANS >= 2:
     ns_closure == 4
 
 #wave/current properties

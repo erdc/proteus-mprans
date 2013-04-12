@@ -21,8 +21,11 @@ if movingDomain:
 dissipation_model_flag = 1 
 if useRANS == 2:
     dissipation_model_flag=2
+elif useRANS == 3:
+    dissipation_model_flag=3
+
 coefficients = Kappa.Coefficients(V_model=0,ME_model=ME_model,LS_model=LS_model,RD_model=RD_model,dissipation_model=dissipation_model,
-                                  dissipation_model_flag=dissipation_model_flag,#1 -- K-epsilon, 2 -- K-omega
+                                  dissipation_model_flag=dissipation_model_flag,#1 -- K-epsilon, 2 -- K-omega 1998, 3 -- K-omega 1988
                                   useMetrics=useMetrics,
                                   rho_0=rho_0,nu_0=nu_0,
                                   rho_1=rho_1,nu_1=nu_1,

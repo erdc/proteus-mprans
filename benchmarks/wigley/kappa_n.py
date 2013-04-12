@@ -29,8 +29,8 @@ else:
     levelLinearSolver      = LU
 
 linear_solver_options_prefix = 'kappa_'
-levelNonlinearSolverConvergenceTest = 'r'#'rits'
-linearSolverConvergenceTest         = 'r'#'rits'
+levelNonlinearSolverConvergenceTest = 'rits'#'r'
+linearSolverConvergenceTest         = 'rits'#'r'
 
 tolFac = 0.0
 linTolFac =0.0
