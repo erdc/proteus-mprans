@@ -407,11 +407,11 @@ else:
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
     redist_Newton = False#True
-    kappa_shockCapturingFactor = 0.0#0.9
+    kappa_shockCapturingFactor = 0.9
     kappa_lag_shockCapturing = True#False
     kappa_sc_uref  = 1.0
     kappa_sc_beta  = 1.0
-    dissipation_shockCapturingFactor = 0.0#0.9
+    dissipation_shockCapturingFactor = 0.9
     dissipation_lag_shockCapturing = True#False
     dissipation_sc_uref  = 1.0
     dissipation_sc_beta  = 1.0
