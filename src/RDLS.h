@@ -293,8 +293,6 @@ namespace proteus
 	       <<lag_shockCapturing<< "\t"
 	       <<lag_subgridError<<std::endl;
 #endif
-      lag_shockCapturing=1;
-      lag_subgridError=2;
       //
       //loop over elements to compute volume integrals and load them into element and global residual
       //
@@ -788,8 +786,6 @@ namespace proteus
 				double* ebqe_bc_u_ext,
 				int* csrColumnOffsets_eb_u_u)
     {
-      lag_shockCapturing=1;
-      lag_subgridError=2;
       //
       //loop over elements to compute volume integrals and load them into the element Jacobians and global Jacobian
       //

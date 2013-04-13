@@ -636,7 +636,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                              self.nElementBoundaryQuadraturePoints_elementBoundary,
                              compKernelFlag)
 
-        self.forceStrongConditions=True#False
+        self.forceStrongConditions=False
         if self.forceStrongConditions:
             self.dirichletConditionsForceDOF = DOFBoundaryConditions(self.u[0].femSpace,dofBoundaryConditionsSetterDict[0],weakDirichletConditions=False)
 

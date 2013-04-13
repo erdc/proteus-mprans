@@ -734,7 +734,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #TODO how to handle redistancing calls for calculateCoefficients,calculateElementResidual etc
         self.globalResidualDummy = None
         #create storage for enforcing weak dirichlet boundary conditions around zero level set contour
-        self.freezeLevelSet=False
+        self.freezeLevelSet=1#True
         self.u_dof_last = numpy.zeros(self.u[0].dof.shape,'d')
         self.weakDirichletConditionFlags = numpy.zeros(self.u[0].dof.shape,'i')
         self.dofFlag_element = numpy.zeros((self.nDOF_trial_element[0],),'i')
