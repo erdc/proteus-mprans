@@ -591,7 +591,16 @@ namespace proteus
 			      double& mom_v_ham,
 			      double dmom_v_ham_grad_p[nSpace],
 			      double& mom_w_ham,
-			      double dmom_w_ham_grad_p[nSpace])
+			      double dmom_w_ham_grad_p[nSpace],
+                              double& mom_u_adv_ham, //for non-conservative formulation
+                              double& dmom_u_adv_ham_u,  
+                              double& dmom_u_adv_ham_v,  
+                              double  dmom_u_adv_ham_grad_u[nSpace], 
+                              double& mom_v_adv_ham, 
+                              double& dmom_v_adv_ham_u, 
+                              double& dmom_v_adv_ham_v, 
+                              double  dmom_v_adv_ham_grad_v[nSpace])
+                              
     {
       double rho,nu,mu,H_rho,d_rho,H_mu,d_mu,norm_n;
       H_rho = (1.0-useVF)*smoothedHeaviside(eps_rho,phi) + useVF*fmin(1.0,fmax(0.0,vf));
@@ -764,6 +773,31 @@ namespace proteus
       /* dmom_w_ham_grad_p[0]=0.0; */
       /* dmom_w_ham_grad_p[1]=0.0; */
       /* dmom_w_ham_grad_p[2]=porosity; */
+
+      /**
+         for non-conservative formulation
+         H(\grad(u),u,v) = \phi \rho \vec v \cdot \grad u
+         \pd{H}{u} = \phi \rho \pd{u}{x}
+         \pd{H}{v} = \phi \rho \pd{u}{y}
+         \pd{H}{\grad u} = \phi\rho \vec v
+         
+         H(\grad(v),u,v) = \phi \rho \vec v \cdot \grad v
+         \pd{H}{u} = \phi \rho \pd{v}{x}
+         \pd{H}{v} = \phi \rho \pd{v}{y}
+         \pd{H}{\grad v} = \phi\rho \vec v
+         
+       */
+      mom_u_adv_ham = porosity*rho*(u*grad_u[0] + v*grad_u[1]);
+      dmom_u_adv_ham_u  = porosity*rho*grad_u[0];
+      dmom_u_adv_ham_v  = porosity*rho*grad_u[1];
+      dmom_u_adv_ham_grad_u[0] = porosity*rho*u; dmom_u_adv_ham_grad_u[1] = porosity*rho*v; 
+
+      mom_v_adv_ham = porosity*rho*(u*grad_v[0] + v*grad_v[1]);
+      dmom_v_adv_ham_u = porosity*rho*grad_v[0];
+      dmom_v_adv_ham_v = porosity*rho*grad_v[1];
+      dmom_v_adv_ham_grad_v[0] = porosity*rho*u; dmom_v_adv_ham_grad_v[1] = porosity*rho*v;
+
+
 #else
       //u momentum accumulation
       mom_u_acc=porosity*u;
@@ -896,6 +930,31 @@ namespace proteus
       /* dmom_w_ham_grad_p[0]=0.0; */
       /* dmom_w_ham_grad_p[1]=0.0; */
       /* dmom_w_ham_grad_p[2]=porosity/rho; */
+
+      /**
+         for non-conservative formulation
+         H(\grad(u),u,v) = \phi \vec v \cdot \grad u
+         \pd{H}{u} = \phi \pd{u}{x}
+         \pd{H}{v} = \phi  \pd{u}{y}
+         \pd{H}{\grad u} = \phi \vec v
+         
+         H(\grad(v),u,v) = \phi \vec v \cdot \grad v
+         \pd{H}{u} = \phi \pd{v}{x}
+         \pd{H}{v} = \phi \pd{v}{y}
+         \pd{H}{\grad v} = \phi \vec v
+         
+       */
+      mom_u_adv_ham = porosity*(u*grad_u[0] + v*grad_u[1]);
+      dmom_u_adv_ham_u  = porosity*grad_u[0];
+      dmom_u_adv_ham_v  = porosity*grad_u[1];
+      dmom_u_adv_ham_grad_u[0] = porosity*u; dmom_u_adv_ham_grad_u[1] = porosity*v; 
+
+      mom_v_adv_ham = porosity*(u*grad_v[0] + v*grad_v[1]);
+      dmom_v_adv_ham_u = porosity*grad_v[0];
+      dmom_v_adv_ham_v = porosity*grad_v[1];
+      dmom_v_adv_ham_grad_v[0] = porosity*u; dmom_v_adv_ham_grad_v[1] = porosity*v;
+
+
 #endif
     }
     //VRANS specific
@@ -1888,6 +1947,16 @@ namespace proteus
 		dmom_v_acc_v_t=0.0,
 		mom_w_acc_t=0.0,
 		dmom_w_acc_w_t=0.0,
+                //begin non-conservative formulation
+                mom_u_adv_ham=0.0,
+                dmom_u_adv_ham_u=0.0,
+                dmom_u_adv_ham_v=0.0,
+                dmom_u_adv_ham_grad_u[nSpace],
+                mom_v_adv_ham=0.0,
+                dmom_v_adv_ham_u=0.0,
+                dmom_v_adv_ham_v=0.0,
+                dmom_v_adv_ham_grad_v[nSpace],
+                //end non-conservative formulation
 		pdeResidual_p=0.0,
 		pdeResidual_u=0.0,
 		pdeResidual_v=0.0,
@@ -2061,7 +2130,16 @@ namespace proteus
 				   mom_v_ham,
 				   dmom_v_ham_grad_p,
 				   mom_w_ham,
-				   dmom_w_ham_grad_p);          
+				   dmom_w_ham_grad_p,
+                                   //begin non-conservative form
+                                   mom_u_adv_ham,
+                                   dmom_u_adv_ham_u,
+                                   dmom_u_adv_ham_v,
+                                   dmom_u_adv_ham_grad_u,
+                                   mom_v_adv_ham,
+                                   dmom_v_adv_ham_u,
+                                   dmom_v_adv_ham_v,
+                                   dmom_v_adv_ham_grad_v);
 	      //VRANS
 	      mass_source = q_mass_source[eN_k];
 	      //todo: decide if these should be lagged or not?
@@ -2444,6 +2522,16 @@ namespace proteus
 		dmom_u_adv_p_ext[nSpace],
 		dmom_v_adv_p_ext[nSpace],
 		dmom_w_adv_p_ext[nSpace],
+                //begin non-conservative formulation
+                mom_u_adv_ham_ext=0.0,
+                dmom_u_adv_ham_u_ext=0.0,
+                dmom_u_adv_ham_v_ext=0.0,
+                dmom_u_adv_ham_grad_u_ext[nSpace],
+                mom_v_adv_ham_ext=0.0,
+                dmom_v_adv_ham_u_ext=0.0,
+                dmom_v_adv_ham_v_ext=0.0,
+                dmom_v_adv_ham_grad_v_ext[nSpace],
+                //end non-conservative formulation
 		flux_mass_ext=0.0,
 		flux_mom_u_adv_ext=0.0,
 		flux_mom_v_adv_ext=0.0,
@@ -2501,6 +2589,16 @@ namespace proteus
 		bc_dmom_v_ham_grad_p_ext[nSpace],
 		bc_mom_w_ham_ext=0.0,
 		bc_dmom_w_ham_grad_p_ext[nSpace],
+                //begin non-conservative formulation
+                bc_mom_u_adv_ham_ext=0.0,
+                bc_dmom_u_adv_ham_u_ext=0.0,
+                bc_dmom_u_adv_ham_v_ext=0.0,
+                bc_dmom_u_adv_ham_grad_u_ext[nSpace],
+                bc_mom_v_adv_ham_ext=0.0,
+                bc_dmom_v_adv_ham_u_ext=0.0,
+                bc_dmom_v_adv_ham_v_ext=0.0,
+                bc_dmom_v_adv_ham_grad_v_ext[nSpace],
+                //end non-conservative formulation
 		jac_ext[nSpace*nSpace],
 		jacDet_ext,
 		jacInv_ext[nSpace*nSpace],
@@ -2657,7 +2755,17 @@ namespace proteus
 				   mom_v_ham_ext,
 				   dmom_v_ham_grad_p_ext,
 				   mom_w_ham_ext,
-				   dmom_w_ham_grad_p_ext);          
+				   dmom_w_ham_grad_p_ext,
+                                   //begin non-conservative form
+                                   mom_u_adv_ham_ext,
+                                   dmom_u_adv_ham_u_ext,
+                                   dmom_u_adv_ham_v_ext,
+                                   dmom_u_adv_ham_grad_u_ext,
+                                   mom_v_adv_ham_ext,
+                                   dmom_v_adv_ham_u_ext,
+                                   dmom_v_adv_ham_v_ext,
+                                   dmom_v_adv_ham_grad_v_ext);
+          
 	      evaluateCoefficients(eps_rho,
 				   eps_mu,
 				   sigma,
@@ -2724,7 +2832,17 @@ namespace proteus
 				   bc_mom_v_ham_ext,
 				   bc_dmom_v_ham_grad_p_ext,
 				   bc_mom_w_ham_ext,
-				   bc_dmom_w_ham_grad_p_ext);          
+				   bc_dmom_w_ham_grad_p_ext,
+                                   //begin non-conservative form
+                                   bc_mom_u_adv_ham_ext,
+                                   bc_dmom_u_adv_ham_u_ext,
+                                   bc_dmom_u_adv_ham_v_ext,
+                                   bc_dmom_u_adv_ham_grad_u_ext,
+                                   bc_mom_v_adv_ham_ext,
+                                   bc_dmom_v_adv_ham_u_ext,
+                                   bc_dmom_v_adv_ham_v_ext,
+                                   bc_dmom_v_adv_ham_grad_v_ext);
+  
 
 	      //Turbulence closure model
 	      if (turbulenceClosureModel >= 3)
@@ -3427,6 +3545,16 @@ namespace proteus
 		dmom_v_acc_v_t=0.0,
 		mom_w_acc_t=0.0,
 		dmom_w_acc_w_t=0.0,
+                //begin non-conservative formulation
+                mom_u_adv_ham=0.0,
+                dmom_u_adv_ham_u=0.0,
+                dmom_u_adv_ham_v=0.0,
+                dmom_u_adv_ham_grad_u[nSpace],
+                mom_v_adv_ham=0.0,
+                dmom_v_adv_ham_u=0.0,
+                dmom_v_adv_ham_v=0.0,
+                dmom_v_adv_ham_grad_v[nSpace],
+                //end non-conservative formulation
 		pdeResidual_p=0.0,
 		pdeResidual_u=0.0,
 		pdeResidual_v=0.0,
@@ -3606,7 +3734,17 @@ namespace proteus
 				   mom_v_ham,
 				   dmom_v_ham_grad_p,
 				   mom_w_ham,
-				   dmom_w_ham_grad_p);          
+				   dmom_w_ham_grad_p,
+                                   //begin non-conservative form
+                                   mom_u_adv_ham,
+                                   dmom_u_adv_ham_u,
+                                   dmom_u_adv_ham_v,
+                                   dmom_u_adv_ham_grad_u,
+                                   mom_v_adv_ham,
+                                   dmom_v_adv_ham_u,
+                                   dmom_v_adv_ham_v,
+                                   dmom_v_adv_ham_grad_v);
+         
 	      //VRANS
 	      mass_source = q_mass_source[eN_k];
 	      //todo: decide if these should be lagged or not
@@ -4063,6 +4201,16 @@ namespace proteus
 		dmom_u_adv_p_ext[nSpace],
 		dmom_v_adv_p_ext[nSpace],
 		dmom_w_adv_p_ext[nSpace],
+                //begin non-conservative formulation
+                mom_u_adv_ham_ext=0.0,
+                dmom_u_adv_ham_u_ext=0.0,
+                dmom_u_adv_ham_v_ext=0.0,
+                dmom_u_adv_ham_grad_u_ext[nSpace],
+                mom_v_adv_ham_ext=0.0,
+                dmom_v_adv_ham_u_ext=0.0,
+                dmom_v_adv_ham_v_ext=0.0,
+                dmom_v_adv_ham_grad_v_ext[nSpace],
+                //end non-conservative formulation
 		dflux_mass_u_ext=0.0,
 		dflux_mass_v_ext=0.0,
 		dflux_mass_w_ext=0.0,
@@ -4122,6 +4270,16 @@ namespace proteus
 		bc_dmom_v_ham_grad_p_ext[nSpace],
 		bc_mom_w_ham_ext=0.0,
 		bc_dmom_w_ham_grad_p_ext[nSpace],
+                //begin non-conservative formulation
+                bc_mom_u_adv_ham_ext=0.0,
+                bc_dmom_u_adv_ham_u_ext=0.0,
+                bc_dmom_u_adv_ham_v_ext=0.0,
+                bc_dmom_u_adv_ham_grad_u_ext[nSpace],
+                bc_mom_v_adv_ham_ext=0.0,
+                bc_dmom_v_adv_ham_u_ext=0.0,
+                bc_dmom_v_adv_ham_v_ext=0.0,
+                bc_dmom_v_adv_ham_grad_v_ext[nSpace],
+                //end non-conservative formulation
 		fluxJacobian_p_p[nDOF_trial_element],
 		fluxJacobian_p_u[nDOF_trial_element],
 		fluxJacobian_p_v[nDOF_trial_element],
@@ -4294,7 +4452,17 @@ namespace proteus
 				   mom_v_ham_ext,
 				   dmom_v_ham_grad_p_ext,
 				   mom_w_ham_ext,
-				   dmom_w_ham_grad_p_ext);          
+				   dmom_w_ham_grad_p_ext,
+                                   //begin non-conservative form
+                                   mom_u_adv_ham_ext,
+                                   dmom_u_adv_ham_u_ext,
+                                   dmom_u_adv_ham_v_ext,
+                                   dmom_u_adv_ham_grad_u_ext,
+                                   mom_v_adv_ham_ext,
+                                   dmom_v_adv_ham_u_ext,
+                                   dmom_v_adv_ham_v_ext,
+                                   dmom_v_adv_ham_grad_v_ext);
+          
 	      evaluateCoefficients(eps_rho,
 				   eps_mu,
 				   sigma,
@@ -4361,7 +4529,18 @@ namespace proteus
 				   bc_mom_v_ham_ext,
 				   bc_dmom_v_ham_grad_p_ext,
 				   bc_mom_w_ham_ext,
-				   bc_dmom_w_ham_grad_p_ext);          
+				   bc_dmom_w_ham_grad_p_ext,
+                                   //begin non-conservative form
+                                   bc_mom_u_adv_ham_ext,
+                                   bc_dmom_u_adv_ham_u_ext,
+                                   bc_dmom_u_adv_ham_v_ext,
+                                   bc_dmom_u_adv_ham_grad_u_ext,
+                                   bc_mom_v_adv_ham_ext,
+                                   bc_dmom_v_adv_ham_u_ext,
+                                   bc_dmom_v_adv_ham_v_ext,
+                                   bc_dmom_v_adv_ham_grad_v_ext);
+
+          
 	      //Turbulence closure model
 	      if (turbulenceClosureModel >= 3)
 		{
