@@ -14,6 +14,11 @@ spaceOrder=1
 useRBLES   = 0.0
 useMetrics = 1.0
 use_petsc4py=False
+#type of 2 equation turbulence model to use
+#1 K-Epsilon
+#2 Wilcox K-Omega, 1998
+#3 Wilcox K-Omega, 1988
+dissipation_model_flag = 3
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
@@ -50,7 +55,7 @@ ntheta = 2
 #max number of points in x, need to get rid of this
 max_nx = 300
 #how much to pad bounding box
-pad_x = 10.; pad_r_fact = 4.0
+pad_x = 10.; pad_r_fact = 8.0
 #convert from feet to meters
 feet2meter = 0.3048
 #returns x,y,z points along hull, 
@@ -84,7 +89,7 @@ nLayersOfOverlapForParallel = 0
 #----------------------------------------------------
 # Physical coefficients
 #----------------------------------------------------
-Re = 302500.0
+Re = 30250.0
 nu_h20 = 1.004e-6
 nu = nu_h20
 inflow = nu*Re/upstream_height
@@ -111,9 +116,9 @@ g = [0.0,-9.8]
 #----------------------------------------------------
 
 residence_time = length/inflow
-T=1.0*residence_time
-tnList = [0.0,0.1]
-nDTout=10
+T=10.0*residence_time
+tnList = [0.0,0.0001]
+nDTout=100
 tnList.extend([max(i*T/float(nDTout),0.1) for i in range(1,nDTout+1)])#[0.0,0.5*T,T]
 
 
@@ -122,7 +127,7 @@ tnList.extend([max(i*T/float(nDTout),0.1) for i in range(1,nDTout+1)])#[0.0,0.5*
 #----------------------------------------------------
 grad_p = -inflow/(upstream_height**2/(8.0*mu_0))
 upstream_start_z = x_ll[1]
-kInflow = 0.003*inflow*inflow
+kInflow = 0.03*inflow*inflow#0.003*inflow*inflow
 inflowVelocity = (inflow,0.0)
 
 class u_flat:

@@ -124,7 +124,7 @@ c_{\mu} = 0.09, c_1 = 0.126, c_2 = 1.92, c_{\varepsilon} = 0.07
     from proteus.ctransportCoefficients import kEpsilon_k_3D_Evaluate_sd
     from proteus.ctransportCoefficients import kEpsilon_k_2D_Evaluate_sd
     def __init__(self,LS_model=None,V_model=0,RD_model=None,kappa_model=None,ME_model=7,
-                 dissipation_model_flag=1, #default K-Epsilon, 2 --> K-Omega
+                 dissipation_model_flag=1, #default K-Epsilon, 2 --> K-Omega 1998, 3 --> K-Omega 1988
                  c_mu   =0.09,c_1=0.126,c_2=1.92,c_e=0.07,
                  sigma_e=1.29,
                  rho_0=998.2,nu_0=1.004e-6,
@@ -133,9 +133,9 @@ c_{\mu} = 0.09, c_1 = 0.126, c_2 = 1.92, c_{\varepsilon} = 0.07
                  nd=3,
                  epsFact=0.01,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,default_kappa=1.0e-3):
         self.useMetrics = useMetrics
-	self.dissipation_model_flag = dissipation_model_flag #default K-Epsilon, 2 ==> K-Omega
+	self.dissipation_model_flag = dissipation_model_flag #default K-Epsilon, 2 ==> K-Omega 1998, 3 --> K-Omega 1988
         self.variableNames=['epsilon']
-        if self.dissipation_model_flag == 2:
+        if self.dissipation_model_flag >= 2:
             self.variableNames=['omega']
         nc=1
         self.nd = nd

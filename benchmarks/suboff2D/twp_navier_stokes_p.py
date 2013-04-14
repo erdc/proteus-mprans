@@ -4,6 +4,10 @@ from suboff2D import *
 from proteus.mprans import RANS2P
 
 LevelModelType = RANS2P.LevelModel
+
+turbulenceClosureModel = 3 #K-Epsilon
+if dissipation_model_flag >= 2:
+    turbulenceClosureModel = 4 #K-Omega
 coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    sigma=0.0,
                                    rho_0 = rho_0,
@@ -15,7 +19,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    LS_model=1,
                                    Closure_0_model=3,
                                    Closure_1_model=4,
-                                   turbulenceClosureModel=3,
+                                   turbulenceClosureModel=turbulenceClosureModel,
                                    epsFact_density=epsFact_density,
                                    stokes=False,
                                    useRBLES=useRBLES,
