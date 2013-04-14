@@ -9,9 +9,9 @@ femSpaces = {0:basis}
 massLumping       = False
 numericalFluxType = None
 conservativeFlux  = None
-numericalFluxType = DoNothing
-subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,lag=False)
-shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=False)
+numericalFluxType = NCLS.NumericalFlux
+subgridError      = NCLS.SubgridError(coefficients,nd)
+shockCapturing    = NCLS.ShockCapturing(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=ls_lag_shockCapturing)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton

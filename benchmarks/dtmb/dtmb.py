@@ -48,10 +48,10 @@ barycenters[7,:] = hull_cg
 vessel = 5415
 genMesh=False
 #he=10.0
-#he=1.0
+he=1.0
 #he=0.5
 #he=0.25
-he=0.125
+#he=0.125
 if he == 1.0:
     src_dir = 'mesh8490'
 elif he == 0.5:
@@ -233,8 +233,8 @@ freezeLevelSet=True
 #----------------------------------------------------
 # Time stepping and velocity
 #----------------------------------------------------
-Fr = 0.28
-#Fr = 0.51
+#Fr = 0.28
+Fr = 0.51
 Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um/nu_0
 
@@ -356,15 +356,15 @@ elif spaceOrder == 2:
 ns_forceStrongDirichlet = True
 weak_bc_penalty_constant = 1000.0
 if useMetrics:
-    ns_shockCapturingFactor  = 0.3
-    ns_lag_shockCapturing = False#True
+    ns_shockCapturingFactor  = 0.1
+    ns_lag_shockCapturing = True
     ns_lag_subgridError = True
-    ls_shockCapturingFactor  = 0.3
-    ls_lag_shockCapturing = False#True
+    ls_shockCapturingFactor  = 0.1
+    ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.5
-    vof_shockCapturingFactor = 0.3
-    vof_lag_shockCapturing = False#True
+    vof_shockCapturingFactor = 0.1
+    vof_lag_shockCapturing = True
     vof_sc_uref = 1.0
     vof_sc_beta = 1.5
     rd_shockCapturingFactor  = 0.9
@@ -419,7 +419,7 @@ kappa_nl_atol_res = max(1.0e-12,0.01*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.01*he**2)
 
 #turbulence
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:

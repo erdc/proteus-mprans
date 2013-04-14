@@ -244,16 +244,17 @@ namespace proteus
       for (int I=0; I < nSpace; I++)
 	{
 	  flow_fluid += n[I]*velocity[I];
-	  flow_movingDomain -= n[I]*velocity_movingDomain[I];
+	  //flow_movingDomain -= n[I]*velocity_movingDomain[I];
 	}
       flow_total = flow_fluid+flow_movingDomain;
-      if (flow_total >= 0.0)
+      if (flow_total > 0.0)
 	{
 	  flux = u*flow_movingDomain;
 	}
       else
 	{
 	  flux = bc_u*flow_movingDomain - flow_fluid*(u-bc_u);
+	  //std::cout<<"bc_u "<<bc_u<<" flow_fluid "<<flow_fluid<<" u "<<u<<std::endl;
 	}
     }
     
@@ -267,10 +268,10 @@ namespace proteus
       for (int I=0; I < nSpace; I++)
 	{
 	  flow_fluid += n[I]*velocity[I];
-	  flow_movingDomain -= n[I]*velocity_movingDomain[I];
+	  //flow_movingDomain -= n[I]*velocity_movingDomain[I];
 	}
       flow_total=flow_fluid+flow_movingDomain;
-      if (flow_total >= 0.0)
+      if (flow_total > 0.0)
 	{
 	  dflux = flow_movingDomain;
 	}

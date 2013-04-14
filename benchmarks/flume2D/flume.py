@@ -59,7 +59,7 @@ elif spaceOrder == 2:
 L = (2.0,1.0)
 he = L[1]/10
 he*=0.5
-#he*=0.5
+he*=0.5
 #print he
 useObstacle=True#False
 nLevels = 1
@@ -157,7 +157,6 @@ else:
 
 # Numerical parameters
 ns_forceStrongDirichlet = False#True
-weak_bc_penalty_constant = 1000.0
 if useMetrics:
     ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = True#False
@@ -221,7 +220,6 @@ rd_nl_atol_res = max(1.0e-12,0.01*he)
 kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 
-rampInitialConditions = True
 #turbulence
 ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
@@ -250,6 +248,7 @@ inflowHeight = L[1]/2.0
 
 #Fr = 2.0#1.25
 Fr = 0.25
+Fr = 0.51
 Um = Fr*sqrt(fabs(g[1])*2*obstacle_radius)
 Re = 2*obstacle_radius*Um/nu_0
 Frd = Um/sqrt(fabs(g[1])*inflowHeight)
@@ -261,6 +260,8 @@ inflowVelocity = (Um,0.0)
 outflowVelocity = (Um,0.0)
 #for RANS
 kInflow = 0.003*Um
+
+weak_bc_penalty_constant = Re_dw
 
 # Time stepping
 T=10.0*residence_time
@@ -275,7 +276,10 @@ def inflowPhi(x,t):
     return signedDistance(x)
 
 def inflowVF(x,t):
-    return smoothedHeaviside(epsFact_consrv_heaviside*he,x[1] - inflowHeight)
+    return smoothedHeaviside(epsFact_consrv_heaviside*he,inflowPhi(x,t))
+
+def inflowVF_flux(x,t):
+    return -Um*inflowVF(x,t)
 
 def inflowPressure(x,t):
     p_L = L[1]*rho_1*g[1]

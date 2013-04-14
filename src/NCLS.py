@@ -41,6 +41,14 @@ class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
                 self.numDiff_last.append(self.numDiff[ci].copy())
         log("NCLS: max numDiff %e" % (globalMax(self.numDiff_last[0].max()),))
 
+class NumericalFlux(proteus.NumericalFlux.HamiltonJacobi_DiagonalLesaintRaviart):
+    def __init__(self,vt,getPointwiseBoundaryConditions,
+                 getAdvectiveFluxBoundaryConditions,
+                 getDiffusiveFluxBoundaryConditions):
+        proteus.NumericalFlux.HamiltonJacobi_DiagonalLesaintRaviart.__init__(self,vt,getPointwiseBoundaryConditions,
+                                                                             getAdvectiveFluxBoundaryConditions,
+                                                                             getDiffusiveFluxBoundaryConditions)
+
 class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import ncLevelSetCoefficientsEvaluate
     from proteus.UnstructuredFMMandFSWsolvers import FMMEikonalSolver,FSWEikonalSolver

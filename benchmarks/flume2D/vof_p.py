@@ -24,6 +24,8 @@ def getDBC_vof(x,flag):
 dirichletConditions = {0:getDBC_vof}
 
 def getAFBC_vof(x,flag):
+    # if flag == boundaryTags['left']:
+    #     return inflowVF_flux
     if not (flag == boundaryTags['right'] or flag == boundaryTags['left']):
         return lambda x,t: 0.0
 

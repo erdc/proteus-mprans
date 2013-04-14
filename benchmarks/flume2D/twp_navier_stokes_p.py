@@ -34,6 +34,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
 				   useRBLES=useRBLES,
 				   useMetrics=useMetrics,
                                    eb_adjoint_sigma=1.0,
+                                   eb_penalty_constant=weak_bc_penalty_constant,
                                    forceStrongDirichlet=ns_forceStrongDirichlet,
                                    turbulenceClosureModel=ns_closure)
 
@@ -44,16 +45,12 @@ def getDBC_p(x,flag):
 def getDBC_u(x,flag):
     if flag == boundaryTags['left']:
         return lambda x,t: inflowVelocity[0]
-    if flag == boundaryTags['right']:
-        return lambda x,t: outflowVelocity[0]
     if flag == boundaryTags['obstacle']:
         return lambda x,t: 0.0
 
 def getDBC_v(x,flag):
     if flag == boundaryTags['left']:
         return lambda x,t: inflowVelocity[1]
-    if flag == boundaryTags['right']:
-        return lambda x,t: outflowVelocity[1]
     if flag == boundaryTags['obstacle']:
         return lambda x,t: 0.0
 
@@ -62,23 +59,35 @@ dirichletConditions = {0:getDBC_p,
                        2:getDBC_v}
 
 def getAFBC_p(x,flag):
-    if flag == boundaryTags['bottom'] or flag == boundaryTags['top'] or flag == boundaryTags['obstacle']:
+    if flag == boundaryTags['left']:
+        return lambda x,t: -inflowVelocity[0]
+    if flag == boundaryTags['right']:
+        return None
+    else:
         return lambda x,t: 0.0
 
 def getAFBC_u(x,flag):
-    if flag == boundaryTags['bottom'] or flag == boundaryTags['top']:
+    if flag == boundaryTags['left'] or flag == boundaryTags['right'] or flag == boundaryTags['obstacle']:
+        return None
+    else:
         return lambda x,t: 0.0
 
 def getAFBC_v(x,flag):
-    if flag == boundaryTags['bottom'] or flag == boundaryTags['top']:
+    if flag == boundaryTags['left'] or flag == boundaryTags['right'] or flag == boundaryTags['obstacle']:
+        return None
+    else:
         return lambda x,t: 0.0
 
 def getDFBC_u(x,flag):
-    if not (flag == boundaryTags['left'] or flag == boundaryTags['obstacle']):
+    if flag == boundaryTags['left'] or flag == boundaryTags['obstacle']:
+        return None
+    else:
         return lambda x,t: 0.0
     
 def getDFBC_v(x,flag):
-    if not (flag == boundaryTags['left'] or flag == boundaryTags['obstacle']):
+    if flag == boundaryTags['left'] or flag == boundaryTags['obstacle']:
+        return None
+    else:
         return lambda x,t: 0.0
 
 advectiveFluxBoundaryConditions =  {0:getAFBC_p,

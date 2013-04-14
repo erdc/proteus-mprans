@@ -15,7 +15,7 @@ femSpaces = {0:basis}
 
 massLumping       = False
 conservativeFlux  = None
-numericalFluxType = DoNothing
+numericalFluxType = NCLS.NumericalFlux
 subgridError      = NCLS.SubgridError(coefficients,nd)
 shockCapturing    = NCLS.ShockCapturing(coefficients,nd,shockCapturingFactor=ls_shockCapturingFactor,lag=ls_lag_shockCapturing)
 
