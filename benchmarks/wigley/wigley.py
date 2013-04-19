@@ -81,7 +81,7 @@ nLevels = 1
 
 he = hull_draft/1.0 #1 core
 he *=0.5 #4-8 
-#he *=0.5 #512 (2048 8-way nodes)
+he *=0.5 #512 (2048 8-way nodes)
 #he *=0.5
 #he = hull_draft/1.5 #16 cores
 #he *=0.5 #128 but can run on 2 cores with 8G
@@ -414,7 +414,6 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 
-print "weights",elementBoundaryQuadrature.weights,sum(elementBoundaryQuadrature.weights)
 # Numerical parameters
 ns_forceStrongDirichlet = False
 
@@ -581,4 +580,3 @@ def outflowPressure(x,t):
                                                          -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 
-print "waterLevel ",waterLevel
