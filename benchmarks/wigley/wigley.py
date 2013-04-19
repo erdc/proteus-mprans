@@ -80,7 +80,7 @@ RBR_angCons  = [1,0,1]
 nLevels = 1
 
 he = hull_draft/1.0 #16 cores#
-#he *=0.5 #128 
+he *=0.5 #4 
 #he *=0.5 #512 (2048 8-way nodes)
 #he *=0.5
 #he = hull_draft/1.5 #16 cores
