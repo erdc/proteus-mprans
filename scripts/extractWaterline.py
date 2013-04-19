@@ -31,7 +31,7 @@ def  mergeWaterline(size, step):
 		  waterline = concatenate((waterline,data))
 		  
         # Sort waterline 
-        waterline.view('d8,d8,d8').sort(order=['f0'], axis=0)
+        waterline.view('d,d,d').sort(order=['f0'], axis=0)
 	
 	
 	
