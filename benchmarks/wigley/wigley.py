@@ -49,19 +49,19 @@ hull_center = (0.0,
 
 
 #debug
-L=(1.5*hull_length,
-   3.0*hull_beam, 
-   3.0*hull_draft)
+#L=(1.5*hull_length,
+#   3.0*hull_beam, 
+#   3.0*hull_draft)
 
-x_ll = (-0.75*hull_length,
-         -L[1]/2.0,
-         0.0)
+#x_ll = (-0.75*hull_length,
+#         -L[1]/2.0,
+#         0.0)
 
-waterLevel   = 1.5*hull_draft
+#waterLevel   = 1.5*hull_draft
 
-hull_center = (0.0,
-               0.0,
-               waterLevel)
+#hull_center = (0.0,
+#               0.0,
+#               waterLevel)
 
 #set up barycenters for force calculation
 barycenters = numpy.zeros((8,3),'d')
@@ -80,7 +80,7 @@ RBR_angCons  = [1,0,1]
 nLevels = 1
 
 he = hull_draft/1.7 #16 cores
-#he *=0.5 #128 
+he *=0.5 #128 
 #he *=0.5 #512 (2048 8-way nodes)
 #he *=0.5
 #he = hull_draft/1.5 #16 cores
@@ -89,7 +89,7 @@ he = hull_draft/1.7 #16 cores
 #vessel = 'wigley-gmsh'
 #genMesh=False
 vessel = 'wigley'
-genMesh=True#
+genMesh=False#
 #vessel = None
 #genMesh=True
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
@@ -229,7 +229,6 @@ openTop = True
 openSides = True
 smoothBottom = False
 smoothObstacle = False
-rampInitialConditions = False
 movingDomain=False
 checkMass=False
 applyCorrection=True
@@ -360,16 +359,16 @@ elif spaceOrder == 2:
 
 # Numerical parameters
 ns_forceStrongDirichlet = False
-weak_bc_penalty_constant = 1000.0
+weak_bc_penalty_constant = 100.0
 if useMetrics:
-    ns_shockCapturingFactor  = 0.3
+    ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = True
     ns_lag_subgridError = True
-    ls_shockCapturingFactor  = 0.3
+    ls_shockCapturingFactor  = 0.9
     ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.5
-    vof_shockCapturingFactor = 0.3
+    vof_shockCapturingFactor = 0.9
     vof_lag_shockCapturing = True
     vof_sc_uref = 1.0
     vof_sc_beta = 1.5
@@ -379,7 +378,7 @@ if useMetrics:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = False
+    redist_Newton = True
     kappa_shockCapturingFactor = 0.9
     kappa_lag_shockCapturing = True
     kappa_sc_uref = 1.0
@@ -425,7 +424,7 @@ kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 
 #turbulence
-ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=1 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS >= 2:
@@ -446,10 +445,7 @@ def waveHeight(x,t):
     return waterLevel
 
 def waveVelocity_u(x,t):
-    if rampInitialConditions:
-        return min(1.0,0.5*t/residence_time)*Um
-    else:
-        return Um
+    return Um
 
 def waveVelocity_v(x,t):
     return 0.0
@@ -473,10 +469,7 @@ def twpflowVelocity_u(x,t):
 #    waterspeed = waveVelocity_u(x,t)
 #    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
 #    return H*windspeed_u + (1.0-H)*waterspeed
-    if rampInitialConditions:
-        return Um*min(1.0,0.5*t/residence_time)
-    else:
-        return Um
+    return Um
 
 def twpflowVelocity_v(x,t):
 #    waterspeed = waveVelocity_v(x,t)

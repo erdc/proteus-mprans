@@ -47,11 +47,10 @@ barycenters[7,:] = hull_cg
 
 vessel = 5415
 genMesh=False
-#he=10.0
-he=1.0
+#he=1.0
 #he=0.5
 #he=0.25
-#he=0.125
+he=0.125
 if he == 1.0:
     src_dir = 'mesh8490'
 elif he == 0.5:
@@ -219,14 +218,14 @@ quad_order = 3
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
-openTop = True
-openSides = True
-smoothBottom = False
+openTop = False#True
+openSides = False#True
+smoothBottom = True#False
 smoothObstacle = False
 rampInitialConditions = False
 movingDomain=False
 checkMass=False
-applyCorrection=True
+applyCorrection=False#True
 applyRedistancing=True
 freezeLevelSet=True
 
@@ -240,8 +239,8 @@ Re = hull_length*Um/nu_0
 
 residence_time = hull_length/Um
 dt_init=0.001
-T = 10*residence_time
-nDTout=200
+T = 5*residence_time
+nDTout=100
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
 
@@ -310,7 +309,7 @@ spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 1.0
-useVF = 1.0
+useVF = 0.0
 useOnlyVF = False
 useRANS = 0 # 0 -- None
             # 1 -- K-Epsilon
@@ -353,7 +352,7 @@ elif spaceOrder == 2:
     
 
 # Numerical parameters
-ns_forceStrongDirichlet = True
+ns_forceStrongDirichlet = False
 weak_bc_penalty_constant = 1000.0
 if useMetrics:
     ns_shockCapturingFactor  = 0.1
@@ -389,18 +388,18 @@ else:
     ls_shockCapturingFactor  = 0.9
     ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
-    ls_sc_beta  = 1.0
+    ls_sc_beta  = 1.5
     vof_shockCapturingFactor = 0.9
     vof_lag_shockCapturing = True
     vof_sc_uref  = 1.0
-    vof_sc_beta  = 1.0
+    vof_sc_beta  = 1.5
     rd_shockCapturingFactor  = 0.9
     rd_lag_shockCapturing = False
     epsFact_density    = 1.5
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = False#True
+    redist_Newton = True
     kappa_shockCapturingFactor = 0.9
     kappa_lag_shockCapturing = True#False
     kappa_sc_uref  = 1.0
@@ -415,11 +414,11 @@ vof_nl_atol_res = max(1.0e-12,0.001*he**2)
 ls_nl_atol_res = max(1.0e-12,0.001*he**2)
 mcorr_nl_atol_res = max(1.0e-12,0.001*he**2)
 rd_nl_atol_res = max(1.0e-12,0.01*he)
-kappa_nl_atol_res = max(1.0e-12,0.01*he**2)
-dissipation_nl_atol_res = max(1.0e-12,0.01*he**2)
+kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
+dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 
 #turbulence
-ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=1 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:

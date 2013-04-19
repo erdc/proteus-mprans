@@ -12,9 +12,9 @@ if redist_Newton:
     timeIntegration = NoIntegration
     stepController = Newton_controller
     maxNonlinearIts = 25
-    maxLineSearches = 10
-    nonlinearSolverConvergenceTest = 'r'
-    levelNonlinearSolverConvergenceTest = 'r'
+    maxLineSearches = 0
+    nonlinearSolverConvergenceTest = 'rits'
+    levelNonlinearSolverConvergenceTest = 'rits'
     linearSolverConvergenceTest = 'r-true'
 else:
     timeIntegration = BackwardEuler_cfl
