@@ -81,7 +81,10 @@ def getAFBC_p(x,flag):
     if flag == boundaryTags['left']:
         return twpflowFlux#inflow
     elif flag == boundaryTags['right']:
-        return None#outflow
+        if openEnd:
+            return None#outflow
+        else:
+            return lambda x,t: 0.0
     elif flag == boundaryTags['top']:
         if openTop:
             return None#outflow
@@ -101,7 +104,10 @@ def getAFBC_u(x,flag):
     if flag == boundaryTags['left']:
         return None#weak Dirichlet
     elif flag == boundaryTags['right']:
-        return None#outflow
+        if openEnd:
+            return None#outflow
+        else:
+            return lambda x,t: 0.0
     elif flag == boundaryTags['top']:
         if openTop:
             return None#outflow
@@ -119,7 +125,10 @@ def getAFBC_v(x,flag):
     if flag == boundaryTags['left']:
         return None#weak Dirichlet
     elif flag == boundaryTags['right']:
-        return None#outflow
+        if openEnd:
+            return None#outflow
+        else:
+            return lambda x,t: 0.0
     elif flag == boundaryTags['top']:
         if openTop:
             return None#outflow

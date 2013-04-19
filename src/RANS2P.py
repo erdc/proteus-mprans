@@ -358,13 +358,17 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.elementMaterialTypes = mesh.elementMaterialTypes
         self.eps_source=self.epsFact_source*mesh.h
         nBoundariesMax = int(globalMax(max(self.mesh.elementBoundaryMaterialTypes)))+1
-        self.netForces = numpy.zeros((nBoundariesMax,3),'d')
+        self.wettedAreas = numpy.zeros((nBoundariesMax,),'d')
+        self.netForces_p = numpy.zeros((nBoundariesMax,3),'d')
+        self.netForces_v = numpy.zeros((nBoundariesMax,3),'d')
         self.netMoments = numpy.zeros((nBoundariesMax,3),'d')
         if self.barycenters == None:
             self.barycenters = numpy.zeros((nBoundariesMax,3),'d')
         comm = Comm.get()
         if comm.isMaster():
-            self.forceHistory = open("forceHistory.txt","w")
+            self.wettedAreaHistory = open("wettedAreaHistory.txt","w")
+            self.forceHistory_p = open("forceHistory_p.txt","w")
+            self.forceHistory_v = open("forceHistory_v.txt","w")
             self.momentHistory = open("momentHistory.txt","w")
         self.comm = comm
     #initialize so it can run as single phase
@@ -478,11 +482,6 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                     eN  = self.mesh.elementBoundaryElementsArray[ebN,0]
                     self.ebqe_dragBeta[ebNE,:] = self.dragBetaTypes[self.elementMaterialTypes[eN]]
         #
-
-    def postStep(self,t,firstStep=False):    
-        copyInstructions = {}
-        return copyInstructions
-
     def updateToMovingDomain(self,t,c):
         pass
     def evaluateForcingTerms(self,t,c,mesh=None,mesh_trial_ref=None,mesh_l2g=None):
@@ -627,10 +626,29 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         #                                     c[('r',0)])
     def evaluate(self,t,c):
         pass
+    def preStep(self,t,firstStep=False):
+        if self.comm.isMaster():
+            print "wettedAreas"
+            print self.wettedAreas[:]
+            print "Forces_p"
+            print self.netForces_p[:,:]
+            print "Forces_v"
+            print self.netForces_v[:,:]
     def postStep(self,t,firstStep=False):
         if self.comm.isMaster():
-            self.forceHistory.write("%21.16e %21.16e %21.16e\n" %tuple(self.netForces[-1,:]))
+            print "wettedAreas"
+            print self.wettedAreas[:]
+            print "Forces_p"
+            print self.netForces_p[:,:]
+            print "Forces_v"
+            print self.netForces_v[:,:]
+            self.wettedAreaHistory.write("%21.16e\n" % (self.wettedAreas[-1],))
+            self.forceHistory_p.write("%21.16e %21.16e %21.16e\n" %tuple(self.netForces_p[-1,:]))
+            self.forceHistory_p.flush()
+            self.forceHistory_v.write("%21.16e %21.16e %21.16e\n" %tuple(self.netForces_v[-1,:]))
+            self.forceHistory_v.flush()
             self.momentHistory.write("%21.15e %21.16e %21.16e\n" % tuple(self.netMoments[-1,:]))
+            self.momentHistory.flush()
 
 class LevelModel(proteus.Transport.OneLevelTransport):
     nCalls=0
@@ -1255,7 +1273,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if 'evaluateForcingTerms' in dir(self.coefficients):
             self.coefficients.evaluateForcingTerms(self.timeIntegration.t,self.q,self.mesh,
                                                    self.u[0].femSpace.elementMaps.psi,self.mesh.elementNodesArray)
-        self.coefficients.netForces[:,:]  = 0.0
+        self.coefficients.wettedAreas[:]  = 0.0
+        self.coefficients.netForces_p[:,:]  = 0.0
+        self.coefficients.netForces_v[:,:]  = 0.0
         self.coefficients.netMoments[:,:] = 0.0
 
         if self.forceStrongConditions:
@@ -1411,23 +1431,23 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.elementResidual[0],
             self.mesh.elementBoundaryMaterialTypes,
             self.coefficients.barycenters,
-            self.coefficients.netForces,
+            self.coefficients.wettedAreas,
+            self.coefficients.netForces_p,
+            self.coefficients.netForces_v,
             self.coefficients.netMoments)
 	from proteus.flcbdfWrappers import globalSum
-        for i in range(self.coefficients.netForces.shape[0]):
+        for i in range(self.coefficients.netForces_p.shape[0]):
+            self.coefficients.wettedAreas[i] = globalSum(self.coefficients.wettedAreas[i])
             for I in range(3):
-                self.coefficients.netForces[i,I]  = globalSum(self.coefficients.netForces[i,I]) 
+                self.coefficients.netForces_p[i,I]  = globalSum(self.coefficients.netForces_p[i,I]) 
+                self.coefficients.netForces_v[i,I]  = globalSum(self.coefficients.netForces_v[i,I]) 
                 self.coefficients.netMoments[i,I] = globalSum(self.coefficients.netMoments[i,I]) 
 	if self.forceStrongConditions:#
 	    for cj in range(len(self.dirichletConditionsForceDOF)):#
 		for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
                      r[self.offset[cj]+self.stride[cj]*dofN] = 0
-
-
-
         cflMax=globalMax(self.q[('cfl',0)].max())*self.timeIntegration.dt
         log("Maximum CFL = " + str(cflMax),level=2)
-
         if self.stabilization:
             self.stabilization.accumulateSubgridMassHistory(self.q)
         log("Global residual",level=9,data=r)

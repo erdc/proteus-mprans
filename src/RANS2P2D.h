@@ -3022,24 +3022,24 @@ namespace proteus
 	      // 
 	      //integrate the net force and moment on flagged boundaries
 	      //
-	      /* force_x = flux_mom_uu_diff_ext + flux_mom_uv_diff_ext + flux_mom_uw_diff_ext + p_ext*normal[0];  */
-	      /* force_y = flux_mom_vu_diff_ext + flux_mom_vv_diff_ext + flux_mom_vw_diff_ext + p_ext*normal[1];  */
+	      force_x = flux_mom_uu_diff_ext + flux_mom_uv_diff_ext + p_ext*normal[0];
+	      force_y = flux_mom_vu_diff_ext + flux_mom_vv_diff_ext + p_ext*normal[1];
 	      /* force_z = flux_mom_wu_diff_ext + flux_mom_wv_diff_ext + flux_mom_ww_diff_ext + p_ext*normal[2];  */
-	      force_x = p_ext*normal[0]; 
-	      force_y = p_ext*normal[1]; 
+	      /* force_x = p_ext*normal[0];  */
+	      /* force_y = p_ext*normal[1];  */
 	      /* force_z = p_ext*normal[2];  */
  	        
 	      r_x = x_ext - barycenters[3*boundaryFlags[ebN]+0];
 	      r_y = y_ext - barycenters[3*boundaryFlags[ebN]+1];
 	      /* r_z = z_ext - barycenters[3*boundaryFlags[ebN]+2]; */
 
-	      /* netForces[3*boundaryFlags[ebN]+0] += force_x*dS;      		        									 */
-	      /* netForces[3*boundaryFlags[ebN]+1] += force_y*dS;      		        									 */
+	      netForces[3*boundaryFlags[ebN]+0] += force_x*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
+	      netForces[3*boundaryFlags[ebN]+1] += force_y*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
 	      /* netForces[3*boundaryFlags[ebN]+2] += force_z*dS;      		        									 */
 
 	      /* netMoments[3*boundaryFlags[ebN]+0] += (r_y*force_z - r_z*force_y)*dS; */
-	      /* netMoments[3*boundaryFlags[ebN]+1] += (r_z*force_x - r_x*force_z)*dS;	        */
-	      /* netMoments[3*boundaryFlags[ebN]+2] += (r_x*force_y - r_y*force_x)*dS; */
+	      /* netMoments[3*boundaryFlags[ebN]+1] += (r_z*force_x - r_x*force_z)*dS; */
+	      netMoments[3*boundaryFlags[ebN]+2] += (r_x*force_y - r_y*force_x)*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
 	      
 	      //
 	      //update residuals

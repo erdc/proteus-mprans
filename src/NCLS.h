@@ -61,6 +61,7 @@ namespace proteus
 				   int* elementBoundaryLocalElementBoundariesArray,
 				   double* ebqe_velocity_ext,
 				   int* isDOFBoundary_u,
+				   double* ebqe_rd_u_ext,				   
 				   double* ebqe_bc_u_ext,				   
 				   double* ebqe_u)=0;				   
     virtual void calculateJacobian(//element
@@ -106,6 +107,7 @@ namespace proteus
 				   int* elementBoundaryLocalElementBoundariesArray,
 				   double* ebqe_velocity_ext,
 				   int* isDOFBoundary_u,
+				   double* ebqe_rd_u_ext,
 				   double* ebqe_bc_u_ext,
 				   int* csrColumnOffsets_eb_u_u)=0;
     virtual void calculateWaterline(//element
@@ -330,6 +332,7 @@ namespace proteus
 			   int* elementBoundaryLocalElementBoundariesArray,
 			   double* ebqe_velocity_ext,
 			   int* isDOFBoundary_u,
+			   double* ebqe_rd_u_ext,
 			   double* ebqe_bc_u_ext,
 			   double* ebqe_u)
     {
@@ -639,7 +642,7 @@ namespace proteus
 	      //
 	      //load the boundary values
 	      //
-	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
+	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*ebqe_rd_u_ext[ebNE_kb];
 	      // 
 	      //calculate the pde coefficients using the solution and the boundary values for the solution 
 	      // 
@@ -671,8 +674,7 @@ namespace proteus
 	      //calculate the numerical fluxes 
 	      // 
 	      exteriorNumericalFlux(normal,
-				    ebqe_bc_u_ext[ebNE_kb],//
-				    //bc_u_ext,
+				    bc_u_ext,
 				    u_ext,
 				    dH_ext,
 				    velocity_ext,
@@ -752,6 +754,7 @@ namespace proteus
 			   int* elementBoundaryLocalElementBoundariesArray,
 			   double* ebqe_velocity_ext,
 			   int* isDOFBoundary_u,
+			   double* ebqe_rd_u_ext,
 			   double* ebqe_bc_u_ext,
 			   int* csrColumnOffsets_eb_u_u)
     {
@@ -1052,7 +1055,7 @@ namespace proteus
 	      //
 	      //load the boundary values
 	      //
-	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
+	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*ebqe_rd_u_ext[ebNE_kb];
 	      // 
 	      //calculate the internal and external trace of the pde coefficients 
 	      // 

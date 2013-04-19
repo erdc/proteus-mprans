@@ -22,7 +22,10 @@ def getDBC_vof(x,flag):
     elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
         return outflowVF
     elif flag == boundaryTags['right']:
-        return outflowVF
+        if openEnd:
+            return outflowVF
+        else:
+            return None
     elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):
         return outflowVF
     elif flag == boundaryTags['left']:
@@ -42,7 +45,10 @@ def getAFBC_vof(x,flag):
         else:
             return lambda x,t: 0.0
     elif flag == boundaryTags['right']:
-        return None
+        if openEnd:
+            return None
+        else:
+            return lambda x,t: 0.0
     elif flag == boundaryTags['left']:
         return None
     elif openSides and (flag == boundaryTags['front'] or flag == boundaryTags['back']):

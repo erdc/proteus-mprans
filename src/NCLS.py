@@ -689,7 +689,7 @@ class LevelModel(OneLevelTransport):
             self.mesh.elementBoundaryLocalElementBoundariesArray,
             self.coefficients.ebqe_v,
             self.numericalFlux.isDOFBoundary[0],
-            #self.coefficients.rdModel.ebqe[('u',0)],
+            self.coefficients.rdModel.ebqe[('u',0)],
             self.numericalFlux.ebqe[('u',0)],
             self.ebqe[('u',0)])
 
@@ -759,7 +759,7 @@ class LevelModel(OneLevelTransport):
             self.mesh.elementBoundaryLocalElementBoundariesArray,
             self.coefficients.ebqe_v,
             self.numericalFlux.isDOFBoundary[0],
-            #self.coefficients.rdModel.ebqe[('u',0)],
+            self.coefficients.rdModel.ebqe[('u',0)],
             self.numericalFlux.ebqe[('u',0)],
             self.csrColumnOffsets_eb[(0,0)])
 

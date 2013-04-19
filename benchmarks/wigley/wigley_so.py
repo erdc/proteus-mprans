@@ -31,6 +31,7 @@ if wigley.useRANS > 0:
                    "dissipation_n"))
 name = "wigley"
 
+#systemStepControllerType = ISO_fixed_MinAdaptiveModelStep
 systemStepControllerType = Sequential_MinAdaptiveModelStep
 
 needEBQ_GLOBAL = False
