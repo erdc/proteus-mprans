@@ -152,7 +152,9 @@ namespace proteus
 				   double* elementResidual_p,
 				   int* boundaryFlags,
 				   double* barycenters,
-				   double* netForces,
+				   double* wettedAreas,
+				   double* netForces_p,
+				   double* netForces_v,
 				   double* netMoments)=0;
     virtual void calculateJacobian(//element
 				   double* mesh_trial_ref,
@@ -1806,7 +1808,9 @@ namespace proteus
 			   double* elementResidual_p_save,
 			   int* boundaryFlags,
 			   double* barycenters,
-			   double* netForces,
+			   double* wettedAreas,
+			   double* netForces_p,
+			   double* netForces_v,
 			   double* netMoments)
     {
       //
@@ -2515,7 +2519,7 @@ namespace proteus
 		porosity_ext,
 		//
 		G[nSpace*nSpace],G_dd_G,tr_G,h_phi,h_penalty,penalty,
-		force_x,force_y,force_z,r_x,r_y,r_z;
+		force_x,force_y,force_z,force_p_x,force_p_y,force_p_z,force_v_x,force_v_y,force_v_z,r_x,r_y,r_z;
 	      //compute information about mapping from reference element to physical element
 	      ck.calculateMapping_elementBoundary(eN,
 						  ebN_local,
@@ -3022,23 +3026,34 @@ namespace proteus
 	      // 
 	      //integrate the net force and moment on flagged boundaries
 	      //
-	      force_x = flux_mom_uu_diff_ext + flux_mom_uv_diff_ext + p_ext*normal[0];
-	      force_y = flux_mom_vu_diff_ext + flux_mom_vv_diff_ext + p_ext*normal[1];
-	      /* force_z = flux_mom_wu_diff_ext + flux_mom_wv_diff_ext + flux_mom_ww_diff_ext + p_ext*normal[2];  */
-	      /* force_x = p_ext*normal[0];  */
-	      /* force_y = p_ext*normal[1];  */
-	      /* force_z = p_ext*normal[2];  */
- 	        
+	      force_v_x = flux_mom_uu_diff_ext + flux_mom_uv_diff_ext + flux_mom_uw_diff_ext;
+	      force_v_y = flux_mom_vu_diff_ext + flux_mom_vv_diff_ext + flux_mom_vw_diff_ext;
+	      //force_v_z = flux_mom_wu_diff_ext + flux_mom_wv_diff_ext + flux_mom_ww_diff_ext;
+
+	      force_p_x = p_ext*normal[0];
+	      force_p_y = p_ext*normal[1];
+	      //force_p_z = p_ext*normal[2];
+	      
+	      force_x = force_p_x + force_v_x;
+	      force_y = force_p_y + force_v_y;
+	      //force_z = force_p_z + force_v_z;
+
 	      r_x = x_ext - barycenters[3*boundaryFlags[ebN]+0];
 	      r_y = y_ext - barycenters[3*boundaryFlags[ebN]+1];
-	      /* r_z = z_ext - barycenters[3*boundaryFlags[ebN]+2]; */
+	      //r_z = z_ext - barycenters[3*boundaryFlags[ebN]+2];
+	      
+	      wettedAreas[boundaryFlags[ebN]] += dS*(1.0-ebqe_vf_ext[ebNE_kb]);
 
-	      netForces[3*boundaryFlags[ebN]+0] += force_x*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
-	      netForces[3*boundaryFlags[ebN]+1] += force_y*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
-	      /* netForces[3*boundaryFlags[ebN]+2] += force_z*dS;      		        									 */
-
-	      /* netMoments[3*boundaryFlags[ebN]+0] += (r_y*force_z - r_z*force_y)*dS; */
-	      /* netMoments[3*boundaryFlags[ebN]+1] += (r_z*force_x - r_x*force_z)*dS; */
+	      netForces_p[3*boundaryFlags[ebN]+0] += force_p_x*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
+	      netForces_p[3*boundaryFlags[ebN]+1] += force_p_y*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
+	      //netForces_p[3*boundaryFlags[ebN]+2] += force_p_z*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
+	      
+	      netForces_v[3*boundaryFlags[ebN]+0] += force_v_x*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
+	      netForces_v[3*boundaryFlags[ebN]+1] += force_v_y*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
+	      //netForces_v[3*boundaryFlags[ebN]+2] += force_v_z*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
+	      
+	      //netMoments[3*boundaryFlags[ebN]+0] += (r_y*force_z - r_z*force_y)*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
+	      //netMoments[3*boundaryFlags[ebN]+1] += (r_z*force_x - r_x*force_z)*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
 	      netMoments[3*boundaryFlags[ebN]+2] += (r_x*force_y - r_y*force_x)*dS*(1.0-ebqe_vf_ext[ebNE_kb]);
 	      
 	      //

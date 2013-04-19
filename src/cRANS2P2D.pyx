@@ -145,7 +145,9 @@ cdef extern from "RANS2P2D.h" namespace "proteus":
                                    double* elementResidual_p,
 				   int* boundaryFlags,
 				   double* barycenters,
-				   double* netForces,
+				   double* wettedAreas,
+				   double* netForces_p,
+				   double* netForces_v,
 				   double* netMoments)        
         void calculateJacobian(double* mesh_trial_ref,
 				   double* mesh_grad_trial_ref,
@@ -603,7 +605,9 @@ cdef class cRANS2P2D_base:
                          numpy.ndarray elementResidual_p,
 			 numpy.ndarray boundaryFlags,
 			 numpy.ndarray barycenters,
-			 numpy.ndarray netForces,
+			 numpy.ndarray wettedAreas,
+			 numpy.ndarray netForces_p,
+			 numpy.ndarray netForces_v,
 			 numpy.ndarray netMoments):			 
        self.thisptr.calculateResidual(<double*> mesh_trial_ref.data,
                                        <double*> mesh_grad_trial_ref.data,
@@ -744,7 +748,9 @@ cdef class cRANS2P2D_base:
                                        <double*> elementResidual_p.data,
 				       <int*> boundaryFlags.data,
 				       <double*> barycenters.data,
-				       <double*> netForces.data,
+				       <double*> wettedAreas.data,
+				       <double*> netForces_p.data,
+				       <double*> netForces_v.data,
 				       <double*> netMoments.data)
 			       
    def calculateJacobian(self,
