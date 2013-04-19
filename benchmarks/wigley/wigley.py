@@ -295,7 +295,7 @@ Fr = 0.51
 #Fr = 0.0
 Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um/nu_0
-weak_bc_penalty_constant = Re
+weak_bc_penalty_constant = 100.0#Re
 
 if Um > 0.0:
     residence_time = hull_length/Um
@@ -586,3 +586,4 @@ def outflowPressure(x,t):
                                                          -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 
+print "waterLevel ",waterLevel

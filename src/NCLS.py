@@ -834,13 +834,10 @@ class LevelModel(OneLevelTransport):
         pass
 
     def computeWaterline(self, t):
-
         self.waterline_calls += 1 
-    
         if self.coefficients.waterline_interval > 0 and self.waterline_calls%self.coefficients.waterline_interval == 0:
-		self.waterline_npoints = numpy.zeros((1),'i')
+		self.waterline_npoints = numpy.zeros((1,),'i')
         	self.waterline_data    = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nSpace_global),'d')	
-	
 		self.ncls.calculateWaterline(#element
 	 	   self.waterline_npoints,
 		   self.waterline_data,
@@ -896,12 +893,8 @@ class LevelModel(OneLevelTransport):
                    self.numericalFlux.isDOFBoundary[0],
                    self.numericalFlux.ebqe[('u',0)],
                    self.ebqe[('u',0)])
-
 		from proteus import Comm
 		comm = Comm.get()	
-
-	
 		filename = os.path.join(self.coefficients.opts.dataDir,  "waterline." + str(comm.rank()) + "." + str(self.waterline_prints))
-
 		numpy.save(filename, self.waterline_data[0:self.waterline_npoints[0]])
                 self.waterline_prints += 1

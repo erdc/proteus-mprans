@@ -139,11 +139,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
             #self.vofModel.q[('u',0)] += self.massCorrModel.q[('r',0)]
             #####print "********************max VOF************************",max(self.vofModel.q[('u',0)].flat[:])
         copyInstructions = {}
-	#cek hack
-	#self.lsModel.computeWaterline(t)
-	
-	
-	
+        #get the waterline on the obstacle if option set in NCLS (boundary==7)
+	self.lsModel.computeWaterline(t)
         return copyInstructions
     def evaluate(self,t,c):
         import math
