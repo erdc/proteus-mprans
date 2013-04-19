@@ -52,6 +52,7 @@ cdef extern from "NCLS.h" namespace "proteus":
                                int* elementBoundaryLocalElementBoundariesArray,
                                double* ebqe_velocity_ext,
                                int* isDOFBoundary_u,
+                               double* ebqe_rd_u_ext,
                                double* ebqe_bc_u_ext,
                                double* ebqe_u)
         void calculateJacobian(double* mesh_trial_ref,
@@ -94,6 +95,7 @@ cdef extern from "NCLS.h" namespace "proteus":
                                int* elementBoundaryLocalElementBoundariesArray,
                                double* ebqe_velocity_ext,
                                int* isDOFBoundary_u,
+                               double* ebqe_rd_u_ext,
                                double* ebqe_bc_u_ext,
                                int* csrColumnOffsets_eb_u_u)
         void calculateWaterline(
@@ -224,6 +226,7 @@ cdef class cNCLS_base:
                          numpy.ndarray elementBoundaryLocalElementBoundariesArray,
                          numpy.ndarray ebqe_velocity_ext,
                          numpy.ndarray isDOFBoundary_u,
+                         numpy.ndarray ebqe_rd_u_ext,
                          numpy.ndarray ebqe_bc_u_ext,
                          numpy.ndarray ebqe_u):
        self.thisptr.calculateResidual(<double*>mesh_trial_ref.data,
@@ -274,6 +277,7 @@ cdef class cNCLS_base:
                                        <int*>elementBoundaryLocalElementBoundariesArray.data,
                                        <double*>ebqe_velocity_ext.data,
                                        <int*>isDOFBoundary_u.data,
+                                       <double*>ebqe_rd_u_ext.data,
                                        <double*>ebqe_bc_u_ext.data,
                                        <double*>ebqe_u.data)
    def calculateJacobian(self,
@@ -317,6 +321,7 @@ cdef class cNCLS_base:
                          numpy.ndarray elementBoundaryLocalElementBoundariesArray,
                          numpy.ndarray ebqe_velocity_ext,
                          numpy.ndarray isDOFBoundary_u,
+                         numpy.ndarray ebqe_rd_u_ext,
                          numpy.ndarray ebqe_bc_u_ext,
                          numpy.ndarray csrColumnOffsets_eb_u_u):
        cdef numpy.ndarray rowptr,colind,globalJacobian_a
@@ -361,6 +366,7 @@ cdef class cNCLS_base:
                                        <int*>elementBoundaryLocalElementBoundariesArray.data,
                                        <double*>ebqe_velocity_ext.data,
                                        <int*>isDOFBoundary_u.data,
+                                       <double*>ebqe_rd_u_ext.data,
                                        <double*>ebqe_bc_u_ext.data,
                                        <int*>csrColumnOffsets_eb_u_u.data)
    def calculateWaterline(self,

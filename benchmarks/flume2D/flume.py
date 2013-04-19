@@ -15,7 +15,7 @@ applyCorrection=True
 useVF = 1.0
 useOnlyVF = False
 redist_Newton = True
-useRANS = 0 # 0 -- None
+useRANS = 1 # 0 -- None
             # 1 -- K-Epsilon
             # 2 -- K-Omega
 # Input checks
@@ -221,7 +221,7 @@ kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 
 #turbulence
-ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=3 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:

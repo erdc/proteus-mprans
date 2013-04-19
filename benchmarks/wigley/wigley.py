@@ -79,7 +79,7 @@ RBR_angCons  = [1,0,1]
 
 nLevels = 1
 
-he = hull_draft/1.7 #16 cores
+he = hull_draft/1.0 #16 cores#
 #he *=0.5 #128 
 #he *=0.5 #512 (2048 8-way nodes)
 #he *=0.5
@@ -89,6 +89,7 @@ he = hull_draft/1.7 #16 cores
 #vessel = 'wigley-gmsh'
 #genMesh=False
 vessel = 'wigley'
+#vessel = 'cube'
 genMesh=True#
 #vessel = None
 #genMesh=True
@@ -131,6 +132,8 @@ else:
     if vessel is 'wigley':
         n_points_length = int(ceil(hull_length/he))+1
         n_points_draft  = 2*int(ceil(hull_draft/he))+1
+        n_points_length *= 3
+        n_points_draft  *= 3
         #print "points",n_points_length,n_points_draft
         dx = hull_length/float(n_points_length-1)
         dz = 2.0*hull_draft/float(n_points_draft-1)
@@ -200,6 +203,53 @@ else:
         #for v in vertices: print v
         #for f in facets: print f
         holes.append(hull_center)
+    if vessel is 'cube':
+        nStart = len(vertices)
+        vertices.append([hull_center[0] - 0.5*hull_length,
+                         hull_center[1] - 0.5*hull_beam,
+                         hull_center[2] - 0.5*hull_draft])
+        vertexFlags.append(boundaryTags['obstacle'])
+        vertices.append([hull_center[0] - 0.5*hull_length,
+                         hull_center[1] + 0.5*hull_beam,
+                         hull_center[2] - 0.5*hull_draft])
+        vertexFlags.append(boundaryTags['obstacle'])
+        vertices.append([hull_center[0] + 0.5*hull_length,
+                         hull_center[1] + 0.5*hull_beam,
+                         hull_center[2] - 0.5*hull_draft])
+        vertexFlags.append(boundaryTags['obstacle'])
+        vertices.append([hull_center[0] + 0.5*hull_length,
+                         hull_center[1] - 0.5*hull_beam,
+                         hull_center[2] - 0.5*hull_draft])
+        vertexFlags.append(boundaryTags['obstacle'])
+        vertices.append([hull_center[0] - 0.5*hull_length,
+                         hull_center[1] - 0.5*hull_beam,
+                         hull_center[2] + 0.5*hull_draft])
+        vertexFlags.append(boundaryTags['obstacle'])
+        vertices.append([hull_center[0] - 0.5*hull_length,
+                         hull_center[1] + 0.5*hull_beam,
+                         hull_center[2] + 0.5*hull_draft])
+        vertexFlags.append(boundaryTags['obstacle'])
+        vertices.append([hull_center[0] + 0.5*hull_length,
+                         hull_center[1] + 0.5*hull_beam,
+                         hull_center[2] + 0.5*hull_draft])
+        vertexFlags.append(boundaryTags['obstacle'])
+        vertices.append([hull_center[0] + 0.5*hull_length,
+                         hull_center[1] - 0.5*hull_beam,
+                         hull_center[2] + 0.5*hull_draft])
+        vertexFlags.append(boundaryTags['obstacle'])
+        facets.append([[nStart,nStart+1,nStart+2,nStart+3]])#1
+        facetFlags.append(boundaryTags['obstacle'])
+        facets.append([[nStart,nStart+1,nStart+5,nStart+4]])#2
+        facetFlags.append(boundaryTags['obstacle'])
+        facets.append([[nStart+1,nStart+2,nStart+6,nStart+5]])#3
+        facetFlags.append(boundaryTags['obstacle'])
+        facets.append([[nStart+2,nStart+3,nStart+7,nStart+6]])#4
+        facetFlags.append(boundaryTags['obstacle'])
+        facets.append([[nStart+3,nStart,nStart+4,nStart+7]])#5
+        facetFlags.append(boundaryTags['obstacle'])
+        facets.append([[nStart+4,nStart+5,nStart+6,nStart+7]])#6
+        facetFlags.append(boundaryTags['obstacle'])
+        holes.append(hull_center)
     domain = Domain.PiecewiseLinearComplexDomain(vertices=vertices,
                                                  vertexFlags=vertexFlags,
                                                  facets=facets,
@@ -225,8 +275,9 @@ quad_order = 3
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
-openTop = True
-openSides = True
+openTop = True#False
+openSides = True#False
+openEnd = True
 smoothBottom = False
 smoothObstacle = False
 rampInitialConditions = False
@@ -239,12 +290,17 @@ freezeLevelSet=True
 #----------------------------------------------------
 # Time stepping and velocity
 #----------------------------------------------------
-Fr = 0.25
-#Fr = 0.51
+#Fr = 0.25
+Fr = 0.51
+#Fr = 0.0
 Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um/nu_0
+weak_bc_penalty_constant = Re
 
-residence_time = hull_length/Um
+if Um > 0.0:
+    residence_time = hull_length/Um
+else:
+    residence_time = 1.0
 dt_init=0.001
 T = 10*residence_time
 nDTout=200
@@ -317,7 +373,7 @@ useRBLES   = 0.0
 useMetrics = 1.0
 useVF = 1.0
 useOnlyVF = False
-useRANS = 1 # 0 -- None
+useRANS = 0 # 0 -- None
             # 1 -- K-Epsilon
             # 2 -- K-Omega, 1998
             # 3 -- K-Omega, 1988
@@ -346,6 +402,7 @@ if spaceOrder == 1:
     	 basis=C0_AffineLinearOnSimplexWithNodalBasis
          elementQuadrature = SimplexGaussQuadrature(nd,3)
          elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,3) 	    
+         #elementBoundaryQuadrature = SimplexLobattoQuadrature(nd-1,1) 	    
 elif spaceOrder == 2:
     hFactor=0.5
     if useHex:    
@@ -358,18 +415,18 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 
+print "weights",elementBoundaryQuadrature.weights,sum(elementBoundaryQuadrature.weights)
 # Numerical parameters
 ns_forceStrongDirichlet = False
-weak_bc_penalty_constant = 1000.0
 if useMetrics:
-    ns_shockCapturingFactor  = 0.3
+    ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = True
     ns_lag_subgridError = True
-    ls_shockCapturingFactor  = 0.3
+    ls_shockCapturingFactor  = 0.9
     ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.5
-    vof_shockCapturingFactor = 0.3
+    vof_shockCapturingFactor = 0.9
     vof_lag_shockCapturing = True
     vof_sc_uref = 1.0
     vof_sc_beta = 1.5
@@ -379,7 +436,7 @@ if useMetrics:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = False
+    redist_Newton = True#False
     kappa_shockCapturingFactor = 0.9
     kappa_lag_shockCapturing = True
     kappa_sc_uref = 1.0
@@ -425,7 +482,7 @@ kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 
 #turbulence
-ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS >= 2:
@@ -506,23 +563,26 @@ def outflowVF(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,x[2] - outflowHeight)
 
 def twpflowPressure(x,t):
+    #return min(L[2] - x[2],L[2]-waterLevel)*rho_1*(-g[2]) + max(waterLevel - x[2],0.0)*rho_0*(-g[2])
     p_L = L[2]*rho_1*g[2]
     phi_L = wavePhi((x[0],x[1],L[2]),t) 
     phi = wavePhi(x,t)
     return p_L - g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
                                                           -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 def twpflowPressure_init(x,t):
+    #return min(L[2] - x[2],L[2]-waterLevel)*rho_1*(-g[2]) + max(waterLevel - x[2],0.0)*rho_0*(-g[2])
     p_L = L[2]*rho_1*g[2]
     phi_L = L[2] - inflowHeightMean
     phi = x[2] - inflowHeightMean
     return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
-                                                          -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
+                                                         -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 def outflowPressure(x,t):
+    #return min(L[2] - x[2],L[2]-waterLevel)*rho_1*(-g[2]) + max(waterLevel - x[2],0.0)*rho_0*(-g[2])
     p_L = L[2]*rho_1*g[2]
     phi_L = L[2] - outflowHeight
     phi = x[2] - outflowHeight
     return p_L -g[2]*(rho_0*(phi_L - phi)+(rho_1 -rho_0)*(smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi_L)
-                                                          -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
+                                                         -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 
