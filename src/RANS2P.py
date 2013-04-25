@@ -1009,6 +1009,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                 (self.mesh.nExteriorElementBoundaries_global,
                  self.nElementBoundaryQuadraturePoints_elementBoundary),
                 'd')
+            self.ebqe[('dS_u',0)] = self.ebqe['dS']
             self.ebqe['n'] = numpy.zeros(
                 (self.mesh.nExteriorElementBoundaries_global,
                  self.nElementBoundaryQuadraturePoints_elementBoundary,
@@ -1319,6 +1320,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.nodeDiametersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
+            self.mesh.nElementBoundaries_owned,
             self.coefficients.useRBLES,
             self.coefficients.useMetrics,
             self.timeIntegration.alpha_bdf,
