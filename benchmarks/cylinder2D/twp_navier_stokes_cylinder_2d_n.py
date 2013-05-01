@@ -56,7 +56,7 @@ else:
 
 tolFac = 0.0
 linTolFac = 0.0001
-nl_atol_res = 1.0e-8
+nl_atol_res = 1.0e-5
 
 maxNonlinearIts = 100
 maxLineSearches =0

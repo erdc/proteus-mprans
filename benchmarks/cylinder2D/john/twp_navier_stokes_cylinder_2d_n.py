@@ -3,6 +3,45 @@ from cylinder2d import *
 from proteus.default_n import *
 from twp_navier_stokes_cylinder_2d_p import *
 
+
+class Fixed_dt_controller(proteus.StepControl.Min_dt_controller):
+    ''' Class for setting a fixed timestep, dt, from nOptions for the model
+    to allow substepping between time intervals in tnlist '''
+
+    def __init__(self,model,nOptions):
+        proteus.StepControl.Min_dt_controller.__init__(self,model,nOptions)
+        self.dt = nOptions.DT
+        self.dt_model_last = None
+        
+        
+    def initialize_dt_model(self,t0,tOut):
+        self.saveSolution()
+        m = self.model.levelModelList[-1]
+        self.dt_model = self.dt
+        if self.dt_model_last == None:
+            self.dt_model_last = self.dt_model
+        self.set_dt_allLevels()
+        self.substeps = [self.t_model]
+        log("Initializing time step on model %s to dt = %12.5e" % (self.model.name,
+                                                                   self.dt_model),
+            level=1)
+
+    def choose_dt_model(self):
+        self.solverFailures=0
+        self.errorFailures=0
+        self.saveSolution()
+        m = self.model.levelModelList[-1]
+        self.dt_model = self.dt
+        if self.dt_model_last == None:
+            self.dt_model_last = self.dt_model
+        self.set_dt_allLevels()
+        #self.substeps=[self.t_model]
+        self.setSubsteps([self.t_model])
+
+    def updateTimeHistory(self,resetFromDOF=False):
+        Min_dt_controller.updateTimeHistory(self,resetFromDOF=resetFromDOF)
+        self.dt_model_last = self.dt_model
+
 if useBackwardEuler:
     timeIntegration = BackwardEuler#_cfl
     stepController = Min_dt_controller
@@ -19,7 +58,8 @@ if useBackwardEuler:
 else:
     timeOrder=2
     timeIntegration = VBDF 
-    stepController = Min_dt_controller
+    stepController = Fixed_dt_controller #Min_dt_controller
+    DT = dt_fixed
     # timeIntegration = FLCBDF
     # stepController  = FLCBDF_controller
     # systemStepControllerType = SplitOperator.Sequential_MinFLCBDFModelStep
