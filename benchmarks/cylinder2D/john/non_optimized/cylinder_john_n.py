@@ -12,7 +12,7 @@ atol_u[1] = 1.0e-2
 atol_u[2] = 1.0e-2
 
 #tnList = [0,T]
-dt_fixed = 1.0e-1 #2.5e-1
+dt_fixed = 1.0e-2 #2.5e-1
 dt_init = 1.0e-2
 nDTout = int(T/dt_fixed)
 dt_init = min(dt_init,0.5*dt_fixed)
@@ -66,11 +66,13 @@ nl_atol_res = 1.0e-8
 
 matrix = SparseMatrix
 
-multilevelLinearSolver = LU
-levelLinearSolver = LU
+# multilevelLinearSolver = LU
+# levelLinearSolver = LU
 
-#multilevelLinearSolver = PETSc
-#levelLinearSolver = PETSc
+multilevelLinearSolver = PETSc
+levelLinearSolver = PETSc
+parallelPartitioningType = MeshParallelPartitioningTypes.element
+nLayersOfOverlapForParallel = 1
 
 linearSmoother = GaussSeidel
 

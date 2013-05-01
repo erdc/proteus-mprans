@@ -50,7 +50,7 @@ nd = 2
 
 rho=1.0
 nu=1.0e-3
-inflow_height=0.41
+inflow_height=0.41 #0.41
 fl_H = inflow_height
 bottom_length=2.2
 cylinder_radius=0.1/2.0
