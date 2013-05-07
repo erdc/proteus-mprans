@@ -80,7 +80,8 @@ else:
     L      = [3.22,1.0,1.0]
     box_L  = [0.161,0.403,0.161]
     box_xy = [2.3955,0.2985]
-    he = L[0]/float(6.5*Refinement)
+    #he = L[0]/float(6.5*Refinement)
+    he = L[0]/64.0
     boundaries=['left','right','bottom','top','front','back','box_left','box_right','box_top','box_front','box_back',]
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
     bt = boundaryTags
@@ -217,7 +218,7 @@ kappa_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
 dissipation_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
 
 #turbulence
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:
