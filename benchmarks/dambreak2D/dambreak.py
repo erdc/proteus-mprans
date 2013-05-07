@@ -9,7 +9,7 @@ Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
 useSuperlu=False#True
-timeDiscretization='vbdf'#'vbdf'#'be','flcbdf'
+timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -59,7 +59,7 @@ elif spaceOrder == 2:
 # Domain and mesh
 L = (0.584,0.350)
 he = L[0]/float(4*Refinement-1)
-#he*=0.5
+he*=0.5
 #he*=0.5
 #he*=0.5
 nLevels = 1
