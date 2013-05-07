@@ -50,8 +50,8 @@ hull_center = (0.0,
 
 #debug
 #L=(1.5*hull_length,
-#   3.0*hull_beam, 
-#   3.0*hull_draft)
+#  3.0*hull_beam, 
+#  3.0*hull_draft)
 
 #x_ll = (-0.75*hull_length,
 #         -L[1]/2.0,
@@ -130,8 +130,8 @@ else:
     regionFlags=[1.0]
     holes=[]
     if vessel is 'wigley':
-        n_points_length = 3*int(ceil(hull_length/he))+1
-        n_points_draft  = 3*2*int(ceil(hull_draft/he))+1
+        n_points_length = int(ceil(hull_length/he/4.0))+1
+        n_points_draft  = 2*int(ceil(hull_draft/he/4.0))+1
         #print "points",n_points_length,n_points_draft
         dx = hull_length/float(n_points_length-1)
         dz = 2.0*hull_draft/float(n_points_draft-1)
@@ -261,7 +261,7 @@ else:
         domain.writePoly("mesh_"+vessel)
     else:
         domain.writePoly("meshNoVessel")
-    triangleOptions="VApq1.45q10ena%e" % ((he**3)/6.0,)
+    triangleOptions="VApq1.35q12ena%e" % ((he**3)/6.0,)
 logEvent("""Mesh generated using: tetgen %s %s"""  % (triangleOptions,domain.polyfile+".poly"))
 
 restrictFineSolutionToAllMeshes=False

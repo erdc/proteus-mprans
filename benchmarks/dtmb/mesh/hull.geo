@@ -30,7 +30,7 @@ Function addHull
   Physical Surface(7) = {1,2,3,4,5,6,7,8,9,10,11,12,13}; 
 
   // Set Characteristic lengths on hull
-  Characteristic Length {3}  = hcl/2;    // Sonar Dome
+  Characteristic Length {3}  = hcl;    // Sonar Dome
   Characteristic Length {1}  = hcl;      // Keel
   Characteristic Length {13} = hcl;      // Keel
 
@@ -39,11 +39,11 @@ Function addHull
   Characteristic Length {2,6}  = hcl;    // Bow Deck
   Characteristic Length {8,12} = hcl;    // Bow Deck
 
-  Characteristic Length {10}    = hcl/2;   // Stern upper   keel
-  Characteristic Length {16}    = hcl/4;   // Stern medium  keel
-  Characteristic Length {14}    = hcl/2;   // Stern lower   keel
-  Characteristic Length {9,11}  = hcl/2;   // Stern upper   sides
-  Characteristic Length {15,17} = hcl/2;   // Stern upper   sides
+  Characteristic Length {10}    = hcl;   // Stern upper   keel
+  Characteristic Length {16}    = hcl;   // Stern medium  keel
+  Characteristic Length {14}    = hcl;   // Stern lower   keel
+  Characteristic Length {9,11}  = hcl;   // Stern upper   sides
+  Characteristic Length {15,17} = hcl;   // Stern upper   sides
    
 Return
 

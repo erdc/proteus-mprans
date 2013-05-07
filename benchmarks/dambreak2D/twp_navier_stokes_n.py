@@ -5,12 +5,17 @@ from dambreak import *
 if timeDiscretization=='vbdf':
     timeIntegration = VBDF
     timeOrder=2
+    stepController  = Min_dt_cfl_controller
 elif timeDiscretization=='flcbdf':
     timeIntegration = FLCBDF
+    #stepController = FLCBDF_controller_sys
+    stepController  = Min_dt_cfl_controller
+    time_tol = 10.0*ns_nl_atol_res
+    atol_u = {1:time_tol,2:time_tol}
+    rtol_u = {1:time_tol,2:time_tol}
 else:
     timeIntegration = BackwardEuler_cfl
-
-stepController  = Min_dt_cfl_controller
+    stepController  = Min_dt_cfl_controller
 
 femSpaces = {0:basis,
 	     1:basis,
@@ -54,4 +59,4 @@ nl_atol_res = ns_nl_atol_res
 useEisenstatWalker = True
 maxNonlinearIts = 50
 maxLineSearches = 0
-conservativeFlux = {0:'pwl-bdm-opt'}
+#conservativeFlux = {0:'pwl-bdm-opt'}

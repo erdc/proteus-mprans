@@ -100,7 +100,8 @@ Function addOneBox
 		
 
   // Build volume around hull
-  bsl = newsl; Surface Loop(bsl) = {lowerSurf[],upperSurf[]}; 
+  bsl = newsl; 
+  Surface Loop(bsl) = {s1,s2,s3,s4,s5,s6}; 
   If (hsl > 0)
     v   = newv;  Volume(v) = {bsl,hsl};
   EndIf

@@ -870,6 +870,12 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.q[('m_tmp',1)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('m_tmp',2)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('m_tmp',3)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        self.q[('mt',1)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        self.q[('mt',2)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        self.q[('mt',3)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        self.q[('dV_u',1)] = (1.0/self.mesh.nElements_global)*numpy.ones((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        self.q[('dV_u',2)] = (1.0/self.mesh.nElements_global)*numpy.ones((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        self.q[('dV_u',3)] = (1.0/self.mesh.nElements_global)*numpy.ones((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         self.q[('f',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
         self.q[('velocity',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
         self.q['x'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
@@ -1009,6 +1015,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                 (self.mesh.nExteriorElementBoundaries_global,
                  self.nElementBoundaryQuadraturePoints_elementBoundary),
                 'd')
+            self.ebqe[('dS_u',0)] = self.ebqe['dS']
             self.ebqe['n'] = numpy.zeros(
                 (self.mesh.nExteriorElementBoundaries_global,
                  self.nElementBoundaryQuadraturePoints_elementBoundary,
@@ -1319,6 +1326,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.nodeDiametersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
+            self.mesh.nElementBoundaries_owned,
             self.coefficients.useRBLES,
             self.coefficients.useMetrics,
             self.timeIntegration.alpha_bdf,

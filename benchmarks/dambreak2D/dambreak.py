@@ -8,8 +8,8 @@ from proteus.default_n import *
 Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
-useSuperlu=True
-timeDiscretization='vbdf'#'be','flcbdf'
+useSuperlu=False#True
+timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0

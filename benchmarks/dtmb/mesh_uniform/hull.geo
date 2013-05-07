@@ -20,8 +20,12 @@ hsl = -1;
 Add hull
 ********************************************/
 Function addHull
-  Geometry.Tolerance = 1e-2;
+  Geometry.Tolerance = 1.0e-2;
   Geometry.OCCSewFaces = 1;
+  //Geometry.OCCConnectFaces = 1;
+  Geometry.OCCFixDegenerated = 1;
+  Geometry.OCCFixSmallEdges = 1;
+  Geometry.OCCFixSmallFaces = 1;
 
    Merge 'hull.igs';
 
@@ -30,20 +34,20 @@ Function addHull
   Physical Surface(7) = {1,2,3,4,5,6,7,8,9,10,11,12,13}; 
 
   // Set Characteristic lengths on hull
-  Characteristic Length {3}  = hcl;    // Sonar Dome
-  Characteristic Length {1}  = hcl;      // Keel
-  Characteristic Length {13} = hcl;      // Keel
+  Characteristic Length {3}  = hcl/1.5;    // Sonar Dome
+  Characteristic Length {1}  = hcl/1.5;      // Keel
+  Characteristic Length {13} = hcl/1.5;      // Keel
 
-  Characteristic Length {4}    = hcl;    // Bow Deck
-  Characteristic Length {5,7}  = hcl;    // Bow Deck
-  Characteristic Length {2,6}  = hcl;    // Bow Deck
-  Characteristic Length {8,12} = hcl;    // Bow Deck
+  Characteristic Length {4}    = hcl/1.5;    // Bow Deck
+  Characteristic Length {5,7}  = hcl/1.5;    // Bow Deck
+  Characteristic Length {2,6}  = hcl/1.5;    // Bow Deck
+  Characteristic Length {8,12} = hcl/1.5;    // Bow Deck
 
-  Characteristic Length {10}    = hcl;   // Stern upper   keel
-  Characteristic Length {16}    = hcl;   // Stern medium  keel
-  Characteristic Length {14}    = hcl;   // Stern lower   keel
-  Characteristic Length {9,11}  = hcl;   // Stern upper   sides
-  Characteristic Length {15,17} = hcl;   // Stern upper   sides
+  Characteristic Length {10}    = hcl/1.5;   // Stern upper   keel
+  Characteristic Length {16}    = hcl/1.5;   // Stern medium  keel
+  Characteristic Length {14}    = hcl/1.5;   // Stern lower   keel
+  Characteristic Length {9,11}  = hcl/1.5;   // Stern upper   sides
+  Characteristic Length {15,17} = hcl/1.5;   // Stern upper   sides
    
 Return
 
