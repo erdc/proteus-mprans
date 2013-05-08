@@ -79,18 +79,14 @@ RBR_angCons  = [1,0,1]
 
 nLevels = 1
 
-he = hull_draft/1.0 #1 core
-he *=0.5 #4-8 
-#he *=0.5 #512 (2048 8-way nodes)
-#he *=0.5
-#he = hull_draft/1.5 #16 cores
-#he *=0.5 #128 but can run on 2 cores with 8G
-#he *=0.5 #1024
+he = hull_draft/1.0 #32
+he *=0.5 #256 - 
+he *=0.5 #2048 - mesh3206851
 #vessel = 'wigley-gmsh'
 #genMesh=False
 vessel = 'wigley'
+genMesh=False
 #vessel = 'cube'
-genMesh=True
 #vessel = None
 #genMesh=True
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
@@ -130,8 +126,12 @@ else:
     regionFlags=[1.0]
     holes=[]
     if vessel is 'wigley':
-        n_points_length = int(ceil(hull_length/he/4.0))+1
-        n_points_draft  = 2*int(ceil(hull_draft/he/4.0))+1
+        from math import log
+        he_hull = log(64.0*he+1.0)/64.0
+        print he,he_hull
+        #he_hull = he
+        n_points_length = int(ceil(hull_length/he_hull))+1
+        n_points_draft  = 2*int(ceil(hull_draft/he_hull))+1
         #print "points",n_points_length,n_points_draft
         dx = hull_length/float(n_points_length-1)
         dz = 2.0*hull_draft/float(n_points_draft-1)
@@ -262,8 +262,8 @@ else:
     else:
         domain.writePoly("meshNoVessel")
     triangleOptions="VApq1.35q12ena%e" % ((he**3)/6.0,)
-logEvent("""Mesh generated using: tetgen %s %s"""  % (triangleOptions,domain.polyfile+".poly"))
-
+logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
+print triangleOptions
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0

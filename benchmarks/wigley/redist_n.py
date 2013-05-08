@@ -6,7 +6,7 @@ nl_atol_res = rd_nl_atol_res
 tolFac = 0.0
 linTolFac = 0.0
 l_atol_res = 0.001*rd_nl_atol_res
-useEisenstatWalker = True
+useEisenstatWalker = False#True
 
 if redist_Newton:
     timeIntegration = NoIntegration
@@ -26,7 +26,7 @@ else:
     psitc['startRatio']=1.0
     rtol_res[0] = 0.0
     atol_res[0] = rd_nl_atol_res
-    useEisenstatWalker = True
+    useEisenstatWalker = False#True
     maxNonlinearIts = 1
     maxLineSearches = 0
     nonlinearSolverConvergenceTest = 'rits'
