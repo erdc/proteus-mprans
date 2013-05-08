@@ -128,7 +128,7 @@ else:
     if vessel is 'wigley':
         from math import log
         he_hull = log(64.0*he+1.0)/64.0
-        print he,he_hull
+        #print he,he_hull
         #he_hull = he
         n_points_length = int(ceil(hull_length/he_hull))+1
         n_points_draft  = 2*int(ceil(hull_draft/he_hull))+1
@@ -263,7 +263,7 @@ else:
         domain.writePoly("meshNoVessel")
     triangleOptions="VApq1.35q12ena%e" % ((he**3)/6.0,)
 logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
-print triangleOptions
+#print triangleOptions
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
