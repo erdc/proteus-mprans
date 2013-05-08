@@ -1,5 +1,5 @@
 #if True uses PETSc solvers
-parallel = False
+parallel = True#False
 linearSmoother = None
 #compute mass balance statistics or not
 checkMass=False#True
@@ -11,8 +11,8 @@ atol_u = {0:1.0e-4}
 rtol_res = {0:1.0e-4}
 atol_res = {0:1.0e-4}
 #
-timeIntegration_vof = "flcbdf"#vbdf,be,flcbdf,rk
-timeIntegration_ls = "flcbdf"#vbdf,be,flcbdf,rk
+timeIntegration_vof = "vbdf"#vbdf,be,flcbdf,rk
+timeIntegration_ls = "vbdf"#vbdf,be,flcbdf,rk
 timeOrder = 2
 
 runCFL = 0.3#0.3,0.185,0.125 for dgp1,dgp2,dgpk(3)
@@ -35,7 +35,7 @@ else:
 from proteus import MeshTools
 partitioningType = MeshTools.MeshParallelPartitioningTypes.node
 #spatial mesh
-lRefinement=3
+lRefinement=5
 #tag simulation name to level of refinement
 #soname="vortexcgp2_bdf2_mc"+`lRefinement`
 nn=nnx=nny=(2**lRefinement)*10+1

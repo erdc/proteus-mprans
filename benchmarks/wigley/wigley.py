@@ -50,15 +50,15 @@ hull_center = (0.0,
 
 #debug
 #L=(1.5*hull_length,
-#   3.0*hull_beam, 
-#   3.0*hull_draft)
+#  3.0*hull_beam, 
+#  3.0*hull_draft)
 
 #x_ll = (-0.75*hull_length,
 #         -L[1]/2.0,
 #         0.0)
-
+#
 #waterLevel   = 1.5*hull_draft
-
+#
 #hull_center = (0.0,
 #               0.0,
 #               waterLevel)
@@ -79,18 +79,14 @@ RBR_angCons  = [1,0,1]
 
 nLevels = 1
 
-he = hull_draft/1.0 #1 core
-he *=0.5 #4-8 
-he *=0.5 #512 (2048 8-way nodes)
-#he *=0.5
-#he = hull_draft/1.5 #16 cores
-#he *=0.5 #128 but can run on 2 cores with 8G
-#he *=0.5 #1024
+he = hull_draft/1.0 #32
+he *=0.5 #4 way on diamond, 8 way on garnet 256-1024 mpi tasks
+#he *=0.5 #2048 - mesh3206851
 #vessel = 'wigley-gmsh'
 #genMesh=False
 vessel = 'wigley'
+genMesh=False
 #vessel = 'cube'
-genMesh=True
 #vessel = None
 #genMesh=True
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
@@ -130,10 +126,12 @@ else:
     regionFlags=[1.0]
     holes=[]
     if vessel is 'wigley':
-        n_points_length = int(ceil(hull_length/he))+1
-        n_points_draft  = 2*int(ceil(hull_draft/he))+1
-        n_points_length *= 3
-        n_points_draft  *= 3
+        from math import log
+        he_hull = log(64.0*he+1.0)/64.0
+        #print he,he_hull
+        #he_hull = he
+        n_points_length = int(ceil(hull_length/he_hull))+1
+        n_points_draft  = 2*int(ceil(hull_draft/he_hull))+1
         #print "points",n_points_length,n_points_draft
         dx = hull_length/float(n_points_length-1)
         dz = 2.0*hull_draft/float(n_points_draft-1)
@@ -263,9 +261,9 @@ else:
         domain.writePoly("mesh_"+vessel)
     else:
         domain.writePoly("meshNoVessel")
-    triangleOptions="VApq1.45q10ena%e" % ((he**3)/6.0,)
-logEvent("""Mesh generated using: tetgen %s %s"""  % (triangleOptions,domain.polyfile+".poly"))
-
+    triangleOptions="VApq1.35q12ena%e" % ((he**3)/6.0,)
+logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
+#print triangleOptions
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
@@ -435,7 +433,7 @@ if useMetrics:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = True#False
+    redist_Newton = False
     kappa_shockCapturingFactor = 0.9
     kappa_lag_shockCapturing = True
     kappa_sc_uref = 1.0
@@ -481,7 +479,7 @@ kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 
 #turbulence
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=1 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 
 if useRANS == 1:
     ns_closure = 3

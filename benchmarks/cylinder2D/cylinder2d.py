@@ -10,9 +10,14 @@ nd = 2
 spaceOrder=1
 Refinement=2
 useHex=False
-points_on_grain = 20
+points_on_grain = 21
 DX = 0.03
+DX *=0.5
+#DX *=0.5
 usePETSc = True
+
+parallelPartitioningType = MeshParallelPartitioningTypes.node
+nLayersOfOverlapForParallel = 1
 
 L=1.0
 H = 0.41
@@ -28,12 +33,12 @@ if spaceOrder == 1:
     hFactor=1.0
     if useHex:
 	 basis=C0_AffineLinearOnCubeWithNodalBasis
-         elementQuadrature = CubeGaussQuadrature(nd,2)
-         elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,2)     	 
+         elementQuadrature = CubeGaussQuadrature(nd,3)
+         elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,3)     	 
     else:
     	 basis=C0_AffineLinearOnSimplexWithNodalBasis
-         elementQuadrature = SimplexGaussQuadrature(nd,2)
-         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,2) 	    
+         elementQuadrature = SimplexGaussQuadrature(nd,3)
+         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,3) 	    
 elif spaceOrder == 2:
     hFactor=0.5
     if useHex:    
@@ -49,9 +54,9 @@ nLevels = 1
 from cylinder2dDomain import *
 domain = cylinder2D(L=L,
                     H=H,
-                    C=(0.2,0.2),
+                    C=(0.5*H,0.5*H),#C=(0.2,0.2),
                     r=radius,
-                    points_on_grain=int(ceil(2.0*pi*radius/DX)))
+                    points_on_grain=4*int(ceil(2.0*pi*radius/DX))+1)
 boundaryTags=domain.boundaryFlags
 
 # Time stepping

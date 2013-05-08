@@ -65,6 +65,92 @@ Function addPoints
 Return
 
 
+Function addOneBox 
+  count = 0; 
+
+
+  //Call addPoints;
+
+  boc = 0;
+  frc = 0;
+  ric = 0;
+  bac = 0;
+  lec = 0;
+  toc = 0;
+
+        x1=x[0];       hx1=hx[0];
+        x2=x[5];       hx2=hx[5];
+
+        y1=y[0];    hy1=hy[0];
+        y2=y[5];    hy2=hy[5];
+        
+        y3=y[0];  hy3=hy[0];
+        y4=y[5];  hy4=hy[5];
+              
+        z1=z[0];       hz1=hz[0];
+        z2=z[4];       hz2=hz[4];
+          
+        Call addBox;
+
+        // Add volume and surfaces to global lists       
+        If (v > 0)
+	  vol[count] = v;
+          count = count+1;
+	EndIf
+		
+
+  // Build volume around hull
+  bsl = newsl; Surface Loop(bsl) = {lowerSurf[],upperSurf[]}; 
+  If (hsl > 0)
+    v   = newv;  Volume(v) = {bsl,hsl};
+  EndIf
+  If (hsl == -1) // No hull !!!
+    v   = newv;  Volume(v) = {bsl};
+  EndIf
+  
+  vol[count] = v;
+
+	  left[lec] = s5;
+          lec = lec  + 1;
+       
+	  right[ric] = s3;
+          ric = ric + 1;
+
+	  front[frc] = s2;
+          frc = frc + 1;
+       
+	  back[bac] = s4;
+          bac = bac  + 1;
+
+	  bottom[boc] = s1;
+          boc = boc  + 1;
+
+	  top[toc] = s6;
+          toc = toc + 1;
+  //
+  Printf("bottom = %g",boc);
+  Printf("top    = %g",toc);
+  Printf("right  = %g",ric);
+  Printf("left   = %g",lec);
+  Printf("front  = %g",frc);
+  Printf("back   = %g",bac);
+  
+  // Define physical entities
+  Physical Surface(1) = {bottom[]};
+
+  Physical Surface(2) = {front[]};
+  Physical Surface(3) = {right[]};
+  Physical Surface(4) = {back[]};
+  Physical Surface(5) = {left[]};
+
+  Physical Surface(6) = {top[]};
+ 
+  Physical Volume(2) = {vol[]};
+
+  // Delete redundant entities
+  Coherence; 
+Return
+
 Function addBoxes 
   count = 0; 
 

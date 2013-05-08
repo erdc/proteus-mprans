@@ -58,9 +58,10 @@ elif spaceOrder == 2:
     
 # Domain and mesh
 L = (0.584,0.146,0.350)
-he = L[0]/float(4*Refinement-1)
-he*=0.5
-quasi2D = True
+#he = L[0]/float(4*Refinement-1)
+#he*=0.5
+he = L[0]/40.0
+quasi2D = False#True
 
 if quasi2D:
     L = (L[0],he,L[2])
@@ -195,7 +196,7 @@ kappa_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
 dissipation_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
 
 #turbulence
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:

@@ -19,8 +19,11 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    LS_model=None,
                                    epsFact_density=epsFact_density,
                                    stokes=False,#useStokes,
+                                   forceStrongDirichlet=True,
+                                   eb_adjoint_sigma=1.0,
+                                   eb_penalty_constant=10.0,
                                    useRBLES=0.0,
-                                   useMetrics=0.0)
+                                   useMetrics=1.0)
 
 
 from math import cos,pi

@@ -5,6 +5,8 @@ Mesh.RandomFactor = 1e-4;
 Mesh.SaveElementTagType= 2;
 Mesh.QualityType = 1;
 Mesh.Optimize = 1;
+//Mesh.QualityType = 1;
+//Mesh.OptimizeNetgen = 1;
 
 //Mesh.Algorithm=6;
 //Mesh.Algorithm3D=1;

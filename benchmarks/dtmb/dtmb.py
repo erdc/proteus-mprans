@@ -49,8 +49,8 @@ vessel = 5415
 genMesh=False
 #he=1.0
 #he=0.5
-#he=0.25
-he=0.125
+he=0.25
+#he=0.125
 if he == 1.0:
     src_dir = 'mesh8490'
 elif he == 0.5:
@@ -239,8 +239,8 @@ Re = hull_length*Um/nu_0
 
 residence_time = hull_length/Um
 dt_init=0.001
-T = 5*residence_time
-nDTout=100
+T = 10*residence_time
+nDTout=200
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
 
