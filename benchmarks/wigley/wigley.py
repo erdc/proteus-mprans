@@ -90,7 +90,7 @@ he *=0.5 #4-8
 #genMesh=False
 vessel = 'wigley'
 #vessel = 'cube'
-genMesh=False#True
+genMesh=True
 #vessel = None
 #genMesh=True
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
@@ -433,7 +433,7 @@ if useMetrics:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = True#False
+    redist_Newton = False
     kappa_shockCapturingFactor = 0.9
     kappa_lag_shockCapturing = True
     kappa_sc_uref = 1.0
@@ -479,7 +479,7 @@ kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 
 #turbulence
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=1 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 
 if useRANS == 1:
     ns_closure = 3
