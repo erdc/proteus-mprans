@@ -49,12 +49,15 @@ vessel = 5415
 genMesh=False
 #he=1.0
 #he=0.5
-he=0.25
+he = 0.375
+#he=0.25
 #he=0.125
 if he == 1.0:
     src_dir = 'mesh8490'
 elif he == 0.5:
     src_dir = 'mesh28144'
+elif he == 0.375:
+    src_dir = 'mesh1127217'
 elif he == 0.25:
     src_dir = 'mesh196331'
 elif he == 0.125:
@@ -218,8 +221,8 @@ quad_order = 3
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
-openTop = False#True
-openSides = False#True
+openTop = True
+openSides = True
 smoothBottom = True#False
 smoothObstacle = False
 rampInitialConditions = False
@@ -309,7 +312,7 @@ spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 1.0
-useVF = 0.0
+useVF = 1.0
 useOnlyVF = False
 useRANS = 0 # 0 -- None
             # 1 -- K-Epsilon
@@ -355,14 +358,14 @@ elif spaceOrder == 2:
 ns_forceStrongDirichlet = False
 weak_bc_penalty_constant = 1000.0
 if useMetrics:
-    ns_shockCapturingFactor  = 0.1
+    ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = True
     ns_lag_subgridError = True
-    ls_shockCapturingFactor  = 0.1
+    ls_shockCapturingFactor  = 0.9
     ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.5
-    vof_shockCapturingFactor = 0.1
+    vof_shockCapturingFactor = 0.9
     vof_lag_shockCapturing = True
     vof_sc_uref = 1.0
     vof_sc_beta = 1.5
@@ -399,7 +402,7 @@ else:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = True
+    redist_Newton = False#True
     kappa_shockCapturingFactor = 0.9
     kappa_lag_shockCapturing = True#False
     kappa_sc_uref  = 1.0
