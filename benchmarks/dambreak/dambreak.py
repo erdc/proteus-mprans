@@ -2,6 +2,7 @@ from math import *
 import proteus.MeshTools
 from proteus import Domain
 from proteus.default_n import *   
+from proteus.Profiling import logEvent
    
 #  Discretization -- input options  
 #Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
@@ -61,6 +62,8 @@ L = (0.584,0.146,0.350)
 #he = L[0]/float(4*Refinement-1)
 #he*=0.5
 he = L[0]/40.0
+he*=0.5#128
+he*=0.5#1024
 quasi2D = False#True
 
 if quasi2D:
@@ -130,7 +133,7 @@ else:
         domain.writeAsymptote("mesh")
         triangleOptions="VApq1.4q12ena%21.16e" % ((he**3)/6.0,)
 
-
+logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
 # Time stepping
 T=1.0
 dt_fixed = 0.01

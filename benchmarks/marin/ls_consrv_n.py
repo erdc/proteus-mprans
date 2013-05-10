@@ -37,10 +37,10 @@ linear_solver_options_prefix = 'mcorr_'
 linearSolverConvergenceTest  = 'r-true'
 
 tolFac = 0.0
-linTolFac = 0.0
+linTolFac = 0.001
 l_atol_res = 0.001*mcorr_nl_atol_res
 nl_atol_res = mcorr_nl_atol_res
-useEisenstatWalker = True
+useEisenstatWalker = False#True
 
 maxNonlinearIts = 50
 maxLineSearches = 0

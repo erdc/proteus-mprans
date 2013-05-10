@@ -33,10 +33,10 @@ levelNonlinearSolverConvergenceTest = 'r'#'rits'
 linearSolverConvergenceTest         = 'r'#'rits'
 
 tolFac = 0.0
-linTolFac =0.0
+linTolFac =0.001
 l_atol_res = 0.001*dissipation_nl_atol_res
 nl_atol_res = dissipation_nl_atol_res
-useEisenstatWalker = True
+useEisenstatWalker = False#True
 
 maxNonlinearIts = 50
 maxLineSearches = 0

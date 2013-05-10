@@ -1,8 +1,8 @@
 #!/bin/bash
 #PBS -A ERDCV00898ENQ
-#PBS -l walltime=001:00:00
-#PBS -l ncpus=32
-#PBS -q debug
+#PBS -l walltime=048:00:00
+#PBS -l ncpus=1024
+#PBS -q standard
 #PBS -N dambreak
 #PBS -j oe
 #PBS -l application=proteus
@@ -13,12 +13,5 @@ source /opt/modules/default/etc/modules.sh
 source ${PROTEUS}/envConfig/garnet.gnu.bash
 cd $PBS_O_WORKDIR
 mkdir $WORKDIR/dambreak.$PBS_JOBID
-#aprun -n <proc>               when fully using all the (16) cores
-#aprun -N 12 -S 3 -n <procs>   when putting 12 processes on the node
-#aprun -N 8 -S 2 -n <procs>    when putting 8 processes on the node
-#aprun -N 4 -S 1 -n <procs>    when putting 4 processes on the node
-#aprun -n 32 parun dambreak_so.py -l 7 -v -G -O ../inputTemplates/petsc.options.asm -D $WORKDIR/dambreak.$PBS_JOBID
-#aprun -n 32 parun dambreak_so.py -l 7 -v -G -M 1.9 -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dambreak.$PBS_JOBID
-aprun -n 32 parun dambreak_so.py -l 7 -v -G -M 1.9 -O ../inputTemplates/petsc.options.asm -D $WORKDIR/dambreak.$PBS_JOBID
-#aprun -n 32 parun dambreak_so.py -l 7 -v -G -O ../inputTemplates/petsc.options.mumps -D $WORKDIR/dambreak.$PBS_JOBID
-#aprun -n 128 parun dambreak_so.py -l 7 -v -G -O ../inputTemplates/petsc.options.asm -D $WORKDIR/dambreak.$PBS_JOBID
+#-n total number of cores, -N cores per node, -S cores per numa node (4 numa nodes per node)
+aprun -n 256 -N 8 -S 2 parun dambreak_so.py -l 7 -v -G -M 8.0 -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dambreak.$PBS_JOBID

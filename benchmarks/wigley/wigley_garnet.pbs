@@ -17,4 +17,4 @@ export MPICH_RANK_REORDER_METHOD=2
 mkdir $WORKDIR/wigley.$PBS_JOBID
 #note, garnet has about 62 GB of usable memory per node.if using -N 32 pass -M 1.9 to proteus, if -N 16 pass -M 3.8, etc.
 #aprun -n 256 -N 16 -d 2 parun wigley_so.py -l 7 -v -M 3.75 -O ../inputTemplates/petsc.options.asm -D $WORKDIR/wigley.$PBS_JOBID
-aprun -n 2512 -N 16 -d 2  parun wigley_so.py -l 7 -v -m -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/wigley.$PBS_JOBID
+aprun -n 1256 -N 8 -S 2 parun wigley_so.py -l 7 -v -m -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/wigley.$PBS_JOBID
