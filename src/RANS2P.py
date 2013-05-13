@@ -1,7 +1,7 @@
 import proteus
 from proteus.mprans.cRANS2P import *
 from proteus.mprans.cRANS2P2D import *
-
+from proteus import Profiling
 class SubgridError(proteus.SubgridError.SGE_base):
     def __init__(self,coefficients,nd,lag=False,nStepsToDelay=0,hFactor=1.0,noPressureStabilization=False):
         self.noPressureStabilization=noPressureStabilization
@@ -365,11 +365,12 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         if self.barycenters == None:
             self.barycenters = numpy.zeros((nBoundariesMax,3),'d')
         comm = Comm.get()
+        import os
         if comm.isMaster():
-            self.wettedAreaHistory = open("wettedAreaHistory.txt","w")
-            self.forceHistory_p = open("forceHistory_p.txt","w")
-            self.forceHistory_v = open("forceHistory_v.txt","w")
-            self.momentHistory = open("momentHistory.txt","w")
+            self.wettedAreaHistory = open(os.path.join(proteus.Profiling.logDir,"wettedAreaHistory.txt"),"w")
+            self.forceHistory_p = open(os.path.join(proteus.Profiling.logDir,"forceHistory_p.txt"),"w")
+            self.forceHistory_v = open(os.path.join(proteus.Profiling.logDir,"forceHistory_v.txt"),"w")
+            self.momentHistory = open(os.path.join(proteus.Profiling.logDir,"momentHistory.txt"),"w")
         self.comm = comm
     #initialize so it can run as single phase
     def initializeElementQuadrature(self,t,cq):
