@@ -25,8 +25,8 @@ def refine_uniform_from_tetgen(filebase,refinementLevels,index_base=0,EB=False):
     ar.close()
     
 def refine_uniform_from_triangle(filebase,refinementLevels,index_base=0,EB=False):
-    import pdb
-    pdb.set_trace()
+    #import pdb
+    #pdb.set_trace()
     from proteus import MeshTools,Archiver
     mesh = MeshTools.TriangularMesh()
     mesh.generateFromTriangleFiles(filebase,index_base)
@@ -35,7 +35,7 @@ def refine_uniform_from_triangle(filebase,refinementLevels,index_base=0,EB=False
 
     MLMesh.generateFromExistingCoarseMesh(mesh,refinementLevels)
 
-    MLMesh.meshList[-1].writeTetgenFiles(filebase+'_out',index_base)
+    MLMesh.meshList[-1].writeTriangleFiles(filebase+'_out',index_base)
 
     ar = Archiver.XdmfArchive('.',filebase+'_out')
     import xml.etree.ElementTree as ElementTree
