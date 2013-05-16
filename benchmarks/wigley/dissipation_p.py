@@ -40,6 +40,9 @@ if useRANS >= 2:
 def getDBC_dissipation(x,flag):
     if flag == boundaryTags['left']:
         return lambda x,t:dissipationInflow
+    if flag in [boundaryTags['front'], boundaryTags['back']]:
+        if openSides:
+            return lambda x,t:dissipationInflow
 
 dirichletConditions = {0:getDBC_dissipation}
 #fluxBoundaryConditions = {0:'outFlow'}
@@ -59,9 +62,13 @@ def getAFBC_dissipation(x,flag):
             return None#lambda x,t: 0.0
     elif flag == boundaryTags['obstacle']:
         return None#outflow
+    elif flag == boundaryTags['bottom']:
+        return None#outflow
 def getDFBC_dissipation(x,flag):
     if flag == boundaryTags['left']:
         return None#weak Dirichlet
+    if flag == boundaryTags['obstacle']:
+        return lambda x,t: 0.0 #outflow
     if flag == boundaryTags['right']:
         return lambda x,t: 0.0 #outflow
     if flag in [boundaryTags['front'],boundaryTags['back'],boundaryTags['top'],boundaryTags['bottom']]:

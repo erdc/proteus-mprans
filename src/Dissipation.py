@@ -642,6 +642,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.ebqe[('advectiveFlux_bc_flag',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'i')
         self.ebqe[('advectiveFlux_bc',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.ebqe[('advectiveFlux',0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
+        self.ebqe[('diffusiveFlux_bc_flag',0,0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'i')
+        self.ebqe[('diffusiveFlux_bc',0,0)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.ebqe[('penalty')] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary),'d')
         self.points_elementBoundaryQuadrature= set()
         self.scalars_elementBoundaryQuadrature= set([('u',ci) for ci in range(self.nc)])
@@ -742,6 +744,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.elementBoundaryQuadratureDictionaryWriter = Archiver.XdmfWriter()
         self.exteriorElementBoundaryQuadratureDictionaryWriter = Archiver.XdmfWriter()
         #TODO get rid of this
+        #mwf can I use the numericalFlux's flag information?
         for ci,fbcObject  in self.fluxBoundaryConditionsObjectsDict.iteritems():
             self.ebqe[('advectiveFlux_bc_flag',ci)] = numpy.zeros(self.ebqe[('advectiveFlux_bc',ci)].shape,'i')
             for t,g in fbcObject.advectiveFluxBoundaryConditionsDict.iteritems():
@@ -749,6 +752,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                     self.ebqe[('advectiveFlux_bc',ci)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
                     self.ebqe[('advectiveFlux_bc_flag',ci)][t[0],t[1]] = 1
         
+            for ck,diffusiveFluxBoundaryConditionsDict in fbcObject.diffusiveFluxBoundaryConditionsDictDict.iteritems():
+                self.ebqe[('diffusiveFlux_bc_flag',ck,ci)] = numpy.zeros(self.ebqe[('diffusiveFlux_bc',ck,ci)].shape,'i')
+                for t,g in diffusiveFluxBoundaryConditionsDict.iteritems():
+                    self.ebqe[('diffusiveFlux_bc',ck,ci)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
+                    self.ebqe[('diffusiveFlux_bc_flag',ck,ci)][t[0],t[1]] = 1
         if hasattr(self.numericalFlux,'setDirichletValues'):
             self.numericalFlux.setDirichletValues(self.ebqe)
         if not hasattr(self.numericalFlux,'isDOFBoundary'):
@@ -817,6 +825,10 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         for t,g in self.fluxBoundaryConditionsObjectsDict[0].advectiveFluxBoundaryConditionsDict.iteritems():
             self.ebqe[('advectiveFlux_bc',0)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
             self.ebqe[('advectiveFlux_bc_flag',0)][t[0],t[1]] = 1
+        for ck,diffusiveFluxBoundaryConditionsDict in self.fluxBoundaryConditionsObjectsDict[0].diffusiveFluxBoundaryConditionsDictDict.iteritems():
+            for t,g in diffusiveFluxBoundaryConditionsDict.iteritems():
+                self.ebqe[('diffusiveFlux_bc',ck,0)][t[0],t[1]] = g(self.ebqe[('x')][t[0],t[1]],self.timeIntegration.t)
+                self.ebqe[('diffusiveFlux_bc_flag',ck,0)][t[0],t[1]] = 1
         #self.shockCapturing.lag=True
 
 
@@ -902,6 +914,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.numericalFlux.ebqe[('u',0)],
             self.ebqe[('advectiveFlux_bc_flag',0)],
             self.ebqe[('advectiveFlux_bc',0)],
+            self.ebqe[('diffusiveFlux_bc_flag',0,0)],
+            self.ebqe[('diffusiveFlux_bc',0,0)],
             self.coefficients.ebqe_phi,self.coefficients.epsFact,
             self.coefficients.ebqe_kappa, #dissipation rate variable on boundary
             self.coefficients.ebqe_porosity, #dissipation rate variable on boundary
@@ -989,6 +1003,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.numericalFlux.ebqe[('u',0)],
             self.ebqe[('advectiveFlux_bc_flag',0)],
             self.ebqe[('advectiveFlux_bc',0)],
+            self.ebqe[('diffusiveFlux_bc_flag',0,0)],
+            self.ebqe[('diffusiveFlux_bc',0,0)],
             self.csrColumnOffsets_eb[(0,0)],
             self.coefficients.ebqe_phi,self.coefficients.epsFact,
             self.coefficients.ebqe_kappa,#dissipation rate variable on boundary

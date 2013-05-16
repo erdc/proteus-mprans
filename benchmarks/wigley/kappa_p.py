@@ -40,11 +40,18 @@ def getDBC_k(x,flag):
         return lambda x,t:kInflow
     if flag == boundaryTags['obstacle']:
         return lambda x,t:0.0
+    if flag in [boundaryTags['front'], boundaryTags['back']]:
+        if openSides:
+            return lambda x,t:kInflow
 dirichletConditions = {0:getDBC_k}
 #fluxBoundaryConditions = {0:'outFlow'}
 
 def getAFBC_k(x,flag):
-    if flag == boundaryTags['right']:
+    if flag == boundaryTags['left']:
+        return None#weak Dirichlet
+    elif flag == boundaryTags['obstacle']:
+        return None#weak Dirichlet
+    elif flag == boundaryTags['right']:
         return None#outflow
     elif flag == boundaryTags['top']:
         if openTop:
@@ -60,6 +67,8 @@ def getAFBC_k(x,flag):
         return None#outflow
 def getDFBC_k(x,flag):
     if flag == boundaryTags['left']:
+        return None#weak Dirichlet
+    elif flag == boundaryTags['obstacle']:
         return None#weak Dirichlet
     elif flag == boundaryTags['right']:
         return lambda x,t: 0.0 #outflow

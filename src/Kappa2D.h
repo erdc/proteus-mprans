@@ -80,8 +80,10 @@ namespace proteus
 				   double* ebqe_velocity_ext,
 				   int* isDOFBoundary_u,
 				   double* ebqe_bc_u_ext,
-				   int* isFluxBoundary_u,
-				   double* ebqe_bc_flux_u_ext,
+				   int* isAdvectiveFluxBoundary_u,
+				   double* ebqe_bc_advectiveFlux_u_ext,
+				   int* isDiffusiveFluxBoundary_u,
+				   double* ebqe_bc_diffusiveFlux_u_ext,
 				   double* ebqe_phi,double epsFact,
 				   double* ebqe_dissipation, //dissipation rate variable on boundary
 				   double* ebqe_porosity, //VRANS
@@ -150,8 +152,10 @@ namespace proteus
 				   double* ebqe_velocity_ext,
 				   int* isDOFBoundary_u,
 				   double* ebqe_bc_u_ext,
-				   int* isFluxBoundary_u,
-				   double* ebqe_bc_flux_u_ext,
+				   int* isAdvectiveFluxBoundary_u,
+				   double* ebqe_bc_advectiveFlux_u_ext,
+				   int* isDiffusiveFluxBoundary_u,
+				   double* ebqe_bc_diffusiveFlux_u_ext,
 				   int* csrColumnOffsets_eb_u_u,
 				   double* ebqe_phi,double epsFact,
 				   double* ebqe_dissipation,//dissipation rate on boundary
@@ -421,7 +425,7 @@ namespace proteus
 
     inline
     void exteriorNumericalAdvectiveFlux(const int& isDOFBoundary_u,
-					const int& isFluxBoundary_u,
+					const int& isAdvectiveFluxBoundary_u,
 					const double n[nSpace],
 					const double& bc_u,
 					const double& bc_flux_u,
@@ -448,7 +452,7 @@ namespace proteus
 	      //flux = flow;
 	    }
 	}
-      else if (isFluxBoundary_u == 1)
+      else if (isAdvectiveFluxBoundary_u == 1)
 	{
 	  flux = bc_flux_u;
 	  //std::cout<<"Flux boundary flux and flow"<<flux<<'\t'<<flow<<std::endl;
@@ -487,7 +491,7 @@ namespace proteus
 
     inline
     void exteriorNumericalAdvectiveFluxDerivative(const int& isDOFBoundary_u,
-						  const int& isFluxBoundary_u,
+						  const int& isAdvectiveFluxBoundary_u,
 						  const double n[nSpace],
 						  const double velocity[nSpace],
 						  double& dflux)
@@ -508,7 +512,7 @@ namespace proteus
 	      dflux = 0.0;
 	    }
 	}
-      else if (isFluxBoundary_u == 1)
+      else if (isAdvectiveFluxBoundary_u == 1)
 	{
 	  dflux = 0.0;
 	}
@@ -523,6 +527,7 @@ namespace proteus
     inline
     void exteriorNumericalDiffusiveFlux(const double& bc_flux,
 					const int& isDOFBoundary,
+					const int& isDiffusiveFluxBoundary,
 					double n[nSpace],
 					double bc_u,
 					double a,
@@ -532,7 +537,12 @@ namespace proteus
 					double& flux)
     {
       double v_I;
-      if (isDOFBoundary)
+      flux = 0.0;
+      if (isDiffusiveFluxBoundary)
+	{
+	  flux = bc_flux;
+	}
+      else if (isDOFBoundary)
 	{
 	  flux = 0.0;
 	  for(int I=0;I<nSpace;I++)
@@ -543,10 +553,14 @@ namespace proteus
 	  flux += penalty*(u-bc_u);
 	}
       else
-	flux = bc_flux;
+	{
+	  //std::cerr<<"warning, Kappa2D diffusion term with no boundary condition set, setting diffusive flux to 0.0"<<std::endl;
+	  flux = 0.0;
+	}
     }
     inline
     void exteriorNumericalDiffusiveFluxDerivative(const int& isDOFBoundary,
+						  const int& isDiffusiveFluxBoundary,
 						  double n[nSpace],
 						  double a,
 						  double da,
@@ -556,7 +570,7 @@ namespace proteus
 						  double penalty,
 						  double& fluxJacobian)
     {
-      if (isDOFBoundary)
+      if (isDiffusiveFluxBoundary == 0 && isDOFBoundary == 1)
 	{
 	  fluxJacobian = 0.0;
 	  for(int I=0;I<nSpace;I++)
@@ -637,8 +651,10 @@ namespace proteus
 			   double* ebqe_velocity_ext,
 			   int* isDOFBoundary_u,
 			   double* ebqe_bc_u_ext,
-			   int* isFluxBoundary_u,
-			   double* ebqe_bc_flux_u_ext,
+			   int* isAdvectiveFluxBoundary_u,
+			   double* ebqe_bc_advectiveFlux_u_ext,
+			   int* isDiffusiveFluxBoundary_u,
+			   double* ebqe_bc_diffusiveFlux_u_ext,
 			   double* ebqe_phi,double epsFact,
 			   double* ebqe_dissipation, //dissipation rate on boundary
 			   double* ebqe_porosity, //VRANS
@@ -1061,18 +1077,19 @@ namespace proteus
 	      //calculate the numerical fluxes 
 	      // 
 	      exteriorNumericalAdvectiveFlux(isDOFBoundary_u[ebNE_kb],
-					     isFluxBoundary_u[ebNE_kb],
+					     isAdvectiveFluxBoundary_u[ebNE_kb],
 					     normal,
 					     bc_u_ext,
-					     ebqe_bc_flux_u_ext[ebNE_kb],
+					     ebqe_bc_advectiveFlux_u_ext[ebNE_kb],
 					     u_ext,//smoothedHeaviside(eps,ebqe_phi[ebNE_kb]),
 					     velocity_ext,
 					     flux_ext);
 	      //diffusive flux now as well
 	      //for now just apply flux boundary through advection term
-	      const double bc_diffusive_flux = 0.0;
+	      const double bc_diffusive_flux = ebqe_bc_diffusiveFlux_u_ext[ebNE_kb];
 	      exteriorNumericalDiffusiveFlux(bc_diffusive_flux,
 					     isDOFBoundary_u[ebNE_kb],
+					     isDiffusiveFluxBoundary_u[ebNE_kb],
 					     normal,
 					     bc_u_ext,
 					     a_ext,
@@ -1174,8 +1191,10 @@ namespace proteus
 			   double* ebqe_velocity_ext,
 			   int* isDOFBoundary_u,
 			   double* ebqe_bc_u_ext,
-			   int* isFluxBoundary_u,
-			   double* ebqe_bc_flux_u_ext,
+			   int* isAdvectiveFluxBoundary_u,
+			   double* ebqe_bc_advectiveFlux_u_ext,
+			   int* isDiffusiveFluxBoundary_u,
+			   double* ebqe_bc_diffusiveFlux_u_ext,
 			   int* csrColumnOffsets_eb_u_u,
 			   double* ebqe_phi,double epsFact,
 			   double* ebqe_dissipation,//dissipation rate on boundary
@@ -1596,7 +1615,7 @@ namespace proteus
 	      //calculate the numerical fluxes 
 	      // 
 	      exteriorNumericalAdvectiveFluxDerivative(isDOFBoundary_u[ebNE_kb],
-						       isFluxBoundary_u[ebNE_kb],
+						       isAdvectiveFluxBoundary_u[ebNE_kb],
 						       normal,
 						       velocity_ext,//ebqe_velocity_ext[ebNE_kb_nSpace],
 						       dflux_u_u_ext);
@@ -1609,6 +1628,7 @@ namespace proteus
 		  register int ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
 		  //diffusive flux
 		  exteriorNumericalDiffusiveFluxDerivative(isDOFBoundary_u[ebNE_kb],
+							   isDiffusiveFluxBoundary_u[ebNE_kb],
 							   normal,
 							   a_ext,
 							   da_ext,
