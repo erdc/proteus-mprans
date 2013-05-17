@@ -5,8 +5,6 @@ from proteus import Comm
 Comm.init()
 comm = Comm.get()
 def refine_uniform_from_tetgen(filebase,refinementLevels,index_base=0,EB=False):
-    #import pdb
-    #pdb.set_trace()
     from proteus import MeshTools,Archiver
     mesh = MeshTools.TetrahedralMesh()
     mesh.generateFromTetgenFiles(filebase,index_base,skipGeometricInit=False)
@@ -25,8 +23,6 @@ def refine_uniform_from_tetgen(filebase,refinementLevels,index_base=0,EB=False):
     ar.close()
     
 def refine_uniform_from_triangle(filebase,refinementLevels,index_base=0,EB=False):
-    #import pdb
-    #pdb.set_trace()
     from proteus import MeshTools,Archiver
     mesh = MeshTools.TriangularMesh()
     mesh.generateFromTriangleFiles(filebase,index_base)
@@ -56,6 +52,6 @@ if __name__ == '__main__':
     if len(sys.argv) > 4:
         index_base = int(sys.argv[4])
     if spaceDim == 3:
-        refine_uniform_from_tetgen(filebase,nrefine,index_base,EB=False)
+        refine_uniform_from_tetgen(filebase,nrefine+1,index_base,EB=False)
     else:
-        refine_uniform_from_triangle(filebase,nrefine,index_base,EB=False)
+        refine_uniform_from_triangle(filebase,nrefine+1,index_base,EB=False)
