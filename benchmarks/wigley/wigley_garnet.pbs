@@ -1,9 +1,9 @@
 #!/bin/bash
 #PBS -A ERDCV00898ENQ
-##PBS -q standard
+#PBS -q standard
 ##PBS -l walltime=120:00:00
-#PBS -q R468490
-#PBS -l walltime=168:00:00
+##PBS -q R468490
+#PBS -l walltime=072:00:00
 #PBS -l ncpus=5024
 #PBS -N wigley
 #PBS -j oe

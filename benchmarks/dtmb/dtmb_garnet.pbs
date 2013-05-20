@@ -1,8 +1,11 @@
 #!/bin/bash
 #PBS -A ERDCV00898ENQ
-#PBS -l walltime=048:00:00
+#PBS -l walltime=072:00:00
 #PBS -q standard
-#PBS -l ncpus=2048
+##PBS -l ncpus=64
+##PBS -q R468490
+##PBS -l walltime=072:00:00
+#PBS -l ncpus=5024
 #PBS -N dtmb
 #PBS -j oe
 #PBS -l application=proteus
@@ -13,7 +16,7 @@ source ${PROTEUS}/envConfig/garnet.gnu.bash
 cd $PBS_O_WORKDIR
 export MPICH_RANK_REORDER_METHOD=2
 mkdir $WORKDIR/dtmb.$PBS_JOBID
-#aprun -n 128 parun dtmb_so.py -l 7 -v -M 1.875 -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dtmb.$PBS_JOBID
-#aprun -n 64 -N 16 parun dtmb_so.py -l 7 -v -M 3.75 -O ../inputTemplates/petsc.options.mumps -D $WORKDIR/dtmb.$PBS_JOBID
-aprun -n 512 -N 8 -d 4 parun dtmb_so.py -l 7 -v -m -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dtmb.$PBS_JOBID
-#aprun -n 32 parun dtmb_so.py -l 7 -v -M 1.875 -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dtmb.$PBS_JOBID
+#aprun -n 64  parun dtmb_so.py -l 7 -m -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dtmb.$PBS_JOBID
+#aprun -n 128  parun dtmb_so.py -l 7 -m -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dtmb.$PBS_JOBID
+#aprun -n 256 -N 16 -S 4  parun dtmb_so.py -l 7 -v -m -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dtmb.$PBS_JOBID
+aprun -n 1256 -N 8 -S 2  parun dtmb_so.py -l 7 -v -m -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dtmb.$PBS_JOBID

@@ -81,7 +81,8 @@ nLevels = 1
 
 he = hull_draft/1.0 #32
 he *=0.5 #4 way on diamond, 8 way on garnet 256-1024 mpi tasks
-#he *=0.5 #2048 - mesh3206851
+he *=0.5 #2048 - mesh3206851
+he *=0.5 #2048 - mesh3206851
 #vessel = 'wigley-gmsh'
 #genMesh=False
 vessel = 'wigley'
@@ -273,8 +274,8 @@ quad_order = 3
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
-openTop = True#False
-openSides = True#False
+openTop = False
+openSides = False
 openEnd = True
 smoothBottom = False
 smoothObstacle = False
