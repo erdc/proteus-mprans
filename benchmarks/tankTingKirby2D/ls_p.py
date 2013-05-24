@@ -1,6 +1,6 @@
 from proteus import *
 from proteus.default_p import *
-from dambreak import *
+from tank import *
 from proteus.mprans import NCLS
 
 LevelModelType = NCLS.LevelModel
@@ -10,7 +10,10 @@ coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=2,
                                  epsFact=epsFact_consrv_heaviside,sc_uref=ls_sc_uref,sc_beta=ls_sc_beta)
  
 def getDBC_ls(x,flag):
-    return None
+    if flag == boundaryTags['left']:
+        return wavePhi
+    else:
+        return None
 
 dirichletConditions = {0:getDBC_ls}
 

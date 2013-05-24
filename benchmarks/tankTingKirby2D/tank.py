@@ -2,6 +2,8 @@ from math import *
 import proteus.MeshTools
 from proteus import Domain
 from proteus.default_n import *   
+from proteus.ctransportCoefficients import smoothedHeaviside
+from proteus.ctransportCoefficients import smoothedHeaviside_integral
    
 #  Discretization -- input options  
 genMesh=True
@@ -119,8 +121,8 @@ else:
         triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
 
 # Time stepping
-T=1.0
-dt_fixed = 0.01
+T=25.0
+dt_fixed = 0.1
 dt_init = min(0.1*dt_fixed,0.001)
 runCFL=0.33
 nDTout = int(round(T/dt_fixed))
@@ -211,8 +213,10 @@ sigma_01 = 0.0
 g = [0.0,-9.8]
 
 # Initial condition
-waterLine_x = 0.5*L[0]
-waterLine_z = 0.9*L[1]
+waterLine_x = 2*L[0]
+waterLine_z = 0.4
+#waterLine_x = 0.5*L[0]
+#waterLine_z = 0.9*L[1]
 
 def signedDistance(x):
     phi_x = x[0]-waterLine_x
@@ -228,3 +232,45 @@ def signedDistance(x):
         else:
             return sqrt(phi_x**2 + phi_z**2)
 
+#wave generator
+windVelocity = (0.0,0.0)
+inflowHeightMean = 0.4
+inflowVelocityMean = (0.0,0.0)
+omega = 2.0*math.pi/2.0
+amplitude = 0.25*L[1]
+k = 2.0*math.pi/(2.0*amplitude)
+
+def waveHeight(x,t):
+    return inflowHeightMean + amplitude*sin(omega*t-k*x[0])
+
+def waveVelocity_u(x,t):
+    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k*x[0])/(k*inflowHeightMean)
+
+def waveVelocity_v(x,t):
+    z = x[1] - inflowHeightMean
+    return inflowVelocityMean[1] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k*x[0])/inflowHeightMean
+
+#solution variables
+
+def wavePhi(x,t):
+    return x[1] - waveHeight(x,t)
+
+def waveVF(x,t):
+    return smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t))
+
+def twpflowVelocity_u(x,t):
+    waterspeed = waveVelocity_u(x,t)
+    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
+    u = H*windVelocity[0] + (1.0-H)*waterspeed
+    return u
+
+def twpflowVelocity_v(x,t):
+    waterspeed = 0.0
+    H = smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t)-epsFact_consrv_heaviside*he)
+    return H*windVelocity[1]+(1.0-H)*waterspeed
+
+def twpflowFlux(x,t):
+    return -twpflowVelocity_u(x,t)
+
+def outflowVF(x,t):
+    return smoothedHeaviside(epsFact_consrv_heaviside*he,x[1] - outflowHeight)

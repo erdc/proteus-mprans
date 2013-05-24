@@ -1,7 +1,7 @@
 from proteus import *
 from proteus.default_p import *
 from proteus.ctransportCoefficients import smoothedHeaviside
-from dambreak import *
+from tank import *
 from proteus.mprans import VOF
 
 LevelModelType = VOF.LevelModel
@@ -16,13 +16,17 @@ coefficients = VOF.Coefficients(LS_model=LS_model,V_model=0,RD_model=RD_model,ME
                                 epsFact=epsFact_vof,sc_uref=vof_sc_uref,sc_beta=vof_sc_beta)
  
 def getDBC_vof(x,flag):
-   if flag == boundaryTags['top']:# or x[1] >= L[1] - 1.0e-12:
+   if flag == boundaryTags['left']:
+       return waveVF
+   elif flag == boundaryTags['top']:# or x[1] >= L[1] - 1.0e-12:
        return lambda x,t: 1.0
 
 dirichletConditions = {0:getDBC_vof}
 
 def getAFBC_vof(x,flag):
-    if flag == boundaryTags['top']:# or x[1] >= L[1] - 1.0e-12:
+    if flag == boundaryTags['left']:
+        return None
+    elif flag == boundaryTags['top']:# or x[1] >= L[1] - 1.0e-12:
         return None
     else:
         return lambda x,t: 0.0
