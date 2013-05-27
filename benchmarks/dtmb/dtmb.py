@@ -48,18 +48,21 @@ barycenters[7,:] = hull_cg
 vessel = 5415
 genMesh=False
 #he=1.0
-#he=0.5
-he = 0.375
-##he=0.25
+he=0.5
+#he = 0.375
+#he=0.25
 #he=0.125
 if he == 1.0:
     src_dir = 'mesh249914' #128
 elif he == 0.5:
-    src_dir = 'mesh274984' #128
+    src_dir = 'mesh300031'
+    #src_dir = 'mesh274984' #128
 elif he == 0.375:
     src_dir = 'mesh1127217' #1024
 elif he == 0.25:
-    src_dir = 'mesh470168' #256
+    #src_dir = 'mesh470168' #256
+    #src_dir = 'mesh3961173' #1256
+    src_dir = 'mesh1127217'#'1686606'
 elif he == 0.125:
     #src_dir = 'mesh1487782'
     src_dir = 'mesh2034287' #1024

@@ -44,7 +44,7 @@ linear_solver_options_prefix = 'mesh_'
 linearSmoother = None
 linearSolverConvergenceTest = 'r-true'
 
-linTolFac = 0.001
+linTolFac = 0.0001
 
 conservativeFlux = None
 
