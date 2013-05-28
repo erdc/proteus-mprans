@@ -18,6 +18,9 @@ else:
 dissipation_model_flag = 1
 if useRANS == 2:
     dissipation_model_flag=2
+elif useRANS == 3:
+    dissipation_model_flag=3
+
 coefficients = Kappa.Coefficients(V_model=0,ME_model=ME_model,LS_model=LS_model,RD_model=RD_model,dissipation_model=dissipation_model,
                                   dissipation_model_flag=dissipation_model_flag,#1 -- K-epsilon, 2 -- K-omega
                                   useMetrics=useMetrics,
