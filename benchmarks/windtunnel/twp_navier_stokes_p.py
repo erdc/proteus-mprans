@@ -32,7 +32,11 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    eb_adjoint_sigma=1.0,
                                    eb_penalty_constant=weak_bc_penalty_constant,
                                    forceStrongDirichlet=ns_forceStrongDirichlet,
-                                   turbulenceClosureModel=ns_closure)
+                                   turbulenceClosureModel=ns_closure,
+                                   porosityTypes=porosityTypes,
+                                   dragAlphaTypes=dragAlphaTypes,
+                                   dragBetaTypes=dragBetaTypes,
+                                   epsFact_solid = epsFact_solid)
 
 
 bcsTimeDependent = False
@@ -42,17 +46,16 @@ periodic = False
 getDBC_p = twpflowPressure
 getDBC_u = twpflowVelocity_u
 getDBC_v = twpflowVelocity_v
-getDBC_w = twpflowVelocity_w
 
 dirichletConditions = {0:getDBC_p,
                        1:getDBC_u,
-                       2:getDBC_v,
-                       3:getDBC_w}
+                       2:getDBC_v}
+
 
 fluxBoundaryConditions = {0:'outFlow',
                           1:'outFlow',
-                          2:'outFlow',
-                          3:'outFlow'}
+                          2:'outFlow'}
+
 
 def getAFBC_p(x,flag):
     if flag == boundaryTags['left_fluid']: #inflow

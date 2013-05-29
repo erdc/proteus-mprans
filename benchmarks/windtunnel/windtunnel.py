@@ -13,12 +13,13 @@ spaceOrder=1
 useRBLES   = 0.0
 useMetrics = 1.0
 use_petsc4py=False
+useVF=1.0
 #type of 2 equation turbulence model to use
 # 0 None
 #1 K-Epsilon
 #2 Wilcox K-Omega, 1998
 #3 Wilcox K-Omega, 1988
-useRANS = 1 
+useRANS = 0 
             
 # Input checks
 if spaceOrder not in [1,2]:
@@ -102,7 +103,7 @@ segmentFlags=[boundaryTags['bottom'],
               boundaryTags['left_porous'],
               boundaryTags['interior_porous']]
 
-fluid_id = 1; porous_id = 2
+fluid_id = 0; porous_id = 1
 regions=[[0.5*L[0],0.5*(z_g+L[1])],[0.5*L[0],0.5*(z_g+0.)]]
 regionFlags=[fluid_id,porous_id]
 domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
@@ -119,6 +120,22 @@ domain.writePLY("mesh")
 domain.writeAsymptote("mesh")
 triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
 
+#homogeneous subsurface
+meanGrainSize = 0.001
+porosity  = 0.3
+porosityTypes = numpy.array([1.0,porosity])
+#convert Ergun formula to alpha-beta coefficients
+if porosity > 9.999e-1:
+    Ftilde = 1.0
+    Kinv   = 0.0
+else:
+    Ftilde = porosity*meanGrainSize*100.0/(1.0-porosity) #viscocities cancel out
+    Kinv   = 180.*(1.0-porosity)*(1.0-porosity)/(meanGrainSize*meanGrainSize*porosity*porosity*porosity);
+dragAlphaTypes = numpy.array([0.0,Kinv])
+dragBetaTypes  = numpy.array([0.0,Kinv*Ftilde])
+
+killNonlinearDragInSpongeLayer = True 
+
 #--- Numerical parameters for mesh
 nLevels = 1
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -131,7 +148,11 @@ nLayersOfOverlapForParallel = 0
 rho_1 = 1.205
 nu_1  = 1.500e-5 
 
-Re = 100.0#30250.0
+#single phase
+rho_0 = rho_1
+nu_0  = rho_1
+
+Re = 10000.0#30250.0
 nu = nu_1
 rho = rho_1
 inflow = nu*Re/upstream_height #perhaps should be nu*Re/(upstream_height-z_g)
@@ -163,6 +184,9 @@ tnList.extend([max(i*T/float(nDTout),0.1) for i in range(1,nDTout+1)])#[0.0,0.5*
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
+weak_bc_penalty_constant = 100.0
+
+
 upstream_start_z = z_g
 kInflow = 0.03*inflow*inflow#0.003*inflow*inflow
 inflowVelocity = (inflow,0.0)
@@ -219,6 +243,7 @@ def signedDistance(x):
 #----------------------------------------------------
 # Numerical parameters
 ns_forceStrongDirichlet = False
+epsFact_solid = 0.5
 if useMetrics:
     ns_shockCapturingFactor  = 0.1
     ns_lag_shockCapturing = True
