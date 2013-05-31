@@ -134,7 +134,7 @@ else:
 dragAlphaTypes = numpy.array([0.0,Kinv])
 dragBetaTypes  = numpy.array([0.0,Kinv*Ftilde])
 
-killNonlinearDragInSpongeLayer = True 
+killNonlinearDragInSpongeLayer = False 
 
 #--- Numerical parameters for mesh
 nLevels = 1
@@ -152,10 +152,14 @@ nu_1  = 1.500e-5
 rho_0 = rho_1
 nu_0  = rho_1
 
-Re = 10000.0#30250.0
 nu = nu_1
 rho = rho_1
-inflow = nu*Re/upstream_height #perhaps should be nu*Re/(upstream_height-z_g)
+
+#Re = 10000.0#30250.0
+#inflow = nu*Re/upstream_height #perhaps should be nu*Re/(upstream_height-z_g)
+
+inflow = 1.0 
+Re = inflow*upstream_height/nu
 
 # Surface tension
 sigma_01 = 0.0
@@ -164,7 +168,7 @@ sigma_01 = 0.0
 g = [0.0,-9.8]
 
 #turbulence
-ns_closure=3 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:
@@ -177,7 +181,7 @@ elif useRANS == 2:
 residence_time = length/inflow
 T=10.0*residence_time
 tnList = [0.0,0.0001]
-nDTout=100
+nDTout=10#100
 tnList.extend([max(i*T/float(nDTout),0.1) for i in range(1,nDTout+1)])#[0.0,0.5*T,T]
 
 
@@ -217,13 +221,14 @@ porous_boundary = [boundaryTags['left_porous'],boundaryTags['right_porous']]
 exterior_boundary = [boundaryTags['left_fluid'],boundaryTags['right_fluid'],boundaryTags['bottom'],boundaryTags['top'],boundaryTags['left_porous'],boundaryTags['right_porous']]
 def twpflowVelocity_u(x,flag):
     if flag == boundaryTags['left_fluid']:
-        return lambda x,t: uProfile.uOfX(x-[0.0,z_g,0.0])*velRamp(t)
+        return lambda x,t: inflow*velRamp(t)
     elif (flag == boundaryTags['top'] or
           flag in bottom or
-          flag == boundaryTags['left_porous']):
+          flag == boundaryTags['left_porous'] or 
+          flag == boundaryTags['right_porous']):
         return lambda x,t: 0.0
 def twpflowVelocity_v(x,flag):
-    if flag in [boundaryTags['left_fluid'],boundaryTags['left_porous']]:
+    if flag in [boundaryTags['left_fluid'],boundaryTags['left_porous'],boundaryTags['right_porous']]:
         return lambda x,t: 0.0
     if (flag == boundaryTags['top'] or
         flag in bottom):
@@ -242,7 +247,7 @@ def signedDistance(x):
 # Numerical parameters
 #----------------------------------------------------
 # Numerical parameters
-ns_forceStrongDirichlet = False
+ns_forceStrongDirichlet = True
 epsFact_solid = 0.5
 if useMetrics:
     ns_shockCapturingFactor  = 0.1
@@ -301,3 +306,25 @@ rd_nl_atol_res = max(1.0e-8,0.1*he)
 kappa_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
 dissipation_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
 
+#================================================
+# Print run data
+#================================================
+logEvent("""
+Reynolds number    = %16.21e
+Windtunnel Domain  = [%16.21e,%16.21e]
+Porous Domain      = [%16.21e,%16.21e]
+Target element h_e = %16.21e
+Porosity           = %16.21e
+MeanGrainSize      = %16.21e
+Inflow velocity    = %16.21e
+T                  = %16.21e
+nDTout             = %i
+""" % (Re,           
+       L[0],L[1],
+       L[0],z_g,
+       he,
+       porosity,
+       meanGrainSize,
+       inflow,
+       T,
+       nDTout))

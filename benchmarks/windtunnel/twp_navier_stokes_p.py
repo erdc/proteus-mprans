@@ -39,7 +39,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    epsFact_solid = epsFact_solid)
 
 
-bcsTimeDependent = False
+bcsTimeDependent = True
 
 periodic = False
 
@@ -60,31 +60,32 @@ fluxBoundaryConditions = {0:'outFlow',
 def getAFBC_p(x,flag):
     if flag == boundaryTags['left_fluid']: #inflow
         return lambda x,t: -inflow*velRamp(t)
-    if flag in [boundaryTags['right_fluid'],boundaryTags['right_porous']]:#outflow
-        return None
-    else:
+    #if flag in [boundaryTags['right_fluid']]:#outflow
+    #    return None
+    if flag in [boundaryTags['top'],boundaryTags['bottom'],boundaryTags['left_porous'],
+                boundaryTags['right_porous']]:
         return lambda x,t: 0.0 #no-penetration (wall)
 
 def getAFBC_u(x,flag):
-    if flag in exterior_boundary:
+    if flag in exterior_boundary or flag == boundaryTags['right_porous']:
         return None #Dirichlet or outflow
 
     
 def getAFBC_v(x,flag):
-    if flag in exterior_boundary:
+    if flag in exterior_boundary or flag == boundaryTags['right_porous']:
         return None #Dirichlet or outflow
    
 advectiveFluxBoundaryConditions =  {0:getAFBC_p,
                                     1:getAFBC_u,
                                     2:getAFBC_v}
 def getDFBC_u(x,flag):
-    if flag in [boundaryTags['right_fluid'],boundaryTags['right_porous']]:#outflow
+    if flag in [boundaryTags['right_fluid']]:#outflow
         return lambda x,t: 0.0
     else: #Dirichlet
         return None
 
 def getDFBC_v(x,flag):
-    if flag in [boundaryTags['right_fluid'],boundaryTags['right_porous']]:#outflow
+    if flag in [boundaryTags['right_fluid']]:#outflow
         return lambda x,t: 0.0
     else: #Dirichlet
         return None
