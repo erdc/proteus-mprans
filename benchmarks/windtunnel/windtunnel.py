@@ -19,7 +19,7 @@ useVF=1.0
 #1 K-Epsilon
 #2 Wilcox K-Omega, 1998
 #3 Wilcox K-Omega, 1988
-useRANS = 0 
+useRANS = 1 
             
 # Input checks
 if spaceOrder not in [1,2]:

@@ -6,9 +6,7 @@ from proteus.mprans import RANS2P
 LevelModelType = RANS2P.LevelModel
 
 if useRANS >= 1:
-    Closure_0_model = 5; Closure_1_model=6
-    if useOnlyVF:
-        Closure_0_model=2; Closure_1_model=3
+    Closure_0_model = 3; Closure_1_model=4
 else:
     Closure_0_model = None
     Closure_1_model = None
