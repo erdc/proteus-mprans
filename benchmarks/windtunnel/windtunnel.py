@@ -61,50 +61,81 @@ elif spaceOrder == 2:
 # ------------------------------------- L_x
 #
 #----------------------------------------------------
+#----------------------------------------------------
+# Domain and mesh
+# 
+#               top                   L_z
+# ------------------------------------- L_x
+# | ---> v^a_{in}                     | 
+# |                                   |    p= p_{out}
+# ************************************* -- z_g
+# l_duct|        porous          |r_duct
+#       |                        |
+#       ------------------------- L_px
+#      0,0       bottom
+#----------------------------------------------------
+
 # Domain and mesh [m]
-length = 10.0
-upstream_height = 2.0
+left_duct_length= 2.0
+right_duct_length= 2.0
+porous_length = 6.0   #sand box length
+duct_length = left_duct_length+porous_length+right_duct_length  #free-flow domain length
+z_g = 1.0 #height of tank
+duct_height = 1.0
+upstream_height = z_g+duct_height #total height
+
+#bounding box
+length = duct_length  
 L = (length,
      upstream_height)
 
-z_g = L[1]/2.0
 
 he = L[1]/float(4*Refinement-1)
 
 #--- define Piecewise Linear Complex Domain --- 
-boundaries=['left_fluid','right_fluid','bottom','top','left_porous','right_porous','interior_porous']
+boundaries=['left_fluid','right_fluid','bottom_left','bottom','bottom_right','top','left_porous','right_porous','interior_porous']
 boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
 
 vertices=[[0.0,0.0], #0
-          [L[0],0.0],#1
-          [L[0],z_g],#2
-          [L[0],L[1]],#3
-          [0.0,L[1]], #4
-          [0.0,z_g]]  #5
+          [porous_length,0.0],#1
+          [porous_length,z_g],#2
+          [porous_length+right_duct_length,z_g], #3
+          [porous_length+right_duct_length,z_g+duct_height],#4
+          [-left_duct_length,z_g+duct_height], #5
+          [-left_duct_length,z_g],  #6
+          [0.0,z_g]] #7
+
 vertexFlags=[boundaryTags['bottom'],
              boundaryTags['bottom'],
              boundaryTags['right_porous'],
+             boundaryTags['bottom'],
+             boundaryTags['right_fluid'],
              boundaryTags['top'],
-             boundaryTags['top'],
-             boundaryTags['left_porous']]
+             boundaryTags['left_fluid'],
+             boundaryTags['bottom']]
+
 segments=[[0,1],
           [1,2],
           [2,3],
           [3,4],
           [4,5],
-          [5,0],
-          [2,5]]
+          [5,6],
+          [6,7],
+          [7,0],
+          [2,7]]
 
 segmentFlags=[boundaryTags['bottom'],
               boundaryTags['right_porous'],
+              boundaryTags['bottom_right'],
               boundaryTags['right_fluid'],
               boundaryTags['top'],
               boundaryTags['left_fluid'],
+              boundaryTags['bottom_left'],
               boundaryTags['left_porous'],
               boundaryTags['interior_porous']]
 
 fluid_id = 0; porous_id = 1
-regions=[[0.5*L[0],0.5*(z_g+L[1])],[0.5*L[0],0.5*(z_g+0.)]]
+regions=[[0.+0.5*porous_length,z_g+0.5*duct_height],[0.+0.5*porous_length,0.5*z_g]]
 regionFlags=[fluid_id,porous_id]
 domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
                                               vertexFlags=vertexFlags,
@@ -216,9 +247,9 @@ def twpflowPressure(x,flag):
         return lambda x,t: -(L[1]-x[1])*rho*g[1]
 
 
-bottom = [boundaryTags['bottom']]
+bottom = [boundaryTags['bottom'],boundaryTags['bottom_left'],boundaryTags['bottom_right']]
 porous_boundary = [boundaryTags['left_porous'],boundaryTags['right_porous']]
-exterior_boundary = [boundaryTags['left_fluid'],boundaryTags['right_fluid'],boundaryTags['bottom'],boundaryTags['top'],boundaryTags['left_porous'],boundaryTags['right_porous']]
+exterior_boundary = [boundaryTags['left_fluid'],boundaryTags['right_fluid'],boundaryTags['top'],boundaryTags['left_porous'],boundaryTags['right_porous']] + bottom
 def twpflowVelocity_u(x,flag):
     if flag == boundaryTags['left_fluid']:
         return lambda x,t: inflow*velRamp(t)
