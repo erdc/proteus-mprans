@@ -7,19 +7,19 @@ from proteus.default_n import *
 #----------------------------------------------------
 #  Discretization -- input options    
 #----------------------------------------------------
-Refinement=4
+Refinement=8
 genMesh=True
 spaceOrder=1
 useRBLES   = 0.0
 useMetrics = 1.0
-use_petsc4py=False
+use_petsc4py=True
 useVF=1.0
 #type of 2 equation turbulence model to use
 # 0 None
 #1 K-Epsilon
 #2 Wilcox K-Omega, 1998
 #3 Wilcox K-Omega, 1988
-useRANS = 1 
+useRANS = 0 
             
 # Input checks
 if spaceOrder not in [1,2]:
@@ -48,19 +48,6 @@ elif spaceOrder == 2:
     elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
 
 
-#----------------------------------------------------
-# Domain and mesh
-# 
-#  
-# ------------------------------------- L_z
-# | ---> v^a_{in}                     | 
-# |                                   |    p= p_{out}
-# ************************************* -- z_g
-# |          \theta_s                 | 
-# |                                   |
-# ------------------------------------- L_x
-#
-#----------------------------------------------------
 #----------------------------------------------------
 # Domain and mesh
 # 
@@ -152,8 +139,8 @@ domain.writeAsymptote("mesh")
 triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
 
 #homogeneous subsurface
-meanGrainSize = 0.001
-porosity  = 0.3
+meanGrainSize = 0.00053 #m
+porosity  = 0.32
 porosityTypes = numpy.array([1.0,porosity])
 #convert Ergun formula to alpha-beta coefficients
 if porosity > 9.999e-1:
@@ -189,17 +176,17 @@ rho = rho_1
 #Re = 10000.0#30250.0
 #inflow = nu*Re/upstream_height #perhaps should be nu*Re/(upstream_height-z_g)
 
-inflow = 1.0 
+inflow = 1.0 #m/s
 Re = inflow*upstream_height/nu
 
 # Surface tension
 sigma_01 = 0.0
 
 # Gravity
-g = [0.0,-9.8]
+g = [0.0,-9.8] #m/s^2
 
 #turbulence
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=1 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:
@@ -210,9 +197,9 @@ elif useRANS == 2:
 #----------------------------------------------------
 
 residence_time = length/inflow
-T=10.0*residence_time
+T=100.0*residence_time
 tnList = [0.0,0.0001]
-nDTout=10#100
+nDTout=50#100
 tnList.extend([max(i*T/float(nDTout),0.1) for i in range(1,nDTout+1)])#[0.0,0.5*T,T]
 
 
