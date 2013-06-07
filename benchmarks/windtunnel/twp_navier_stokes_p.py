@@ -55,37 +55,35 @@ fluxBoundaryConditions = {0:'outFlow',
                           2:'outFlow'}
 
 
+
 def getAFBC_p(x,flag):
     if flag == boundaryTags['left_fluid']: #inflow
         return lambda x,t: -inflow*velRamp(t)
-    #if flag in [boundaryTags['right_fluid']]:#outflow
-    #    return None
-    if flag in [boundaryTags['top'],boundaryTags['bottom'],boundaryTags['left_porous'],
-                boundaryTags['right_porous']]:
+    if flag in outflow:
+        return None #outflow
+    if flag in walls:
         return lambda x,t: 0.0 #no-penetration (wall)
 
 def getAFBC_u(x,flag):
-    if flag in exterior_boundary or flag == boundaryTags['right_porous']:
+    if flag in walls+outflow:
         return None #Dirichlet or outflow
-
-    
 def getAFBC_v(x,flag):
-    if flag in exterior_boundary or flag == boundaryTags['right_porous']:
+    if flag in walls+outflow:
         return None #Dirichlet or outflow
    
 advectiveFluxBoundaryConditions =  {0:getAFBC_p,
                                     1:getAFBC_u,
                                     2:getAFBC_v}
 def getDFBC_u(x,flag):
-    if flag in [boundaryTags['right_fluid']]:#outflow
-        return lambda x,t: 0.0
-    else: #Dirichlet
+    if flag in outflow:
+        return lambda x,t: 0.0  #outflow
+    elif flag in walls+inflow_boundary: #Dirichlet
         return None
 
 def getDFBC_v(x,flag):
-    if flag in [boundaryTags['right_fluid']]:#outflow
-        return lambda x,t: 0.0
-    else: #Dirichlet
+    if flag in outflow:
+        return lambda x,t: 0.0  #outflow
+    elif flag in walls+inflow_boundary: #Dirichlet
         return None
 
 diffusiveFluxBoundaryConditions = {0:{},

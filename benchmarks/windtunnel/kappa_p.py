@@ -23,25 +23,21 @@ coefficients = Kappa.Coefficients(V_model=0,ME_model=3,LS_model=1,RD_model=None,
 def getDBC_k(x,flag):
     if flag == boundaryTags['left_fluid']:
         return lambda x,t:kInflow
-    if flag == boundaryTags['left_porous']:
-        return lambda x,t:0.0
-    if flag in [boundaryTags['top'],boundaryTags['bottom']]:
+    if flag in walls:
         return lambda x,t:0.0
 
 dirichletConditions = {0:getDBC_k}
 fluxBoundaryConditions = {0:'outFlow'}
 
 def getAFBC_k(x,flag):
-    if flag in [boundaryTags['right_fluid'],boundaryTags['right_porous']]: #outflow
+    if flag in outflow:
         return None
-    if flag in [boundaryTags['left_fluid'],boundaryTags['left_porous'],
-                boundaryTags['top'],boundaryTags['bottom']]: #Dirichlet
+    if flag in walls+inflow_boundary: #Dirichlet
         return None
 def getDFBC_k(x,flag):
-    if flag in [boundaryTags['right_fluid'],boundaryTags['right_porous']]: #outflow
+    if flag in outflow:
         return lambda x,t:0.0
-    if flag in [boundaryTags['left_fluid'],boundaryTags['left_porous'],
-                boundaryTags['top'],boundaryTags['bottom']]: #Dirichlet
+    if flag in walls+inflow_boundary:
         return None
 
 advectiveFluxBoundaryConditions =  {0:getAFBC_k}

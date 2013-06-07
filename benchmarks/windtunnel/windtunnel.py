@@ -207,7 +207,7 @@ tnList.extend([max(i*T/float(nDTout),0.1) for i in range(1,nDTout+1)])#[0.0,0.5*
 # Boundary conditions and other flags
 #----------------------------------------------------
 weak_bc_penalty_constant = 100.0
-
+outflow_on_porous_bed = False
 
 upstream_start_z = z_g
 kInflow = 0.03*inflow*inflow#0.003*inflow*inflow
@@ -223,6 +223,19 @@ class u_flat:
 
 uProfile = u_flat(val=inflow)
 
+#label the boundaries for convenience
+bottom = [boundaryTags['bottom'],boundaryTags['bottom_left'],boundaryTags['bottom_right']]
+porous_boundary = [boundaryTags['left_porous'],boundaryTags['right_porous']]
+exterior_boundary = [boundaryTags['left_fluid'],boundaryTags['right_fluid'],boundaryTags['top'],boundaryTags['left_porous']] + bottom
+walls   = [boundaryTags['top'],boundaryTags['left_porous']]+bottom
+outflow = [boundaryTags['right_fluid']]
+inflow_boundary = [boundaryTags['left_fluid']]
+
+if outflow_on_porous_bed == False:
+    walls += [boundaryTags['right_porous']]
+else:
+    outflow += [boundaryTags['right_porous']]
+
 def velRamp(t):
     if t < residence_time:
         return 1.0-exp(-25.0*t/residence_time)
@@ -230,26 +243,17 @@ def velRamp(t):
         return 1.0
 
 def twpflowPressure(x,flag):
-    if flag in [boundaryTags['right_fluid'],boundaryTags['right_porous']]:#set pressure on outflow to hydrostatic
+    if flag in outflow:#set pressure on outflow to hydrostatic
         return lambda x,t: -(L[1]-x[1])*rho*g[1]
 
-
-bottom = [boundaryTags['bottom'],boundaryTags['bottom_left'],boundaryTags['bottom_right']]
-porous_boundary = [boundaryTags['left_porous'],boundaryTags['right_porous']]
-exterior_boundary = [boundaryTags['left_fluid'],boundaryTags['right_fluid'],boundaryTags['top'],boundaryTags['left_porous'],boundaryTags['right_porous']] + bottom
 def twpflowVelocity_u(x,flag):
     if flag == boundaryTags['left_fluid']:
         return lambda x,t: inflow*velRamp(t)
-    elif (flag == boundaryTags['top'] or
-          flag in bottom or
-          flag == boundaryTags['left_porous'] or 
-          flag == boundaryTags['right_porous']):
+    elif flag in walls:
         return lambda x,t: 0.0
+
 def twpflowVelocity_v(x,flag):
-    if flag in [boundaryTags['left_fluid'],boundaryTags['left_porous'],boundaryTags['right_porous']]:
-        return lambda x,t: 0.0
-    if (flag == boundaryTags['top'] or
-        flag in bottom):
+    if flag in walls + [boundaryTags['left_fluid']]:
         return lambda x,t: 0.0
 
 

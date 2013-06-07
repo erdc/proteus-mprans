@@ -26,23 +26,19 @@ if useRANS >= 2:
 def getDBC_dissipation(x,flag):
     if flag == boundaryTags['left_fluid']:
         return lambda x,t:dissipationInflow
-    if flag == boundaryTags['left_porous']:
-        return lambda x,t:0.0
 
 dirichletConditions = {0:getDBC_dissipation}
 fluxBoundaryConditions = {0:'outFlow'}
 
 def getAFBC_dissipation(x,flag):
-    if flag in [boundaryTags['right_fluid'],boundaryTags['right_porous']]: #outflow
+    if flag in outflow: 
         return None
-    if flag in [boundaryTags['left_fluid'],boundaryTags['left_porous'],
-                boundaryTags['top'],boundaryTags['bottom']]: #No-flow
+    if flag in walls: #No-flux
         return lambda x,t: 0.0
 def getDFBC_dissipation(x,flag):
-    if flag in [boundaryTags['right_fluid'],boundaryTags['right_porous']]: #outflow
+    if flag in outflow: 
         return lambda x,t: 0.0
-    if flag in [boundaryTags['left_fluid'],boundaryTags['left_porous'],
-                boundaryTags['top'],boundaryTags['bottom']]: #No-flow
+    if flag in walls: #No-flow
         return lambda x,t: 0.0
     
 
