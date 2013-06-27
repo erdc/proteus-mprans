@@ -1,7 +1,11 @@
 #!/bin/bash
 #PBS -A ERDCV00898ENQ
-#PBS -l walltime=048:00:00
-#PBS -l ncpus=1024
+#PBS -l walltime=024:00:00
+#PBS -l ncpus=512
+##PBS -l walltime=012:00:00
+##PBS -l ncpus=128
+##PBS -l walltime=048:00:00
+##PBS -l ncpus=1024
 #PBS -q standard
 #PBS -N dambreak
 #PBS -j oe
@@ -14,4 +18,6 @@ source ${PROTEUS}/envConfig/garnet.gnu.bash
 cd $PBS_O_WORKDIR
 mkdir $WORKDIR/dambreak.$PBS_JOBID
 #-n total number of cores, -N cores per node, -S cores per numa node (4 numa nodes per node)
-aprun -n 256 -N 8 -S 2 parun dambreak_so.py -l 7 -v -G -M 8.0 -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dambreak.$PBS_JOBID
+#aprun -n 32 parun dambreak_so.py -l 7 -v -G -m -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dambreak.$PBS_JOBID
+aprun -n 256 -N 16 -S 4  parun dambreak_so.py -l 7 -v -m -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dambreak.$PBS_JOBID
+#aprun -n 256 -N 8 -S 2 parun dambreak_so.py -l 7 -v -G -M 8.0 -O ../inputTemplates/petsc.options.schur_upper_a11_asm_boomeramg -D $WORKDIR/dambreak.$PBS_JOBID

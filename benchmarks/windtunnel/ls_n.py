@@ -1,12 +1,13 @@
 from proteus import *
 from ls_p import *
 
-timeIntegration = BackwardEuler_cfl
+timeIntegration = BackwardEuler
 stepController  = Min_dt_controller
 
 femSpaces = {0:basis}
 
 massLumping       = False
+numericalFluxType = None
 conservativeFlux  = None
 numericalFluxType = NCLS.NumericalFlux
 subgridError      = NCLS.SubgridError(coefficients,nd)
@@ -20,28 +21,20 @@ nonlinearSmoother = None
 linearSmoother    = None
 
 matrix = SparseMatrix
-
-if useOldPETSc:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver      = PETSc
+if not use_petsc4py:
+    multilevelLinearSolver = LU
+    levelLinearSolver      = LU
 else:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
-
-if useSuperlu:
-    multilevelLinearSolver = LU
-    levelLinearSolver      = LU
-
 linear_solver_options_prefix = 'ncls_'
-levelNonlinearSolverConvergenceTest = 'r'
-linearSolverConvergenceTest         = 'r-true'
+nonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'rits'
+linearSolverConvergenceTest         = 'rits'
 
-tolFac = 0.0
-linTolFac = 0.001
-l_atol_res = 0.001*ls_nl_atol_res
-nl_atol_res = ls_nl_atol_res
-useEisenstatWalker = False#True
+tolFac = 1e-3
+nl_atol_res = 0.0
 
-maxNonlinearIts = 50
+maxNonlinearIts = 0
 maxLineSearches = 0
 

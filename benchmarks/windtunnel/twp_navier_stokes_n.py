@@ -1,14 +1,13 @@
 from proteus import *
 from twp_navier_stokes_p import *
-from wigley import *
+from windtunnel import *
 
 timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_controller
 
 femSpaces = {0:basis,
 	     1:basis,
-	     2:basis,
-	     3:basis}
+	     2:basis}
 
 massLumping       = False
 numericalFluxType = None
@@ -27,26 +26,19 @@ linearSmoother    = SimpleNavierStokes3D
 
 matrix = SparseMatrix
 
-if useOldPETSc:
-    multilevelLinearSolver = PETSc
-    levelLinearSolver      = PETSc
+if not use_petsc4py:
+    multilevelLinearSolver = LU
+    levelLinearSolver      = LU
 else:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
-
-if useSuperlu:
-    multilevelLinearSolver = LU
-    levelLinearSolver      = LU
-
 linear_solver_options_prefix = 'rans2p_'
 levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest             = 'r-true'
 
 tolFac = 0.0
-linTolFac = 0.001
-l_atol_res = 0.001*vof_nl_atol_res
-nl_atol_res = ns_nl_atol_res
-useEisenstatWalker = False#True
-maxNonlinearIts = 50
+nl_atol_res = 1.0e-4
+useEisenstatWalker = True
+maxNonlinearIts = 20
 maxLineSearches = 0
-conservativeFlux = {0:'pwl-bdm-opt'}
+

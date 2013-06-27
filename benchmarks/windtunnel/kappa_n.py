@@ -7,11 +7,11 @@ stepController  = Min_dt_cfl_controller
 femSpaces = {0:basis}
 
 massLumping       = False
-numericalFluxType = Kappa.NumericalFlux
 conservativeFlux  = None
+numericalFluxType = Kappa.NumericalFlux
 subgridError      = Kappa.SubgridError(coefficients=coefficients,nd=nd)
 shockCapturing    = Kappa.ShockCapturing(coefficients,nd,shockCapturingFactor=kappa_shockCapturingFactor,
-                                         lag=kappa_lag_shockCapturing)
+                                         lag=True)
 
 fullNewtonFlag  = True
 multilevelNonlinearSolver = Newton
@@ -21,7 +21,7 @@ nonlinearSmoother = None
 linearSmoother    = None
 #printNonlinearSolverInfo = True
 matrix = SparseMatrix
-if not useOldPETSc and not useSuperlu:
+if use_petsc4py:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver      = KSP_petsc4py
 else:
@@ -33,11 +33,9 @@ levelNonlinearSolverConvergenceTest = 'r'#'rits'
 linearSolverConvergenceTest         = 'r'#'rits'
 
 tolFac = 0.0
-linTolFac =0.0001
-l_atol_res = 0.001*kappa_nl_atol_res
-nl_atol_res = kappa_nl_atol_res
-useEisenstatWalker = False#True
+nl_atol_res = 1.0e-6
+nl_rtol_res = 0.0
 
-maxNonlinearIts = 50
+maxNonlinearIts = 15
 maxLineSearches = 0
 

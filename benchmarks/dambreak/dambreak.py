@@ -58,12 +58,12 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (0.584,0.146,0.350)
+L = (0.584,0.146,2*0.350)
 #he = L[0]/float(4*Refinement-1)
 #he*=0.5
 he = L[0]/40.0
 he*=0.5#128
-he*=0.5#1024
+#he*=0.5#1024
 quasi2D = False#True
 
 if quasi2D:
@@ -145,14 +145,14 @@ nDTout = int(round(T/dt_fixed))
 ns_forceStrongDirichlet = False#True
 if useMetrics:
     ns_shockCapturingFactor  = 0.9
-    ns_lag_shockCapturing = True
-    ns_lag_subgridError = True
+    ns_lag_shockCapturing = False
+    ns_lag_subgridError = False
     ls_shockCapturingFactor  = 0.9
-    ls_lag_shockCapturing = True
+    ls_lag_shockCapturing = False
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.5
     vof_shockCapturingFactor = 0.9
-    vof_lag_shockCapturing = True
+    vof_lag_shockCapturing = False
     vof_sc_uref = 1.0
     vof_sc_beta = 1.5
     rd_shockCapturingFactor  = 0.9
@@ -190,13 +190,13 @@ else:
     dissipation_sc_uref  = 1.0
     dissipation_sc_beta  = 1.0
 
-ns_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
-vof_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
-ls_nl_atol_res = max(1.0e-8,0.1*he**2/2.0)
-rd_nl_atol_res = max(1.0e-8,0.1*he)
-mcorr_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-kappa_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
-dissipation_nl_atol_res = max(1.0e-8,0.01*he**2/2.0)
+ns_nl_atol_res = max(1.0e-8,0.01*he**2)
+vof_nl_atol_res = max(1.0e-8,0.01*he**2)
+ls_nl_atol_res = max(1.0e-8,0.01*he**2)
+rd_nl_atol_res = max(1.0e-8,0.01*he)
+mcorr_nl_atol_res = max(1.0e-80,0.01*he**2)
+kappa_nl_atol_res = max(1.0e-8,0.01*he**2)
+dissipation_nl_atol_res = max(1.0e-8,0.01*he**2)
 
 #turbulence
 ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega

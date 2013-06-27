@@ -81,11 +81,12 @@ nLevels = 1
 
 he = hull_draft/1.0 #32
 he *=0.5 #4 way on diamond, 8 way on garnet 256-1024 mpi tasks
+he *=0.5 #2048 - mesh3206851
 #he *=0.5 #2048 - mesh3206851
 #vessel = 'wigley-gmsh'
 #genMesh=False
 vessel = 'wigley'
-genMesh=False
+genMesh=True#False
 #vessel = 'cube'
 #vessel = None
 #genMesh=True
@@ -263,7 +264,6 @@ else:
         domain.writePoly("meshNoVessel")
     triangleOptions="VApq1.35q12ena%e" % ((he**3)/6.0,)
 logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
-#print triangleOptions
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
@@ -273,8 +273,8 @@ quad_order = 3
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
-openTop = True#False
-openSides = True#False
+openTop = False
+openSides = False
 openEnd = True
 smoothBottom = False
 smoothObstacle = False
@@ -287,8 +287,8 @@ freezeLevelSet=True
 #----------------------------------------------------
 # Time stepping and velocity
 #----------------------------------------------------
-#Fr = 0.25
-Fr = 0.51
+Fr = 0.25
+#Fr = 0.51
 #Fr = 0.0
 Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um/nu_0

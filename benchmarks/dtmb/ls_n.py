@@ -37,7 +37,7 @@ levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest         = 'r-true'
 
 tolFac = 0.0
-linTolFac = 0.001
+linTolFac = 0.0001
 l_atol_res = 0.001*ls_nl_atol_res
 nl_atol_res = ls_nl_atol_res
 useEisenstatWalker = False#True

@@ -1,4 +1,4 @@
--rans2p_ksp_type fgmres -rans2p_ksp_gmres_restart 100 -rans2p_ksp_gmres_modifiedgramschmidt
+-rans2p_ksp_type fgmres -rans2p_ksp_gmres_restart 200 -rans2p_ksp_gmres_modifiedgramschmidt
 -rans2p_pc_type fieldsplit
 -rans2p_pc_fieldsplit_type schur -rans2p_pc_fieldsplit_schur_fact_type upper -rans2p_pc_fieldsplit_schur_precondition a11
 -rans2p_fieldsplit_velocity_ksp_type preonly

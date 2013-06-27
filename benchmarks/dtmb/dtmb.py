@@ -48,20 +48,24 @@ barycenters[7,:] = hull_cg
 vessel = 5415
 genMesh=False
 #he=1.0
-#he=0.5
-he = 0.375
+he=0.5
+#he = 0.375
 #he=0.25
 #he=0.125
 if he == 1.0:
-    src_dir = 'mesh8490'
+    src_dir = 'mesh249914' #128
 elif he == 0.5:
-    src_dir = 'mesh28144'
+    src_dir = 'mesh300031'
+    #src_dir = 'mesh274984' #128
 elif he == 0.375:
-    src_dir = 'mesh1127217'
+    src_dir = 'mesh1127217' #1024
 elif he == 0.25:
-    src_dir = 'mesh196331'
+    #src_dir = 'mesh470168' #256
+    #src_dir = 'mesh3961173' #1256
+    src_dir = 'mesh1127217'#'1686606'
 elif he == 0.125:
-    src_dir = 'mesh1487782'
+    #src_dir = 'mesh1487782'
+    src_dir = 'mesh2034287' #1024
 import os
 import shutil
 import glob
@@ -221,8 +225,8 @@ quad_order = 3
 #----------------------------------------------------
 # Boundary conditions and other flags
 #----------------------------------------------------
-openTop = True
-openSides = True
+openTop = False#True
+openSides = False#True
 smoothBottom = True#False
 smoothObstacle = False
 rampInitialConditions = False
@@ -235,8 +239,8 @@ freezeLevelSet=True
 #----------------------------------------------------
 # Time stepping and velocity
 #----------------------------------------------------
-#Fr = 0.28
-Fr = 0.51
+Fr = 0.28
+#Fr = 0.51
 Um = Fr*sqrt(fabs(g[2])*hull_length)
 Re = hull_length*Um/nu_0
 
@@ -356,7 +360,7 @@ elif spaceOrder == 2:
 
 # Numerical parameters
 ns_forceStrongDirichlet = False
-weak_bc_penalty_constant = 1000.0
+weak_bc_penalty_constant = 100.0
 if useMetrics:
     ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = True
@@ -402,7 +406,7 @@ else:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = False#True
+    redist_Newton = False
     kappa_shockCapturingFactor = 0.9
     kappa_lag_shockCapturing = True#False
     kappa_sc_uref  = 1.0
@@ -412,13 +416,13 @@ else:
     dissipation_sc_uref  = 1.0
     dissipation_sc_beta  = 1.0
 
-ns_nl_atol_res = max(1.0e-12,0.001*he**2)
-vof_nl_atol_res = max(1.0e-12,0.001*he**2)
-ls_nl_atol_res = max(1.0e-12,0.001*he**2)
-mcorr_nl_atol_res = max(1.0e-12,0.001*he**2)
-rd_nl_atol_res = max(1.0e-12,0.01*he)
-kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
-dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
+ns_nl_atol_res = max(1.0e-8,0.01*he**2)
+vof_nl_atol_res = max(1.0e-8,0.01*he**2)
+ls_nl_atol_res = max(1.0e-8,0.01*he**2)
+mcorr_nl_atol_res = max(1.0e-8,0.01*he**2)
+rd_nl_atol_res = max(1.0e-8,0.01*he)
+kappa_nl_atol_res = max(1.0e8,0.01*he**2)
+dissipation_nl_atol_res = max(1.0e-8,0.01*he**2)
 
 #turbulence
 ns_closure=1 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
