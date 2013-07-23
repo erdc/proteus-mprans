@@ -8,7 +8,7 @@ from proteus.ctransportCoefficients import smoothedHeaviside_integral
 #  Discretization -- input options  
 genMesh=True
 useOldPETSc=False
-useSuperlu=True
+useSuperlu=False#True
 timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
