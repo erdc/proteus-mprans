@@ -4,11 +4,15 @@ from proteus import Domain
 from proteus.default_n import *   
 from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
-   
+import numpy as np
+
+transect = np.loadtxt('transect_001_bathy_meters.csv',skiprows=1,delimiter="\t")
+wse = np.loadtxt('wse_by_wavemaker_storm36_wave3.csv',skiprows=2,delimiter="\t")
+
 #  Discretization -- input options  
 genMesh=True
 useOldPETSc=False
-useSuperlu=False#True
+useSuperlu=True
 timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
@@ -75,44 +79,38 @@ if useHex:
     hex=True    
     domain = Domain.RectangularDomain(L)
 else:
+    maxZ = max(transect[:,1])
+    minZ = min(transect[:,1])
+    maxX = max(transect[:,0])
+    minX = min(transect[:,0])
+    Lz = 1.1*(maxZ-minZ)
     boundaries=['left','right','bottom','top','front','back']
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
     if structured:
         nnx=ceil(L[0]/he)+1
         nny=ceil(L[1]/he)+1
     else:
-        vertices=[[0.0,0.0],#0
-                  [0.5*L[0],0.0],#1
-                  [L[0]*0.9, (0.9*L[0]-0.5*L[0])*0.75*L[1]/(0.5*L[0])],#2
-                  [L[0],0.75*L[1]],#3
-                  [L[0],L[1]],#4
-                  [L[0]*0.9,L[1]],#5
-                  [0.0,L[1]]]#6
-        vertexFlags=[boundaryTags['bottom'],
-                     boundaryTags['bottom'],
-                     boundaryTags['bottom'],
-                     boundaryTags['bottom'],
-                     boundaryTags['top'],
-                     boundaryTags['top'],
+        vertices=[[maxX,minZ+Lz],#0
+                  [transect[0,0],minZ+Lz]]#1
+        vertexFlags=[boundaryTags['top'],
                      boundaryTags['top']]
-        segments=[[0,1],
-                  [1,2],
-                  [2,3],
-                  [3,4],
-                  [4,5],
-                  [5,2],
-                  [5,6],
-                  [6,0]]
-        segmentFlags=[boundaryTags['bottom'],
-                      boundaryTags['bottom'],
-                      boundaryTags['bottom'],
-                      boundaryTags['right'],
-                      boundaryTags['top'],
-                      0,
-                      boundaryTags['top'],
-                      boundaryTags['left']]
-        regions=[ [ 0.5*L[0] , 0.5*L[1] ],
-                  [0.95*L[0] , 0.95*L[1] ] ]
+        for p in transect:
+            vertices.append([p[0],p[1]])
+            vertexFlags.append(boundaryTags['bottom'])
+        nSegments = len(vertices)
+        segments=[]
+        segmentFlags=[]
+        for i in range(nSegments):
+            segments.append([i,(i+1) % nSegments])
+            if i==0:
+                segmentFlags.append(boundaryTags['top'])
+            elif i==1:
+                segmentFlags.append(boundaryTags['left'])
+            elif i==nSegments:
+                segmentFlags.append(boundaryTags['right'])
+            else:
+                segmentFlags.append(boundaryTags['bottom'])
+        regions=[[transect[0,0]+0.001,transect[0,1]+0.001]]
         regionFlags=[1,2]
         domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
                                                       vertexFlags=vertexFlags,
