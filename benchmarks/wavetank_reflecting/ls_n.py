@@ -1,13 +1,24 @@
 from proteus import *
 from ls_p import *
 
-timeIntegration = BackwardEuler
-stepController  = Min_dt_controller
+if timeDiscretization=='vbdf':
+    timeIntegration = VBDF
+    timeOrder=2
+    stepController  = Min_dt_cfl_controller
+elif timeDiscretization=='flcbdf':
+    timeIntegration = FLCBDF
+    #stepController = FLCBDF_controller
+    stepController  = Min_dt_cfl_controller
+    time_tol = 10.0*ls_nl_atol_res
+    atol_u = {0:time_tol}
+    rtol_u = {0:time_tol}
+else:
+    timeIntegration = BackwardEuler_cfl
+    stepController  = Min_dt_cfl_controller
 
 femSpaces = {0:basis}
 
 massLumping       = False
-numericalFluxType = None
 conservativeFlux  = None
 numericalFluxType = NCLS.NumericalFlux
 subgridError      = NCLS.SubgridError(coefficients,nd)
@@ -38,8 +49,11 @@ levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest         = 'r-true'
 
 tolFac = 0.0
-nl_atol_res = 1.0e-3
+linTolFac = 0.0
+l_atol_res = 0.001*ls_nl_atol_res
+nl_atol_res = ls_nl_atol_res
+useEisenstatWalker = True
 
-maxNonlinearIts = 10
+maxNonlinearIts = 50
 maxLineSearches = 0
 

@@ -90,6 +90,8 @@ def getDBC_w(x,flag):
         return twpflowVelocity_w
     elif (not rightEndClosed) and flag == boundaryTags['right']:#x[0] > L[0] - 1.0e-8: #right velocity, only inforced on inflow
         return lambda x,t: outflowVelocity[2]
+    elif flag == boundaryTags['top']:#x[2] > L[2] - 1.0e-8:
+        return lambda x,t: 0.0
     elif flag == boundaryTags['obstacle']:#x[2] > L[2] - 1.0e-8:
         return lambda x,t: 0.0
 
