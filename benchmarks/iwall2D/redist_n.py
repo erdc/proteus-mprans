@@ -13,8 +13,13 @@ if redist_Newton:
     stepController = Newton_controller
     maxNonlinearIts = 25
     maxLineSearches = 0
+<<<<<<< HEAD
     nonlinearSolverConvergenceTest = 'rits'
     levelNonlinearSolverConvergenceTest = 'rits'
+=======
+    nonlinearSolverConvergenceTest = 'r'
+    levelNonlinearSolverConvergenceTest = 'r'
+>>>>>>> 66add04... Merge branch 'master' of github.com:erdc-cm/proteus-mprans
     linearSolverConvergenceTest = 'r-true'
 else:
     timeIntegration = BackwardEuler_cfl
