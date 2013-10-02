@@ -6,8 +6,10 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
 import numpy as np
 
-transect = np.loadtxt('transect_001_bathy_meters.csv',skiprows=1,delimiter="\t")
-wse = np.loadtxt('wse_by_wavemaker_storm36_wave3.csv',skiprows=2,delimiter="\t")
+transect = np.loadtxt('transectShort.txt',skiprows=0,delimiter="\t")
+#transect = np.loadtxt('transect.txt',skiprows=0,delimiter="\t")
+#transect = np.loadtxt('transect_001_bathy_meters.csv',skiprows=1,delimiter="\t")
+#wse = np.loadtxt('wse_by_wavemaker_storm36_wave3.csv',skiprows=2,delimiter="\t")
 
 #  Discretization -- input options  
 genMesh=True
@@ -63,8 +65,8 @@ elif spaceOrder == 2:
 # Domain and mesh
 #L = (40.0,0.7)
 #for debugging, make the tank short
-L = (10.0,0.7)
-he = L[1]/10.0 #try this first
+#L = (10.0,0.7)
+#he = L[1]/10.0 #try this first
 #he*=0.5
 #he*=0.5
 #he*=0.5
@@ -83,7 +85,10 @@ else:
     minZ = min(transect[:,1])
     maxX = max(transect[:,0])
     minX = min(transect[:,0])
-    Lz = 1.1*(maxZ-minZ)
+    Lx = maxX - minX
+    Lz = 1.2*(maxZ-minZ)
+    L = (Lx,Lz,1.0)
+    he = Lz/25.0
     boundaries=['left','right','bottom','top','front','back']
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
     if structured:
@@ -126,8 +131,8 @@ else:
         triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
 
 # Time stepping
-T=25.0
-dt_fixed = 0.1
+T=500#100 5.0s waves
+dt_fixed =5.0/10.0
 dt_init = min(0.1*dt_fixed,0.001)
 runCFL=0.33
 nDTout = int(round(T/dt_fixed))
@@ -153,7 +158,7 @@ if useMetrics:
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
     redist_Newton = True
-    kappa_shockCapturingFactor = 0.1
+    kappa_shockCapturingFactor = 0.9
     kappa_lag_shockCapturing = True#False
     kappa_sc_uref = 1.0
     kappa_sc_beta = 1.0
@@ -192,13 +197,13 @@ else:
 ns_nl_atol_res = max(1.0e-12,0.001*he**2)
 vof_nl_atol_res = max(1.0e-12,0.001*he**2)
 ls_nl_atol_res = max(1.0e-12,0.001*he**2)
-rd_nl_atol_res = max(1.0e-12,0.01*he)
+rd_nl_atol_res = max(1.0e-12,0.1*he)
 mcorr_nl_atol_res = max(1.0e-12,0.001*he**2)
 kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 
 #turbulence
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:
@@ -218,8 +223,8 @@ sigma_01 = 0.0
 g = [0.0,-9.8]
 
 # Initial condition
-waterLine_x = 2*L[0]
-waterLine_z = 0.4
+waterLine_x = 215.15#2*L[0]
+waterLine_z = 0.0#4
 #waterLine_x = 0.5*L[0]
 #waterLine_z = 0.9*L[1]
 
@@ -239,21 +244,21 @@ def signedDistance(x):
 
 #wave generator
 windVelocity = (0.0,0.0)
-inflowHeightMean = 0.4
+inflowHeightMean = 0.0
 inflowVelocityMean = (0.0,0.0)
-omega = 2.0*math.pi/2.0
-amplitude = 0.25*L[1]
+omega = 2.0*math.pi/10.0
+amplitude = 0.5*L[1]
 k = 2.0*math.pi/(2.0*amplitude)
 
 def waveHeight(x,t):
     return inflowHeightMean + amplitude*sin(omega*t-k*x[0])
 
 def waveVelocity_u(x,t):
-    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k*x[0])/(k*inflowHeightMean)
+    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k*x[0])/(k*(inflowHeightMean-domain.x[1]))
 
 def waveVelocity_v(x,t):
     z = x[1] - inflowHeightMean
-    return inflowVelocityMean[1] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k*x[0])/inflowHeightMean
+    return inflowVelocityMean[1] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k*x[0])/(inflowHeightMean-domain.x[1])
 
 #solution variables
 
