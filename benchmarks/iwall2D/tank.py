@@ -65,7 +65,6 @@ elif spaceOrder == 2:
 # Domain and mesh
 #L = (40.0,0.7)
 #for debugging, make the tank short
-<<<<<<< HEAD
 #L = (10.0,0.7)
 #he = L[1]/10.0 #try this first
 #he*=0.5
@@ -87,7 +86,7 @@ else:
     maxX = max(transect[:,0])
     minX = min(transect[:,0])
     Lx = maxX - minX
-    Lz = 1.2*(maxZ-minZ)
+    Lz = 1.3*(maxZ-minZ)
     L = (Lx,Lz,1.0)
     he = Lz/25.0
     boundaries=['left','right','bottom','top','front','back']
@@ -132,7 +131,6 @@ else:
         triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
 
 # Time stepping
-<<<<<<< HEAD
 T=500#100 5.0s waves
 dt_fixed =5.0/10.0
 dt_init = min(0.1*dt_fixed,0.001)
@@ -249,7 +247,7 @@ windVelocity = (0.0,0.0)
 inflowHeightMean = 0.0
 inflowVelocityMean = (0.0,0.0)
 omega = 2.0*math.pi/10.0
-amplitude = 0.5*L[1]
+amplitude = 2.0
 k = 2.0*math.pi/(2.0*amplitude)
 
 def waveHeight(x,t):
