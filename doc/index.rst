@@ -115,7 +115,7 @@ For parallel runs, you would do the following::
    %cd $PROTEUS_MPRANS/benchmarks/wavetank_reflecing
    %mpirun -n #NP parun wavetank_so.py -l 3 -v -O petsc.options -D test_parallel_wavetank
 
-where ``#NP`` stand for the number of processors. Again, the solution of a parallel run will be saved
+where ``#NP`` stands for the number of processors. Again, the solution of a parallel run will be saved
 in files ending in ``.xmf``. However, they  will be numbered to reflect the number of processors ``#NP`` 
 used in the simulation (eg. ``wavetank0.xmf``, ``wavetank1.xmf``, ... , ``wavetank#NP-1.xmf``). 
 
@@ -139,14 +139,14 @@ Otherwise if you are running in parallel, you will have to set ``useSuperlu`` to
 
 Geometry and Mesh Selection
 ---------------------------
-The geometry and mesh selection (along with other inputs) is all set in the ``wavetank.py`` module. The 3D tank size is provided by a tuple ``L = (X, Y, Z)``, where the mean water depth is automatically set to half of the vertical dimension of the wavetank ``Y/2``. A wave damping sponge layer (wave absorbing beach) is imposed by setting ``spongeLyer = True``. A flag for allowing waves to rebound off the right end of the tank is given by ``rightEndClosed = True``.
+The geometry and mesh selection (along with other inputs) is all set in the ``wavetank.py`` module. The 3D tank size is provided by a tuple ``L = (X, Y, Z)``, where the mean water depth is automatically set to half of the vertical dimension of the wavetank ``Y/2``. A wave damping sponge layer (wave absorbing beach) is imposed by setting ``spongeLayer = True``. A flag for allowing waves to rebound off the right end of the tank is given by ``rightEndClosed = True``.
 
 To specify the mesh you have to set ``useHex`` flag to either ``True/False``, that will set it to use hexagon or tetrahedral meshes, resepectively.  
 
 
 Numerical & Physical Parameters
 -------------------------------
-In addition, you can specify several numerical and physical parameters, such as for example
+In addition, inside the ``wavetank.py`` module you can specify several numerical and physical parameters, such as for example
 
 * shock capturing factor
 * density
@@ -159,23 +159,25 @@ In addition, you can specify several numerical and physical parameters, such as 
 * water depth (shallow, intermediate, deep) limits
 * desired level on nonlinearity (based on wave steepness/slope)
 * group velocity (for wave trains)
+* final computation time (T)
+* initial time step (dt_init)
 
 To specify the wave input at the wave maker (left end of the tank) you need to set the ``waveField`` object to one of the following
 
-* waveField = wm.Linear2D()
-* waveField = wm.WaveGroup()
-* waveField = wm.Solitary()
-* waveField = wm.StokesWave()
-* waveField = wm.JONSWAP()   ... (implementation not complete)
+* waveField = wm.Linear2D()    ... monochromatic wavetrain
+* waveField = wm.WaveGroup()   ... modulated wavetrain
+* waveField = wm.Solitary()    ... single solitary/soliton wave
+* waveField = wm.StokesWave()  ... 2nd order Stokes wave
+* waveField = wm.JONSWAP()     ... (implementation not complete)
 
-and all of these wavemaner function require the following parameters to be passed in
+and all of these wavemaker functions require the following parameters to be passed in
 
 * wave amplitude
 * angular frequency (omega)
 * peak wavenumber (k)
 * mean inflow height (inflowHeightMean)
 * density of both phases (water & air in our case)
-* random phase flag (randomPhase)
+* random phase flag (randomPhase) ... not required by all inputs!
 
 .. note:: 
    
@@ -183,9 +185,8 @@ and all of these wavemaner function require the following parameters to be passe
 
      * serial vs. parallel runs 
      * specifying PETSc option
-     * closing vs. opening the end/boundary
      * setting up tank geometries
-     * specifying wavemaker functions (monochromatic, modulated wavetrain, solitary, Stokes, etc.) 
+
 
 .. _capabilities-sec:
 

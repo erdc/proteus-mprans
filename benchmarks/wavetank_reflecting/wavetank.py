@@ -1,7 +1,6 @@
 from math import *
+import os
 import sys
-sys.path.append('/Users/mattmalej/proteus-mprans/benchmarks/wavetak_reflecting')
-import waveModules_Matt as wm
 
 import proteus.MeshTools
 import numpy as np
@@ -10,12 +9,15 @@ from proteus.default_n import *
 from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
 
+import waveModules_Matt as wm
+wavetankDIR = os.environ['HOME']+'/proteus-mprans/benchmarks/wavetak_reflecting'
+sys.path.append(wavetankDIR)
    
 #  Discretization -- input options  
 Refinement = 3#4#15
 genMesh=True
-useOldPETSc=False
-useSuperlu=False#True
+useOldPETSc= False
+useSuperlu = False # set to False if running in parallel with petsc.options
 timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
@@ -64,7 +66,7 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-depthFactor=16.0#16.0  # ...TODO: remove depthFactor after debugging
+depthFactor=1.0#16.0  # ...TODO: remove depthFactor after debugging
 L = (40.0,
      0.0,#0.25,
      depthFactor*0.61)
@@ -610,7 +612,7 @@ else:
 
 # Setting desired level on nonlinearity: 
 # ... epsilon ~ 0.1 ==> weakly nonlinear, epsilon ~ 0.5 ==> highly nonlinear
-epsilon = 0.05 # 0.01,0.02,0.05,0.1,0.15,0.2,0.4 # wave steepness
+epsilon = 0.1 # 0.01,0.02,0.05,0.1,0.15,0.2,0.4 # wave steepness
 factor = epsilon*regime/(2*np.pi*depthFactor) # factor == amplitude/depth 
 amplitude = inflowHeightMean*factor
 period = 2.0*pi/omega
@@ -621,10 +623,12 @@ groupVelocity = df_dk / (2.0*omega)
 # Add random phase
 randomPhase = False
 
+################
 # DEBUGGING
 print "WAVE STEEPNESS IS: ", epsilon
 print "AMPLITUDE IS: ", amplitude
 print "GROUP SPPED IS: ", groupVelocity
+#sys.exit()
 ##############
 
 # Wave Field Object
@@ -735,7 +739,7 @@ def outflowPressure(x,t):
 # Computation Time for Wave(s) to return to wave maker (based on groupVelocity)
 # ...TODO: remove debugFactor when done debugging 
 debugFactor=0.1
-T=1.00# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
+T=2.00# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
 runCFL = 0.33
 print "Total Time of Computation is: ",T
 dt_fixed = period/100.0
