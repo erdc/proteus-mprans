@@ -12,10 +12,10 @@ from proteus.ctransportCoefficients import smoothedHeaviside_integral
 
    
 #  Discretization -- input options  
-Refinement = 2#4#15
+Refinement = 3#4#15
 genMesh=True
 useOldPETSc= False
-useSuperlu = True # set to False if running in parallel with petsc.options
+useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -60,7 +60,7 @@ elif spaceOrder == 2:
 # Domain and mesh
 depthFactor=16.0#16.0  # ...TODO: remove depthFactor after debugging
 L = (40.0,
-     0.25,
+     0.0,#0.25,
      depthFactor*0.61)
 spongeLayer = True
 xSponge = L[0]/3.0#L[0] - 2.25
@@ -75,7 +75,7 @@ leveeHeightDownstream = 0.0#0.25
 leveeSlope = 1.0/2.0
 bedHeight = 0.2*L[2]
 leveeHeightDownstream=bedHeight
-quasi2D = True#False # set it to false if you want to run full 3D
+quasi2D = True # set it to false if you want to run full 3D
 #veg=True; levee=False; spongeLayer=False
 veg=False; levee=False; spongeLayer=True; slopingSpongeLayer=False;
 nLevels = 1 # cannot support now nLevel>1 when running in parallel
@@ -494,6 +494,7 @@ else:
 # Numerical parameters
 ns_shockCapturingFactor  = 0.3
 ls_shockCapturingFactor  = 0.3
+ls_lag_shockCapturing = False
 ls_sc_uref  = 1.0
 ls_sc_beta  = 1.0
 vof_shockCapturingFactor = 0.3
@@ -563,6 +564,12 @@ groupVelocity = df_dk / (2.0*omega)
 
 # Add random phase
 randomPhase = False
+
+# DEBUGGING
+print "WAVE STEEPNESS IS: ", epsilon
+print "AMPLITUDE IS: ", amplitude
+print "GROUP SPPED IS: ", groupVelocity
+##############
 
 # Wave Field Object
 waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
