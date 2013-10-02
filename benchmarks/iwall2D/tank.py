@@ -6,15 +6,10 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
 import numpy as np
 
-<<<<<<< HEAD
 transect = np.loadtxt('transectShort.txt',skiprows=0,delimiter="\t")
 #transect = np.loadtxt('transect.txt',skiprows=0,delimiter="\t")
 #transect = np.loadtxt('transect_001_bathy_meters.csv',skiprows=1,delimiter="\t")
 #wse = np.loadtxt('wse_by_wavemaker_storm36_wave3.csv',skiprows=2,delimiter="\t")
-=======
-transect = np.loadtxt('transect_001_bathy_meters.csv',skiprows=1,delimiter="\t")
-wse = np.loadtxt('wse_by_wavemaker_storm36_wave3.csv',skiprows=2,delimiter="\t")
->>>>>>> 66add04... Merge branch 'master' of github.com:erdc-cm/proteus-mprans
 
 #  Discretization -- input options  
 genMesh=True
@@ -73,10 +68,6 @@ elif spaceOrder == 2:
 <<<<<<< HEAD
 #L = (10.0,0.7)
 #he = L[1]/10.0 #try this first
-=======
-L = (10.0,0.7)
-he = L[1]/10.0 #try this first
->>>>>>> 66add04... Merge branch 'master' of github.com:erdc-cm/proteus-mprans
 #he*=0.5
 #he*=0.5
 #he*=0.5
@@ -95,14 +86,10 @@ else:
     minZ = min(transect[:,1])
     maxX = max(transect[:,0])
     minX = min(transect[:,0])
-<<<<<<< HEAD
     Lx = maxX - minX
     Lz = 1.2*(maxZ-minZ)
     L = (Lx,Lz,1.0)
     he = Lz/25.0
-=======
-    Lz = 1.1*(maxZ-minZ)
->>>>>>> 66add04... Merge branch 'master' of github.com:erdc-cm/proteus-mprans
     boundaries=['left','right','bottom','top','front','back']
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
     if structured:
@@ -148,10 +135,6 @@ else:
 <<<<<<< HEAD
 T=500#100 5.0s waves
 dt_fixed =5.0/10.0
-=======
-T=25.0
-dt_fixed = 0.1
->>>>>>> 66add04... Merge branch 'master' of github.com:erdc-cm/proteus-mprans
 dt_init = min(0.1*dt_fixed,0.001)
 runCFL=0.33
 nDTout = int(round(T/dt_fixed))
@@ -177,11 +160,7 @@ if useMetrics:
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
     redist_Newton = True
-<<<<<<< HEAD
     kappa_shockCapturingFactor = 0.9
-=======
-    kappa_shockCapturingFactor = 0.1
->>>>>>> 66add04... Merge branch 'master' of github.com:erdc-cm/proteus-mprans
     kappa_lag_shockCapturing = True#False
     kappa_sc_uref = 1.0
     kappa_sc_beta = 1.0
@@ -220,21 +199,13 @@ else:
 ns_nl_atol_res = max(1.0e-12,0.001*he**2)
 vof_nl_atol_res = max(1.0e-12,0.001*he**2)
 ls_nl_atol_res = max(1.0e-12,0.001*he**2)
-<<<<<<< HEAD
 rd_nl_atol_res = max(1.0e-12,0.1*he)
-=======
-rd_nl_atol_res = max(1.0e-12,0.01*he)
->>>>>>> 66add04... Merge branch 'master' of github.com:erdc-cm/proteus-mprans
 mcorr_nl_atol_res = max(1.0e-12,0.001*he**2)
 kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 
 #turbulence
-<<<<<<< HEAD
 ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
-=======
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
->>>>>>> 66add04... Merge branch 'master' of github.com:erdc-cm/proteus-mprans
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:
@@ -254,13 +225,8 @@ sigma_01 = 0.0
 g = [0.0,-9.8]
 
 # Initial condition
-<<<<<<< HEAD
 waterLine_x = 215.15#2*L[0]
 waterLine_z = 0.0#4
-=======
-waterLine_x = 2*L[0]
-waterLine_z = 0.4
->>>>>>> 66add04... Merge branch 'master' of github.com:erdc-cm/proteus-mprans
 #waterLine_x = 0.5*L[0]
 #waterLine_z = 0.9*L[1]
 
@@ -280,36 +246,21 @@ def signedDistance(x):
 
 #wave generator
 windVelocity = (0.0,0.0)
-<<<<<<< HEAD
 inflowHeightMean = 0.0
 inflowVelocityMean = (0.0,0.0)
 omega = 2.0*math.pi/10.0
 amplitude = 0.5*L[1]
-=======
-inflowHeightMean = 0.4
-inflowVelocityMean = (0.0,0.0)
-omega = 2.0*math.pi/2.0
-amplitude = 0.25*L[1]
->>>>>>> 66add04... Merge branch 'master' of github.com:erdc-cm/proteus-mprans
 k = 2.0*math.pi/(2.0*amplitude)
 
 def waveHeight(x,t):
     return inflowHeightMean + amplitude*sin(omega*t-k*x[0])
 
 def waveVelocity_u(x,t):
-<<<<<<< HEAD
     return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k*x[0])/(k*(inflowHeightMean-domain.x[1]))
 
 def waveVelocity_v(x,t):
     z = x[1] - inflowHeightMean
     return inflowVelocityMean[1] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k*x[0])/(inflowHeightMean-domain.x[1])
-=======
-    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k*x[0])/(k*inflowHeightMean)
-
-def waveVelocity_v(x,t):
-    z = x[1] - inflowHeightMean
-    return inflowVelocityMean[1] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k*x[0])/inflowHeightMean
->>>>>>> 66add04... Merge branch 'master' of github.com:erdc-cm/proteus-mprans
 
 #solution variables
 

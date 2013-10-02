@@ -15,6 +15,8 @@ if redist_Newton:
     maxLineSearches = 0
     nonlinearSolverConvergenceTest = 'rits'
     levelNonlinearSolverConvergenceTest = 'rits'
+    nonlinearSolverConvergenceTest = 'r'
+    levelNonlinearSolverConvergenceTest = 'r'
     linearSolverConvergenceTest = 'r-true'
 else:
     timeIntegration = BackwardEuler_cfl
