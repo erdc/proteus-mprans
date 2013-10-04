@@ -6,8 +6,13 @@ from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
 import numpy as np
 
-transect = np.loadtxt('transectShort.txt',skiprows=0,delimiter="\t")
-#transect = np.loadtxt('transect.txt',skiprows=0,delimiter="\t")
+transect = np.loadtxt('transectVeryShort.txt',skiprows=0,delimiter="\t")
+benchStart=2
+benchEnd=7
+# transect = np.loadtxt('transectShort.txt',skiprows=0,delimiter="\t")
+# benchStart=15
+# benchEnd=20
+##transect = np.loadtxt('transect.txt',skiprows=0,delimiter="\t")
 #transect = np.loadtxt('transect_001_bathy_meters.csv',skiprows=1,delimiter="\t")
 #wse = np.loadtxt('wse_by_wavemaker_storm36_wave3.csv',skiprows=2,delimiter="\t")
 
@@ -16,9 +21,11 @@ windVelocity = (0.0,0.0)
 inflowHeightMean = 2.64
 inflowVelocityMean = (0.0,0.0)
 period = 2.0
-omega = 2.0*math.pi/period #T=2.0s
-amplitude = 0.4 / 2.0 #H=0.4m
-k = 2.0*math.pi/6.2 #L=6.2m
+omega = 2.0*math.pi/period
+waveheight = 0.4
+amplitude = waveheight/ 2.0
+wavelength = 6.2
+k = 2.0*math.pi/wavelength
 
 #  Discretization -- input options  
 genMesh=True
@@ -97,23 +104,29 @@ else:
     Lx = maxX - minX
     Lz = 1.3*(maxZ-minZ)
     L = (Lx,Lz,1.0)
-    he = Lz/25.0
-    coarse_area = he**2/2.0
-    fine_area = coarse_area#min(coarse_area,((amplitude/2.0)**2) / 2.0)
+    coarse_he = wavelength*0.25
+    coarse_he*=0.5
+    coarse_he*=0.5
+    coarse_he*=0.5
+    coarse_area = coarse_he**2 / 2.0
+    #fine_he = 0.5*coarse_he
+    fine_he=coarse_he
+    he = fine_he
+    fine_area = fine_he**2 / 2.0
     boundaries=['left','right','bottom','top','front','back','obstacle']
     boundaryTags=dict([(key,i+1) for (i,key) in enumerate(boundaries)])
     if structured:
         nnx=ceil(L[0]/he)+1
         nny=ceil(L[1]/he)+1
     else:
-        vertices=[[maxX,inflowHeightMean-5*amplitude],#0
-                  [maxX,inflowHeightMean+5*amplitude],#1
+        vertices=[[maxX,inflowHeightMean-5.0*amplitude],#0
+                  [maxX,inflowHeightMean+5.0*amplitude],#1
                   [maxX,minZ+Lz],#2
-                  [235,minZ+Lz],#3
-                  [195,minZ+Lz],#4
+                  [transect[benchEnd][0],minZ+Lz],#3
+                  [transect[benchStart][0],minZ+Lz],#4
                   [transect[0,0],minZ+Lz],#5
-                  [transect[0,0],inflowHeightMean+5*amplitude],#6
-                  [transect[0,0],inflowHeightMean-5*amplitude]]#7
+                  [transect[0,0],inflowHeightMean+5.0*amplitude],#6
+                  [transect[0,0],inflowHeightMean-5.0*amplitude]]#7
         vertexFlags=[boundaryTags['right'],#0
                      boundaryTags['right'],#1
                      boundaryTags['top'],#2
@@ -139,53 +152,26 @@ else:
             else:
                 segmentFlags.append(boundaryTags['bottom'])
         #mesh grading
-        vertices.append([235,inflowHeightMean-5*amplitude])
+        vertices.append([transect[benchStart][0],inflowHeightMean+5.0*amplitude])
         vertexFlags.append(0)
-        lr=nSegments
-        vertices.append([235,inflowHeightMean+5*amplitude])
+        ul=nSegments
+        vertices.append([transect[benchStart][0],inflowHeightMean-5.0*amplitude])
         vertexFlags.append(0)
-        ur=nSegments+1
-        vertices.append([195,inflowHeightMean+5*amplitude])
-        vertexFlags.append(0)
-        ul=nSegments+2
-        vertices.append([195,inflowHeightMean-5*amplitude])
-        vertexFlags.append(0)
-        ll=nSegments+3
-        #segments.append([lr,ur])
-        #segmentFlags.append(0)
-        #segments.append([ur,ul])
-        #segmentFlags.append(0)
-        #segments.append([ul,ll])
-        #segmentFlags.append(0)
-        #segments.append([ll,lr])
-        #segmentFlags.append(0)
-        segments.append([lr,0])
-        segmentFlags.append(0)
-        segments.append([ur,1])
-        segmentFlags.append(0)
-        segments.append([ur,3])
-        segmentFlags.append(0)
+        ll=nSegments+1
         segments.append([ul,4])
         segmentFlags.append(0)
         segments.append([ul,6])
         segmentFlags.append(0)
         segments.append([ll,7])
         segmentFlags.append(0)
-        segments.append([ll,15+8])
-        segmentFlags.append(0)
-        segments.append([lr,20+8])
+        segments.append([ll,benchStart+8])
         segmentFlags.append(0)
         eps=1.0e-5
         regions=[[transect[0,0]+eps,transect[0,1]+eps],
-                 [transect[0,0]+eps,inflowHeightMean+5*amplitude+eps],
-                 [vertices[ur][0]+eps,vertices[ur][1]+eps],
-                 [vertices[lr][0]+eps,vertices[lr][1]-eps],
-                 [transect[0,0]+eps,inflowHeightMean-5*amplitude+eps]]
-#                 [ll+eps,inflowHeightMean-5*amplitude+eps],
-#                 [lr+eps,inflowHeightMean-5*amplitude+eps]]
-        regionFlags=[1,2,3,4,5]#,3,4]
-        regionConstraints=[coarse_area,coarse_area,coarse_area,coarse_area,
-                           fine_area]#,fine_area,fine_area]
+                 [transect[0,0]+eps,inflowHeightMean+5.0*amplitude+eps],
+                 [transect[0,0]+eps,inflowHeightMean-5.0*amplitude+eps]]
+        regionFlags=[1,2,3]
+        regionConstraints=[coarse_area,coarse_area,fine_area]
         domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
                                                       vertexFlags=vertexFlags,
                                                       segments=segments,
@@ -200,11 +186,11 @@ else:
         domain.writeAsymptote("mesh")
         #triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
         triangleOptions="VApq30Dena"#%8.8f" % ((he**2)/2.0,)
-
+1
 # Time stepping
-T=25*period#100 5.0s waves
+T=100*period
 dt_fixed =period/10.0
-dt_init = min(0.1*dt_fixed,0.001)
+dt_init = min(0.01*dt_fixed,0.001)
 runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
@@ -214,7 +200,7 @@ if useMetrics:
     ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = True
     ns_lag_subgridError = True
-    ls_shockCapturingFactor  = 0.33
+    ls_shockCapturingFactor  = 0.9
     ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.5
@@ -314,15 +300,23 @@ def signedDistance(x):
             return sqrt(phi_x**2 + phi_z**2)
 
 
+def theta(x,t):
+    return k*x[0] - omega*t
+
+def z(x):
+    return x[1] - inflowHeightMean
+
+sigma = omega - k*inflowVelocityMean[0]
+h = inflowHeightMean - transect[0][1]
+
 def waveHeight(x,t):
-    return inflowHeightMean + amplitude*sin(omega*t-k*x[0])
+    return inflowHeightMean + amplitude*cos(theta(x,t))
 
 def waveVelocity_u(x,t):
-    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k*x[0])/(k*(inflowHeightMean-domain.x[1]))
+    return sigma*amplitude*cosh(k*(z(x)+h))*cos(theta(x,t))/sinh(k*h)
 
 def waveVelocity_v(x,t):
-    z = x[1] - inflowHeightMean
-    return inflowVelocityMean[1] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k*x[0])/(inflowHeightMean-domain.x[1])
+    return sigma*amplitude*sinh(k*(z(x)+h))*sin(theta(x,t))/sinh(k*h)
 
 #solution variables
 
