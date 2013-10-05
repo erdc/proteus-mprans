@@ -4,17 +4,17 @@ from tank import *
 
 nl_atol_res = rd_nl_atol_res
 tolFac = 0.0
-linTolFac = 0.0
+linTolFac = 0.001
 l_atol_res = 0.001*rd_nl_atol_res
-useEisenstatWalker = True
+useEisenstatWalker = False#True
 
 if redist_Newton:
     timeIntegration = NoIntegration
     stepController = Newton_controller
     maxNonlinearIts = 25
     maxLineSearches = 0
-    nonlinearSolverConvergenceTest = 'r'
-    levelNonlinearSolverConvergenceTest = 'r'
+    nonlinearSolverConvergenceTest = 'rits'
+    levelNonlinearSolverConvergenceTest = 'rits'
     linearSolverConvergenceTest = 'r-true'
 else:
     timeIntegration = BackwardEuler_cfl
@@ -22,11 +22,11 @@ else:
     runCFL=0.5
     psitc['nStepsForce']=6
     psitc['nStepsMax']=25
-    psitc['reduceRatio']=2.0
+    psitc['reduceRatio']=3.0
     psitc['startRatio']=1.0
     rtol_res[0] = 0.0
     atol_res[0] = rd_nl_atol_res
-    useEisenstatWalker = True
+    useEisenstatWalker = False#True
     maxNonlinearIts = 1
     maxLineSearches = 0
     nonlinearSolverConvergenceTest = 'rits'

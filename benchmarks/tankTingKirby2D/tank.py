@@ -4,11 +4,21 @@ from proteus import Domain
 from proteus.default_n import *   
 from proteus.ctransportCoefficients import smoothedHeaviside
 from proteus.ctransportCoefficients import smoothedHeaviside_integral
+#wave generator
+windVelocity = (0.0,0.0)
+inflowHeightMean = 0.4
+inflowVelocityMean = (0.0,0.0)
+period = 1.5
+omega = 2.0*math.pi/period
+waveheight = 0.1
+amplitude = waveheight/ 2.0
+wavelength = 3.0
+k = 2.0*math.pi/wavelength
    
 #  Discretization -- input options  
 genMesh=True
 useOldPETSc=False
-useSuperlu=False#True
+useSuperlu=True
 timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
@@ -61,7 +71,7 @@ elif spaceOrder == 2:
 #for debugging, make the tank short
 L = (10.0,0.7)
 he = L[1]/10.0 #try this first
-#he*=0.5
+he*=0.5
 #he*=0.5
 #he*=0.5
 nLevels = 1
@@ -128,8 +138,8 @@ else:
         triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
 
 # Time stepping
-T=25.0
-dt_fixed = 0.1
+T=25*period
+dt_fixed = period/21.0
 dt_init = min(0.1*dt_fixed,0.001)
 runCFL=0.33
 nDTout = int(round(T/dt_fixed))
@@ -221,7 +231,7 @@ g = [0.0,-9.8]
 
 # Initial condition
 waterLine_x = 2*L[0]
-waterLine_z = 0.4
+waterLine_z = inflowHeightMean
 #waterLine_x = 0.5*L[0]
 #waterLine_z = 0.9*L[1]
 
@@ -239,23 +249,24 @@ def signedDistance(x):
         else:
             return sqrt(phi_x**2 + phi_z**2)
 
-#wave generator
-windVelocity = (0.0,0.0)
-inflowHeightMean = 0.4
-inflowVelocityMean = (0.0,0.0)
-omega = 2.0*math.pi/2.0
-amplitude = 0.25*L[1]
-k = 2.0*math.pi/(2.0*amplitude)
+
+def theta(x,t):
+    return k*x[0] - omega*t
+
+def z(x):
+    return x[1] - inflowHeightMean
+
+sigma = omega - k*inflowVelocityMean[0]
+h = inflowHeightMean # - transect[0][1] if lower left hand corner is not at z=0
 
 def waveHeight(x,t):
-    return inflowHeightMean + amplitude*sin(omega*t-k*x[0])
+    return inflowHeightMean + amplitude*cos(theta(x,t))
 
 def waveVelocity_u(x,t):
-    return inflowVelocityMean[0] + omega*amplitude*sin(omega*t - k*x[0])/(k*inflowHeightMean)
+    return sigma*amplitude*cosh(k*(z(x)+h))*cos(theta(x,t))/sinh(k*h)
 
 def waveVelocity_v(x,t):
-    z = x[1] - inflowHeightMean
-    return inflowVelocityMean[1] + (z + inflowHeightMean)*omega*amplitude*cos(omega*t-k*x[0])/inflowHeightMean
+    return sigma*amplitude*sinh(k*(z(x)+h))*sin(theta(x,t))/sinh(k*h)
 
 #solution variables
 
