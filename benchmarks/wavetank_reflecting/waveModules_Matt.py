@@ -56,7 +56,7 @@ class Linear2D:
         z = x[2] - self.h           # mean height would now =0
 
         # Finite Depth (0 < kh < infty)
-        u = (-g[2]*self.k[0]*self.A / self.omega) * np.cosh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * \
+        u = (g[2]*self.k[0]*self.A / self.omega) * np.cosh(self.k[0]*(z+self.h))/np.cosh(self.k[0]*self.h) * \
             np.exp(1j*(self.k[0]*x[0] - self.omega*t + self.phase))  
 
         # Deep water (kh >> 1)
