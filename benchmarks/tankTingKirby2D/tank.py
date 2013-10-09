@@ -72,7 +72,7 @@ elif spaceOrder == 2:
 L = (10.0,0.7)
 he = L[1]/10.0 #try this first
 he*=0.5
-#he*=0.5
+he*=0.5
 #he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
@@ -210,7 +210,7 @@ kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
 
 #turbulence
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:

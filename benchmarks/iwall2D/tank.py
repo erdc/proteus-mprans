@@ -191,7 +191,8 @@ else:
 T=100*period
 dt_fixed =period/10.0
 dt_init = min(0.01*dt_fixed,0.001)
-runCFL=0.33
+#runCFL=0.33
+runCFL=0.033
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
