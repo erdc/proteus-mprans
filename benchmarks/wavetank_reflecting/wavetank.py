@@ -14,7 +14,7 @@ wavetankDIR = os.environ['HOME']+'/proteus-mprans/benchmarks/wavetak_reflecting'
 sys.path.append(wavetankDIR)
    
 #  Discretization -- input options  
-Refinement = 3#4#15
+Refinement = 2#4#15
 genMesh=True
 useOldPETSc= False
 useSuperlu = False # set to False if running in parallel with petsc.options
@@ -632,44 +632,45 @@ print "GROUP SPPED IS: ", groupVelocity
 ##############
 
 # Wave Field Object
-waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
+#waveField = wm.Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
 #waveField = wm.true_Linear2D(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
-#waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
+waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPhase)
 #waveField = wm.Solitary(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 #waveField = wm.StokesWave(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 
 #c_soliton = sqrt(fabs(g[2])*(inflowHeightMean+amplitude))
 def waveHeight(x,t):
+    return inflowHeightMean + waveField.height(x,t)
+    # --------------------- CEK original -----------------------
     #T = min(t,100) - 4.0
     #return inflowHeightMean + amplitude/cosh(sqrt(3.0*amplitude/(4.0*inflowHeightMean**3)) * (x[0] - c_soliton*T))**2
     #return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
-    return inflowHeightMean + waveField.height(x,t)
+    # ----------------------------------------------------------
 
 def waveVelocity_u(x,t):
-    #return c_soliton*(waveHeight(x,t)-inflowHeightMean)/waveHeight(x,t)
-    #z = x[2] - inflowHeightMean
-    #return inflowVelocityMean[0] + omega*amplitude*cosh(k[0]*(z + inflowHeightMean))*sin(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
+    z = x[2] - inflowHeightMean
     return inflowVelocityMean[0] + waveField.velocity_u(x,t)
+    # CEK: return inflowVelocityMean[0] + omega*amplitude*cosh(k[0]*(z + inflowHeightMean))*sin(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
+    # CEK: return c_soliton*(waveHeight(x,t)-inflowHeightMean)/waveHeight(x,t)
 
 def waveVelocity_v(x,t):
-    return 0.0
-    #z = x[2] - inflowHeightMean
-    #return inflowVelocityMean[1] + waveField.velocity_v(x,t)
+    z = x[2] - inflowHeightMean
+    return inflowVelocityMean[1] + waveField.velocity_v(x,t)
+    # CEK:
+    #return 0.0
 
 def waveVelocity_w(x,t):
-    #return 0.0
-    #z = x[2] - inflowHeightMean
-    #return inflowVelocityMean[2] + omega*amplitude*sinh(k[0]*(z + inflowHeightMean))*cos(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
+    z = x[2] - inflowHeightMean
     return inflowVelocityMean[2] + waveField.velocity_w(x,t)
-
+    # CEK: return inflowVelocityMean[2] + omega*amplitude*sinh(k[0]*(z + inflowHeightMean))*cos(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
 ####
 
 def wavePhi(x,t):
     return x[2] - waveHeight(x,t)
 
 def wavePhi_init(x,t):
-    #return wavePhi(x,t) # interface is initialized at t=0 (not flat) 
     return x[2] - inflowHeightMean # mean/flat initial surface profile
+    # CEK original: return wavePhi(x,t) # interface is initialized at t=0 (not flat) 
 
 def waveVF(x,t):
     return smoothedHeaviside(epsFact_consrv_heaviside*he,wavePhi(x,t))
@@ -694,18 +695,18 @@ def twpflowVelocity_w(x,t):
 
 #twpflowVelocity_u_init = twpflowVelocity_u
 def twpflowVelocity_u_init(x,t):
-    #return 0.0 # for flat initial mean water surface
-    return twpflowVelocity_u(x,t)
+    return 0.0 # for flat initial mean water surface
+    #return twpflowVelocity_u(x,t)
     #return inflowVelocityMean[0] + waveField.velocity_u(x,t)
 
 def twpflowVelocity_v_init(x,t):
-    #return 0.0 # for flat initial surface
-    return twpflowVelocity_v(x,t)
+    return 0.0 # for flat initial surface
+    #return twpflowVelocity_v(x,t)
     #return inflowVelocityMean[0] + waveField.velocity_v(x,t)
 
 def twpflowVelocity_w_init(x,t):
-    #return 0.0 # for flat initial surface
-    return twpflowVelocity_w(x,t)
+    return 0.0 # for flat initial surface
+    #return twpflowVelocity_w(x,t)
     #return inflowVelocityMean[0] + waveField.velocity_w(x,t)
 
 def twpflowFlux(x,t):
@@ -739,7 +740,7 @@ def outflowPressure(x,t):
 # Computation Time for Wave(s) to return to wave maker (based on groupVelocity)
 # ...TODO: remove debugFactor when done debugging 
 debugFactor=0.1
-T=2.00# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
+T=3.00# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
 runCFL = 0.33
 print "Total Time of Computation is: ",T
 dt_fixed = period/100.0
