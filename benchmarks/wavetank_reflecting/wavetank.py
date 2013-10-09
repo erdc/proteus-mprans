@@ -639,30 +639,66 @@ waveField = wm.WaveGroup(amplitude,omega,k,inflowHeightMean,rho_0,rho_1,randomPh
 #waveField = wm.StokesWave(amplitude,omega,k,inflowHeightMean,rho_0,rho_1)
 
 #c_soliton = sqrt(fabs(g[2])*(inflowHeightMean+amplitude))
+
+#cek debugging
+#windVelocity = (0.0,0.0,0.0)
+#inflowHeightMean = 2.64
+#inflowVelocityMean = (0.0,0.0,0.0)
+#period = 2.0
+#omega = 2.0*math.pi/period
+#waveheight = 0.4
+#amplitude = waveheight/ 2.0
+#wavelength = 6.2
+#k = 2.0*math.pi/wavelength
+
+def theta(x,t):
+    return k[0]*x[0] - omega*t
+
+def z(x):
+    return x[2] - inflowHeightMean
+
+sigma = omega - k[0]*inflowVelocityMean[0]
+h = inflowHeightMean# - transect[0][1]
+
+print "h",h,"sigma",sigma,"inflowHeightMen",inflowHeightMean,"omega",omega,"k",k
 def waveHeight(x,t):
-    return inflowHeightMean + waveField.height(x,t)
-    # --------------------- CEK original -----------------------
-    #T = min(t,100) - 4.0
-    #return inflowHeightMean + amplitude/cosh(sqrt(3.0*amplitude/(4.0*inflowHeightMean**3)) * (x[0] - c_soliton*T))**2
-    #return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
-    # ----------------------------------------------------------
+    return inflowHeightMean + amplitude*cos(theta(x,t))
 
 def waveVelocity_u(x,t):
-    z = x[2] - inflowHeightMean
-    return inflowVelocityMean[0] + waveField.velocity_u(x,t)
-    # CEK: return inflowVelocityMean[0] + omega*amplitude*cosh(k[0]*(z + inflowHeightMean))*sin(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
-    # CEK: return c_soliton*(waveHeight(x,t)-inflowHeightMean)/waveHeight(x,t)
+    return sigma*amplitude*cosh(k[0]*(z(x)+h))*cos(theta(x,t))/sinh(k[0]*h)
 
 def waveVelocity_v(x,t):
-    z = x[2] - inflowHeightMean
-    return inflowVelocityMean[1] + waveField.velocity_v(x,t)
-    # CEK:
-    #return 0.0
+    return 0.0
 
 def waveVelocity_w(x,t):
-    z = x[2] - inflowHeightMean
-    return inflowVelocityMean[2] + waveField.velocity_w(x,t)
-    # CEK: return inflowVelocityMean[2] + omega*amplitude*sinh(k[0]*(z + inflowHeightMean))*cos(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
+    return sigma*amplitude*sinh(k[0]*(z(x)+h))*sin(theta(x,t))/sinh(k[0]*h)
+
+#cek debugging
+
+# def waveHeight(x,t):
+#     return inflowHeightMean + waveField.height(x,t)
+#     # --------------------- CEK original -----------------------
+#     #T = min(t,100) - 4.0
+#     #return inflowHeightMean + amplitude/cosh(sqrt(3.0*amplitude/(4.0*inflowHeightMean**3)) * (x[0] - c_soliton*T))**2
+#     #return inflowHeightMean + amplitude*sin(omega*t-k[0]*x[0])
+#     # ----------------------------------------------------------
+
+# def waveVelocity_u(x,t):
+#     z = x[2] - inflowHeightMean
+#     return inflowVelocityMean[0] + waveField.velocity_u(x,t)
+#     # CEK: return inflowVelocityMean[0] + omega*amplitude*cosh(k[0]*(z + inflowHeightMean))*sin(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
+#     # CEK: return c_soliton*(waveHeight(x,t)-inflowHeightMean)/waveHeight(x,t)
+
+# def waveVelocity_v(x,t):
+#     z = x[2] - inflowHeightMean
+#     return inflowVelocityMean[1] + waveField.velocity_v(x,t)
+#     # CEK:
+#     #return 0.0
+
+# def waveVelocity_w(x,t):
+#     z = x[2] - inflowHeightMean
+#     return inflowVelocityMean[2] + waveField.velocity_w(x,t)
+#     # CEK: return inflowVelocityMean[2] + omega*amplitude*sinh(k[0]*(z + inflowHeightMean))*cos(omega*t - k[0]*x[0])/sinh(k[0]*inflowHeightMean)
 ####
 
 def wavePhi(x,t):
@@ -740,7 +776,7 @@ def outflowPressure(x,t):
 # Computation Time for Wave(s) to return to wave maker (based on groupVelocity)
 # ...TODO: remove debugFactor when done debugging 
 debugFactor=0.1
-T=3.00# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
+T=50*period#3.00# ...fixed T-final for now #debugFactor*2.0*L[0]/groupVelocity
 runCFL = 0.33
 print "Total Time of Computation is: ",T
 dt_fixed = period/100.0
