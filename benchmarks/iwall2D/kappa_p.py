@@ -2,7 +2,7 @@ from proteus import *
 from proteus.default_p import *
 from tank import *
 from proteus.mprans import Kappa
-
+name = 'kappa'
 LevelModelType = Kappa.LevelModel
 if useOnlyVF:
     RD_model = None

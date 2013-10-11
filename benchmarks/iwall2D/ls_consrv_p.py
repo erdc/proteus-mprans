@@ -2,7 +2,7 @@ from proteus import *
 from proteus.default_p import *
 from tank import *
 from proteus.mprans import MCorr
-
+name="mcorr"
 LevelModelType = MCorr.LevelModel
 
 coefficients = MCorr.Coefficients(LSModel_index=2,V_model=0,me_model=4,VOFModel_index=1,

@@ -628,21 +628,22 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
     def evaluate(self,t,c):
         pass
     def preStep(self,t,firstStep=False):
-        if self.comm.isMaster():
-            print "wettedAreas"
-            print self.wettedAreas[:]
-            print "Forces_p"
-            print self.netForces_p[:,:]
-            print "Forces_v"
-            print self.netForces_v[:,:]
+        pass
+        #if self.comm.isMaster():
+            #print "wettedAreas"
+            #print self.wettedAreas[:]
+            #print "Forces_p"
+            #print self.netForces_p[:,:]
+            #print "Forces_v"
+            #print self.netForces_v[:,:]
     def postStep(self,t,firstStep=False):
         if self.comm.isMaster():
-            print "wettedAreas"
-            print self.wettedAreas[:]
-            print "Forces_p"
-            print self.netForces_p[:,:]
-            print "Forces_v"
-            print self.netForces_v[:,:]
+            #print "wettedAreas"
+            #print self.wettedAreas[:]
+            #print "Forces_p"
+            #print self.netForces_p[:,:]
+            #print "Forces_v"
+            #print self.netForces_v[:,:]
             self.wettedAreaHistory.write("%21.16e\n" % (self.wettedAreas[-1],))
             self.forceHistory_p.write("%21.16e %21.16e %21.16e\n" %tuple(self.netForces_p[-1,:]))
             self.forceHistory_p.flush()

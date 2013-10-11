@@ -2,7 +2,7 @@ from proteus import *
 from proteus.default_p import *
 from tank import *
 from proteus.mprans import RANS2P
-
+name = "rans"
 LevelModelType = RANS2P.LevelModel
 if useOnlyVF:
     LS_model = None

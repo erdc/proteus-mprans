@@ -6,7 +6,7 @@ from proteus.mprans import RDLS
 """
 The redistancing equation in the sloshbox test problem.
 """
-
+name = "rdls"
 LevelModelType = RDLS.LevelModel
 
 coefficients = RDLS.Coefficients(applyRedistancing=True,

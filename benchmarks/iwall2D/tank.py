@@ -104,10 +104,10 @@ else:
     Lx = maxX - minX
     Lz = 1.3*(maxZ-minZ)
     L = (Lx,Lz,1.0)
-    coarse_he = wavelength*0.25
-    coarse_he*=0.5
-    coarse_he*=0.5
-    coarse_he*=0.5
+    coarse_he = wavelength*0.1
+    #coarse_he*=0.5
+    #coarse_he*=0.5
+    #coarse_he*=0.5
     coarse_area = coarse_he**2 / 2.0
     #fine_he = 0.5*coarse_he
     fine_he=coarse_he
@@ -167,26 +167,25 @@ else:
         segments.append([ll,benchStart+8])
         segmentFlags.append(0)
         eps=1.0e-5
-        regions=[[transect[0,0]+eps,transect[0,1]+eps],
-                 [transect[0,0]+eps,inflowHeightMean+5.0*amplitude+eps],
-                 [transect[0,0]+eps,inflowHeightMean-5.0*amplitude+eps]]
-        regionFlags=[1,2,3]
-        regionConstraints=[coarse_area,coarse_area,fine_area]
+        #regions=[[transect[0,0]+eps,transect[0,1]+eps],
+        #         [transect[0,0]+eps,inflowHeightMean+5.0*amplitude+eps],
+        #         [transect[0,0]+eps,inflowHeightMean-5.0*amplitude+eps]]
+        #regionFlags=[1,2,3]
+        #regionConstraints=[coarse_area,coarse_area,fine_area]
         domain = Domain.PlanarStraightLineGraphDomain(vertices=vertices,
                                                       vertexFlags=vertexFlags,
                                                       segments=segments,
-                                                      segmentFlags=segmentFlags,
-                                                      regions=regions,
-                                                      regionFlags=regionFlags,
-                                                      regionConstraints=regionConstraints)
+                                                      segmentFlags=segmentFlags)
+        #regions=regions,
+         #                                             regionFlags=regionFlags,
+          #                                            regionConstraints=regionConstraints)
         #go ahead and add a boundary tags member 
         domain.boundaryTags = boundaryTags
         domain.writePoly("mesh")
         domain.writePLY("mesh")
         domain.writeAsymptote("mesh")
-        #triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
-        triangleOptions="VApq30Dena"#%8.8f" % ((he**2)/2.0,)
-1
+        triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
+        #triangleOptions="VApq30Dena"#%8.8f" % ((he**2)/2.0,)
 # Time stepping
 T=100*period
 dt_fixed =period/10.0

@@ -2,7 +2,7 @@ from proteus import *
 from proteus.default_p import *
 from tank import *
 from proteus.mprans import NCLS
-
+name='ncls'
 LevelModelType = NCLS.LevelModel
 
 coefficients = NCLS.Coefficients(V_model=0,RD_model=3,ME_model=2,

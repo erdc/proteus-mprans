@@ -3,7 +3,7 @@ from proteus.default_p import *
 from proteus.ctransportCoefficients import smoothedHeaviside
 from tank import *
 from proteus.mprans import VOF
-
+name = "vof"
 LevelModelType = VOF.LevelModel
 if useOnlyVF:
     RD_model = None
