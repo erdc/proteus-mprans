@@ -161,10 +161,26 @@ wavetank_reflecting Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`wavetank_prev` Module
+---------------------------
+
+.. automodule:: benchmarks.wavetank_reflecting.wavetank_prev
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`wavetank_so` Module
 -------------------------
 
 .. automodule:: benchmarks.wavetank_reflecting.wavetank_so
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`wavetank_stashed` Module
+------------------------------
+
+.. automodule:: benchmarks.wavetank_reflecting.wavetank_stashed
     :members:
     :undoc-members:
     :show-inheritance:

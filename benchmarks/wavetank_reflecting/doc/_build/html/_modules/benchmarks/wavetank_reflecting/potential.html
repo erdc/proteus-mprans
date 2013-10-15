@@ -1,0 +1,166 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>benchmarks.wavetank_reflecting.potential &mdash; Wavetank 1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Wavetank 1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+<link rel="shortcut icon" href="_static/proteusSimple.ico">
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<img src="../../../_static/proteus.png" alt="Proteus logo" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Proteus home</a>&nbsp;|&nbsp;</li>
+        <li><a href="../../../api/index.html">API</a>&raquo;</li>
+
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for benchmarks.wavetank_reflecting.potential</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">   NOTE:</span>
+
+<span class="sd">   This module defines the velocity potential based on linear</span>
+<span class="sd">   theory from the free-surface spectrum. Higher order corrections</span>
+<span class="sd">   can be implemented if needed, but recall that the linear solution </span>
+<span class="sd">   for velocity potential of a Stokes wave is valid up to third</span>
+<span class="sd">   in wave steepness, hence capturing the required bound </span>
+<span class="sd">   and free waves. &quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="velocityPotential"><a class="viewcode-back" href="../../../api/benchmarks.wavetank_reflecting.html#benchmarks.wavetank_reflecting.potential.velocityPotential">[docs]</a><span class="k">def</span> <span class="nf">velocityPotential</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">gv</span><span class="p">,</span> <span class="n">kx</span><span class="p">,</span> <span class="n">ky</span><span class="p">):</span>
+    
+    <span class="p">[</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">]</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">potentialFourier</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">),</span> <span class="nb">complex</span><span class="p">)</span>      <span class="c"># ~ for fft(vel potential)</span>
+       
+    <span class="c"># ~ Define the spectrum over HALF the modes as the input is REAL and thus</span>
+    <span class="c"># the other half of the modes is just the complex conjugate of the first!</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="c"># ~ loops over nx/2+1 (from  0^th to nx/2^th) terms</span>
+            <span class="n">kk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">kx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">ky</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">gv</span><span class="o">*</span><span class="n">kk</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">omega</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">potentialFourier</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">potentialFourier</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0j</span> <span class="o">*</span> <span class="n">gv</span> <span class="o">*</span> <span class="n">spec</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">omega</span>
+                <span class="c"># Recall: spec = fft2(free surface)</span>
+            
+    <span class="c"># Recall: for real transforms the highest and lowest modes are real!!!</span>
+    <span class="n">potentialFourier</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">potentialFourier</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">potentialFourier</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">potentialFourier</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">])</span>
+        
+    <span class="c"># Constructing the other half (complex conjugates) ~ linear vectors first</span>
+    <span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">nx</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>        <span class="c"># along ky = 0</span>
+    <span class="n">potentialFourier</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">ny</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">potentialFourier</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>        <span class="c"># along kx = 0</span>
+    <span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">ny</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>  <span class="c"># along kx = Nx/2</span>
+    <span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">nx</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>  <span class="c"># along ky = Ny/2</span>
+    
+    <span class="c"># Now for the complex conjugates of the quadrants!    </span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>            
+            <span class="n">potentialFourier</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">ny</span><span class="o">-</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">potentialFourier</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">potentialFourier</span><span class="p">[</span><span class="n">nx</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">ny</span><span class="o">-</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+
+    <span class="c"># Create a 2D meshgrid of wavenumbers</span>
+    <span class="p">[</span><span class="n">kxx</span><span class="p">,</span> <span class="n">kyy</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">kx</span><span class="p">,</span><span class="n">ky</span><span class="p">)</span>
+
+    <span class="c"># Horizontal velocityties (term-wise multiplication)</span>
+    <span class="n">uVelocity</span> <span class="o">=</span> <span class="mf">1.0j</span><span class="o">*</span><span class="n">kxx</span><span class="o">*</span><span class="n">potentialFourier</span>
+    <span class="n">vVelocity</span> <span class="o">=</span> <span class="mf">1.0j</span><span class="o">*</span><span class="n">kyy</span><span class="o">*</span><span class="n">potentialFourier</span>
+    
+    <span class="c"># ~ Inverting back to physical space --&gt; take REAL part just in case we have</span>
+    <span class="c">#   some left over (nonzero) imaginary part of &#39;potentialFourier&#39; and u,v</span>
+    <span class="n">potential</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft2</span><span class="p">(</span><span class="n">potentialFourier</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft2</span><span class="p">(</span><span class="n">uVelocity</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft2</span><span class="p">(</span><span class="n">vVelocity</span><span class="p">)</span> <span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">potential</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Proteus home</a>&nbsp;|&nbsp;</li>
+        <li><a href="../../../api/index.html">API</a>&raquo;</li>
+
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Matt Malej, Chris Kees.
+    </div>
+  </body>
+</html>

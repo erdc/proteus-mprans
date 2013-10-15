@@ -1,0 +1,226 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>benchmarks.wavetank_reflecting.spectrum &mdash; Wavetank 1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Wavetank 1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+<link rel="shortcut icon" href="_static/proteusSimple.ico">
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<img src="../../../_static/proteus.png" alt="Proteus logo" />
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Proteus home</a>&nbsp;|&nbsp;</li>
+        <li><a href="../../../api/index.html">API</a>&raquo;</li>
+
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for benchmarks.wavetank_reflecting.spectrum</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot; This module (spectrum.py) is to be included in the main JONSWAP.py module.</span>
+<span class="sd">    It defines a JONSWAP spectrum and adds a desired degree of directional</span>
+<span class="sd">    spreading with a random phase. &quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">math</span><span class="o">,</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="o">*</span>
+
+<div class="viewcode-block" id="sigma"><a class="viewcode-back" href="../../../api/benchmarks.wavetank_reflecting.html#benchmarks.wavetank_reflecting.spectrum.sigma">[docs]</a><span class="k">def</span> <span class="nf">sigma</span><span class="p">(</span><span class="n">omega</span><span class="p">,</span> <span class="n">omega_peak</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This function returns value of sigma in JONWSAP.</span>
+<span class="sd">    Note that the inputs are acutally omega**2 and omega_peak**2,</span>
+<span class="sd">    but it doesn&#39;t matter for the return value!&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">omega</span> <span class="o">&lt;=</span> <span class="n">omega_peak</span><span class="p">:</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.07</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.09</span>
+    <span class="c"># end if</span>
+
+    <span class="k">return</span> <span class="n">sigma</span>
+</div>
+<div class="viewcode-block" id="factorial_1"><a class="viewcode-back" href="../../../api/benchmarks.wavetank_reflecting.html#benchmarks.wavetank_reflecting.spectrum.factorial_1">[docs]</a><span class="k">def</span> <span class="nf">factorial_1</span><span class="p">(</span><span class="n">ns</span><span class="p">):</span>
+    <span class="n">fact</span> <span class="o">=</span> <span class="mi">1</span>        <span class="c"># ~ default</span>
+    <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ns</span><span class="p">),</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">fact</span> <span class="o">=</span> <span class="n">fact</span> <span class="o">*</span> <span class="n">factor</span>
+    <span class="k">return</span> <span class="n">fact</span>
+</div>
+<div class="viewcode-block" id="factorial_2"><a class="viewcode-back" href="../../../api/benchmarks.wavetank_reflecting.html#benchmarks.wavetank_reflecting.spectrum.factorial_2">[docs]</a><span class="k">def</span> <span class="nf">factorial_2</span><span class="p">(</span><span class="n">ns</span><span class="p">):</span>
+    <span class="n">fact</span> <span class="o">=</span> <span class="mi">1</span>        <span class="c"># ~ default</span>
+    <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ns</span><span class="p">),</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">fact</span> <span class="o">=</span> <span class="n">fact</span> <span class="o">*</span> <span class="n">factor</span>
+    <span class="k">return</span> <span class="n">fact</span>
+</div>
+<div class="viewcode-block" id="spreading"><a class="viewcode-back" href="../../../api/benchmarks.wavetank_reflecting.html#benchmarks.wavetank_reflecting.spectrum.spreading">[docs]</a><span class="k">def</span> <span class="nf">spreading</span><span class="p">(</span><span class="n">vkx</span><span class="p">,</span> <span class="n">vky</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="n">max_angle</span><span class="p">):</span>
+    <span class="n">temp1</span> <span class="o">=</span> <span class="n">factorial_1</span><span class="p">(</span><span class="n">ns</span><span class="p">)</span>      <span class="c"># user defined std. factorial function </span>
+    <span class="n">temp2</span> <span class="o">=</span> <span class="n">factorial_2</span><span class="p">(</span><span class="n">ns</span><span class="p">)</span>      <span class="c"># user defined augmented factorial function</span>
+    
+    <span class="c"># Normalization Constant</span>
+    <span class="n">D0</span> <span class="o">=</span> <span class="n">temp1</span> <span class="o">*</span> <span class="mf">2.0</span><span class="o">**</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ns</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">max_angle</span> <span class="o">*</span> <span class="n">temp2</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="n">vkx</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">spread</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">angle</span> <span class="o">=</span> <span class="n">arctan</span><span class="p">(</span><span class="n">vky</span><span class="o">/</span><span class="n">vkx</span><span class="p">)</span>        
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">max_angle</span><span class="p">:</span>
+            <span class="n">spread</span> <span class="o">=</span> <span class="n">D0</span><span class="o">*</span><span class="p">(</span> <span class="n">cos</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.0</span><span class="o">*</span><span class="n">angle</span><span class="o">/</span><span class="n">max_angle</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">ns</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">spread</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">return</span> <span class="n">spread</span>
+
+</div>
+<div class="viewcode-block" id="jonswap"><a class="viewcode-back" href="../../../api/benchmarks.wavetank_reflecting.html#benchmarks.wavetank_reflecting.spectrum.jonswap">[docs]</a><span class="k">def</span> <span class="nf">jonswap</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">Hs</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">nspread</span><span class="p">,</span> <span class="n">thetam</span><span class="p">,</span> <span class="n">gv</span><span class="p">,</span> <span class="n">kx</span><span class="p">,</span> <span class="n">ky</span><span class="p">):</span>
+    <span class="c"># Constansts</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="mf">5.0</span> <span class="o">/</span> <span class="mf">16.0</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="mf">5.0</span> <span class="o">/</span> <span class="mf">4.0</span>        <span class="c"># *** different from Beta and theta_m !!!</span>
+    
+    <span class="n">kx_min</span> <span class="o">=</span> <span class="n">kx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">ky_min</span> <span class="o">=</span> <span class="n">ky</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    
+    <span class="n">spectrum</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">),</span><span class="nb">complex</span><span class="p">)</span>
+    
+    <span class="n">omega_peak</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">pi</span><span class="o">*</span><span class="n">fp</span>
+    <span class="n">kp</span> <span class="o">=</span> <span class="n">omega_peak</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">gv</span>      <span class="c"># peak wavenumber (determinied from disper. rel. with h-&gt;infty)</span>
+    
+    <span class="n">spread</span> <span class="o">=</span> <span class="n">spreading</span><span class="p">(</span><span class="n">kx</span><span class="p">[</span><span class="mi">10</span><span class="p">],</span> <span class="n">ky</span><span class="p">[</span><span class="mi">10</span><span class="p">],</span> <span class="n">nspread</span><span class="p">,</span> <span class="n">thetam</span><span class="p">)</span>
+    
+    <span class="c"># Define the spectrum over HALF the modes as the input is REAL and thus</span>
+    <span class="c"># the other half of the modes is just the complex conjugate of the first!</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="c"># ~ loops over nx/2+1 (from  0^th to nx/2^th) terms</span>
+            <span class="n">kk</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">kx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">ky</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">kk</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">spectrum</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="o">+</span> <span class="mf">0.0j</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># sigma factor</span>
+                <span class="n">temp_sigma</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">(</span><span class="n">gv</span><span class="o">*</span><span class="n">kk</span><span class="p">,</span> <span class="n">gv</span><span class="o">*</span><span class="n">kp</span><span class="p">)</span>  <span class="c"># ~ sending omegas SQUARED !</span>
+                             
+                <span class="c"># spreading factor</span>
+                <span class="n">temp_spread</span> <span class="o">=</span> <span class="n">spreading</span><span class="p">(</span><span class="n">kx</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ky</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">nspread</span><span class="p">,</span> <span class="n">thetam</span><span class="p">)</span>
+                                
+                <span class="c"># computing random phase (seed is apparently the system clock)</span>
+                <span class="n">phase</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>     <span class="c">#  where:  0 &lt;= phase &lt;= 1</span>
+                
+                <span class="c">#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c">#    &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; Computing JONSWAP Function &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>
+                <span class="c">#</span>
+                <span class="c"># Recall: the spectrum is composed of F(kk,theta)=S(kk)*D(theta)</span>
+                <span class="c">#         where S(kk)=S(kx,ky) is the JONSWAP spectrum and</span>
+                <span class="c">#         D(theta) is the directional spreading function!</span>
+                <span class="c">#</span>
+                <span class="n">temp1</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">kp</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Hs</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">kk</span><span class="o">**</span><span class="mi">4</span><span class="p">)</span>
+                <span class="n">temp2</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">beta</span> <span class="o">*</span> <span class="p">(</span><span class="n">kp</span><span class="o">/</span><span class="n">kk</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">temp3</span> <span class="o">=</span> <span class="n">gamma</span><span class="o">**</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="p">(</span> <span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="n">kk</span><span class="p">)</span><span class="o">-</span><span class="n">sqrt</span><span class="p">(</span><span class="n">kp</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="n">temp_sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">kp</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+                <span class="n">temp_JONSWAP</span> <span class="o">=</span> <span class="n">temp1</span> <span class="o">*</span> <span class="n">temp2</span> <span class="o">*</span> <span class="n">temp3</span>
+                
+                <span class="c"># spectrum[i,j] ==&gt; F(kk,theta) = S(kx,ky) * D(theta)</span>
+                <span class="n">spectrum</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">temp_JONSWAP</span> <span class="o">*</span> <span class="n">temp_spread</span> <span class="o">*</span> <span class="n">kx_min</span> <span class="o">*</span> <span class="n">ky_min</span><span class="p">)</span> <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="mf">2.0j</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">*</span> <span class="n">phase</span><span class="p">)</span>
+                <span class="c">#  NOTE: we added sqrt(2.0) into the spectrum ******* !!!!!!</span>
+                <span class="c">#        ... if unclear  as to how the line above comes about</span>
+                <span class="c">#            see attached PDF for theory on relation between</span>
+                <span class="c">#            the above spectrum[i,j] and autocorrelation of the</span>
+                <span class="c">#            surface elevation (Weiner-Khinchin Theorem)</span>
+ 
+    <span class="c"># For real transforms the highest and lowest modes  are real!!!</span>
+    <span class="n">spectrum</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">real</span><span class="p">(</span><span class="n">spectrum</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">real</span><span class="p">(</span><span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">spectrum</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">real</span><span class="p">(</span><span class="n">spectrum</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">real</span><span class="p">(</span><span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">])</span>
+        
+ 
+    <span class="c"># Constructing the other half (complex conjugates) ~ linear vectors first</span>
+    <span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">nx</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>          <span class="c"># along ky = 0</span>
+    <span class="n">spectrum</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">ny</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">spectrum</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>          <span class="c"># along kx = 0</span>
+    <span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">ny</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>    <span class="c"># along kx = Nx/2</span>
+    <span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">nx</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>    <span class="c"># along ky = Ny/2</span>
+    
+    <span class="c"># Now for the complex conjugates of the quadrants!    </span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>            
+            <span class="n">spectrum</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">ny</span><span class="o">-</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="n">ny</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span> <span class="p">(</span><span class="n">nx</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">spectrum</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">spectrum</span><span class="p">[</span><span class="n">nx</span><span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="n">ny</span><span class="o">-</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+     
+    <span class="k">return</span> <span class="n">spectrum</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Proteus home</a>&nbsp;|&nbsp;</li>
+        <li><a href="../../../api/index.html">API</a>&raquo;</li>
+
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Matt Malej, Chris Kees.
+    </div>
+  </body>
+</html>

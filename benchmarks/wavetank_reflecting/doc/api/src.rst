@@ -97,3 +97,115 @@ src Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`cDissipation` Module
+--------------------------
+
+.. automodule:: src.cDissipation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cDissipation2D` Module
+----------------------------
+
+.. automodule:: src.cDissipation2D
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cKappa` Module
+--------------------
+
+.. automodule:: src.cKappa
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cKappa2D` Module
+----------------------
+
+.. automodule:: src.cKappa2D
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cMCorr` Module
+--------------------
+
+.. automodule:: src.cMCorr
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cMoveMesh` Module
+-----------------------
+
+.. automodule:: src.cMoveMesh
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cNCLS` Module
+-------------------
+
+.. automodule:: src.cNCLS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cRANS2P` Module
+---------------------
+
+.. automodule:: src.cRANS2P
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cRANS2P2D` Module
+-----------------------
+
+.. automodule:: src.cRANS2P2D
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cRANS3P` Module
+---------------------
+
+.. automodule:: src.cRANS3P
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cRDLS` Module
+-------------------
+
+.. automodule:: src.cRDLS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cSW2D` Module
+-------------------
+
+.. automodule:: src.cSW2D
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cSW2DCV` Module
+---------------------
+
+.. automodule:: src.cSW2DCV
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`cVOF` Module
+------------------
+
+.. automodule:: src.cVOF
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
