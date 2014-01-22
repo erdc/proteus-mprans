@@ -7,6 +7,11 @@ from proteus.ctransportCoefficients import smoothedHeaviside_integral
 import numpy as np
 
 transect = np.loadtxt('transectVeryShort.txt',skiprows=0,delimiter="\t")
+transectNew = transect.copy()
+scaleHeight = 0.5
+for i  in range(transectNew.shape[0]):
+    transect[i][0] = scaleHeight*transectNew[i][0]
+    transect[i][1] = scaleHeight*transectNew[i][1]
 benchStart=2
 benchEnd=7
 # transect = np.loadtxt('transectShort.txt',skiprows=0,delimiter="\t")
@@ -18,7 +23,7 @@ benchEnd=7
 
 #wave generator
 windVelocity = (0.0,0.0)
-inflowHeightMean = 2.64
+inflowHeightMean = 2.64*scaleHeight
 inflowVelocityMean = (0.0,0.0)
 period = 2.0
 omega = 2.0*math.pi/period
@@ -30,7 +35,7 @@ k = 2.0*math.pi/wavelength
 #  Discretization -- input options  
 genMesh=True
 useOldPETSc=False
-useSuperlu=True
+useSuperlu=False#True
 timeDiscretization='vbdf'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
@@ -105,7 +110,7 @@ else:
     Lz = 1.3*(maxZ-minZ)
     L = (Lx,Lz,1.0)
     coarse_he = wavelength*0.1
-    #coarse_he*=0.5
+    coarse_he*=0.5
     #coarse_he*=0.5
     #coarse_he*=0.5
     coarse_area = coarse_he**2 / 2.0
@@ -187,7 +192,7 @@ else:
         triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
         #triangleOptions="VApq30Dena"#%8.8f" % ((he**2)/2.0,)
 # Time stepping
-T=100*period
+T=10*period
 dt_fixed =period/10.0
 dt_init = min(0.01*dt_fixed,0.001)
 #runCFL=0.33
