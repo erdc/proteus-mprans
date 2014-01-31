@@ -288,6 +288,7 @@ def build_PSLG():
     """
     build PlanarStraightLineGraph and return
     """
+    from proteus import Domain
     v,s,vf,sf,btags = build_vertices_and_segments()
 
     domain = Domain.PlanarStraightLineGraphDomain(vertices=v,segments=s,vertexFlags=vf,segmentFlags=sf)
