@@ -1,6 +1,6 @@
 from proteus import *
 from redist_p import *
-from suboff2D import *
+from jet_test2D import *
 
 timeIntegration = BackwardEuler
 stepController = Osher_PsiTC_controller2	     

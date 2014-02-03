@@ -1,6 +1,6 @@
 from proteus import *
 from proteus.default_p import *
-from suboff2D import *
+from jet_test2D import *
 from proteus.mprans import Kappa
 
 LevelModelType = Kappa.LevelModel
@@ -16,23 +16,23 @@ coefficients = Kappa.Coefficients(V_model=0,ME_model=3,LS_model=1,RD_model=None,
 
 
 def getDBC_k(x,flag):
-    if flag == boundaryTags['left']:
+    if flag == boundaryTags['inflow']:
         return lambda x,t:kInflow
-    if flag == boundaryTags['obstacle']:
+    if flag == boundaryTags['wall']:
         return lambda x,t:0.0
 dirichletConditions = {0:getDBC_k}
 fluxBoundaryConditions = {0:'outFlow'}
 
 def getAFBC_k(x,flag):
-    if flag == boundaryTags['right']:
+    if flag == boundaryTags['outflow']:
         return None
-    if flag != boundaryTags['left']:
+    if flag != boundaryTags['inflow']:
         return None#outflow
-        #return lambda x,t: 0.0#no flux
+
 def getDFBC_k(x,flag):
-    if flag == boundaryTags['right']:
+    if flag == boundaryTags['outflow']:
         return lambda x,t: 0.0#outflow
-    if flag != boundaryTags['left']:
+    if flag != boundaryTags['inflow']:
         return lambda x,t: 0.0#outflow or no flux
     
 

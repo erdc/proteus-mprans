@@ -1,7 +1,7 @@
 from proteus import *
 from proteus.default_p import *
 from math import *
-from suboff2D import *
+from jet_test2D import *
 from proteus.mprans import RDLS
 """
 The redistancing equation in the sloshbox test problem.

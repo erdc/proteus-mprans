@@ -54,6 +54,7 @@ domain = jet_domain.build_PSLG()
 L = domain.L    
 length = L[0]
 inflow_length = jet_domain.lin
+inflow_start_z= 0.0
 he = (length)/float(6.5*Refinement)
 
 domain.writePoly('mesh_jet_test_2d')
@@ -67,10 +68,10 @@ nLayersOfOverlapForParallel = 0
 # Physical coefficients
 #----------------------------------------------------
 Re = 100.0
-inflow = 1.0
+inflow = -1.0
 nu_h20 = 1.004e-6
 nu = nu_h20
-Re = length*inflow/nu
+Re = length*abs(inflow)/nu
 
 
 # Water
@@ -107,7 +108,7 @@ inflowVelocity = (inflow,0.0)
 
 class u_flat:
     def __init__(self,val=inflow,ztop=inflow_length,zbot=inflow_start_z,delta_z=0.1):
-        self.val= val; self.ztop = ztop; self.zbot=bot
+        self.val= val; self.ztop = ztop; self.zbot=zbot
         self.delta_z = delta_z
     def uOfX(self,x):
         fact = 0.0#exp(-(x[1]-self.zbot)*(self.ztop-x[1])/self.delta_z)

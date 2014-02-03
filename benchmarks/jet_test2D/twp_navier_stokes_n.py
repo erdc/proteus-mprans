@@ -1,6 +1,6 @@
 from proteus import *
 from twp_navier_stokes_p import *
-from suboff2D import *
+from jet_test2D import *
 
 timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_controller
