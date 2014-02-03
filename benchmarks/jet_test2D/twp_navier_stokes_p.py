@@ -1,6 +1,6 @@
 from proteus import *
 from proteus.default_p import *
-from suboff2D import *
+from jet_test2D import *
 from proteus.mprans import RANS2P
 
 LevelModelType = RANS2P.LevelModel
@@ -34,23 +34,24 @@ dirichletConditions = {0:getDBC_p,
                        2:getDBC_v}
 
 def getAFBC_p(x,flag):
-    if flag == boundaryTags['bottom'] or flag == boundaryTags['top'] or flag == boundaryTags['obstacle']:
+    if (flag == boundaryTags['wall'] or 
+        flag == boundaryTags['symmetry']):
         return lambda x,t: 0.0
 
 def getAFBC_u(x,flag):
-    if flag == boundaryTags['bottom'] or flag == boundaryTags['top']:
+    if flag == boundaryTags['symmetry']:
         return lambda x,t: 0.0
 
 def getAFBC_v(x,flag):
-    if flag == boundaryTags['bottom'] or flag == boundaryTags['top']:
+    if flag == boundaryTags['symmetry']:
         return lambda x,t: 0.0
 
 def getDFBC_u(x,flag):
-    if not (flag == boundaryTags['left'] or flag == boundaryTags['obstacle']):
+    if not flag == boundaryTags['inflow']:
         return lambda x,t: 0.0
     
 def getDFBC_v(x,flag):
-    if not (flag == boundaryTags['left'] or flag == boundaryTags['obstacle']):
+    if not flag == boundaryTags['inflow']:
         return lambda x,t: 0.0
 
 advectiveFluxBoundaryConditions =  {0:getAFBC_p,

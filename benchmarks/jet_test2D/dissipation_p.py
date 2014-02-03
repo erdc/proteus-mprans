@@ -1,6 +1,6 @@
 from proteus import *
 from proteus.default_p import *
-from suboff2D import *
+from jet_test2D import *
 from proteus.mprans import Dissipation
 
 LevelModelType = Dissipation.LevelModel
@@ -14,29 +14,29 @@ coefficients = Dissipation.Coefficients(V_model=0,ME_model=4,LS_model=1,RD_model
                                         c_mu=0.09,sigma_e=1.0,#default values for c_1,c_2,c_e
                                         sc_uref=dissipation_sc_uref,sc_beta=dissipation_sc_beta)
 
-dissipationInflow = coefficients.c_mu*kInflow**(1.5)/(0.03*upstream_height)
+dissipationInflow = coefficients.c_mu*kInflow**(1.5)/(0.03*inflow_length)
 if dissipation_model_flag >= 2:
     dissipationInflow = dissipationInflow/(kInflow+1.0e-12)
 
 def getDBC_dissipation(x,flag):
-    if flag == boundaryTags['left']:
+    if flag == boundaryTags['inflow']:
         return lambda x,t:dissipationInflow
 
 dirichletConditions = {0:getDBC_dissipation}
 fluxBoundaryConditions = {0:'outFlow'}
 
 def getAFBC_dissipation(x,flag):
-    if flag == boundaryTags['right']:
+    if flag == boundaryTags['outlet']:
         return None
-    if flag == boundaryTags['obstacle']:
+    if flag == boundaryTags['wall']:
         return lambda x,t: 0.0#no flux
-    if flag != boundaryTags['left']: #top and bottom
+    if flag == boundaryTags['symmetry']: #top and bottom
         return None#outflow
         #return lambda x,t: 0.0 #no flux 
 def getDFBC_dissipation(x,flag):
-    if flag == boundaryTags['right']:
+    if flag == boundaryTags['outlet']:
         return lambda x,t: 0.0#outflow
-    if flag != boundaryTags['left']:
+    if flag != boundaryTags['inflow']:
         return lambda x,t: 0.0#outflow or no flux
     
 

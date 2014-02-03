@@ -1,5 +1,5 @@
 from proteus.default_so import *
-from suboff2D import *
+from jet_test2D import *
 
 pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
           ("ls_p",                "ls_n"),
@@ -8,7 +8,7 @@ pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
           ("dissipation_p", "dissipation_n")]
 
     
-name = "suboff2D_p"
+name = "jet_test2D_p"
 
 systemStepControllerType = Sequential_MinAdaptiveModelStep
     
