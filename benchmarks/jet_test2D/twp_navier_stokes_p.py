@@ -17,13 +17,17 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    g=g,
                                    nd=nd,
                                    LS_model=1,
-                                   Closure_0_model=3,
-                                   Closure_1_model=4,
-                                   turbulenceClosureModel=turbulenceClosureModel,
+                                   Closure_0_model=None,#3,
+                                   Closure_1_model=None,#4,
+                                   turbulenceClosureModel=1,#turbulenceClosureModel,
                                    epsFact_density=epsFact_density,
                                    stokes=False,
                                    useRBLES=useRBLES,
-                                   useMetrics=useMetrics)
+                                   useMetrics=useMetrics,
+                                   useVF=1.0,
+                                   eb_adjoint_sigma=1.0,
+                                   eb_penalty_constant=100.,
+                                   forceStrongDirichlet=True)
 
 getDBC_p = twpflowPressure
 getDBC_u = twpflowVelocity_u
