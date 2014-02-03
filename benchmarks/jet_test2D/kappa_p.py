@@ -21,16 +21,16 @@ def getDBC_k(x,flag):
     if flag == boundaryTags['wall']:
         return lambda x,t:0.0
 dirichletConditions = {0:getDBC_k}
-fluxBoundaryConditions = {0:'outFlow'}
+fluxBoundaryConditions = {0:'outlet'}
 
 def getAFBC_k(x,flag):
-    if flag == boundaryTags['outflow']:
+    if flag == boundaryTags['outlet']:
         return None
     if flag != boundaryTags['inflow']:
         return None#outflow
 
 def getDFBC_k(x,flag):
-    if flag == boundaryTags['outflow']:
+    if flag == boundaryTags['outlet']:
         return lambda x,t: 0.0#outflow
     if flag != boundaryTags['inflow']:
         return lambda x,t: 0.0#outflow or no flux

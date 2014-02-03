@@ -23,7 +23,7 @@ def getDBC_dissipation(x,flag):
         return lambda x,t:dissipationInflow
 
 dirichletConditions = {0:getDBC_dissipation}
-fluxBoundaryConditions = {0:'outFlow'}
+fluxBoundaryConditions = {0:'outlet'}
 
 def getAFBC_dissipation(x,flag):
     if flag == boundaryTags['outlet']:
@@ -31,13 +31,13 @@ def getAFBC_dissipation(x,flag):
     if flag == boundaryTags['wall']:
         return lambda x,t: 0.0#no flux
     if flag == boundaryTags['symmetry']: #top and bottom
-        return None#outflow
+        return None#outlet
         #return lambda x,t: 0.0 #no flux 
 def getDFBC_dissipation(x,flag):
     if flag == boundaryTags['outlet']:
-        return lambda x,t: 0.0#outflow
+        return lambda x,t: 0.0#outlet
     if flag != boundaryTags['inflow']:
-        return lambda x,t: 0.0#outflow or no flux
+        return lambda x,t: 0.0#outlet or no flux
     
 
 advectiveFluxBoundaryConditions =  {0:getAFBC_dissipation}
