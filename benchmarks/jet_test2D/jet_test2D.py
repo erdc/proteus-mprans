@@ -8,7 +8,7 @@ import jet_domain
 #----------------------------------------------------
 #  Discretization -- input options    
 #----------------------------------------------------
-Refinement=4
+Refinement=10
 genMesh=True
 spaceOrder=1
 useRBLES   = 0.0
@@ -51,6 +51,7 @@ elif spaceOrder == 2:
 #----------------------------------------------------
 
 domain = jet_domain.build_PSLG()
+boundaryTags = domain.boundaryTags
 L = domain.L    
 length = L[0]
 inflow_length = jet_domain.lin
@@ -67,7 +68,6 @@ nLayersOfOverlapForParallel = 0
 #----------------------------------------------------
 # Physical coefficients
 #----------------------------------------------------
-Re = 100.0
 inflow = -1.0
 nu_h20 = 1.004e-6
 nu = nu_h20
@@ -95,6 +95,7 @@ g = [-9.8,0.0]
 #----------------------------------------------------
 
 T=10.0
+residence_time=1.0
 tnList = [0.0,0.0001]
 nDTout=100
 tnList.extend([max(i*T/float(nDTout),0.1) for i in range(1,nDTout+1)])#[0.0,0.5*T,T]
@@ -123,14 +124,14 @@ def velRamp(t):
         return 1.0
 
 def twpflowPressure(x,flag):
-    if flag == boundaryTags['right']:#set pressure on outflow to atmospheric
+    if flag == boundaryTags['outlet']:#set pressure on outflow to atmospheric
         return lambda x,t: 0.0
 
 
 
 def twpflowVelocity_u(x,flag):
     if flag == domain.boundaryTags['inflow']:
-        return lambda x,t: uProfile.uOfX(x-[0.0,upstream_start_z,0.0])*velRamp(t)
+        return lambda x,t: uProfile.uOfX(x-[0.0,inflow_start_z,0.0])*velRamp(t)
     elif flag == domain.boundaryTags['wall']:
         return lambda x,t: 0.0
 def twpflowVelocity_v(x,flag):

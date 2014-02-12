@@ -23,7 +23,11 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    epsFact_density=epsFact_density,
                                    stokes=False,
                                    useRBLES=useRBLES,
-                                   useMetrics=useMetrics)
+                                   useMetrics=useMetrics,
+                                   useVF=1.0,
+                                   eb_adjoint_sigma=1.0,
+                                   eb_penalty_constant=100.,
+                                   forceStrongDirichlet=True)
 
 getDBC_p = twpflowPressure
 getDBC_u = twpflowVelocity_u
