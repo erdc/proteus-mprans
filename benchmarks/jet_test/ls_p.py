@@ -1,6 +1,6 @@
 from proteus import *
 from proteus.default_p import *
-from jet_test2D import *
+from jet_test3D import *
 from proteus.mprans import NCLS
 
 LevelModelType = NCLS.LevelModel

@@ -1,13 +1,14 @@
 from proteus import *
 from twp_navier_stokes_p import *
-from jet_test2D import *
+from jet_test3D import *
 
 timeIntegration = BackwardEuler_cfl
 stepController  = Min_dt_controller
 
 femSpaces = {0:basis,
 	     1:basis,
-	     2:basis}
+	     2:basis,
+             3:basis}
 
 massLumping       = False
 numericalFluxType = None

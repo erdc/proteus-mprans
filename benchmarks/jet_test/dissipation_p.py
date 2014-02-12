@@ -1,6 +1,6 @@
 from proteus import *
 from proteus.default_p import *
-from jet_test2D import *
+from jet_test3D import *
 from proteus.mprans import Dissipation
 
 LevelModelType = Dissipation.LevelModel
@@ -28,11 +28,8 @@ fluxBoundaryConditions = {0:'outFlow'}
 def getAFBC_dissipation(x,flag):
     if flag == boundaryTags['outlet']:
         return None
-    if flag == boundaryTags['wall']:
+    if flag in wall_boundaries:
         return lambda x,t: 0.0#no flux
-    if flag == boundaryTags['symmetry']: #top and bottom
-        return None#outflow
-        #return lambda x,t: 0.0 #no flux 
 def getDFBC_dissipation(x,flag):
     if flag == boundaryTags['outlet']:
         return lambda x,t: 0.0#outflow

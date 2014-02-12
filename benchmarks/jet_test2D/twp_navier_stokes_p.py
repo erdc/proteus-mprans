@@ -76,13 +76,13 @@ class Steady_u:
     def __init__(self):
         pass
     def uOfXT(self,x,t):
-        return inflowVelocity[0]
+        return 0.
 
 class Steady_v:
     def __init__(self):
         pass
     def uOfXT(self,x,t):
-        return inflowVelocity[1]
+        return 0.0
     
 
 initialConditions = {0:Steady_p(),

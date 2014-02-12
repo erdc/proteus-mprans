@@ -13,14 +13,19 @@ spaceOrder=1
 useRBLES   = 0.0
 useMetrics = 1.0
 use_petsc4py=False
+#turbulence models
+turbulenceClosureModel=1 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+
 #type of 2 equation turbulence model to use
 #1 K-Epsilon
 #2 Wilcox K-Omega, 1998
 #3 Wilcox K-Omega, 1988
 dissipation_model_flag = 0
-useRANS= 0 # 0 -- None
-           # 1 -- K-Epsilon
-           # 2 -- K-Omega
+if turbulenceClosureModel > 2:
+    useRANS=1
+else:
+    useRANS=0
+
 
 # Input checks
 if spaceOrder not in [1,2]:
@@ -54,7 +59,8 @@ elif spaceOrder == 2:
 #----------------------------------------------------
 he = 0.05 #guess level 0
 domain = Domain.MeshTetgenDomain(fileprefix="jet_domain3d")
-boundaryTags = {'inlet':5,'top_walls':6,'outlet':7,'outer_walls':8,'bottom_walls':9}
+boundaryTags = {'inflow':5,'top_walls':6,'outlet':7,'outer_walls':8,'bottom_walls':9}
+wall_boundaries= [boundaryTags['top_walls'],boundaryTags['outer_walls'],boundaryTags['bottom_walls']]
 domain.boundaryTags = boundaryTags
 
 L = (14.1,30.,30)
@@ -99,6 +105,7 @@ g = [-9.8,0.0,0.0]
 #----------------------------------------------------
 
 T=1.0
+residence_time=1.
 tnList = [0.0,0.0001]
 nDTout=100
 tnList.extend([max(i*T/float(nDTout),0.1) for i in range(1,nDTout+1)])#[0.0,0.5*T,T]
@@ -134,18 +141,18 @@ def twpflowPressure(x,flag):
 
 def twpflowVelocity_u(x,flag):
     if flag == domain.boundaryTags['inflow']:
-        return lambda x,t: uProfile.uOfX(x-[0.0,upstream_start_z,0.0])*velRamp(t)
-    elif flag == domain.boundaryTags['wall']:
+        return lambda x,t: uProfile.uOfX(x-[0.0,inflow_start_z,0.0])*velRamp(t)
+    if flag in wall_boundaries:
         return lambda x,t: 0.0
 def twpflowVelocity_v(x,flag):
     if flag == boundaryTags['inflow']:
         return lambda x,t: 0.0
-    if flag == boundaryTags['wall']:
+    if flag in wall_boundaries:
         return lambda x,t: 0.0
 def twpflowVelocity_w(x,flag):
     if flag == boundaryTags['inflow']:
         return lambda x,t: 0.0
-    if flag == boundaryTags['wall']:
+    if flag in wall_boundaries:
         return lambda x,t: 0.0
 
 
