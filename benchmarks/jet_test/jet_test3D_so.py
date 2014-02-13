@@ -3,9 +3,10 @@ from jet_test3D import *
 
 pnList = [("twp_navier_stokes_p", "twp_navier_stokes_n"),
           ("ls_p",                "ls_n"),
-          ("redist_p",            "redist_n"),
-          ("kappa_p", "kappa_n"),
-          ("dissipation_p", "dissipation_n")]
+          ("redist_p",            "redist_n")]
+if useRANS > 0:
+    pnList.append(("kappa_p", "kappa_n"))
+    pnList.append(("dissipation_p", "dissipation_n"))
 
     
 name = "jet_test3D_p"

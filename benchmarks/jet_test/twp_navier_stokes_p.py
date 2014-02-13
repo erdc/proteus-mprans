@@ -22,8 +22,8 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    g=g,
                                    nd=nd,
                                    LS_model=1,
-                                   Closure_0_model=3,
-                                   Closure_1_model=4,
+                                   Closure_0_model=Closure_0_model,
+                                   Closure_1_model=Closure_1_model,
                                    turbulenceClosureModel=turbulenceClosureModel,
                                    epsFact_density=epsFact_density,
                                    stokes=False,
@@ -79,7 +79,7 @@ class Steady_p:
     def __init__(self):
         pass
     def uOfXT(self,x,t):
-        return -(L[0]-x[0])*coefficients.rho*coefficients.g[0]
+        return 0.0#-(L[0]-x[0])*coefficients.rho*coefficients.g[0]
 
 class Steady_u:
     def __init__(self):

@@ -57,7 +57,7 @@ elif spaceOrder == 2:
 #----------------------------------------------------
 # Domain and mesh
 #----------------------------------------------------
-he = 0.05 #guess level 0
+he = 0.025 #guess level 0
 domain = Domain.MeshTetgenDomain(fileprefix="jet_domain3d")
 boundaryTags = {'inflow':5,'top_walls':6,'outlet':7,'outer_walls':8,'bottom_walls':9}
 wall_boundaries= [boundaryTags['top_walls'],boundaryTags['outer_walls'],boundaryTags['bottom_walls']]
@@ -78,7 +78,7 @@ nLayersOfOverlapForParallel = 0
 #----------------------------------------------------
 # Physical coefficients
 #----------------------------------------------------
-inflow = -1.0e-3
+inflow = -4.0e-2
 nu_h20 = 1.004e-6
 nu = nu_h20
 Re = length*abs(inflow)/nu
@@ -97,7 +97,7 @@ nu_1  = 1.500e-5
 sigma_01 = 0.0
 
 # Gravity
-g = [-9.8,0.0,0.0]
+g = [0.0,0.0,0.0]#[-9.8,0.0,0.0]
 
 
 #----------------------------------------------------

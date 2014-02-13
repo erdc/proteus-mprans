@@ -13,7 +13,7 @@ subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=Fal
 shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=False)
 
 fullNewtonFlag = True
-multilevelNonlinearSolver  = NLNI
+multilevelNonlinearSolver  = Newton
 levelNonlinearSolver       = Newton
 
 nonlinearSmoother = NLGaussSeidel
@@ -30,6 +30,7 @@ else:
 
 linear_solver_options_prefix = 'rdls_'
 nonlinearSolverConvergenceTest = 'rits'
+levelNonlinearSolverConvergenceTest = 'rits'
 linearSolverConvergenceTest = 'rits'
 
 runCFL=1.0

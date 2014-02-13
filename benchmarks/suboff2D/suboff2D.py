@@ -8,7 +8,7 @@ import suboff_domain
 #----------------------------------------------------
 #  Discretization -- input options    
 #----------------------------------------------------
-Refinement=4
+Refinement=8
 genMesh=True
 spaceOrder=1
 useRBLES   = 0.0

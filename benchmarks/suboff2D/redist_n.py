@@ -13,7 +13,7 @@ subgridError      = HamiltonJacobi_ASGS_opt(coefficients,nd,stabFlag='2',lag=Fal
 shockCapturing    = ResGradQuad_SC(coefficients,nd,shockCapturingFactor=rd_shockCapturingFactor,lag=False)
 
 fullNewtonFlag = True
-multilevelNonlinearSolver  = NLNI
+multilevelNonlinearSolver  = Newton
 levelNonlinearSolver       = Newton
 
 nonlinearSmoother = NLGaussSeidel
