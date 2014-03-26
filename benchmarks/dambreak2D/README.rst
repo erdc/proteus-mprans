@@ -10,11 +10,15 @@ Preprocessing
 No postprocessing is necessary for running this case. 
 The first lines of dambreak.py the discretion and formulation can be chosen by modifying the following lines.
 
- - Refinement = 2              ==>  Controls the global level or refinement  e.g. 5 ==> 32x16x16     
- - spaceOrder = 1 / 2          ==>  Choose linear or quadratic elements
- - useHex     = True / False   ==>  Choose hexahedral or tetrahedral elements
- - useRBLES   = 0.0 / 1.0      ==>  Choose SUPG  (0.0) or RBLES/VMS (1.0) for stabilizing the Navier-Stokes equations
- - useMetrics = 0.0 / 1.0      ==>  Choose h-based (0.0) or metric based (1.0) numerical parameters
+============================= =====================================================================================
+  Parameter                        Description                                                                    
+============================= =====================================================================================
+  Refinement = 2               Controls the global level or refinement  e.g. 5 ==> 32x16x16                       
+  spaceOrder = 1 / 2           Choose linear or quadratic elements                                                
+  useHex     = True / False    Choose hexahedral or tetrahedral elements                                          
+  useRBLES   = 0.0 / 1.0       Choose SUPG  (0.0) or RBLES/VMS (1.0) for stabilizing the Navier-Stokes equations  
+  useMetrics = 0.0 / 1.0       Choose h-based (0.0) or metric based (1.0) numerical parameters                    
+============================= =====================================================================================
 
 Running
 --------------------------------
@@ -69,21 +73,25 @@ For convenience all the postprocesing mentioned above are lumped in a simple scr
 following commands in the directory containing the xmf/h5 solution files.
 
 ::
+
    postpro.sh
 
 
 References
 --------------------------------
- S. Koshizuka, H. Tamako, Y. Oka 
-"A particle method for incompressible viscous flow with fluid fragmentation"
-Computational Fluid Mechanics Journal, 113 (1995) 134-147
+- S.Koshizuka, H. Tamako, Y. Oka
 
-R. Elias, A. Coutinho
-"Stabilized edge-based finite element simulation of free-surface flows"
-International Journal of Numerical Methods in Fluids 54 (2007) 965-993
+    "A particle method for incompressible viscous flow with fluid fragmentation"
+    Computational Fluid Mechanics Journal, 113 (1995) 134-147
 
-C. E. Kees, I. Akkerman, M. W. Farthing and Y. Bazilevs
-"a Conservative Level Set Method for Variable-Order Approximations and Unstructured Meshes"
-Journal of Computational Physics, 230-12(2011) 3402-3414,  doi:10.1016/j.jcp.2011.02.030
+- R.Elias, A. Coutinho
+
+    "Stabilized edge-based finite element simulation of free-surface flows"
+    International Journal of Numerical Methods in Fluids 54 (2007) 965-993
+
+- C.E. Kees, I. Akkerman, M. W. Farthing and Y. Bazilevs
+
+    "A Conservative Level Set Method for Variable-Order Approximations and Unstructured Meshes"
+    Journal of Computational Physics, 230-12(2011) 3402-3414,  doi:10.1016/j.jcp.2011.02.030
 
 

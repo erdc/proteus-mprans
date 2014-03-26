@@ -14,11 +14,15 @@ This is part of the mprans default build sequence, so one can assume this utilit
 
 The first lines of marin.py the discretion and formulation can be chosen by modifying the following lines.
 
- - Refinement = 2              ==>  Controls the global level or refinement  e.g. 5 ==> 32x16x16     
- - spaceOrder = 1 / 2          ==>  Choose linear or quadratic elements
- - useHex     = True / False   ==>  Choose hexahedral or tetrahedral elements
- - useRBLES   = 0.0 / 1.0      ==>  Choose SUPG  (0.0) or RBLES/VMS (1.0) for stabilizing the Navier-Stokes equations
- - useMetrics = 0.0 / 1.0      ==>  Choose h-based (0.0) or metric based (1.0) numerical parameters
+============================= =====================================================================================
+  Parameter                        Description                                                                    
+============================= =====================================================================================
+  Refinement = 2               Controls the global level or refinement  e.g. 5 ==> 32x16x16                       
+  spaceOrder = 1 / 2           Choose linear or quadratic elements                                                
+  useHex     = True / False    Choose hexahedral or tetrahedral elements                                          
+  useRBLES   = 0.0 / 1.0       Choose SUPG  (0.0) or RBLES/VMS (1.0) for stabilizing the Navier-Stokes equations  
+  useMetrics = 0.0 / 1.0       Choose h-based (0.0) or metric based (1.0) numerical parameters                    
+============================= =====================================================================================
 
 Running
 --------------------------------
@@ -75,19 +79,23 @@ For convenience all the postprocesing mentioned above are lumped in a simple scr
 following commands in the directory containing the xmf/h5 solution files.
 
 ::
+
    postpro.sh
 
 
 References
 --------------------------------
-K. Kleefsman, G. Fekken, A. Veldman, B. Iwanowski, B. Buchner
-"A volume-of-fluid based simulation method for wave impact problems"
-Journal of Computational Physics 206 (2005) 363Ð393.
+- K.Kleefsman, G. Fekken, A. Veldman, B. Iwanowski, B. Buchner
 
-C. E. Kees, I. Akkerman, M. W. Farthing and Y. Bazilevs
-"A Conservative Level Set Method for Variable-Order Approximations and Unstructured Meshes"
-Journal of Computational Physics, 230-12(2011) 3402-3414,  doi:10.1016/j.jcp.2011.02.030
+    "A volume-of-fluid based simulation method for wave impact problems"
+    Journal of Computational Physics 206 (2005) 363Ð393.
 
-I. Akkerman, Y. Bazilevs, C. E. Kees and M. W. Farthing
-"Isogeometric Analysis of Free-Surface Flow"
-Journal of Computational Physics, 230-11(2011)  4137-4152,  doi:10.1016/j.jcp.2010.11.044
+- C.E. Kees, I. Akkerman, M. W. Farthing and Y. Bazilevs
+
+    "A Conservative Level Set Method for Variable-Order Approximations and Unstructured Meshes"
+    Journal of Computational Physics, 230-12(2011) 3402-3414,  doi:10.1016/j.jcp.2011.02.030
+
+- I.Akkerman, Y. Bazilevs, C. E. Kees and M. W. Farthing
+
+    "Isogeometric Analysis of Free-Surface Flow"
+    Journal of Computational Physics, 230-11(2011)  4137-4152,  doi:10.1016/j.jcp.2010.11.044
