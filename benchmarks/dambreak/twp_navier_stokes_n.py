@@ -23,7 +23,11 @@ multilevelNonlinearSolver = NewtonNS
 levelNonlinearSolver      = NewtonNS
 
 nonlinearSmoother = None
-linearSmoother    = SimpleNavierStokes3D
+
+if ns_forceStrongDirichlet:
+    linearSmoother    = SimpleNavierStokes3D
+else:
+    linearSmoother    = SimpleNavierStokes3D_null_pp
 
 matrix = SparseMatrix
 
