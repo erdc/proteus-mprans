@@ -19,7 +19,11 @@ if dambreak.useRANS > 0:
                    "dissipation_n"))
 name = "dambreak_p" 
 
-systemStepControllerType = Sequential_MinAdaptiveModelStep
+if dambreak.timeDiscretization == 'flcbdf':
+    systemStepControllerType = Sequential_MinFLCBDFModelStep
+    systemStepControllerType = Sequential_MinAdaptiveModelStep
+else:
+    systemStepControllerType = Sequential_MinAdaptiveModelStep
 
 needEBQ_GLOBAL = False
 needEBQ = False

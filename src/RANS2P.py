@@ -1291,7 +1291,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             for cj in range(len(self.dirichletConditionsForceDOF)):
                 for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
                     self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
-
         self.rans2p.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -1653,6 +1652,10 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.csrColumnOffsets_eb[(3,2)],
             self.csrColumnOffsets_eb[(3,3)])
 
+        if not self.forceStrongConditions and max(numpy.linalg.norm(self.u[1].dof,numpy.inf),numpy.linalg.norm(self.u[2].dof,numpy.inf),numpy.linalg.norm(self.u[3].dof,numpy.inf)) < 1.0e-8:
+            self.pp_hasConstantNullSpace=True
+        else:
+            self.pp_hasConstantNullSpace=False
         #Load the Dirichlet conditions directly into residual
         if self.forceStrongConditions:
             scaling = 1.0#probably want to add some scaling to match non-dirichlet diagonals in linear system 

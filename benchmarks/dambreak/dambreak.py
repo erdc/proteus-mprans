@@ -9,7 +9,8 @@ from proteus.Profiling import logEvent
 Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
-useSuperlu=False
+useSuperlu=False#True
+timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -58,13 +59,13 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (0.584,0.146,2*0.350)
-#he = L[0]/float(4*Refinement-1)
-#he*=0.5
-he = L[0]/40.0
-he*=0.5#128
+L = (0.584,0.146,0.350)
+he = L[0]/float(4*Refinement-1)
+he*=0.5
+#he = L[0]/20.0
+#he*=0.5#128
 #he*=0.5#1024
-quasi2D = False#True
+quasi2D = True
 
 if quasi2D:
     L = (L[0],he,L[2])
@@ -131,7 +132,7 @@ else:
         domain.writePoly("mesh")
         domain.writePLY("mesh")
         domain.writeAsymptote("mesh")
-        triangleOptions="VApq1.4q12ena%21.16e" % ((he**3)/6.0,)
+        triangleOptions="VApq1.4q12feena%21.16e" % ((he**3)/6.0,)
 
 logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
 # Time stepping
@@ -142,7 +143,7 @@ runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
-ns_forceStrongDirichlet = False#True
+ns_forceStrongDirichlet = False
 if useMetrics:
     ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = True
@@ -161,7 +162,15 @@ if useMetrics:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = False
+    redist_Newton = True
+    kappa_shockCapturingFactor = 0.1
+    kappa_lag_shockCapturing = True#False
+    kappa_sc_uref = 1.0
+    kappa_sc_beta = 1.0
+    dissipation_shockCapturingFactor = 0.1
+    dissipation_lag_shockCapturing = True#False
+    dissipation_sc_uref = 1.0
+    dissipation_sc_beta = 1.0
 else:
     ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = True
@@ -194,7 +203,7 @@ ns_nl_atol_res = max(1.0e-8,0.01*he**2)
 vof_nl_atol_res = max(1.0e-8,0.01*he**2)
 ls_nl_atol_res = max(1.0e-8,0.01*he**2)
 rd_nl_atol_res = max(1.0e-8,0.01*he)
-mcorr_nl_atol_res = max(1.0e-80,0.01*he**2)
+mcorr_nl_atol_res = max(1.0e-8,0.01*he**2)
 kappa_nl_atol_res = max(1.0e-8,0.01*he**2)
 dissipation_nl_atol_res = max(1.0e-8,0.01*he**2)
 

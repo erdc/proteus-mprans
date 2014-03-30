@@ -2,6 +2,7 @@ from math import *
 import proteus.MeshTools
 from proteus import Domain
 from proteus.default_n import *   
+from proteus.Profiling import logEvent
    
 #  Discretization -- input options  
 #Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
@@ -110,6 +111,7 @@ else:
         domain.writeAsymptote("mesh")
         triangleOptions="VApq30Dena%8.8f" % ((he**2)/2.0,)
 
+logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
 # Time stepping
 T=1.0
 dt_fixed = 0.01
@@ -137,7 +139,7 @@ if useMetrics:
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = True
+    redist_Newton = False
     kappa_shockCapturingFactor = 0.1
     kappa_lag_shockCapturing = True#False
     kappa_sc_uref = 1.0
@@ -174,13 +176,13 @@ else:
     dissipation_sc_uref  = 1.0
     dissipation_sc_beta  = 1.0
 
-ns_nl_atol_res = max(1.0e-12,0.001*he**2)
-vof_nl_atol_res = max(1.0e-12,0.001*he**2)
-ls_nl_atol_res = max(1.0e-12,0.001*he**2)
-rd_nl_atol_res = max(1.0e-12,0.01*he)
-mcorr_nl_atol_res = max(1.0e-12,0.001*he**2)
-kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
-dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
+ns_nl_atol_res = max(1.0e-8,0.01*he**2)
+vof_nl_atol_res = max(1.0e-8,0.01*he**2)
+ls_nl_atol_res = max(1.0e-8,0.01*he**2)
+rd_nl_atol_res = max(1.0e-8,0.01*he)
+mcorr_nl_atol_res = max(1.0e-8,0.01*he**2)
+kappa_nl_atol_res = max(1.0e-8,0.01*he**2)
+dissipation_nl_atol_res = max(1.0e-8,0.01*he**2)
 
 #turbulence
 ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega

@@ -19,8 +19,8 @@ if redist_Newton:
 else:
     timeIntegration = BackwardEuler_cfl
     stepController = RDLS.PsiTC
-    runCFL=0.5
-    psitc['nStepsForce']=6
+    runCFL=1.0
+    psitc['nStepsForce']=3
     psitc['nStepsMax']=25
     psitc['reduceRatio']=2.0
     psitc['startRatio']=1.0

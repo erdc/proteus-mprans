@@ -35,10 +35,7 @@ levelNonlinearSolver      = NewtonNS
 
 nonlinearSmoother = None
 
-if ns_forceStrongDirichlet:
-    linearSmoother    = SimpleNavierStokes2D
-else:
-    linearSmoother    = SimpleNavierStokes2D_null_pp
+linearSmoother    = SimpleNavierStokes2D
 
 matrix = SparseMatrix
 
@@ -58,9 +55,9 @@ levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest             = 'r-true'
 
 tolFac = 0.0
-l_atol_res = 0.001*vof_nl_atol_res
+l_atol_res = 0.001*ns_nl_atol_res
 nl_atol_res = ns_nl_atol_res
 useEisenstatWalker = True
 maxNonlinearIts = 50
 maxLineSearches = 0
-#conservativeFlux = {0:'pwl-bdm-opt'}
+conservativeFlux = {0:'pwl-bdm-opt'}
