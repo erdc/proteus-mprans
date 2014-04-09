@@ -61,7 +61,7 @@ elif spaceOrder == 2:
 # Domain and mesh
 L = (0.584,0.146,0.350)
 he = L[0]/float(4*Refinement-1)
-he*=0.5
+#he*=0.5
 #he = L[0]/20.0
 #he*=0.5#128
 #he*=0.5#1024
@@ -72,8 +72,8 @@ if quasi2D:
 
 # Domain and mesh
 nLevels = 1
-#parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
-parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
+parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
+#parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 0
 structured=False
 if useHex:   

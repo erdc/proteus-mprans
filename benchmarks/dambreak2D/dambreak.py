@@ -58,10 +58,11 @@ elif spaceOrder == 2:
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
     
 # Domain and mesh
-L = (0.584,0.350)
+#L = (0.584,0.350)
+L = (0.584,0.584)
 he = L[0]/float(4*Refinement-1)
 he*=0.5
-#he*=0.5
+he*=0.5
 #he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
@@ -120,7 +121,7 @@ runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
-ns_forceStrongDirichlet = False
+ns_forceStrongDirichlet = False#True
 if useMetrics:
     ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = True
@@ -185,7 +186,7 @@ kappa_nl_atol_res = max(1.0e-8,0.01*he**2)
 dissipation_nl_atol_res = max(1.0e-8,0.01*he**2)
 
 #turbulence
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:
