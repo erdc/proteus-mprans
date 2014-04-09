@@ -20,8 +20,6 @@ except:
 ##\todo Finishing cleaning up setup.py/setup.cfg, config.py...
 from distutils import sysconfig
 cv = sysconfig.get_config_vars()
-cv["OPT"] = cv["OPT"].replace("-g","")
-cv["CFLAGS"] = cv["CFLAGS"].replace("-g","")
 
 
 setup(name='proteus_mprans',
