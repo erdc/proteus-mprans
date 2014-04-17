@@ -131,7 +131,7 @@ else:
         domain.writePoly("mesh")
         domain.writePLY("mesh")
         domain.writeAsymptote("mesh")
-        triangleOptions="VApq1.4q12ena%21.16e" % ((he**3)/6.0,)
+        triangleOptions="VApq1.4q12feena%21.16e" % ((he**3)/6.0,)
 
 logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
 # Time stepping
@@ -142,7 +142,7 @@ runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
-ns_forceStrongDirichlet = False#True
+ns_forceStrongDirichlet = True
 if useMetrics:
     ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = False
