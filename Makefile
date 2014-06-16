@@ -1,9 +1,17 @@
 default: install_proteus install 
 
+PROTEUS ?= $(shellpwd)
+PROTEUS_ARCH ?= $(shell python -c "import sys; print sys.platform")
+PROTEUS_PREFIX ?= ${PROTEUS}/${PROTEUS_ARCH}
+PROTEUS_PYTHON ?= ${PROTEUS_PREFIX}/bin/python
+
 install_proteus:
 	cd ${PROTEUS} && make
+	echo ${PWD}
 
 install:
+	echo ${PROTEUS_PYTHON}
+	echo ${PROTEUS_PREFIX}/bin/python
 	${PROTEUS_PYTHON} setup.py install
 
 clean:
