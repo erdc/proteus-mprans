@@ -11,7 +11,7 @@ try:
     import sys,os.path,os
     if not os.getenv('PROTEUS_PREFIX'):
         os.environ['PROTEUS_PREFIX'] = sys.prefix
-    sys.path.insert(0,os.path.join(sys.prefix,'proteusConfig'))
+    sys.path.insert(0,os.path.join(os.environ['PROTEUS_PREFIX'],'proteusConfig'))
     from config import *
 except:
     raise RuntimeError("Missing or invalid config.py file. See proteusConfig for examples")
@@ -20,8 +20,6 @@ except:
 ##\todo Finishing cleaning up setup.py/setup.cfg, config.py...
 from distutils import sysconfig
 cv = sysconfig.get_config_vars()
-cv["OPT"] = cv["OPT"].replace("-g","")
-cv["CFLAGS"] = cv["CFLAGS"].replace("-g","")
 
 
 setup(name='proteus_mprans',
