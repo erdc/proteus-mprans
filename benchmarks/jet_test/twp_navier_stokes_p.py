@@ -1,0 +1,108 @@
+from proteus import *
+from proteus.default_p import *
+from jet_test3D import *
+from proteus.mprans import RANS2P
+
+LevelModelType = RANS2P.LevelModel
+
+if useRANS >= 1:
+    Closure_0_model = 3; Closure_1_model=4
+else:
+    Closure_0_model = None
+    Closure_1_model = None
+if dissipation_model_flag >= 2 and useRANS >= 1:
+    turbulenceClosureModel = 4 #K-Omega
+
+coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
+                                   sigma=0.0,
+                                   rho_0 = rho_0,
+                                   nu_0 = nu_0,
+                                   rho_1 = rho_0,
+                                   nu_1 = nu_0,
+                                   g=g,
+                                   nd=nd,
+                                   LS_model=1,
+                                   Closure_0_model=3,
+                                   Closure_1_model=4,
+                                   turbulenceClosureModel=turbulenceClosureModel,
+                                   epsFact_density=epsFact_density,
+                                   stokes=False,
+                                   useRBLES=useRBLES,
+                                   useMetrics=useMetrics)
+
+getDBC_p = twpflowPressure
+getDBC_u = twpflowVelocity_u
+getDBC_v = twpflowVelocity_v
+getDBC_w = twpflowVelocity_w
+
+dirichletConditions = {0:getDBC_p,
+                       1:getDBC_u,
+                       2:getDBC_v,
+                       3:getDBC_w}
+
+def getAFBC_p(x,flag):
+    if flag in wall_boundaries:
+        return lambda x,t: 0.0
+
+def getAFBC_u(x,flag):
+    return None
+
+def getAFBC_v(x,flag):
+    return None
+
+def getAFBC_w(x,flag):
+    return None
+
+def getDFBC_u(x,flag):
+    if not flag == boundaryTags['inflow']:
+        return lambda x,t: 0.0
+    
+def getDFBC_v(x,flag):
+    if not flag == boundaryTags['inflow']:
+        return lambda x,t: 0.0
+
+def getDFBC_w(x,flag):
+    if not flag == boundaryTags['inflow']:
+        return lambda x,t: 0.0
+
+advectiveFluxBoundaryConditions =  {0:getAFBC_p,
+                                    1:getAFBC_u,
+                                    2:getAFBC_v,
+                                    3:getAFBC_w}
+
+diffusiveFluxBoundaryConditions = {0:{},
+                                   1:{1:getDFBC_u},
+                                   2:{2:getDFBC_v},
+                                   3:{3:getDFBC_w}}
+
+class Steady_p:
+    def __init__(self):
+        pass
+    def uOfXT(self,x,t):
+        return -(L[0]-x[0])*coefficients.rho*coefficients.g[0]
+
+class Steady_u:
+    def __init__(self):
+        pass
+    def uOfXT(self,x,t):
+        return 0.
+
+class Steady_v:
+    def __init__(self):
+        pass
+    def uOfXT(self,x,t):
+        return 0.
+
+class Steady_w:
+    def __init__(self):
+        pass
+    def uOfXT(self,x,t):
+        return 0.0
+    
+
+initialConditions = {0:Steady_p(),
+                     1:Steady_u(),
+                     2:Steady_v(),
+                     3:Steady_w()}
+
+## @}
