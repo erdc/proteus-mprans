@@ -42,7 +42,9 @@ def getDBC_p(x,flag):
         return lambda x,t: 0.0
     
 def getDBC_u(x,flag):
-    return None
+    #return None
+    if flag == boundaryTags['top']:# or x[1] >= L[1] - 1.0e-12:
+        return lambda x,t: 0.0
 
 def getDBC_v(x,flag):
     return None
@@ -64,7 +66,9 @@ def getAFBC_v(x,flag):
         return lambda x,t: 0.0
 
 def getDFBC_u(x,flag):
-    return lambda x,t: 0.0
+    #return lambda x,t: 0.0
+    if flag != boundaryTags['top']:# or x[1] < L[1] - 1.0e-12:
+        return lambda x,t: 0.0
     
 def getDFBC_v(x,flag):
     return lambda x,t: 0.0

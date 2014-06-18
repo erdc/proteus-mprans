@@ -265,6 +265,7 @@ if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:
     ns_closure == 4
+
 # Water
 rho_0 = 998.2
 nu_0  = 1.004e-6

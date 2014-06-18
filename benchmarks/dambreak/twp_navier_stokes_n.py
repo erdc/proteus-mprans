@@ -2,8 +2,20 @@ from proteus import *
 from twp_navier_stokes_p import *
 from dambreak import *
 
-timeIntegration = BackwardEuler_cfl
-stepController  = Min_dt_controller
+if timeDiscretization=='vbdf':
+    timeIntegration = VBDF
+    timeOrder=2
+    stepController  = Min_dt_cfl_controller
+elif timeDiscretization=='flcbdf':
+    timeIntegration = FLCBDF
+    #stepController = FLCBDF_controller_sys
+    stepController  = Min_dt_cfl_controller
+    time_tol = 10.0*ns_nl_atol_res
+    atol_u = {1:time_tol,2:time_tol,3:time_tol}
+    rtol_u = {1:time_tol,2:time_tol,3:time_tol}
+else:
+    timeIntegration = BackwardEuler_cfl
+    stepController  = Min_dt_cfl_controller
 
 femSpaces = {0:basis,
 	     1:basis,
@@ -23,6 +35,7 @@ multilevelNonlinearSolver = NewtonNS
 levelNonlinearSolver      = NewtonNS
 
 nonlinearSmoother = None
+
 linearSmoother    = SimpleNavierStokes3D
 
 matrix = SparseMatrix
@@ -43,10 +56,10 @@ levelNonlinearSolverConvergenceTest = 'r'
 linearSolverConvergenceTest             = 'r-true'
 
 tolFac = 0.0
-linTolFac = 0.01
-l_atol_res = 0.01*vof_nl_atol_res
+l_atol_res = 0.001*ns_nl_atol_res
 nl_atol_res = ns_nl_atol_res
-useEisenstatWalker = False#True
+useEisenstatWalker = True
 maxNonlinearIts = 50
 maxLineSearches = 0
-conservativeFlux = {0:'pwl-bdm-opt'}
+#conservativeFlux = {0:'pwl-bdm-opt'}
+conservativeFlux = None
