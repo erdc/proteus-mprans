@@ -22,12 +22,12 @@ spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 1.0
-applyCorrection=True
+applyCorrection=False
 
 # Free surface tracking and turbulence models
 
 useVF = 1.0
-useOnlyVF = False
+useOnlyVF = True
 useRANS = 0 # 0 -- None
             # 1 -- K-Epsilon
             # 2 -- K-Omega
