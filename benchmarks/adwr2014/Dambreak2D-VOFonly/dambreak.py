@@ -11,9 +11,9 @@ from proteus.default_n import *
  
    
 #  Discretization -- input options  
-Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
+#Refinement = 20#45min on a single core for spaceOrder=1, useHex=False
 #Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
-#Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
+Refinement = 13#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
 useSuperlu=False
@@ -22,7 +22,7 @@ spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
 useMetrics = 1.0
-applyCorrection=False
+applyCorrection=True
 
 # Free surface tracking and turbulence models
 
@@ -73,7 +73,8 @@ elif spaceOrder == 2:
 L = (0.3175,0.07937)
 he = L[1]/float(2*Refinement-1)
 he*=0.5
-#he*=0.5
+he*=0.5
+he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -132,26 +133,26 @@ nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
 
-ns_forceStrongDirichlet = False
+ns_forceStrongDirichlet = True
 if useMetrics:
-    ns_shockCapturingFactor  = 0.9
+    ns_shockCapturingFactor  = 0.25
     ns_lag_shockCapturing = True
     ns_lag_subgridError = True
-    ls_shockCapturingFactor  = 0.9
+    ls_shockCapturingFactor  = 0.25
     ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.5
-    vof_shockCapturingFactor = 0.9
+    vof_shockCapturingFactor = 0.25
     vof_lag_shockCapturing = True
     vof_sc_uref = 1.0
     vof_sc_beta = 1.5
-    rd_shockCapturingFactor  = 0.9
+    rd_shockCapturingFactor  = 0.25
     rd_lag_shockCapturing = False
     epsFact_density    = 1.5
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
     epsFact_redistance = 0.33
     epsFact_consrv_diffusion = 10.0
-    redist_Newton = True
+    redist_Newton = False
     kappa_shockCapturingFactor = 0.1
     kappa_lag_shockCapturing = True#False
     kappa_sc_uref = 1.0
@@ -188,17 +189,17 @@ else:
     dissipation_sc_uref  = 1.0
     dissipation_sc_beta  = 1.0
 
-ns_nl_atol_res = max(1.0e-12,0.001*he**2)
-vof_nl_atol_res = max(1.0e-12,0.001*he**2)
-ls_nl_atol_res = max(1.0e-12,0.001*he**2)
-rd_nl_atol_res = max(1.0e-12,0.01*he)
-mcorr_nl_atol_res = max(1.0e-12,0.001*he**2)
-kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
-dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
+ns_nl_atol_res = max(1.0e-6,0.01*he**2)
+vof_nl_atol_res = max(1.0e-6,0.01*he**2)
+ls_nl_atol_res = max(1.0e-6,0.01*he**2)
+rd_nl_atol_res = max(1.0e-6,0.01*he)
+mcorr_nl_atol_res = max(1.0e-6,0.01*he**2)
+kappa_nl_atol_res = max(1.0e-6,0.01*he**2)
+dissipation_nl_atol_res = max(1.0e-6,0.01*he**2)
 
 #Turbulence closure model
 
-ns_closure=0 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 if useRANS == 1:
     ns_closure = 3
 elif useRANS == 2:

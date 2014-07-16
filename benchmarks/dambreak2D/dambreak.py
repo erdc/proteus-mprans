@@ -9,7 +9,7 @@ from proteus.Profiling import logEvent
 Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
-useSuperlu=False#True
+useSuperlu=False
 timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
@@ -62,8 +62,8 @@ elif spaceOrder == 2:
 L = (0.584,0.584)
 he = L[0]/float(4*Refinement-1)
 he*=0.5
-#he*=0.5
-#he*=0.5
+he*=0.5
+he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -114,8 +114,8 @@ else:
 
 logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
 # Time stepping
-T=1.0
-dt_fixed = 0.01
+T=0.003
+dt_fixed = 0.001
 dt_init = min(0.1*dt_fixed,0.001)
 runCFL=0.33
 nDTout = int(round(T/dt_fixed))

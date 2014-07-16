@@ -152,7 +152,7 @@ else:
 T=10*period
 dt_fixed = period/21.0
 dt_init = min(0.1*dt_fixed,0.001)
-runCFL=0.33
+runCFL=0.1
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
@@ -173,7 +173,7 @@ if useMetrics:
     vof_lag_shockCapturing = True
     vof_sc_uref = 1.0
     vof_sc_beta = 1.5
-    rd_shockCapturingFactor  = .7
+    rd_shockCapturingFactor  = 0.9
     rd_lag_shockCapturing = False
     epsFact_density    = 1.5
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
@@ -216,13 +216,13 @@ else:
     dissipation_sc_uref  = 1.0
     dissipation_sc_beta  = 1.0
 
-ns_nl_atol_res = max(1.0e-12,0.001*he**2)
-vof_nl_atol_res = max(1.0e-12,0.001*he**2)
-ls_nl_atol_res = max(1.0e-12,0.001*he**2)
-rd_nl_atol_res = max(1.0e-12,0.01*he)
-mcorr_nl_atol_res = max(1.0e-12,0.001*he**2)
-kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
-dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
+ns_nl_atol_res = max(1.0e-5,0.01*he**2)
+vof_nl_atol_res = max(1.0e-5,0.01*he**2)
+ls_nl_atol_res = max(1.0e-5,0.01*he**2)
+rd_nl_atol_res = max(1.0e-5,0.01*he)
+mcorr_nl_atol_res = max(1.0e-5,0.01*he**2)
+kappa_nl_atol_res = max(1.0e-5,0.01*he**2)
+dissipation_nl_atol_res = max(1.0e-5,0.01*he**2)
 
 # Turbulence closure model
 
