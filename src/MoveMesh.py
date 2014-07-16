@@ -113,7 +113,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.mesh.nodeVelocityArray/=self.model.timeIntegration.dt
 
     def preStep(self,t,firstStep=False):
-        pass
+        self.model.preStep()
     def evaluate(self,t,c):
         pass
 
@@ -503,13 +503,10 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         """
         Calculate the element residuals and add in to the global residual
         """
-	    # Hack Ido 
-        self.moveRigidBody()   
         #Load the unknowns into the finite element dof
         self.timeIntegration.calculateCoefs()
         self.timeIntegration.calculateU(u)
         self.setUnknowns(self.timeIntegration.u)
-        #hack
         if self.bcsTimeDependent or not self.bcsSet:
             self.bcsSet=True
             #Dirichlet boundary conditions
@@ -532,9 +529,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                         self.u[cj].dof[dofN] = (sum(self.rot1[cj,:]*(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg))
                                                 - (self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)[cj] + self.disp1[cj]
                                                 - self.nodeDisplacements[cj][i])
-                        #self.u[cj].dof[dofN] = 0.0
-                        #if  cj == 2:
-                        #    self.u[cj].dof[dofN] = 0.001
                         i+=1
                     else:
                         self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
@@ -720,11 +714,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def calculateAuxiliaryQuantitiesAfterStep(self):
         OneLevelTransport.calculateAuxiliaryQuantitiesAfterStep(self)
     def moveRigidBody(self):
-    
-        self.moveCalls +=1    
-        if self.moveCalls < 4: 
-		return
-	    
     	linRelaxFac = 1.0
         angRelaxFac = 1.0   
     	linNorm = 1.0
@@ -749,13 +738,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
 			    angRelaxFac,
 			    linNorm,	      
 			    angNorm,
-			    iterMax) 
-    def postStep(self):
-        self.disp0[:]   = self.disp1
-        self.vel0[:]    = self.vel1
-        self.rot0[:]    = self.rot1
-        self.angVel0[:] = self.angVel1
-        log("""
+			    iterMax)
+        log("""Moving Rigid Body
 Force  = {force}
 Moment = {moment}
 Displacment = {disp1}
@@ -767,6 +751,13 @@ Ang. Vel.   = {angVel1}""".format(force=self.force,
                                   vel1=self.vel1,
                                   rot1=self.rot1,
                                   angVel1=self.angVel1))
+    def preStep(self):
+        self.moveRigidBody()
+    def postStep(self):
+        self.disp0[:]   = self.disp1
+        self.vel0[:]    = self.vel1
+        self.rot0[:]    = self.rot1
+        self.angVel0[:] = self.angVel1
         if self.forceStrongConditions:
             for cj in range(self.nc):
                 i=0
@@ -775,12 +766,6 @@ Ang. Vel.   = {angVel1}""".format(force=self.force,
                         self.u[cj].dof[dofN] = (sum(self.rot1[cj,:]*(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg))
                                                 - (self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)[cj] + self.disp1[cj]
                                                 -  self.nodeDisplacements[cj][i])
-                        #self.u[cj].dof[dofN] = 0.0
-                        #if cj == 2:
-                        #    self.u[cj].dof[dofN] = 0.001
                         self.nodeDisplacements[cj][i] = (sum(self.rot1[cj,:]*(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg))
                                                          - (self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)[cj] + self.disp1[cj])
-                        #self.nodeDisplacements[cj][i] = 0.0
-                        #if cj == 2:
-                        #    self.nodeDisplacements[cj][i] = 0.001
                         i+=1	       		       
