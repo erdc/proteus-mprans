@@ -509,13 +509,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             for cj in range(self.nc):
                 self.dirichletConditionsForceDOF[cj] = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False)
 
-        for cj in range(self.nc):
-	    tmp = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False)
-            print "SW2D init ",cj, len(tmp.DOFBoundaryConditionsDict)
-	    tmp = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False,allowNodalMaterialBoundaryTypes=False)		
-	    print "SW2D init ",cj, len(tmp.DOFBoundaryConditionsDict)
- 
-
         compKernelFlag = 0
         #if self.coefficients.useConstantH:
         #    self.elementDiameter = self.mesh.elementDiametersArray.copy()

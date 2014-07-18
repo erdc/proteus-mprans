@@ -682,7 +682,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  movingDomain=False):
         self.eb_adjoint_sigma = coefficients.eb_adjoint_sigma
         useConstant_he=coefficients.useConstant_he#this is a hack to test the effect of using a constant smoothing width
-        self.postProcessing = True#this is a hack to test the effect of post-processing
+        self.postProcessing = True
         #
         #set the objects describing the method and boundary conditions
         #
@@ -971,13 +971,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  self.nElementBoundaryQuadraturePoints_elementBoundary,
                  3),
                 'd')
-            self.ebq['J'] = numpy.zeros(
-                (self.mesh.nElements_global,
-                 self.mesh.nElementBoundaries_element,
-                 self.nElementBoundaryQuadraturePoints_elementBoundary,
-                 self.nSpace_global,
-                 self.nSpace_global),
-                'd')
             self.ebq['inverse(J)'] = numpy.zeros(
                 (self.mesh.nElements_global,
                  self.mesh.nElementBoundaries_element,
@@ -991,11 +984,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  self.nElementBoundaryQuadraturePoints_elementBoundary,
                  self.nSpace_global-1,
                  self.nSpace_global-1),
-                'd')
-            self.ebq['det(J)'] = numpy.zeros(
-                (self.mesh.nElements_global,
-                 self.mesh.nElementBoundaries_element,
-                 self.nElementBoundaryQuadraturePoints_elementBoundary),
                 'd')
             self.ebq['sqrt(det(g))'] = numpy.zeros(
                 (self.mesh.nElements_global,
@@ -1023,16 +1011,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  self.nElementBoundaryQuadraturePoints_elementBoundary,
                  self.nSpace_global),
                 'd')
-            self.ebqe['J'] = numpy.zeros(
-                (self.mesh.nExteriorElementBoundaries_global,
-                 self.nElementBoundaryQuadraturePoints_elementBoundary,
-                 self.nSpace_global,
-                 self.nSpace_global),
-                'd')
-            self.ebqe['det(J)'] = numpy.zeros(
-                (self.mesh.nExteriorElementBoundaries_global,
-                 self.nElementBoundaryQuadraturePoints_elementBoundary),
-                'd')
             self.ebqe['inverse(J)'] = numpy.zeros(
                 (self.mesh.nExteriorElementBoundaries_global,
                  self.nElementBoundaryQuadraturePoints_elementBoundary,
@@ -1059,8 +1037,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                  self.nElementBoundaryQuadraturePoints_elementBoundary,
                  3),
                 'd')
-            self.stressFluxBoundaryConditionsSetterDict = {}
-            self.elementBoundaryIntegralKeys=[]
         #
         #show quadrature
         #
@@ -1110,10 +1086,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #
         del self.internalNodes
         self.internalNodes = None
-        comm = Comm.get()
         log("Updating local to global mappings",2)
         self.updateLocal2Global()
-        comm.barrier()
         log("Building time integration object",2)
         log(memory("inflowBC, internalNodes,updateLocal2Global","OneLevelTransport"),level=4)
         #mwf for interpolating subgrid error for gradients etc
@@ -1124,9 +1098,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
            
         if options != None:
             self.timeIntegration.setFromOptions(options)
-        comm.barrier()
         log(memory("TimeIntegration","OneLevelTransport"),level=4)
-        comm.barrier()
         log("Calculating numerical quadrature formulas",2)
         self.calculateQuadrature()
         #lay out components/equations contiguously for now
@@ -1684,25 +1656,36 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         
         This function should be called only when the mesh changes.
         """
-        comm = Comm.get()
-        comm.barrier()
-        log("calculating ElementQuadrature")
         if self.postProcessing:
-            OneLevelTransport.calculateElementQuadrature(self)
+            log("calculating emaps getValues")
+            self.u[0].femSpace.elementMaps.getValues(self.elementQuadraturePoints,
+                                                     self.q['x'])
+            log("calculating emaps getJacobianValues")
+            self.u[0].femSpace.elementMaps.getJacobianValues(self.elementQuadraturePoints,
+                                                             self.q['J'],
+                                                             self.q['inverse(J)'],
+                                                             self.q['det(J)'])
+            log("femSpace getBasis")
+            self.u[0].femSpace.getBasisValues(self.elementQuadraturePoints,self.q[('v',0)])
+        log("done with post-processing element  quadrature")
         self.u[0].femSpace.elementMaps.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.elementMaps.getBasisGradientValuesRef(self.elementQuadraturePoints)
+        log("done with elementMaps")
         self.u[0].femSpace.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[0].femSpace.getBasisGradientValuesRef(self.elementQuadraturePoints)
         self.u[1].femSpace.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[1].femSpace.getBasisGradientValuesRef(self.elementQuadraturePoints)
+        log("done with Basis")
         self.coefficients.initializeElementQuadrature(self.timeIntegration.t,self.q)
+        log("coefficients")
         if self.stabilization != None:
             self.stabilization.initializeElementQuadrature(self.mesh,self.timeIntegration.t,self.q)
             self.stabilization.initializeTimeIntegration(self.timeIntegration)
+        log("done with stab")
         if self.shockCapturing != None:
             self.shockCapturing.initializeElementQuadrature(self.mesh,self.timeIntegration.t,self.q)
-        log("calculating ElementQuadrature")
-        comm.barrier()
+        log("done with shock")
+        log("done calculating ElementQuadrature")
     def calculateElementBoundaryQuadrature(self):
         """
         Calculate the physical location and weights of the quadrature rules
@@ -1711,7 +1694,33 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         This function should be called only when the mesh changes.
         """
         if self.postProcessing:
-            OneLevelTransport.calculateElementBoundaryQuadrature(self)
+            self.u[0].femSpace.elementMaps.getValuesTrace(self.elementBoundaryQuadraturePoints,
+                                                          self.ebq['x'])
+            self.u[0].femSpace.elementMaps.getJacobianValuesTrace(self.elementBoundaryQuadraturePoints,
+                                                                  self.ebq['inverse(J)'],
+                                                                  self.ebq['g'],
+                                                                  self.ebq['sqrt(det(g))'],
+                                                                  self.ebq['n'])
+            cfemIntegrals.copyLeftElementBoundaryInfo(self.mesh.elementBoundaryElementsArray,
+                                                      self.mesh.elementBoundaryLocalElementBoundariesArray,
+                                                      self.mesh.exteriorElementBoundariesArray,
+                                                      self.mesh.interiorElementBoundariesArray,
+                                                      self.ebq['x'],
+                                                      self.ebq['n'],
+                                                      self.ebq_global['x'],
+                                                      self.ebq_global['n'])
+            self.u[0].femSpace.elementMaps.getInverseValuesTrace(self.ebq['inverse(J)'],self.ebq['x'],self.ebq['hat(x)'])
+            self.u[0].femSpace.elementMaps.getPermutations(self.ebq['hat(x)'])
+            self.testSpace[0].getBasisValuesTrace(self.u[0].femSpace.elementMaps.permutations,
+                                                  self.ebq['hat(x)'],
+                                                  self.ebq[('w',0)])
+            self.u[0].femSpace.getBasisValuesTrace(self.u[0].femSpace.elementMaps.permutations,
+                                                                self.ebq['hat(x)'],
+                                                                self.ebq[('v',0)])
+            cfemIntegrals.calculateElementBoundaryIntegrationWeights(self.ebq['sqrt(det(g))'],
+                                                                     self.elementBoundaryQuadratureWeights[('u',0)],
+                                                                     self.ebq[('dS_u',0)])
+        log("done calculating ElementBoundaryQuadrature")
     def calculateExteriorElementBoundaryQuadrature(self):
         """
         Calculate the physical location and weights of the quadrature rules
@@ -1720,14 +1729,20 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         This function should be called only when the mesh changes.
         """
         if self.postProcessing:
-            OneLevelTransport.calculateExteriorElementBoundaryQuadrature(self)
+            self.u[0].femSpace.elementMaps.getValuesGlobalExteriorTrace(self.elementBoundaryQuadraturePoints,
+                                                                    self.ebqe['x'])
+            self.u[0].femSpace.elementMaps.getJacobianValuesGlobalExteriorTrace(self.elementBoundaryQuadraturePoints,
+                                                                                self.ebqe['inverse(J)'],
+                                                                                self.ebqe['g'],
+                                                                                self.ebqe['sqrt(det(g))'],
+                                                                                self.ebqe['n'])
+            cfemIntegrals.calculateIntegrationWeights(self.ebqe['sqrt(det(g))'],
+                                                              self.elementBoundaryQuadratureWeights[('u',0)],
+                                                              self.ebqe[('dS_u',0)])
         #
         #get physical locations of element boundary quadrature points
         #
 	#assume all components live on the same mesh
-        comm = Comm.get()
-        log("calculating ExteriorElementQuadrature")
-        comm.barrier()
         self.u[0].femSpace.elementMaps.getBasisValuesTraceRef(self.elementBoundaryQuadraturePoints)
         self.u[0].femSpace.elementMaps.getBasisGradientValuesTraceRef(self.elementBoundaryQuadraturePoints)
         self.u[0].femSpace.getBasisValuesTraceRef(self.elementBoundaryQuadraturePoints)
@@ -1744,7 +1759,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                                        for cj in self.advectiveFluxBoundaryConditionsSetterDict.keys()])
         self.coefficients.initializeGlobalExteriorElementBoundaryQuadrature(self.timeIntegration.t,self.ebqe)
         log("done calculating ExteriorElementQuadrature")
-        comm.barrier()
     def estimate_mt(self):
         pass
     def calculateSolutionAtQuadrature(self):
@@ -1842,7 +1856,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.elementDiametersArray,
-            self.mesh.nodeDiamtersArray,
+            self.mesh.nodeDiametersArray,
             self.stabilization.hFactor,
             self.mesh.nElements_global,
             self.coefficients.useRBLES,
@@ -1868,7 +1882,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[2].dof,
             self.u[3].dof,
             self.coefficients.g,
-            self.q[('cfl',0)],   # ULTRA UGLY HACK self.q[('rho_0')],
             self.coefficients.useVF,
             self.coefficients.q_vf,
             self.coefficients.q_phi,
@@ -1905,7 +1918,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.exteriorElementBoundariesArray,
             self.mesh.elementBoundaryElementsArray,
             self.mesh.elementBoundaryLocalElementBoundariesArray,
-	    forceExtractionFaces,len(forceExtractionFaces),
+            forceExtractionFaces,len(forceExtractionFaces),
             self.coefficients.ebqe_vf,
             self.coefficients.ebqe_phi,
             self.coefficients.ebqe_n,
@@ -1933,7 +1946,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.ebqe[('diffusiveFlux_bc',2,2)],
             self.numericalFlux.ebqe[('u',3)],
             self.ebqe[('diffusiveFlux_bc',3,3)],
-            self.q['x'],
             self.q[('velocity',0)],
             self.ebqe[('velocity',0)],
             self.ebq_global[('totalFlux',0)],
