@@ -27,7 +27,7 @@ k = 2.0*math.pi/wavelength
  
 genMesh=True
 useOldPETSc=False
-useSuperlu=False
+useSuperlu=True#False
 timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
@@ -88,8 +88,8 @@ elif spaceOrder == 2:
 
 L = (22.0,0.95)
 he = L[0]/600 
-he*=0.5
-he*=0.5
+#he*=0.5
+#he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node

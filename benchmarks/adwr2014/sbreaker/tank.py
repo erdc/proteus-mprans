@@ -29,7 +29,7 @@ windVelocity = (0.0,0.0)
   
 genMesh=True
 useOldPETSc=False
-useSuperlu=False
+useSuperlu=True#False
 timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
@@ -90,8 +90,8 @@ elif spaceOrder == 2:
 
 L = (29.0,0.65)
 he = L[0]/800 
-he*=0.5
-he*=0.5
+#he*=0.5
+#he*=0.5
 
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
