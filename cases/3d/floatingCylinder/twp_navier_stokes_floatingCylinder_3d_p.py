@@ -24,8 +24,7 @@ coefficients = RANS2P.Coefficients(epsFact=epsFact_viscosity,
                                    stokes=useStokes,
                                    useRBLES=0.0,
                                    useMetrics=0.0,
-                                   movingDomain=movingDomain,
-                                   useConstantH=useConstantH)
+                                   movingDomain=movingDomain)
 
 coefficients.waterLevel=waterLevel
 import ode

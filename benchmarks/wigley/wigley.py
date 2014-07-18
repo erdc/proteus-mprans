@@ -49,19 +49,19 @@ hull_center = (0.0,
 
 
 #debug
-#L=(1.5*hull_length,
-#  3.0*hull_beam, 
-#  3.0*hull_draft)
+L=(1.5*hull_length,
+ 3.0*hull_beam, 
+ 6.0*hull_draft)
 
-#x_ll = (-0.75*hull_length,
-#         -L[1]/2.0,
-#         0.0)
-#
-#waterLevel   = 1.5*hull_draft
-#
-#hull_center = (0.0,
-#               0.0,
-#               waterLevel)
+x_ll = (-0.75*hull_length,
+        -L[1]/2.0,
+        0.0)
+
+waterLevel   = 1.5*hull_draft
+
+hull_center = (0.0,
+              0.0,
+              waterLevel)
 
 #set up barycenters for force calculation
 barycenters = numpy.zeros((8,3),'d')
@@ -81,7 +81,7 @@ nLevels = 1
 
 he = hull_draft/1.0 #32
 he *=0.5 #4 way on diamond, 8 way on garnet 256-1024 mpi tasks
-he *=0.5 #2048 - mesh3206851
+#he *=0.5 #2048 - mesh3206851
 #he *=0.5 #2048 - mesh3206851
 #vessel = 'wigley-gmsh'
 #genMesh=False
@@ -262,7 +262,7 @@ else:
         domain.writePoly("mesh_"+vessel)
     else:
         domain.writePoly("meshNoVessel")
-    triangleOptions="VApq1.35q12ena%e" % ((he**3)/6.0,)
+    triangleOptions="VApq1.35q12feena%21.16e" % ((he**3)/6.0,)
 logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
 restrictFineSolutionToAllMeshes=False
 parallelPartitioningType = MeshTools.MeshParallelPartitioningTypes.node
@@ -278,7 +278,7 @@ openSides = False
 openEnd = True
 smoothBottom = False
 smoothObstacle = False
-movingDomain=False
+movingDomain=True
 checkMass=False
 applyCorrection=True
 applyRedistancing=True
@@ -363,7 +363,7 @@ nDTout             = %i
 
 #  Discretization -- input options  
 useOldPETSc=False
-useSuperlu = False # set to False if running in parallel with petsc.options
+useSuperlu = True # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -477,9 +477,10 @@ mcorr_nl_atol_res = max(1.0e-12,0.001*he**2)
 rd_nl_atol_res = max(1.0e-12,0.01*he)
 kappa_nl_atol_res = max(1.0e-12,0.001*he**2)
 dissipation_nl_atol_res = max(1.0e-12,0.001*he**2)
+mesh_nl_atol_res = max(1.0e-12,0.001*he**2)
 
 #turbulence
-ns_closure=1 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
+ns_closure=2 #1-classic smagorinsky, 2-dynamic smagorinsky, 3 -- k-epsilon, 4 -- k-omega
 
 if useRANS == 1:
     ns_closure = 3

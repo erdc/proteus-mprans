@@ -148,7 +148,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #
         #set the objects describing the method and boundary conditions
         #
-	self.moveCalls = 0
+        self.moveCalls = 0
         self.movingDomain=movingDomain
         self.tLast_mesh=None
         #
@@ -722,8 +722,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.force  = numpy.zeros(3,'d') 
         self.moment = numpy.zeros(3,'d')		
         self.coefficients.flowModel.getForce(self.coefficients.hullcg,
-                                            self.forceExtractionFaces,
-                                            self.force,self.moment)
+                                             self.forceExtractionFaces,
+                                             self.force,self.moment)
         self.moveMesh.moveRigidBody(self.coefficients.hullmass,	      
 			    self.coefficients.hullinertia,	      
 			    self.force,	      self.moment,

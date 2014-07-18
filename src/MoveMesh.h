@@ -209,7 +209,6 @@ namespace proteus
       for (int i=0;i<nSymTen;i++)
 	for (int j=0;j<nSymTen;j++)
 	  dstress[i*nSymTen+j] = 0.0;
-      //std::cout<<"E "<<E<<" nu "<<nu<<std::endl<<std::flush;
       stress[sXX] = shear*strain[sXX] + bulk*strainTrace;
       dstress[sXX*nSymTen+sXX] = bulk + shear;
       dstress[sXX*nSymTen+sYY] = bulk;
@@ -318,7 +317,6 @@ namespace proteus
       //here we use both the symmetry of the stress tensor and the fact that dstress is w.r.t. the strain in Voigt notation to go directly to derivatives w.r.t. displacement DOF
       if (isDOFBoundary_u == 1)
 	{
-	  //stressFlux_u = -(stress[sXX]*normal[X] + stress[sXY]*normal[Y] + stress[sXZ]*normal[Z] - h_penalty*(u - bc_u));
 	  dstressFlux_u_u = -(
 			      (dstress[sXX*nSymTen+sXX]*disp_grad_trial[X] + dstress[sXX*nSymTen+sXY]*disp_grad_trial[Y] + dstress[sXX*nSymTen+sXZ]*disp_grad_trial[Z])*normal[X]+
 			      (dstress[sXY*nSymTen+sXX]*disp_grad_trial[X] + dstress[sXY*nSymTen+sXY]*disp_grad_trial[Y] + dstress[sXY*nSymTen+sXZ]*disp_grad_trial[Z])*normal[Y]+
@@ -343,7 +341,6 @@ namespace proteus
     
       if (isDOFBoundary_v == 1)
 	{
-	  //stressFlux_v = -(stress[sYX]*normal[X] + stress[sYY]*normal[Y] + stress[sYZ]*normal[Z] - h_penalty*(v - bc_v));
 	  dstressFlux_v_u = -(
 			      (dstress[sYX*nSymTen+sXX]*disp_grad_trial[X] + dstress[sYX*nSymTen+sXY]*disp_grad_trial[Y] + dstress[sYX*nSymTen+sXZ]*disp_grad_trial[Z])*normal[X]+
 			      (dstress[sYY*nSymTen+sXX]*disp_grad_trial[X] + dstress[sYY*nSymTen+sXY]*disp_grad_trial[Y] + dstress[sYY*nSymTen+sXZ]*disp_grad_trial[Z])*normal[Y]+
@@ -368,7 +365,6 @@ namespace proteus
       
       if (isDOFBoundary_w  == 1)
 	{
-	  //stressFlux_w = -(stress[sZX]*normal[X] + stress[sZY]*normal[Y] + stress[sZZ]*normal[Z] - h_penalty*(w - bc_w));
 	  dstressFlux_w_u = -(
 			      (dstress[sZX*nSymTen+sXX]*disp_grad_trial[X] + dstress[sZX*nSymTen+sXY]*disp_grad_trial[Y] + dstress[sZX*nSymTen+sXZ]*disp_grad_trial[Z])*normal[X]+
 			      (dstress[sZY*nSymTen+sXX]*disp_grad_trial[X] + dstress[sZY*nSymTen+sXY]*disp_grad_trial[Y] + dstress[sZY*nSymTen+sXZ]*disp_grad_trial[Z])*normal[Y]+
@@ -446,8 +442,6 @@ namespace proteus
       //
       //loop over elements to compute volume integrals and load them into element and global residual
       //
-      //std::cout<<"nElements_global"<<nElements_global<<std::endl;
-      //std::cout<<"nQuadraturePoints_element"<<nQuadraturePoints_element<<std::endl;
       for(int eN=0;eN<nElements_global;eN++)
 	{
 	  //declare local storage for element residual and initialize
@@ -523,16 +517,11 @@ namespace proteus
 	      //q_displacement[eN_k_nSpace+2]=w;
 
 	      calculateStrain(D,strain);
-	      //std::cout<<"here "<<materialProperties[0]<<'\t'<<materialProperties[1]<<std::endl<<std::flush;
 	      evaluateCoefficients(fabs(jacDet),
 				   &materialProperties[materialTypes[eN]*nMaterialProperties],
 				   strain,
 				   stress,
 				   dstress);
-	      //
-	      //moving mesh
-	      //
-	      //omit for now
 	      //
 	      //update element residual 
 	      // 
@@ -540,19 +529,9 @@ namespace proteus
 		{ 
 		  register int i_nSpace=i*nSpace;
 
-		  elementResidual_u[i] += ck.Stress_u_weak(stress,&disp_grad_test_dV[i_nSpace]);// + 
-		  //ck.Reaction_weak(-bodyForce[eN_k_nSpace+0],disp_test_dV[i]); 
-		  elementResidual_v[i] += ck.Stress_v_weak(stress,&disp_grad_test_dV[i_nSpace]);// + 
-		  //ck.Reaction_weak(-bodyForce[eN_k_nSpace+1],disp_test_dV[i]); 
-		  elementResidual_w[i] += ck.Stress_w_weak(stress,&disp_grad_test_dV[i_nSpace]);// + 
-		  //ck.Reaction_weak(-bodyForce[eN_k_nSpace+2],disp_test_dV[i]); 
-		  // if (k == nQuadraturePoints_element-1)
-		  // 	{
-		  // 	  std::cout<<"element residual "<<eN<<'\t'<<i<<std::endl;
-		  // 	  std::cout<<elementResidual_u[i]<<std::endl
-		  // 		   <<elementResidual_v[i]<<std::endl
-		  // 		   <<elementResidual_w[i]<<std::endl;
-		  // 	}
+		  elementResidual_u[i] += ck.Stress_u_weak(stress,&disp_grad_test_dV[i_nSpace]);
+		  elementResidual_v[i] += ck.Stress_v_weak(stress,&disp_grad_test_dV[i_nSpace]);
+		  elementResidual_w[i] += ck.Stress_w_weak(stress,&disp_grad_test_dV[i_nSpace]);
 		}//i
 	    }
 	  //
@@ -678,8 +657,6 @@ namespace proteus
 	      //cek hack
 	      h_penalty = 10.0/h_penalty;
 	      h_penalty=100.0;
-	      // for (int II=0;II<nSymTen;II++)
-	      //   stress[II] = 0.0;
 	      exteriorNumericalStressFlux(isDOFBoundary_u[ebNE_kb],
 					  isDOFBoundary_v[ebNE_kb],
 					  isDOFBoundary_w[ebNE_kb],
@@ -874,8 +851,6 @@ namespace proteus
 				   stress,
 				   dstress);
 	      //
-	      //moving mesh
-	      //
 	      //omit for now
 	      //
 	      for(int i=0;i<nDOF_test_element;i++)
@@ -896,19 +871,6 @@ namespace proteus
 		      elementJacobian_w_u[i][j] += ck.StressJacobian_w_u_weak(dstress,&disp_grad_trial[j_nSpace],&disp_grad_test_dV[i_nSpace]);
 		      elementJacobian_w_v[i][j] += ck.StressJacobian_w_v_weak(dstress,&disp_grad_trial[j_nSpace],&disp_grad_test_dV[i_nSpace]);
 		      elementJacobian_w_w[i][j] += ck.StressJacobian_w_w_weak(dstress,&disp_grad_trial[j_nSpace],&disp_grad_test_dV[i_nSpace]);
-		      // if (k == nQuadraturePoints_element-1)
-		      //   {
-		      //     std::cout<<"element jacobian "<<eN<<'\t'<<i<<','<<j<<std::endl;
-		      //     std::cout<<elementJacobian_u_u[i][j]<<std::endl
-		      // 	       <<elementJacobian_u_v[i][j]<<std::endl
-		      // 	       <<elementJacobian_u_w[i][j]<<std::endl
-		      // 	       <<elementJacobian_v_u[i][j]<<std::endl
-		      // 	       <<elementJacobian_v_v[i][j]<<std::endl
-		      // 	       <<elementJacobian_v_w[i][j]<<std::endl
-		      // 	       <<elementJacobian_w_u[i][j]<<std::endl
-		      // 	       <<elementJacobian_w_v[i][j]<<std::endl
-		      // 	       <<elementJacobian_w_w[i][j]<<std::endl;
-		      //   }
 		    }//j
 		}//i
 	    }//k
@@ -921,16 +883,6 @@ namespace proteus
 	      for (int j=0;j<nDOF_trial_element;j++)
 		{
 		  register int eN_i_j = eN_i*nDOF_trial_element+j;
-		  // std::cout<<"i "<<i<<"j "<<j<<std::endl
-		  // 	       <<elementJacobian_u_u[i][j]<<'\t'
-		  // 	       <<elementJacobian_u_v[i][j]<<'\t'
-		  // 	       <<elementJacobian_u_w[i][j]<<std::endl
-		  // 	       <<elementJacobian_v_u[i][j]<<'\t'
-		  // 	       <<elementJacobian_v_v[i][j]<<'\t'
-		  // 	       <<elementJacobian_v_w[i][j]<<std::endl
-		  // 	       <<elementJacobian_w_u[i][j]<<'\t'
-		  // 	       <<elementJacobian_w_v[i][j]<<'\t'
-		  // 	       <<elementJacobian_w_w[i][j]<<std::endl;
 
 		  globalJacobian[csrRowIndeces_u_u[eN_i] + csrColumnOffsets_u_u[eN_i_j]] += elementJacobian_u_u[i][j];
 		  globalJacobian[csrRowIndeces_u_v[eN_i] + csrColumnOffsets_u_v[eN_i_j]] += elementJacobian_u_v[i][j];
