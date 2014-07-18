@@ -12,6 +12,7 @@ numericalFluxType = VOF.NumericalFlux
 conservativeFlux  = None
 subgridError      = VOF.SubgridError(coefficients=coefficients,nd=nd)
 shockCapturing    = VOF.ShockCapturing(coefficients,nd,shockCapturingFactor=vof_shockCapturingFactor,lag=vof_lag_shockCapturing)
+#shockCapturing    = VOF.ShockCapturing(coefficients,nd,shockCapturingFactor=0.0,lag=vof_lag_shockCapturing)
 
 fullNewtonFlag = True
 multilevelNonlinearSolver = Newton

@@ -8,11 +8,13 @@ initialConditions = None
 analyticalSolution = {}
 
 nMediaTypes=1
-smTypes      = numpy.zeros((nMediaTypes,2),'d')
-smFlags      = numpy.zeros((nMediaTypes,),'i')
+smTypes      = numpy.zeros((nMediaTypes+1,2),'d')
+smFlags      = numpy.zeros((nMediaTypes+1,),'i')
 
 smTypes[0,0] = 1.0    ##E
 smTypes[0,1] = 0.3    ##nu
+smTypes[1,0] = 1.0    ##E
+smTypes[1,1] = 0.3    ##nu
 
 LevelModelType = MoveMesh.LevelModel
 coefficients = MoveMesh.Coefficients(hullMass=hull_mass,    
