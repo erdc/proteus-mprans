@@ -16,7 +16,7 @@ from proteus.default_n import *
 Refinement = 13#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
-useSuperlu=True#False
+useSuperlu=False
 timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
@@ -73,7 +73,7 @@ elif spaceOrder == 2:
 L = (0.3175,0.07937)
 he = L[1]/float(2*Refinement-1)
 he*=0.5
-#he*=0.5
+he*=0.5
 #he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
@@ -135,18 +135,18 @@ nDTout = int(round(T/dt_fixed))
 
 ns_forceStrongDirichlet = True
 if useMetrics:
-    ns_shockCapturingFactor  = 0.25
+    ns_shockCapturingFactor  = 0.9
     ns_lag_shockCapturing = True
     ns_lag_subgridError = True
-    ls_shockCapturingFactor  = 0.25
+    ls_shockCapturingFactor  = 0.9
     ls_lag_shockCapturing = True
     ls_sc_uref  = 1.0
     ls_sc_beta  = 1.5
-    vof_shockCapturingFactor = 0.25
+    vof_shockCapturingFactor = 0.9
     vof_lag_shockCapturing = True
     vof_sc_uref = 1.0
     vof_sc_beta = 1.5
-    rd_shockCapturingFactor  = 0.25
+    rd_shockCapturingFactor  = 0.9
     rd_lag_shockCapturing = False
     epsFact_density    = 1.5
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density

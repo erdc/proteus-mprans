@@ -16,7 +16,7 @@ Refinement = 15#45min on a single core for spaceOrder=1, useHex=False
 #Refinement = 10#45min on a single core for spaceOrder=1, useHex=False
 genMesh=True
 useOldPETSc=False
-useSuperlu=True#False
+useSuperlu=False
 timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
@@ -73,7 +73,7 @@ elif spaceOrder == 2:
 L = (0.3175,0.07937)
 he = L[1]/float(2*Refinement-1)
 he*=0.5
-#he*=0.5
+he*=0.5
 #he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element

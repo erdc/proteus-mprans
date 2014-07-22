@@ -29,7 +29,7 @@ windVelocity = (0.0,0.0)
   
 genMesh=True
 useOldPETSc=False
-useSuperlu=True#False
+useSuperlu=False
 timeDiscretization='be'#'vbdf'#'be','flcbdf'
 spaceOrder = 1
 useHex     = False
@@ -90,7 +90,7 @@ elif spaceOrder == 2:
 
 L = (29.0,0.65)
 he = L[0]/800 
-#he*=0.5
+he*=0.5
 #he*=0.5
 
 nLevels = 1
@@ -160,7 +160,7 @@ else:
 T=10*period
 dt_fixed = period/21.0
 dt_init = min(0.1*dt_fixed,0.001)
-runCFL=0.1
+runCFL=0.33
 nDTout = int(round(T/dt_fixed))
 
 # Numerical parameters
@@ -181,7 +181,7 @@ if useMetrics:
     vof_lag_shockCapturing = True
     vof_sc_uref = 1.0
     vof_sc_beta = 1.5
-    rd_shockCapturingFactor  = 0.9
+    rd_shockCapturingFactor  = 0.45
     rd_lag_shockCapturing = False
     epsFact_density    = 1.5
     epsFact_viscosity  = epsFact_curvature  = epsFact_vof = epsFact_consrv_heaviside = epsFact_consrv_dirac = epsFact_density
