@@ -49,19 +49,19 @@ hull_center = (0.0,
 
 
 #debug
-L=(1.5*hull_length,
- 3.0*hull_beam, 
- 6.0*hull_draft)
+#L=(1.5*hull_length,
+# 3.0*hull_beam, 
+# 6.0*hull_draft)
+#
+#x_ll = (-0.75*hull_length,
+#        -L[1]/2.0,
+#        0.0)
 
-x_ll = (-0.75*hull_length,
-        -L[1]/2.0,
-        0.0)
+#waterLevel   = 1.5*hull_draft
 
-waterLevel   = 1.5*hull_draft
-
-hull_center = (0.0,
-              0.0,
-              waterLevel)
+#hull_center = (0.0,
+#              0.0,
+#              waterLevel)
 
 #set up barycenters for force calculation
 barycenters = numpy.zeros((8,3),'d')
@@ -81,6 +81,9 @@ nLevels = 1
 
 he = hull_draft/1.0 #32
 he *=0.5 #4 way on diamond, 8 way on garnet 256-1024 mpi tasks
+he *=1.0/1.25
+he *=1.0/1.25
+he *=1.0/1.25
 #he *=0.5 #2048 - mesh3206851
 #he *=0.5 #2048 - mesh3206851
 #vessel = 'wigley-gmsh'
@@ -278,7 +281,7 @@ openSides = False
 openEnd = True
 smoothBottom = False
 smoothObstacle = False
-movingDomain=True
+movingDomain=False#True
 checkMass=False
 applyCorrection=True
 applyRedistancing=True
@@ -299,8 +302,8 @@ if Um > 0.0:
 else:
     residence_time = 1.0
 dt_init=0.001
-T = 10*residence_time
-nDTout=200
+T = 2*residence_time
+nDTout=100
 dt_out =  (T-dt_init)/nDTout
 runCFL = 0.33
 
@@ -363,7 +366,7 @@ nDTout             = %i
 
 #  Discretization -- input options  
 useOldPETSc=False
-useSuperlu = True # set to False if running in parallel with petsc.options
+useSuperlu = False # set to False if running in parallel with petsc.options
 spaceOrder = 1
 useHex     = False
 useRBLES   = 0.0
@@ -413,7 +416,7 @@ elif spaceOrder == 2:
     
 
 # Numerical parameters
-ns_forceStrongDirichlet = False
+ns_forceStrongDirichlet = True
 
 if useMetrics:
     ns_shockCapturingFactor  = 0.9

@@ -74,7 +74,7 @@ L = (0.3175,0.07937)
 he = L[1]/float(2*Refinement-1)
 he*=0.5
 he*=0.5
-#he*=0.5
+he*=0.5
 nLevels = 1
 #parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.element
 parallelPartitioningType = proteus.MeshTools.MeshParallelPartitioningTypes.node
@@ -189,13 +189,13 @@ else:
     dissipation_sc_uref  = 1.0
     dissipation_sc_beta  = 1.0
 
-ns_nl_atol_res = max(1.0e-5,0.01*he**2)
-vof_nl_atol_res = max(1.0e-5,0.01*he**2)
-ls_nl_atol_res = max(1.0e-5,0.01*he**2)
-rd_nl_atol_res = max(1.0e-5,0.01*he)
-mcorr_nl_atol_res = max(1.0e-5,0.01*he**2)
-kappa_nl_atol_res = max(1.0e-5,0.01*he**2)
-dissipation_nl_atol_res = max(1.0e-5,0.01*he**2)
+ns_nl_atol_res = max(1.0e-8,0.001*he**2)
+vof_nl_atol_res = max(1.0e-8,0.001*he**2)
+ls_nl_atol_res = max(1.0e-8,0.001*he**2)
+rd_nl_atol_res = max(1.0e-8,0.01*he)
+mcorr_nl_atol_res = max(1.0e-8,0.001*he**2)
+kappa_nl_atol_res = max(1.0e-8,0.001*he**2)
+dissipation_nl_atol_res = max(1.0e-8,0.001*he**2)
 
 #Turbulence closure model
 

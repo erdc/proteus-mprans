@@ -46,12 +46,12 @@ barycenters = numpy.zeros((8,3),'d')
 barycenters[7,:] = hull_cg
 
 vessel = 5415
-genMesh=False
+genMesh=True
 #he=1.0
-he=0.5
+#he=0.5
 #he = 0.375
 #he=0.25
-#he=0.125
+he=0.125
 if he == 1.0:
     src_dir = 'mesh249914' #128
 elif he == 0.5:
@@ -213,7 +213,7 @@ else:
         domain.writePoly("mesh_"+vessel)
     else:
         domain.writePoly("meshNoVessel")
-    triangleOptions="VApq1.45q10ena%e" % ((he**3)/6.0,)
+    triangleOptions="VApq1.45q10feena%e" % ((he**3)/6.0,)
     logEvent("""Mesh generated using: tetgen -%s %s"""  % (triangleOptions,domain.polyfile+".poly"))
 
 restrictFineSolutionToAllMeshes=False
