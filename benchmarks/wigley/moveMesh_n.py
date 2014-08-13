@@ -55,4 +55,4 @@ maxLineSearches = 0
 
 conservativeFlux = None
 
-##auxiliaryVariables=[tro]
+auxiliaryVariables=[tro]

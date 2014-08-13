@@ -26,11 +26,11 @@ useStokes=False
 #
 nd = 3
 inflow_height=0.41
-#he = (0.25)*inflow_height
-he = (4.0*0.025)*inflow_height
+he = (0.25)*inflow_height
+#he = (4.0*0.025)*inflow_height
 #he = (3.0*0.025)*inflow_height
 #he = 0.025*inflow_height
-inflow_width=4.0*he
+inflow_width=he#4.0*he
 bottom_length=2.2
 cylinder_radius=inflow_height/5.0
 cylinder_center = (bottom_length/2.0,inflow_width/2.0,inflow_height/2.0)#(1.0*bottom_length/4.0,inflow_width/2.0,inflow_height/2.0)
@@ -93,10 +93,10 @@ lag_ns_subgridError=True
 lag_ns_shockCapturing=True
 lag_ls_shockCapturing=True
 #shock capturing diffusion
-ns_shockCapturingFactor=0.99
-ls_shockCapturingFactor=0.33
-vof_shockCapturingFactor=0.33
-rd_shockCapturingFactor=0.33
+ns_shockCapturingFactor=0.9
+ls_shockCapturingFactor=0.9
+vof_shockCapturingFactor=0.9
+rd_shockCapturingFactor=0.9
 #epsilons for Heaviside/Dirac/etc smoothing
 hFactor=1.0
 noPressureStabilization=False

@@ -51,7 +51,7 @@ hull_center = (0.0,
 #debug
 L=(1.5*hull_length,
  3.0*hull_beam, 
- 6.0*hull_draft)
+ 3.0*hull_draft)
 
 x_ll = (-0.75*hull_length,
         -L[1]/2.0,
@@ -87,7 +87,7 @@ he *=0.5 #4 way on diamond, 8 way on garnet 256-1024 mpi tasks
 #genMesh=False
 vessel = 'wigley'
 genMesh=True#False
-#vessel = 'cube'
+vessel = 'cube'
 #vessel = None
 #genMesh=True
 boundaryTags = { 'bottom': 1, 'front':2, 'right':3, 'back': 4, 'left':5, 'top':6, 'obstacle':7}
@@ -278,7 +278,7 @@ openSides = False
 openEnd = True
 smoothBottom = False
 smoothObstacle = False
-movingDomain=True
+movingDomain=False#True
 checkMass=False
 applyCorrection=True
 applyRedistancing=True
@@ -579,3 +579,123 @@ def outflowPressure(x,t):
                                                          -smoothedHeaviside_integral(epsFact_consrv_heaviside*he,phi)))
 
 
+import ode
+class RigidCylinder(AuxiliaryVariables.AV_base):
+    def __init__(self,rho=1.0,center=(0,0,0),radius=1.0,length=1.0):
+        import pdb
+        #pdb.set_trace()
+        self.mass = length*0.5*rho_0*pi*radius**2 +length*0.5*rho_1*pi*radius**2
+        self.world = ode.World()
+        self.world.setGravity( tuple(g) )
+        # Create a body inside the world
+        self.body = ode.Body(self.world)
+        self.M = ode.Mass()
+        #pdb.set_trace()
+        self.M.setCylinder(rho,direction=3,r=radius,h=length)
+        self.body.setMass(self.M)
+        self.body.setPosition(center)
+        self.last_position=center
+        self.position=center
+        self.last_velocity=(0.0,0.0,0.0)
+        self.velocity=(0.0,0.0,0.0)
+        self.h=(0.0,0.0,0.0)
+    def attachModel(self,model,ar):
+        import copy
+        self.model=model
+        self.ar=ar
+        self.writer = Archiver.XdmfWriter()
+        self.nd = model.levelModelList[-1].nSpace_global
+        m = self.model.levelModelList[-1]
+        flagMax = max(m.mesh.elementBoundaryMaterialTypes)
+        flagMin = min(m.mesh.elementBoundaryMaterialTypes)
+        assert(flagMin == 0)
+        assert(flagMax >= 0)
+        self.nForces=flagMax+1
+        self.levelFlist=[]
+        for m in self.model.levelModelList:
+            if self.nd == 2:
+                F = numpy.zeros((self.nForces,2),'d')
+            elif self.nd == 3:
+                F = numpy.zeros((self.nForces,3),'d')
+            else:
+                logEvent("Can't use stress computation for nd = "+`self.nd`)
+                F=None
+            self.levelFlist.append(F)
+        self.historyF=[]
+        self.historyF.append(copy.deepcopy(self.levelFlist))
+        return self
+    def get_u(self):
+        #print "obastacle-u",self.last_velocity[0]
+        return self.last_velocity[0]
+    def get_v(self):
+        #print "obastacle-v",self.last_velocity[1]
+        return self.last_velocity[1]
+    def get_w(self):
+        #print "obastacle-v",self.last_velocity[2]
+        return self.last_velocity[2]
+    def calculate(self):
+        import pdb
+        for m,F in zip(self.model.levelModelList,self.levelFlist):
+            F.flat[:]=0.0
+            assert(self.nd ==3)
+            print "----------------need to add force calculation-------------------------------"
+            # cfemIntegrals.calculateExteriorElementBoundaryStress3D(m.mesh.elementBoundaryMaterialTypes,
+            #                                                        m.mesh.exteriorElementBoundariesArray,
+            #                                                        m.mesh.elementBoundaryElementsArray,
+            #                                                        m.mesh.elementBoundaryLocalElementBoundariesArray,
+            #                                                        m.ebqe[('u',0)],#pressure
+            #                                                        m.ebqe[('velocity',1)],#mom_flux_vec_u #cek todo, need to add real momentum flux
+            #                                                        m.ebqe[('velocity',2)],#mom_flux_vec_v
+            #                                                        m.ebqe[('velocity',3)],#mom_flux_vec_w
+            #                                                        m.ebqe[('dS_u',0)],#dS
+            #                                                        m.ebqe[('n')],
+            #                                                        F)
+            logEvent("Force")
+            logEvent(`F`)
+            Ftot=F[0,:]
+            for ib in range(1,self.nForces):
+                Ftot+=F[ib,:]
+            logEvent("Total force on all boundaries")
+            logEvent(`Ftot`)
+        logEvent("x Force " +`self.model.stepController.t_model`+" "+`F[-1,0]`)
+        logEvent("y Force " +`self.model.stepController.t_model`+" "+`F[-1,1]`)
+        logEvent("z Force " +`self.model.stepController.t_model`+" "+`F[-1,2]`)
+        #assume moving in the x direction
+        self.body.addForce((0.0,0.0,F[-1,1]))#constrain to vertical motion initially
+        self.world.step(self.model.stepController.dt_model)
+        #f = m a = m (v_new - v_old)/dt
+        #f dt/m = v_new - v_old
+        #v_new = v_old + f dt/m 
+        print "net acceleration====================",F[-1,2]/self.mass+g[2]
+        self.velocity = (0.0,
+                         0.0,
+                         self.last_velocity[2]+F[-1,2]*self.model.stepController.dt_model/self.mass+g[2]*self.model.stepController.dt_model)
+        self.position = (self.last_position[0]+self.velocity[0]*self.model.stepController.dt_model,
+                         self.last_position[1]+self.velocity[1]*self.model.stepController.dt_model,
+                         self.last_position[2]+self.velocity[2]*self.model.stepController.dt_model)
+        self.h = (self.velocity[0]*self.model.stepController.dt_model,
+                  self.velocity[1]*self.model.stepController.dt_model,
+                  self.velocity[2]*self.model.stepController.dt_model)
+        #x,y,z = self.body.getPosition()
+        #u,v,w = self.body.getLinearVel()
+        #self.position=(x,y,z)
+        #self.velocity=(u,v,w)
+        #self.h = (self.velocity[0]*self.model.stepController.dt_model,
+        #          self.velocity[1]*self.model.stepController.dt_model,
+        #          self.velocity[2]*self.model.stepController.dt_model)
+        print "%1.2fsec: pos=(%6.3f, %6.3f, %6.3f)  vel=(%6.3f, %6.3f, %6.3f)" % \
+            (self.model.stepController.t_model, 
+             self.position[0], self.position[1], self.position[2], 
+             self.velocity[0],self.velocity[1],self.velocity[2])
+        print "%1.2fsec: last_pos=(%6.3f, %6.3f, %6.3f)  last_vel=(%6.3f, %6.3f, %6.3f)" % \
+            (self.model.stepController.t_model, 
+             self.last_position[0], self.last_position[1], self.last_position[2], 
+             self.last_velocity[0],self.last_velocity[1],self.last_velocity[2])
+        self.h = (self.velocity[0]*self.model.stepController.dt_model,
+                  self.velocity[1]*self.model.stepController.dt_model,
+                  self.velocity[2]*self.model.stepController.dt_model)
+        self.last_velocity=self.velocity
+        self.last_position=self.position
+        print "dt model in object ",self.model.stepController.dt_model
+
+rc = RigidCylinder(rho=0.5*rho_0,center=hull_center+(0.0,),radius=hull_draft,length=domain.L[1])

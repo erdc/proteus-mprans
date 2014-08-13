@@ -898,3 +898,5 @@ class LevelModel(OneLevelTransport):
 		filename = os.path.join(self.coefficients.opts.dataDir,  "waterline." + str(comm.rank()) + "." + str(self.waterline_prints))
 		numpy.save(filename, self.waterline_data[0:self.waterline_npoints[0]])
                 self.waterline_prints += 1
+    def updateAfterMeshMotion(self):
+        pass

@@ -981,6 +981,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #self.coefficients.q_H_vof.flat[:]=777.0
     def calculateSolutionAtQuadrature(self):
         pass
+    def updateAfterMeshMotion(self):
+        pass
 
 
 class DummyNewton(proteus.NonlinearSolvers.NonlinearSolver):

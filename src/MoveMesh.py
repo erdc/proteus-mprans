@@ -78,6 +78,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         print self.linConstraints
         print self.angConstraints
         print self.hullinertia
+        self.solidsList=[]
         
     def attachModels(self,modelList):
         self.model = modelList[self.meIndex]
@@ -113,7 +114,12 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.mesh.nodeVelocityArray/=self.model.timeIntegration.dt
 
     def preStep(self,t,firstStep=False):
+        log("MoveMesh preStep")
         self.model.preStep()
+        for s in self.solidsList:
+            log("Calling step on solids")
+            log(`s`)
+            s.step()
     def evaluate(self,t,c):
         pass
 
@@ -522,16 +528,19 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.elementResidual[2].fill(0.0) 
 	
         if self.forceStrongConditions:
+            # for cj in range(self.nc):
+            #     i=0
+            #     for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
+            #         if self.dirichletConditionsForceDOF[cj].DOFBoundaryMaterialFlag[dofN] == self.coefficients.rigidBodyMaterialFlag:
+            #             self.u[cj].dof[dofN] = (sum(self.rot1[cj,:]*(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg))
+            #                                     - (self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)[cj] + self.disp1[cj]
+            #                                     - self.nodeDisplacements[cj][i])
+            #             i+=1
+            #         else:
+            #             self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
             for cj in range(self.nc):
-                i=0
                 for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
-                    if self.dirichletConditionsForceDOF[cj].DOFBoundaryMaterialFlag[dofN] == self.coefficients.rigidBodyMaterialFlag:
-                        self.u[cj].dof[dofN] = (sum(self.rot1[cj,:]*(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg))
-                                                - (self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)[cj] + self.disp1[cj]
-                                                - self.nodeDisplacements[cj][i])
-                        i+=1
-                    else:
-                        self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
+                    self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
         self.moveMesh.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -752,20 +761,24 @@ Ang. Vel.   = {angVel1}""".format(force=self.force,
                                   rot1=self.rot1,
                                   angVel1=self.angVel1))
     def preStep(self):
-        self.moveRigidBody()
+        pass
+        #self.moveRigidBody()
     def postStep(self):
-        self.disp0[:]   = self.disp1
-        self.vel0[:]    = self.vel1
-        self.rot0[:]    = self.rot1
-        self.angVel0[:] = self.angVel1
-        if self.forceStrongConditions:
-            for cj in range(self.nc):
-                i=0
-                for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
-                    if self.dirichletConditionsForceDOF[cj].DOFBoundaryMaterialFlag[dofN] == self.coefficients.rigidBodyMaterialFlag:	     		              
-                        self.u[cj].dof[dofN] = (sum(self.rot1[cj,:]*(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg))
-                                                - (self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)[cj] + self.disp1[cj]
-                                                -  self.nodeDisplacements[cj][i])
-                        self.nodeDisplacements[cj][i] = (sum(self.rot1[cj,:]*(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg))
-                                                         - (self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)[cj] + self.disp1[cj])
-                        i+=1	       		       
+        pass
+        # self.disp0[:]   = self.disp1
+        # self.vel0[:]    = self.vel1
+        # self.rot0[:]    = self.rot1
+        # self.angVel0[:] = self.angVel1
+        # if self.forceStrongConditions:
+        #     for cj in range(self.nc):
+        #         i=0
+        #         for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
+        #             if self.dirichletConditionsForceDOF[cj].DOFBoundaryMaterialFlag[dofN] == self.coefficients.rigidBodyMaterialFlag:	     		              
+        #                 self.u[cj].dof[dofN] = (sum(self.rot1[cj,:]*(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg))
+        #                                         - (self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)[cj] + self.disp1[cj]
+        #                                         -  self.nodeDisplacements[cj][i])
+        #                 self.nodeDisplacements[cj][i] = (sum(self.rot1[cj,:]*(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg))
+        #                                                  - (self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN]-self.coefficients.hullcg)[cj] + self.disp1[cj])
+        #                 i+=1	       		       
+    def updateAfterMeshMotion(self):
+        pass

@@ -679,8 +679,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.forceStrongConditions:
               for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():
                   self.u[0].dof[dofN] = g(self.dirichletConditionsForceDOF.DOFBoundaryPointDict[dofN],self.timeIntegration.t)
-        print "mesh velo",self.mesh.nodeVelocityArray.max(),self.mesh.nodeVelocityArray.min()
-        print "numDiff",self.shockCapturing.numDiff_last[0].min(),self.shockCapturing.numDiff_last[0].max()
         self.vof.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -757,8 +755,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def getJacobian(self,jacobian):
         cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
                         jacobian)
-        print "J mesh velo",self.mesh.nodeVelocityArray.max(),self.mesh.nodeVelocityArray.min()
-        print "J numDiff",self.shockCapturing.numDiff_last[0].min(),self.shockCapturing.numDiff_last[0].max()
         self.vof.calculateJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -877,4 +873,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def calculateSolutionAtQuadrature(self):
         pass
     def calculateAuxiliaryQuantitiesAfterStep(self):
+        pass
+    def updateAfterMeshMotion(self):
         pass

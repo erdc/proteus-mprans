@@ -992,6 +992,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #             self.q[('u',0)][eN,k]+=self.u[0].dof[J]*self.u[0].femSpace.psi[k,j]
     def calculateAuxiliaryQuantitiesAfterStep(self):
         pass
+    def updateAfterMeshMotion(self):
+        pass
 #OneLevelRDLS
 from proteus import ctransportCoefficients
 def setZeroLSweakDirichletBCs(RDLSvt):

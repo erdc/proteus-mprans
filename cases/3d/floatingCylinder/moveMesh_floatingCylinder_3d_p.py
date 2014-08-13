@@ -18,9 +18,9 @@ nu=0.3  #- Poisson's ratio
 
 smTypes[0,0] = E
 smTypes[0,1] = nu
-coefficients = MoveMesh.Coefficients(hullMass,
-                                     hullCG,
-                                     hullInertia,
+coefficients = MoveMesh.Coefficients(hullMass=0.0,
+                                     hullCG=[0.0,0.0,0.0],
+                                     hullInertia=[[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]],
                                      modelType_block=smFlags,modelParams_block=smTypes,meIndex=5)
 #coefficients = MoveMesh.Coefficients(E=10.0,nu=0.3,g=g,nd=nd,moveMesh=movingDomain)
 
