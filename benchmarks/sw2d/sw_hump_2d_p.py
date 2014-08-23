@@ -15,17 +15,13 @@ domain = tank2d(L=L)
 bt = domain.boundaryTags
 domain.writePoly("tank2d")
 
-#coefficients = ShallowWater(g=g,
-#                            nd=nd)
 useCV=False
 if useCV:
     LevelModelType = SW2DCV.LevelModel
-    coefficients = SW2DCV.Coefficients(nu=0.1,g=1.0)
+    coefficients = SW2DCV.Coefficients(nu=0.0,g=1.0)
 else:
     LevelModelType = SW2D.LevelModel
-    coefficients = SW2D.Coefficients(nu=0.1,g=1.0)
-
-#coefficients = SW2D.Coefficients(nu=0,g=1.0)
+    coefficients = SW2D.Coefficients(nu=0.0,g=1.0)
 
 class HumpIC:
     def __init__(self,Lx,Ly,r,H,H0,shock=False):

@@ -377,7 +377,7 @@ namespace proteus
     				   double tau[9],
     				   double& cfl)
     {
-      double rx[9],ry[9],rxInv[9],ryInv[9],c=sqrt(fmax(g*1.0e-8,g*h)),lambdax[3],lambday[3],tauxHat[3],tauyHat[3],taux[9],tauy[9],tauc[9],cflx,cfly,L[9],hStar=fmax(1.0e-8,h),u,v;
+      double rx[9],ry[9],rxInv[9],ryInv[9],rn=0.0,c=sqrt(fmax(g*1.0e-8,g*h)),lambdax[3],lambday[3],tauxHat[3],tauyHat[3],taux[9],tauy[9],tauc[9],cflx,cfly,L[9],hStar=fmax(1.0e-8,h),u,v;
       u = hu/hStar;
       v = hv/hStar;
       //eigenvalues and eigenvectors for conservation variables h,hu,hv
@@ -397,9 +397,10 @@ namespace proteus
       rx[1*3+1] = 0.0;
       rx[2*3+1] = 1.0;
 
-      rx[0*3+2] = 1.0;
-      rx[1*3+2] = u + c;
-      rx[2*3+2] = v;
+      rn = sqrt(1.0 + (u+c)*(u+c) + v*v);
+      rx[0*3+2] = 1.0/rn;
+      rx[1*3+2] = (u + c)/rn;
+      rx[2*3+2] = v/rn;
 
       rxInv[0*3+0] = 1.0 - (c - u)/(2.0*c);
       rxInv[1*3+0] = -v;
@@ -427,17 +428,19 @@ namespace proteus
       lambday[1] = v;
       lambday[2] = v + c;
 
-      ry[0*3+0] = 1.0;
-      ry[1*3+0] = u;
-      ry[2*3+0] = v - c;
-
+      rn=sqrt(1.0 + u*u+(v-c)*(v-c));
+      ry[0*3+0] = 1.0/rn;
+      ry[1*3+0] = u/rn;
+      ry[2*3+0] = (v - c)/rn;
+      
       ry[0*3+1] =  0.0;
       ry[1*3+1] = -1.0;
       ry[2*3+1] =  0.0;
 
-      ry[0*3+2] = 1.0;
-      ry[1*3+2] = u;
-      ry[2*3+2] = v + c;
+      rn = sqrt(1.0 + u*u + (v+c)*(v+c));
+      ry[0*3+2] = 1.0/rn;
+      ry[1*3+2] = u/rn;
+      ry[2*3+2] = (v + c)/rn;
 
       ryInv[0*3+0] = 1.0 - (c - v)/(2*c);
       ryInv[1*3+0] = u;
@@ -474,13 +477,13 @@ namespace proteus
 	    tmpx[i*3+j] = 0.0;
 	    tmpy[i*3+j] = 0.0;
 	    L[i*3+j] = 0.0;
-	    /* double Ix=0,Iy=0.0; */
-	    /* for (int k=0;k<3;k++) */
-	    /*   { */
-	    /* 	Ix += rx[i*3+k]*rxInv[k*3+j]; */
-	    /* 	Iy += ry[i*3+k]*ryInv[k*3+j]; */
-	    /*   } */
-	    /* std::cout<<i<<'\t'<<j<<'\t'<<Ix<<'\t'<<Iy<<std::endl; */
+	    double Ix=0,Iy=0.0;
+	    for (int k=0;k<3;k++)
+	      {
+	    	Ix += rx[i*3+k]*rxInv[k*3+j];
+	    	Iy += ry[i*3+k]*ryInv[k*3+j];
+	      }
+	    std::cout<<i<<'\t'<<j<<'\t'<<Ix<<'\t'<<Iy<<std::endl;
 	  }
       //transform from characteristic variables to conservation variables
       for (int i=0;i<3;i++)
@@ -491,8 +494,8 @@ namespace proteus
 	    //tauy[i*3+j] += ry[i*3+m]*tauyHat[m]*ryInv[m*3+j];
 	    if (m==j)
 	      {
-		tmpx[i*3+j] += rx[i*3+m]*tauxHat[m];
-		tmpy[i*3+j] += ry[i*3+m]*tauyHat[m];
+		tmpx[i*3+m] += rx[i*3+m]*tauxHat[m];
+		tmpy[i*3+m] += ry[i*3+m]*tauyHat[m];
 	      }
 	  }
       for (int i=0;i<3;i++)
@@ -976,7 +979,7 @@ namespace proteus
       //
       //loop over elements to compute volume integrals and load them into element and global residual
       //
-      double globalConservationError=0.0;
+      double globalConservationError=0.0,tauSum=0.0;
       for(int eN=0;eN<nElements_global;eN++)
       	{
       	  //declare local storage for element residual and initialize

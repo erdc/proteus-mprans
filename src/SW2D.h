@@ -393,7 +393,7 @@ namespace proteus
 
       rx[0*3+1] = 0.0;
       rx[1*3+1] = 0.0;
-      rx[2*3+1] = 1.0/rn;
+      rx[2*3+1] = 1.0;
 
       rn = sqrt(1.0 + (u+c)*(u+c) + v*v);
       rx[0*3+2] = 1.0/rn;
@@ -434,6 +434,7 @@ namespace proteus
       ry[0*3+1] =  0.0;
       ry[1*3+1] = -1.0;
       ry[2*3+1] =  0.0;
+
       rn = sqrt(1.0 + u*u + (v+c)*(v+c));
       ry[0*3+2] = 1.0/rn;
       ry[1*3+2] = u/rn;
@@ -491,8 +492,8 @@ namespace proteus
 	    //tauy[i*3+j] += ry[i*3+m]*tauyHat[m]*ryInv[m*3+j];
 	    if (m==j)
 	      {
-		tmpx[i*3+j] += rx[i*3+m]*tauxHat[m];
-		tmpy[i*3+j] += ry[i*3+m]*tauyHat[m];
+		tmpx[i*3+m] += rx[i*3+m]*tauxHat[m];
+		tmpy[i*3+m] += ry[i*3+m]*tauyHat[m];
 	      }
 	  }
       for (int i=0;i<3;i++)
@@ -520,7 +521,7 @@ namespace proteus
 	    for (int k=0;k<3;k++)
 	      tau[i*3+j] += L[i*3+k]*tauc[k*3+j];
 	    //cek hack, turn it off until I get the ASGS stuff straigtened out
-	    tau[i*3+j] = 0.0; 
+	    //tau[i*3+j] *= 1.0e-4; 
 	  }
       /* std::cout<<"tau"<<std::endl; */
       /* for (int i=0;i<3;i++) */
@@ -986,7 +987,7 @@ namespace proteus
       //
       //loop over elements to compute volume integrals and load them into element and global residual
       //
-      double globalConservationError=0.0;
+      double globalConservationError=0.0,tauSum=0.0;
       for(int eN=0;eN<nElements_global;eN++)
       	{
       	  //declare local storage for element residual and initialize
@@ -1333,6 +1334,8 @@ namespace proteus
 					v_sge,
 					tau,
 					q_cfl[eN_k]);
+	      for (int i=0;i<9;i++)
+		tauSum += tau[i];
 
 	      subgridError_h = - tau[0*3+0]*pdeResidual_h - tau[0*3+1]*pdeResidual_u - tau[0*3+2]*pdeResidual_v;
 	      subgridError_u = - tau[1*3+0]*pdeResidual_h - tau[1*3+1]*pdeResidual_u - tau[1*3+2]*pdeResidual_v;
@@ -1436,6 +1439,7 @@ namespace proteus
       	      globalResidual[offset_v+stride_v*vel_l2g[eN_i]]+=elementResidual_v[i];
       	    }
       	}
+      std::cout<<"tauSum = "<<tauSum<<std::endl;
       /* */
       /* loop over exterior element boundaries to calculate surface integrals and load into element and global residuals */
       /* */
@@ -1946,6 +1950,7 @@ namespace proteus
 			   int* csrColumnOffsets_eb_v_u,
 			   int* csrColumnOffsets_eb_v_v)
     {
+      double tauSum=0.0;
       //
       //loop over elements to compute volume integrals and load them into the element Jacobians and global Jacobian
       //
@@ -2343,6 +2348,9 @@ namespace proteus
 					v_sge,
 					tau,
 	      				q_cfl[eN_k]);
+	      
+	      for (int i=0;i<9;i++)
+		tauSum += tau[i];
 					
 	      for (int j=0;j<nDOF_trial_element;j++)
 	      	{
@@ -2470,6 +2478,7 @@ namespace proteus
 		}//j
 	    }//i
 	}//elements
+      std::cout<<"tauSum = "<<tauSum<<std::endl;
       //
       //loop over exterior element boundaries to compute the surface integrals and load them into the global Jacobian
       //
