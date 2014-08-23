@@ -376,6 +376,7 @@ namespace proteus
     				   double tau[9],
     				   double& cfl)
     {
+      //todo go back through rx,ry, etc. and the formula for tau in physical variables once  this is known.
       double rx[9],ry[9],rxInv[9],ryInv[9],c=sqrt(fmax(1.0e-8,g*h)),lambdax[3],lambday[3],tauxHat[3],tauyHat[3],taux[9],tauy[9],tauc[9],cflx,cfly,L[9],hStar=fmax(1.0e-8,h);
       //eigenvalues and eigenvectors for conservation variables h,hu,hv
       lambdax[0] = u - c;
