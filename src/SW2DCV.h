@@ -389,15 +389,18 @@ namespace proteus
       else
 	cflx = fabs(u-c)/elementDiameter;
 
-      rx[0*3+0] = 1.0;
-      rx[1*3+0] = u - c;
-      rx[2*3+0] = v;
+      rn = sqrt(1.0 + (u-c)*(u-c) + v*v);
+      //rn = 1.0;
+      rx[0*3+0] = 1.0/rn;
+      rx[1*3+0] = (u - c)/rn;
+      rx[2*3+0] = v/rn;
 
       rx[0*3+1] = 0.0;
       rx[1*3+1] = 0.0;
       rx[2*3+1] = 1.0;
 
       rn = sqrt(1.0 + (u+c)*(u+c) + v*v);
+      //rn = 1.0;
       rx[0*3+2] = 1.0/rn;
       rx[1*3+2] = (u + c)/rn;
       rx[2*3+2] = v/rn;
@@ -429,6 +432,7 @@ namespace proteus
       lambday[2] = v + c;
 
       rn=sqrt(1.0 + u*u+(v-c)*(v-c));
+      //rn = 1.0;
       ry[0*3+0] = 1.0/rn;
       ry[1*3+0] = u/rn;
       ry[2*3+0] = (v - c)/rn;
@@ -438,6 +442,7 @@ namespace proteus
       ry[2*3+1] =  0.0;
 
       rn = sqrt(1.0 + u*u + (v+c)*(v+c));
+      //rn = 1.0;
       ry[0*3+2] = 1.0/rn;
       ry[1*3+2] = u/rn;
       ry[2*3+2] = (v + c)/rn;
@@ -477,21 +482,19 @@ namespace proteus
 	    tmpx[i*3+j] = 0.0;
 	    tmpy[i*3+j] = 0.0;
 	    L[i*3+j] = 0.0;
-	    double Ix=0,Iy=0.0;
-	    for (int k=0;k<3;k++)
-	      {
-	    	Ix += rx[i*3+k]*rxInv[k*3+j];
-	    	Iy += ry[i*3+k]*ryInv[k*3+j];
-	      }
-	    std::cout<<i<<'\t'<<j<<'\t'<<Ix<<'\t'<<Iy<<std::endl;
+	    /* double Ix=0,Iy=0.0; */
+	    /* for (int k=0;k<3;k++) */
+	    /*   { */
+	    /* 	Ix += rx[i*3+k]*rx[j*3+k]; */
+	    /* 	Iy += ry[i*3+k]*ry[j*3+k]; */
+	    /*   } */
+	    /* std::cout<<i<<'\t'<<j<<'\t'<<Ix<<'\t'<<Iy<<std::endl; */
 	  }
       //transform from characteristic variables to conservation variables
       for (int i=0;i<3;i++)
 	for (int j=0;j<3;j++)
 	  for (int m=0;m<3;m++)
 	  {
-	    //taux[i*3+j] += rx[i*3+m]*tauxHat[m]*rxInv[m*3+j];
-	    //tauy[i*3+j] += ry[i*3+m]*tauyHat[m]*ryInv[m*3+j];
 	    if (m==j)
 	      {
 		tmpx[i*3+m] += rx[i*3+m]*tauxHat[m];
@@ -502,8 +505,6 @@ namespace proteus
 	for (int j=0;j<3;j++)
 	  for (int m=0;m<3;m++)
 	  {
-	    //taux[i*3+j] += tmpx[i*3+m]*rxInv[m*3 + j];
-	    //tauy[i*3+j] += tmpy[i*3+m]*ryInv[m*3 + j];
 	    taux[i*3+j] += tmpx[i*3+m]*rx[j*3 + m];
 	    tauy[i*3+j] += tmpy[i*3+m]*ry[j*3 + m];
 	  }
@@ -513,7 +514,7 @@ namespace proteus
 	  {
 	    tauc[i*3+j] = sqrt(taux[i*3+j]*taux[i*3+j] + tauy[i*3+j]*tauy[i*3+j]);
 	    tau[i*3+j] = tauc[i*3+j];
-	    /* tau[i*3+j] = 0.01;//hack */
+	    tau[i*3+j] = 0.0;//hack
 	  }
       /* std::cout<<"tau"<<std::endl; */
       /* for (int i=0;i<3;i++) */
@@ -1324,6 +1325,8 @@ namespace proteus
 					hv_sge,
 					tau,
 					q_cfl[eN_k]);
+	      for (int i=0;i<9;i++)
+		tauSum += tau[i];
 
 	      subgridError_h  = - tau[0*3+0]*pdeResidual_h - tau[0*3+1]*pdeResidual_hu - tau[0*3+2]*pdeResidual_hv;
 	      subgridError_hu = - tau[1*3+0]*pdeResidual_h - tau[1*3+1]*pdeResidual_hu - tau[1*3+2]*pdeResidual_hv;
@@ -1351,30 +1354,15 @@ namespace proteus
 
       	      norm_Rv = sqrt(pdeResidual_hu*pdeResidual_hu + pdeResidual_hv*pdeResidual_hv);
 	      /* double */
-	      /* 	norm_grad = sqrt((grad_hu[0]*grad_hu[0] + grad_hu[1]*grad_hu[1] + grad_hv[0]*grad_hv[0] + grad_hv[1]*grad_hv[1])/4.0);//try RMS */
-	      /* q_numDiff_hu[eN_k] = 0.5*elementDiameter[eN]*norm_Rv/(norm_grad+1.0e-8); */
-	      q_numDiff_hu[eN_k] = 0.0;//0.5*elementDiameter[eN]*norm_Rv;
-	      q_numDiff_hv[eN_k] = 0.0;//q_numDiff_hu[eN_k];
-	      q_numDiff_h[eN_k] = 0.0;
+	      double norm_grad = 1.0;
+	      q_numDiff_hu[eN_k] = 0.5*elementDiameter[eN]*norm_Rv/(norm_grad+1.0e-8);
+	      q_numDiff_hv[eN_k] = q_numDiff_hu[eN_k];
 
 	      /* ck.calculateNumericalDiffusion(1.0, */
 	      /* 				     elementDiameter[eN], */
 	      /* 				     pdeResidual_h, */
-	      /* 				     //norm_Rv,//pdeResidual_h, */
 	      /* 				     grad_h, */
 	      /* 				     q_numDiff_h[eN_k]); */
-	      /* ck.calculateNumericalDiffusion(1.0, */
-	      /* 				     elementDiameter[eN], */
-	      /* 				     pdeResidual_hu, */
-	      /* 				     //norm_Rv,//pdeResidual_hu, */
-	      /* 				     grad_hu, */
-	      /* 				     q_numDiff_hu[eN_k]); */
-	      /* ck.calculateNumericalDiffusion(1.0, */
-	      /* 				     elementDiameter[eN], */
-	      /* 				     pdeResidual_hv, */
-	      /* 				     //norm_Rv,//pdeResidual_hv, */
-	      /* 				     grad_hv, */
-	      /* 				     q_numDiff_hv[eN_k]); */
 
       	      //update element residual
       	      

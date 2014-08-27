@@ -522,7 +522,7 @@ namespace proteus
 	    for (int k=0;k<3;k++)
 	      tau[i*3+j] += L[i*3+k]*tauc[k*3+j];
 	    //cek hack, turn it off until I get the ASGS stuff straigtened out
-	    //tau[i*3+j] *= 1.0e-4; 
+	    tau[i*3+j] = 0.0;
 	  }
       /* std::cout<<"tau"<<std::endl; */
       /* for (int i=0;i<3;i++) */
@@ -1364,33 +1364,15 @@ namespace proteus
 
       	      norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v);
 	      /* double */
-	      /* 	norm_grad = sqrt((grad_u[0]*grad_u[0] + grad_u[1]*grad_u[1] + grad_v[0]*grad_v[0] + grad_v[1]*grad_v[1])/4.0);//try RMS */
-	      /* q_numDiff_u[eN_k] = 0.5*elementDiameter[eN]*norm_Rv/(norm_grad+1.0e-8); */
-	      q_numDiff_u[eN_k] = 0.0;//0.5*elementDiameter[eN]*norm_Rv;
-	      q_numDiff_v[eN_k] = 0.0;//q_numDiff_u[eN_k];
+	      double norm_grad = 1.0;
+	      q_numDiff_u[eN_k] = 0.5*elementDiameter[eN]*norm_Rv/(norm_grad+1.0e-8);
+	      q_numDiff_v[eN_k] = q_numDiff_u[eN_k];
 
-	      ck.calculateNumericalDiffusion(1.0,
-	      				     elementDiameter[eN],
-	      				     pdeResidual_h,
-	      				     //norm_Rv,//pdeResidual_h,
-	      				     grad_h,
-	      				     q_numDiff_h[eN_k]);
-	      q_numDiff_h[eN_k] = 0.0;
-	      q_numDiff_h_last[eN_k] = 0.0;
-	      q_numDiff_u_last[eN_k] = 0.0;
-	      q_numDiff_v_last[eN_k] = 0.0;
 	      /* ck.calculateNumericalDiffusion(1.0, */
 	      /* 				     elementDiameter[eN], */
-	      /* 				     pdeResidual_u, */
-	      /* 				     //norm_Rv,//pdeResidual_u, */
-	      /* 				     grad_u, */
-	      /* 				     q_numDiff_u[eN_k]); */
-	      /* ck.calculateNumericalDiffusion(1.0, */
-	      /* 				     elementDiameter[eN], */
-	      /* 				     pdeResidual_v, */
-	      /* 				     //norm_Rv,//pdeResidual_v, */
-	      /* 				     grad_v, */
-	      /* 				     q_numDiff_v[eN_k]); */
+	      /* 				     pdeResidual_h, */
+	      /* 				     grad_h, */
+	      /* 				     q_numDiff_h[eN_k]); */
 
       	      //update element residual
       	      

@@ -58,15 +58,14 @@ initialConditions = {0:HumpIC(L[0],L[1],0.25*L[0],HH,H0),
 def getDBC_h(x,flag):
     return None
 
+#note, these are the same for hu and hv so we can cheat and use  this p-file for SW2DCV and SW2D
 def getDBC_u(x,flag):
-#    return None
    if (x[0] in [0.0,L[0]]) or flag in [bt['left'],bt['right']]:
        return lambda x,t: 0.0
    else:
        return None
 
 def getDBC_v(x,flag):
-#    return None
    if x[1] in [0.0,L[1]] or flag in [bt['front'],bt['back']]:
        return lambda x,t: 0.0
    else:

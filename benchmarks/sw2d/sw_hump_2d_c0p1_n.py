@@ -34,7 +34,7 @@ subgridError = SW2D.SubgridError(coefficients,nd,lag=True)
 
 massLumping=False
 
-shockCapturing = SW2D.ShockCapturing(coefficients,nd,shockCapturingFactor=0.9,lag=True)
+shockCapturing = SW2D.ShockCapturing(coefficients,nd,shockCapturingFactor=0.99,lag=True)
 
 numericalFluxType = SW2D.NumericalFlux
 
