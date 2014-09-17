@@ -509,6 +509,8 @@ namespace proteus
 	      std::cout<<"q_numDiff_u[eN_k] "<<q_numDiff_u[eN_k]<<" q_numDiff_u_last[eN_k] "<<q_numDiff_u_last[eN_k]<<" lag "<<lag_shockCapturingScale<<std::endl;
 #endif
 	      nu_sc = q_numDiff_u[eN_k]*(1.0-lag_shockCapturingScale) + q_numDiff_u_last[eN_k]*lag_shockCapturingScale;
+	      if (fabs(phi_ls[eN_k]) >  3.0*elementDiameter[eN])
+		nu_sc += 0.1*elementDiameter[eN];
 	      // 
 	      //update element residual 
 	      // 
@@ -970,6 +972,8 @@ namespace proteus
 		dsubgridError_u_u[j] =  -tau*dpdeResidual_u_u[j];
 
 	      nu_sc = q_numDiff_u[eN_k]*(1.0-lag_shockCapturingScale) + q_numDiff_u_last[eN_k]*lag_shockCapturingScale;
+	      if (fabs(phi_ls[eN_k]) >  3.0*elementDiameter[eN])
+		nu_sc += 0.1*elementDiameter[eN];
 
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
