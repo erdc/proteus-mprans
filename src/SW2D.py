@@ -530,6 +530,17 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                    self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
                                    self.nElementBoundaryQuadraturePoints_elementBoundary,
                                    compKernelFlag)
+        try_supg = False
+        if options != None and 'try_supg_stabilization' in dir(options):
+            try_supg = options.try_supg_stabilization
+            log("setting try_supg_stabilization from options= {0}".format(try_supg),level=1)
+        if try_supg:
+            self.calculateResidual = self.sw2d.calculateResidual_supg
+            self.calculateJacobian = self.sw2d.calculateJacobian_supg
+        else:
+            self.calculateResidual =  self.sw2d.calculateResidual
+            self.calculateJacobian = self.sw2d.calculateJacobian
+
     def getResidual(self,u,r):
         """
         Calculate the element residuals and add in to the global residual
@@ -564,7 +575,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                     self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
         #import pdb
         #pdb.set_trace()
-        self.sw2d.calculateResidual_supg(#element
+        
+        self.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
@@ -686,7 +698,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def getJacobian(self,jacobian):
 	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
 				       jacobian)
-        self.sw2d.calculateJacobian_supg(#element
+        self.calculateJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,

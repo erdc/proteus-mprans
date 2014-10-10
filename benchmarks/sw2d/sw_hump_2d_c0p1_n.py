@@ -71,6 +71,8 @@ triangleOptions="pAq30Dena%f"  % (0.5*he**2,)
 
 #subgridError = ShallowWater_CFL(coefficients,nd,g)
 subgridError = AdvectionDiffusionReaction_ASGS(coefficients,nd,lag=False)
+#added flag for using SUPG stabilization based on Berger and Stockstill, 95
+try_supg_stabilization = False
 
 massLumping=False
 
