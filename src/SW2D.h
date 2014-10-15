@@ -2513,34 +2513,15 @@ namespace proteus
 	      //mwf end supg tau and test function operator
       	      norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v);
 	      /* double */
-	      /* 	norm_grad = sqrt((grad_u[0]*grad_u[0] + grad_u[1]*grad_u[1] + grad_v[0]*grad_v[0] + grad_v[1]*grad_v[1])/4.0);//try RMS */
-	      /* q_numDiff_u[eN_k] = 0.5*elementDiameter[eN]*norm_Rv/(norm_grad+1.0e-8); */
-	      q_numDiff_u[eN_k] = 0.0;//0.5*elementDiameter[eN]*norm_Rv;
-	      q_numDiff_v[eN_k] = 0.0;//q_numDiff_u[eN_k];
+	      double norm_grad = 1.0;
+	      q_numDiff_u[eN_k] = 0.5*elementDiameter[eN]*norm_Rv/(norm_grad+1.0e-8);
+	      q_numDiff_v[eN_k] = q_numDiff_u[eN_k];
 
-	      ck.calculateNumericalDiffusion(1.0,
-	      				     elementDiameter[eN],
-	      				     pdeResidual_h,
-	      				     //norm_Rv,//pdeResidual_h,
-	      				     grad_h,
-	      				     q_numDiff_h[eN_k]);
-	      /*mwf todo, see why turned off*/
-	      q_numDiff_h[eN_k] = 0.0;
-	      q_numDiff_h_last[eN_k] = 0.0;
-	      q_numDiff_u_last[eN_k] = 0.0;
-	      q_numDiff_v_last[eN_k] = 0.0;
 	      /* ck.calculateNumericalDiffusion(1.0, */
 	      /* 				     elementDiameter[eN], */
-	      /* 				     pdeResidual_u, */
-	      /* 				     //norm_Rv,//pdeResidual_u, */
-	      /* 				     grad_u, */
-	      /* 				     q_numDiff_u[eN_k]); */
-	      /* ck.calculateNumericalDiffusion(1.0, */
-	      /* 				     elementDiameter[eN], */
-	      /* 				     pdeResidual_v, */
-	      /* 				     //norm_Rv,//pdeResidual_v, */
-	      /* 				     grad_v, */
-	      /* 				     q_numDiff_v[eN_k]); */
+	      /* 				     pdeResidual_h, */
+	      /* 				     grad_h, */
+	      /* 				     q_numDiff_h[eN_k]); */
 
       	      //update element residual
       	      
