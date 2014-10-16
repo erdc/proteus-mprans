@@ -54,7 +54,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.NonlinearSolvers import EikonalSolver
     from proteus.ctransportCoefficients import VolumeAveragedVOFCoefficientsEvaluate
     from proteus.cfemIntegrals import copyExteriorElementBoundaryValuesFromElementBoundaryValues
-    def __init__(self,LS_model=None,V_model=0,RD_model=None,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,setParamsFunc=None):
+    def __init__(self,LS_model=None,V_model=0,RD_model=None,ME_model=1,EikonalSolverFlag=0,checkMass=True,epsFact=0.0,useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,setParamsFunc=None,movingDomain=False):
         self.useMetrics = useMetrics
         self.variableNames=['vof']
         nc=1
@@ -72,16 +72,15 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                          potential,
                          reaction,
                          hamiltonian,
-                         self.variableNames)
+                         self.variableNames,
+                         movingDomain=movingDomain)
         self.epsFact=epsFact
         self.flowModelIndex=V_model
         self.modelIndex=ME_model
         self.RD_modelIndex=RD_model
         self.LS_modelIndex=LS_model
-	
-	self.sc_uref=sc_uref
-	self.sc_beta=sc_beta
-	
+        self.sc_uref=sc_uref
+        self.sc_beta=sc_beta
         #mwf added
         self.eikonalSolverFlag = EikonalSolverFlag
         if self.eikonalSolverFlag >= 1: #FMM
@@ -91,6 +90,7 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.q_porosity = None; self.ebq_porosity = None; self.ebqe_porosity = None
         self.setParamsFunc   = setParamsFunc
         self.flowCoefficients=None
+        self.movingDomain=movingDomain
     def initializeMesh(self,mesh):
         self.eps = self.epsFact*mesh.h
     def attachModels(self,modelList):
@@ -645,9 +645,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.MOVING_DOMAIN=1.0
         else:
             self.MOVING_DOMAIN=0.0
-        #cek hack
-        self.movingDomain=False
-        self.MOVING_DOMAIN=0.0
         if self.mesh.nodeVelocityArray==None:
             self.mesh.nodeVelocityArray = numpy.zeros(self.mesh.nodeArray.shape,'d')        
     #mwf these are getting called by redistancing classes,
@@ -682,7 +679,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.forceStrongConditions:
               for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():
                   self.u[0].dof[dofN] = g(self.dirichletConditionsForceDOF.DOFBoundaryPointDict[dofN],self.timeIntegration.t)
-
         self.vof.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -707,19 +703,19 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.nElements_global,
-	    self.coefficients.useMetrics, 
+            self.coefficients.useMetrics, 
             self.timeIntegration.alpha_bdf,
             self.shockCapturing.lag,
             self.shockCapturing.shockCapturingFactor,
-	    self.coefficients.sc_uref, 
-	    self.coefficients.sc_beta,
+            self.coefficients.sc_uref,
+            self.coefficients.sc_beta,
             #VRANS start
             self.coefficients.q_porosity,
             #VRANS end
             self.u[0].femSpace.dofMap.l2g,
             self.mesh.elementDiametersArray,
             self.u[0].dof,
-	    self.coefficients.u_old_dof,
+            self.coefficients.u_old_dof,
             self.coefficients.q_v,
             self.timeIntegration.m_tmp[0],
             self.q[('u',0)],
@@ -744,11 +740,9 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.ebqe_phi,self.coefficients.epsFact,
             self.ebqe[('u',0)],
             self.ebqe[('advectiveFlux',0)])
-
-	if self.forceStrongConditions:#
-	    for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():
-                     r[dofN] = 0
-
+        if self.forceStrongConditions:#
+            for dofN,g in self.dirichletConditionsForceDOF.DOFBoundaryConditionsDict.iteritems():
+                r[dofN] = 0
         if self.stabilization:
             self.stabilization.accumulateSubgridMassHistory(self.q)
         log("Global residual",level=9,data=r)
@@ -759,8 +753,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.globalResidualDummy == None:
             self.globalResidualDummy = numpy.zeros(r.shape,'d')
     def getJacobian(self,jacobian):
-	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
-				       jacobian)
+        cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
+                        jacobian)
         self.vof.calculateJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -784,38 +778,35 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             self.mesh.nElements_global,
-	    self.coefficients.useMetrics, 
-                  self.timeIntegration.alpha_bdf,
-                  self.shockCapturing.lag,
-                  self.shockCapturing.shockCapturingFactor,
-                  #VRANS start
-                  self.coefficients.q_porosity,
-                  #VRANS end
-                  self.u[0].femSpace.dofMap.l2g,
-                  self.mesh.elementDiametersArray,
-                  self.u[0].dof,
-                  self.coefficients.q_v,
-                  self.timeIntegration.beta_bdf[0],
-                  self.q[('cfl',0)],
-                  self.shockCapturing.numDiff_last[0],
-                  self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
-                  jacobian,
-                  self.mesh.nExteriorElementBoundaries_global,
-                  self.mesh.exteriorElementBoundariesArray,
-                  self.mesh.elementBoundaryElementsArray,
-                  self.mesh.elementBoundaryLocalElementBoundariesArray,
-                  self.coefficients.ebqe_v,
-                  #VRANS start
-                  self.coefficients.ebqe_porosity,
-                  #VRANS end
-                  self.numericalFlux.isDOFBoundary[0],
-                  self.numericalFlux.ebqe[('u',0)],
-                  self.ebqe[('advectiveFlux_bc_flag',0)],
-                  self.ebqe[('advectiveFlux_bc',0)],
-                  self.csrColumnOffsets_eb[(0,0)])
-
-
-
+            self.coefficients.useMetrics, 
+            self.timeIntegration.alpha_bdf,
+            self.shockCapturing.lag,
+            self.shockCapturing.shockCapturingFactor,
+            #VRANS start
+            self.coefficients.q_porosity,
+            #VRANS end
+            self.u[0].femSpace.dofMap.l2g,
+            self.mesh.elementDiametersArray,
+            self.u[0].dof,
+            self.coefficients.q_v,
+            self.timeIntegration.beta_bdf[0],
+            self.q[('cfl',0)],
+            self.shockCapturing.numDiff_last[0],
+            self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
+            jacobian,
+            self.mesh.nExteriorElementBoundaries_global,
+            self.mesh.exteriorElementBoundariesArray,
+            self.mesh.elementBoundaryElementsArray,
+            self.mesh.elementBoundaryLocalElementBoundariesArray,
+            self.coefficients.ebqe_v,
+            #VRANS start
+            self.coefficients.ebqe_porosity,
+            #VRANS end
+            self.numericalFlux.isDOFBoundary[0],
+            self.numericalFlux.ebqe[('u',0)],
+            self.ebqe[('advectiveFlux_bc_flag',0)],
+            self.ebqe[('advectiveFlux_bc',0)],
+            self.csrColumnOffsets_eb[(0,0)])
         #Load the Dirichlet conditions directly into residual
         if self.forceStrongConditions:
             scaling = 1.0#probably want to add some scaling to match non-dirichlet diagonals in linear system 
@@ -828,9 +819,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                         else:
                             self.nzval[i] = 0.0
                             #print "RBLES zeroing residual cj = %s dofN= %s global_dofN= %s " % (cj,dofN,global_dofN)
-			    
-			    
-
         log("Jacobian ",level=10,data=jacobian)
         #mwf decide if this is reasonable for solver statistics
         self.nonlinear_function_jacobian_evaluations += 1
@@ -866,7 +854,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #
         #get physical locations of element boundary quadrature points
         #
-	#assume all components live on the same mesh
+        #assume all components live on the same mesh
         self.u[0].femSpace.elementMaps.getBasisValuesTraceRef(self.elementBoundaryQuadraturePoints)
         self.u[0].femSpace.elementMaps.getBasisGradientValuesTraceRef(self.elementBoundaryQuadraturePoints)
         self.u[0].femSpace.getBasisValuesTraceRef(self.elementBoundaryQuadraturePoints)
@@ -885,4 +873,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def calculateSolutionAtQuadrature(self):
         pass
     def calculateAuxiliaryQuantitiesAfterStep(self):
+        pass
+    def updateAfterMeshMotion(self):
         pass

@@ -369,7 +369,6 @@ namespace proteus
 				   double* v_dof, 
 				   double* w_dof,
 				   double* g,
-				   double* rho_init,
 				   const double useVF,
 				   double* vf,
 				   double* phi,
@@ -3027,9 +3026,9 @@ namespace proteus
 	      //
 	      if (ebN < nElementBoundaries_owned)
 		{
-		  force_v_x = flux_mom_uu_diff_ext + flux_mom_uv_diff_ext + flux_mom_uw_diff_ext;
-		  force_v_y = flux_mom_vu_diff_ext + flux_mom_vv_diff_ext + flux_mom_vw_diff_ext;
-		  force_v_z = flux_mom_wu_diff_ext + flux_mom_wv_diff_ext + flux_mom_ww_diff_ext;
+		  force_v_x = (flux_mom_uu_diff_ext + flux_mom_uv_diff_ext + flux_mom_uw_diff_ext)/dmom_u_ham_grad_p_ext[0];//same as *rho
+		  force_v_y = (flux_mom_vu_diff_ext + flux_mom_vv_diff_ext + flux_mom_vw_diff_ext)/dmom_u_ham_grad_p_ext[0];
+		  force_v_z = (flux_mom_wu_diff_ext + flux_mom_wv_diff_ext + flux_mom_ww_diff_ext)/dmom_u_ham_grad_p_ext[0];
 		  
 		  force_p_x = p_ext*normal[0];
 		  force_p_y = p_ext*normal[1];
@@ -4985,7 +4984,6 @@ namespace proteus
 			   double* v_dof, 
 			   double* w_dof,
 			   double* g,
-			   double* rho_init,
 			   const double useVF,
 			   double* vf,
 			   double* phi,

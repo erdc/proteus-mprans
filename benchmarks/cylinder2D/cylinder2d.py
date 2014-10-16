@@ -14,7 +14,7 @@ points_on_grain = 21
 DX = 0.03
 DX *=0.5
 #DX *=0.5
-usePETSc = True
+usePETSc = False#True
 
 parallelPartitioningType = MeshParallelPartitioningTypes.node
 nLayersOfOverlapForParallel = 1

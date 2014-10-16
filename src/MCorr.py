@@ -601,10 +601,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         if self.globalResidualDummy == None:
             self.globalResidualDummy = numpy.zeros(r.shape,'d')
     def getJacobian(self,jacobian):
-        #import superluWrappers
-        #import numpy
-        import pdb
-	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,jacobian)
+        cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,jacobian)
         self.mcorr.calculateJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
@@ -626,20 +623,20 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             self.mesh.nElements_global,
-	    self.coefficients.useMetrics,
-                                 self.coefficients.epsFactHeaviside,
-                                 self.coefficients.epsFactDirac,
-                                 self.coefficients.epsFactDiffusion,
-                                 self.u[0].femSpace.dofMap.l2g,
-                                 self.elementDiameter,#self.mesh.elementDiametersArray,
+            self.coefficients.useMetrics,
+            self.coefficients.epsFactHeaviside,
+            self.coefficients.epsFactDirac,
+            self.coefficients.epsFactDiffusion,
+            self.u[0].femSpace.dofMap.l2g,
+            self.elementDiameter,#self.mesh.elementDiametersArray,
             self.mesh.nodeDiametersArray,
-                                 self.u[0].dof,
-                                 self.coefficients.q_u_ls,
-				 self.coefficients.q_n_ls,
-                                 self.coefficients.q_H_vof,
-                                 self.coefficients.q_porosity,
-                                 self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
-                                 jacobian)
+            self.u[0].dof,
+            self.coefficients.q_u_ls,
+			self.coefficients.q_n_ls,
+            self.coefficients.q_H_vof,
+            self.coefficients.q_porosity,
+            self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
+            jacobian)
         log("Jacobian ",level=10,data=jacobian)
         #mwf decide if this is reasonable for solver statistics
         self.nonlinear_function_jacobian_evaluations += 1
@@ -983,6 +980,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.vofModel.u[0].dof)
         #self.coefficients.q_H_vof.flat[:]=777.0
     def calculateSolutionAtQuadrature(self):
+        pass
+    def updateAfterMeshMotion(self):
         pass
 
 
