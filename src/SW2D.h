@@ -53,6 +53,7 @@ namespace proteus
 				   double alphaBDF,
 				   double nu,
 				   double g,
+				   double shockCapturingCoefficient,
 				   int* h_l2g, 
 				   int* vel_l2g, 
 				   double* b_dof,
@@ -267,6 +268,7 @@ namespace proteus
 				   double alphaBDF,
 				   double nu,
 				   double g,
+				   double shockCapturingCoefficient,
 				   int* h_l2g, 
 				   int* vel_l2g, 
 				   double* b_dof,
@@ -1185,6 +1187,7 @@ namespace proteus
 			   double alphaBDF,
 			   double nu,
 			   double g,
+			   double shockCapturingCoefficient,
 			   int* h_l2g, 
 			   int* vel_l2g, 
 			   double* b_dof, 
@@ -2123,6 +2126,7 @@ namespace proteus
 			       double alphaBDF,
 			       double nu,
 			       double g,
+			       double shockCapturingCoefficient,
 			       int* h_l2g, 
 			       int* vel_l2g, 
 			       double* b_dof, 
@@ -2513,8 +2517,14 @@ namespace proteus
 	      //mwf end supg tau and test function operator
       	      norm_Rv = sqrt(pdeResidual_u*pdeResidual_u + pdeResidual_v*pdeResidual_v);
 	      /* double */
-	      double norm_grad = 1.0;
-	      q_numDiff_u[eN_k] = 0.5*elementDiameter[eN]*norm_Rv/(norm_grad+1.0e-8);
+	      double grad_norm[2] = {1.0,0.0};
+	      ck.calculateNumericalDiffusion(shockCapturingCoefficient,
+	      				     elementDiameter[eN],
+	      				     norm_Rv,
+	      				     grad_norm,
+	      				     q_numDiff_u[eN_k]);
+	      
+	      /*q_numDiff_u[eN_k] = 0.5*elementDiameter[eN]*norm_Rv/(norm_grad+1.0e-8);*/
 	      q_numDiff_v[eN_k] = q_numDiff_u[eN_k];
 
 	      /* ck.calculateNumericalDiffusion(1.0, */

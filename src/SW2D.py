@@ -688,6 +688,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.timeIntegration.alpha_bdf,
             self.coefficients.nu,
             self.coefficients.g,
+            self.shockCapturing.shockCapturingFactor,
             self.u[0].femSpace.dofMap.l2g,
             self.u[1].femSpace.dofMap.l2g,
             self.coefficients.b.dof,
