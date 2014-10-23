@@ -910,6 +910,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.ebqe[('velocity',3)] = numpy.zeros((self.mesh.nExteriorElementBoundaries_global,self.nElementBoundaryQuadraturePoints_elementBoundary,self.nSpace_global),'d')
         #VRANS start, defaults to RANS 
         self.q[('r',0)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
+        self.q['eddy_viscosity'] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')
         #VRANS end
         #RANS 2eq Models start
         self.q[('grad(u)',1)] = numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element,self.nSpace_global),'d')
@@ -1355,6 +1356,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.coefficients.q_turb_var[0],
             self.coefficients.q_turb_var[1],
             self.coefficients.q_turb_var_grad[0],
+            self.q['eddy_viscosity'],
             #VRANS end
             self.u[0].femSpace.dofMap.l2g,
             self.u[1].femSpace.dofMap.l2g,

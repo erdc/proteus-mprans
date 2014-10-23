@@ -75,6 +75,7 @@ namespace proteus
 				   const double* q_turb_var_0,
 				   const double* q_turb_var_1,
 				   const double* q_turb_var_grad_0,
+				   double * q_eddy_viscosity, 
 				   int* p_l2g, 
 				   int* vel_l2g, 
 				   double* p_dof, 
@@ -555,6 +556,7 @@ namespace proteus
 			      const double& u,
 			      const double& v,
 			      const double& w,
+			      double& eddy_viscosity,
 			      double& mom_u_acc,
 			      double& dmom_u_acc_u,
 			      double& mom_v_acc,
@@ -596,7 +598,7 @@ namespace proteus
 			      double& mom_w_ham,
 			      double dmom_w_ham_grad_p[nSpace])
     {
-      double rho,nu,mu,H_rho,d_rho,H_mu,d_mu,norm_n;
+      double rho,nu,mu,H_rho,d_rho,H_mu,d_mu,norm_n,nu_t0,nu_t1,nu_t;
       H_rho = (1.0-useVF)*smoothedHeaviside(eps_rho,phi) + useVF*fmin(1.0,fmax(0.0,vf));
       d_rho = (1.0-useVF)*smoothedDirac(eps_rho,phi);
       H_mu = (1.0-useVF)*smoothedHeaviside(eps_mu,phi) + useVF*fmin(1.0,fmax(0.0,vf));
@@ -612,8 +614,8 @@ namespace proteus
 			       0.5*(grad_u[1]+grad_v[0])*(grad_u[1]+grad_v[0]) + 
 			       0.5*(grad_u[2]+grad_w[0])*(grad_u[2]+grad_w[0]) +
 			       0.5*(grad_v[2]+grad_w[1])*(grad_v[2]+grad_w[1])));
-	    nu_0 += smagorinskyConstant*smagorinskyConstant*h_e*h_e*norm_S;
-	    nu_1 += smagorinskyConstant*smagorinskyConstant*h_e*h_e*norm_S;
+	    nu_t0 = smagorinskyConstant*smagorinskyConstant*h_e*h_e*norm_S;
+	    nu_t1 = smagorinskyConstant*smagorinskyConstant*h_e*h_e*norm_S;
 	  }
 	case 2:
 	  {
@@ -624,18 +626,23 @@ namespace proteus
 			       0.5*(grad_v[2]+grad_w[1])*(grad_v[2]+grad_w[1])));
 	    re_0 = h_e*h_e*norm_S/nu_0;
 	    cs_0=0.027*pow(10.0,-3.23*pow(re_0,-0.92));
-	    nu_0 += cs_0*h_e*h_e*norm_S;
+	    nu_t0 = cs_0*h_e*h_e*norm_S;
 	    re_1 = h_e*h_e*norm_S/nu_1;
 	    cs_1=0.027*pow(10.0,-3.23*pow(re_1,-0.92));
-	    nu_1 += cs_1*h_e*h_e*norm_S;
+	    nu_t1 = cs_1*h_e*h_e*norm_S;
 	  }
 	}
       
       rho = rho_0*(1.0-H_rho)+rho_1*H_rho;
+      nu_t= nu_t0*(1.0-H_mu)+nu_t1*H_mu;
       nu  = nu_0*(1.0-H_mu)+nu_1*H_mu;
+      nu += nu_t;
       mu  = rho_0*nu_0*(1.0-H_mu)+rho_1*nu_1*H_mu;
 
+      eddy_viscosity = nu_t;
 #ifdef COMPRESSIBLE_FORM
+      eddy_viscosity = nu_t*rho;
+
       //u momentum accumulation
       mom_u_acc=porosity*rho*u;
       dmom_u_acc_u=porosity*rho;
@@ -968,32 +975,33 @@ namespace proteus
 
     inline
       void updateTurbulenceClosure(const int turbulenceClosureModel,
-				 const double eps_rho,
-				 const double eps_mu,
-				 const double rho_0,
-				 const double nu_0,
-				 const double rho_1,
-				 const double nu_1,
-				 const double useVF,
-				 const double vf,
-				 const double phi,
-				 const double porosity,
-				 const double eddy_visc_coef_0,
-				 const double turb_var_0, //k for k-eps or k-omega
-				 const double turb_var_1, //epsilon for k-epsilon, omega for k-omega
-				 const double turb_grad_0[nSpace],//grad k for k-eps,k-omega
-				 double mom_uu_diff_ten[nSpace],
-				 double mom_vv_diff_ten[nSpace],
-				 double mom_ww_diff_ten[nSpace],
-				 double mom_uv_diff_ten[1],
-				 double mom_uw_diff_ten[1],
-				 double mom_vu_diff_ten[1],
-				 double mom_vw_diff_ten[1],
-				 double mom_wu_diff_ten[1],
-				 double mom_wv_diff_ten[1],
-				 double& mom_u_source,
-				 double& mom_v_source,
-				 double& mom_w_source)
+				   const double eps_rho,
+				   const double eps_mu,
+				   const double rho_0,
+				   const double nu_0,
+				   const double rho_1,
+				   const double nu_1,
+				   const double useVF,
+				   const double vf,
+				   const double phi,
+				   const double porosity,
+				   const double eddy_visc_coef_0,
+				   const double turb_var_0, //k for k-eps or k-omega
+				   const double turb_var_1, //epsilon for k-epsilon, omega for k-omega
+				   const double turb_grad_0[nSpace],//grad k for k-eps,k-omega
+				   double& eddy_viscosity,
+				   double mom_uu_diff_ten[nSpace],
+				   double mom_vv_diff_ten[nSpace],
+				   double mom_ww_diff_ten[nSpace],
+				   double mom_uv_diff_ten[1],
+				   double mom_uw_diff_ten[1],
+				   double mom_vu_diff_ten[1],
+				   double mom_vw_diff_ten[1],
+				   double mom_wu_diff_ten[1],
+				   double mom_wv_diff_ten[1],
+				   double& mom_u_source,
+				   double& mom_v_source,
+				   double& mom_w_source)
     {
       /****
 	   eddy_visc_coef 
@@ -1002,7 +1010,7 @@ namespace proteus
 	
       */
       assert (turbulenceClosureModel >=3);
-      double rho,nu,H_mu,eddy_viscosity,nu_t=0.0,nu_t_keps =0.0, nu_t_komega=0.0;
+      double rho,nu,H_mu,nu_t=0.0,nu_t_keps =0.0, nu_t_komega=0.0;
       double isKEpsilon = 1.0;
       if (turbulenceClosureModel == 4)
 	isKEpsilon = 0.0;
@@ -1733,6 +1741,7 @@ namespace proteus
                            const double* q_turb_var_0,
 			   const double* q_turb_var_1,
 			   const double* q_turb_var_grad_0,
+			   double * q_eddy_viscosity, //mwf not used yet
 			   //
 			   int* p_l2g, 
 			   int* vel_l2g, 
@@ -1845,7 +1854,7 @@ namespace proteus
 	    {
 	      //compute indices and declare local storage
 	      register int eN_k = eN*nQuadraturePoints_element+k,
-		eN_k_nSpace = eN_k*nSpace,
+		eN_k_nSpace = eN_k*nSpace,eN_k_3d=eN_k*3,
 		eN_nDOF_trial_element = eN*nDOF_trial_element;
 	      register double p=0.0,u=0.0,v=0.0,w=0.0,
 		grad_p[nSpace],grad_u[nSpace],grad_v[nSpace],grad_w[nSpace],
@@ -1996,9 +2005,9 @@ namespace proteus
 	      q_velocity[eN_k_nSpace+0]=u;
 	      q_velocity[eN_k_nSpace+1]=v;
 	      q_velocity[eN_k_nSpace+2]=w;
-	      q_x[eN_k_nSpace+0]=x;
-	      q_x[eN_k_nSpace+1]=y;
-	      q_x[eN_k_nSpace+2]=z;
+	      q_x[eN_k_3d+0]=x;
+	      q_x[eN_k_3d+1]=y;
+	      q_x[eN_k_3d+2]=z;
 	      //
 	      //calculate pde coefficients at quadrature points
 	      //
@@ -2029,6 +2038,7 @@ namespace proteus
 				   u,
 				   v,
 				   w,
+				   q_eddy_viscosity[eN_k],
 				   mom_u_acc,
 				   dmom_u_acc_u,
 				   mom_v_acc,
@@ -2121,6 +2131,7 @@ namespace proteus
 					  q_turb_var_0[eN_k],
 					  q_turb_var_1[eN_k],
 					  &q_turb_var_grad_0[eN_k_nSpace],
+					  q_eddy_viscosity[eN_k],
 					  mom_uu_diff_ten,
 					  mom_vv_diff_ten,
 					  mom_ww_diff_ten,
@@ -2598,6 +2609,7 @@ namespace proteus
 	      //
 	      //calculate the pde coefficients using the solution and the boundary values for the solution 
 	      // 
+	      double eddy_viscosity_ext(0.),bc_eddy_viscosity_ext(0.); //not interested in saving boundary eddy viscosity for now
 	      evaluateCoefficients(eps_rho,
 				   eps_mu,
 				   sigma,
@@ -2625,6 +2637,7 @@ namespace proteus
 				   u_ext,
 				   v_ext,
 				   w_ext,
+				   eddy_viscosity_ext,
 				   mom_u_acc_ext,
 				   dmom_u_acc_u_ext,
 				   mom_v_acc_ext,
@@ -2692,6 +2705,7 @@ namespace proteus
 				   bc_u_ext,
 				   bc_v_ext,
 				   bc_w_ext,
+				   bc_eddy_viscosity_ext,
 				   bc_mom_u_acc_ext,
 				   bc_dmom_u_acc_u_ext,
 				   bc_mom_v_acc_ext,
@@ -2753,6 +2767,7 @@ namespace proteus
 					  ebqe_turb_var_0[ebNE_kb],
 					  ebqe_turb_var_1[ebNE_kb],
 					  turb_var_grad_0_dummy, //not needed
+					  eddy_viscosity_ext,
 					  mom_uu_diff_ten_ext,
 					  mom_vv_diff_ten_ext,
 					  mom_ww_diff_ten_ext,
@@ -2781,6 +2796,7 @@ namespace proteus
 					  ebqe_turb_var_0[ebNE_kb],
 					  ebqe_turb_var_1[ebNE_kb],
 					  turb_var_grad_0_dummy, //not needed
+					  bc_eddy_viscosity_ext,
 					  bc_mom_uu_diff_ten_ext,
 					  bc_mom_vv_diff_ten_ext,
 					  bc_mom_ww_diff_ten_ext,
@@ -3556,6 +3572,7 @@ namespace proteus
 	      //
 	      //calculate pde coefficients and derivatives at quadrature points
 	      //
+	      double eddy_viscosity(0.);//not really interested in saving eddy_viscosity in jacobian
 	      evaluateCoefficients(eps_rho,
 				   eps_mu,
 				   sigma,
@@ -3583,6 +3600,7 @@ namespace proteus
 				   u,
 				   v,
 				   w,
+				   eddy_viscosity,
 				   mom_u_acc,
 				   dmom_u_acc_u,
 				   mom_v_acc,
@@ -3674,6 +3692,7 @@ namespace proteus
 					  q_turb_var_0[eN_k],
 					  q_turb_var_1[eN_k],
 					  &q_turb_var_grad_0[eN_k_nSpace],
+					  eddy_viscosity,
 					  mom_uu_diff_ten,
 					  mom_vv_diff_ten,
 					  mom_ww_diff_ten,
@@ -4244,6 +4263,7 @@ namespace proteus
 	      // 
 	      //calculate the internal and external trace of the pde coefficients 
 	      // 
+	      double eddy_viscosity_ext(0.),bc_eddy_viscosity_ext(0.);//not interested in saving boundary eddy viscosity for now
 	      evaluateCoefficients(eps_rho,
 				   eps_mu,
 				   sigma,
@@ -4271,6 +4291,7 @@ namespace proteus
 				   u_ext,
 				   v_ext,
 				   w_ext,
+				   eddy_viscosity_ext,
 				   mom_u_acc_ext,
 				   dmom_u_acc_u_ext,
 				   mom_v_acc_ext,
@@ -4338,6 +4359,7 @@ namespace proteus
 				   bc_u_ext,
 				   bc_v_ext,
 				   bc_w_ext,
+				   bc_eddy_viscosity_ext,
 				   bc_mom_u_acc_ext,
 				   bc_dmom_u_acc_u_ext,
 				   bc_mom_v_acc_ext,
@@ -4398,6 +4420,7 @@ namespace proteus
 					  ebqe_turb_var_0[ebNE_kb],
 					  ebqe_turb_var_1[ebNE_kb],
 					  turb_var_grad_0_dummy, //not needed
+					  eddy_viscosity_ext,
 					  mom_uu_diff_ten_ext,
 					  mom_vv_diff_ten_ext,
 					  mom_ww_diff_ten_ext,
@@ -4426,6 +4449,7 @@ namespace proteus
 					  ebqe_turb_var_0[ebNE_kb],
 					  ebqe_turb_var_1[ebNE_kb],
 					  turb_var_grad_0_dummy, //not needed
+					  bc_eddy_viscosity_ext,
 					  bc_mom_uu_diff_ten_ext,
 					  bc_mom_vv_diff_ten_ext,
 					  bc_mom_ww_diff_ten_ext,

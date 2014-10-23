@@ -67,6 +67,7 @@ cdef extern from "RANS2P2D.h" namespace "proteus":
 				   double* q_turb_var_0,
 				   double* q_turb_var_1,
 				   double* q_turb_var_grad_0,
+				   double* q_eddy_viscosity,
 # VRANS end
 				   int* p_l2g, 
 				   int* vel_l2g, 
@@ -528,6 +529,7 @@ cdef class cRANS2P2D_base:
                          numpy.ndarray q_turb_var_0,
                          numpy.ndarray q_turb_var_1,
                          numpy.ndarray q_turb_var_grad_0,
+			 numpy.ndarray q_eddy_viscosity,
 # VRANS end
                          numpy.ndarray p_l2g, 
                          numpy.ndarray vel_l2g, 
@@ -672,6 +674,7 @@ cdef class cRANS2P2D_base:
                                        <double*> q_turb_var_0.data,
                                        <double*> q_turb_var_1.data,
                                        <double*> q_turb_var_grad_0.data,
+				       <double*> q_eddy_viscosity.data,
 # VRANS end
                                        <int*> p_l2g.data, 
                                        <int*> vel_l2g.data, 
