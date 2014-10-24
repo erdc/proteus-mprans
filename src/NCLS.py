@@ -61,8 +61,10 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                  EikonalSolverFlag=0,
                  checkMass=True,epsFact=1.5,
                  useMetrics=0.0,sc_uref=1.0,sc_beta=1.0,
-		 waterline_interval=-1):
-	self.useMetrics=useMetrics
+                 waterline_interval=-1,
+                 movingDomain=False):
+        self.movingDomain=movingDomain
+        self.useMetrics=useMetrics
         self.epsFact=epsFact
         self.variableNames=['phi']
         nc=1
@@ -80,7 +82,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
                          potential,
                          reaction,
                          hamiltonian,
-                         ['phi'])
+                         ['phi'],
+                         movingDomain=movingDomain)
         self.flowModelIndex=V_model
         self.modelIndex=ME_model
         self.RD_modelIndex=RD_model
@@ -596,9 +599,6 @@ class LevelModel(OneLevelTransport):
             self.MOVING_DOMAIN=1.0
         else:
             self.MOVING_DOMAIN=0.0
-        #cek hack
-        self.movingDomain=False
-        self.MOVING_DOMAIN=0.0
         if self.mesh.nodeVelocityArray==None:
             self.mesh.nodeVelocityArray = numpy.zeros(self.mesh.nodeArray.shape,'d')
 
@@ -898,3 +898,5 @@ class LevelModel(OneLevelTransport):
 		filename = os.path.join(self.coefficients.opts.dataDir,  "waterline." + str(comm.rank()) + "." + str(self.waterline_prints))
 		numpy.save(filename, self.waterline_data[0:self.waterline_npoints[0]])
                 self.waterline_prints += 1
+    def updateAfterMeshMotion(self):
+        pass

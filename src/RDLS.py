@@ -131,10 +131,10 @@ class PsiTC(proteus.StepControl.SC_base):
 
 class Coefficients(proteus.TransportCoefficients.TC_base):
     from proteus.ctransportCoefficients import redistanceLevelSetCoefficientsEvaluate
-    def __init__(self,applyRedistancing=True,epsFact=2.0,nModelId=None,u0=None,rdModelId=0,penaltyParameter=0.0,useMetrics=0.0,useConstantH=False):
+    def __init__(self,applyRedistancing=True,epsFact=2.0,nModelId=None,u0=None,rdModelId=0,penaltyParameter=0.0,useMetrics=0.0,useConstantH=False,weakDirichletFactor=10.0,backgroundDiffusionFactor=0.01):
         self.useConstantH=useConstantH
         self.useMetrics=useMetrics
-	variableNames=['phid']
+        variableNames=['phid']
         nc=1
         mass={0:{0:'linear'}}
         hamiltonian={0:{0:'nonlinear'}}
@@ -162,6 +162,8 @@ class Coefficients(proteus.TransportCoefficients.TC_base):
         self.applyRedistancing = applyRedistancing
         self.weakBC_on=True#False
         self.penaltyParameter=penaltyParameter
+        self.backgroundDiffusionFactor=backgroundDiffusionFactor
+        self.weakDirichletFactor=weakDirichletFactor
     def attachModels(self,modelList):
         if self.nModelId != None:
             self.nModel = modelList[self.nModelId]
@@ -813,43 +815,45 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             #physics
             self.mesh.nElements_global,
-	    self.coefficients.useMetrics,
-                  alpha_bdf,
-                  self.coefficients.epsFact,
-                  self.freezeLevelSet,
-                  useTimeIntegration,
-                  self.shockCapturing.lag,
-                  self.stabilization.lag,#0 nothing lagged
-                                         #1 dH lagged in tau calc
-                                         #2 dH lagged in tau and pdeResidual, Lstar*w calculations
-                  self.shockCapturing.shockCapturingFactor,
-                  self.u[0].femSpace.dofMap.l2g,
-                  self.elementDiameter,#self.mesh.elementDiametersArray,
-                  self.mesh.nodeDiametersArray,
+            self.coefficients.useMetrics,
+            alpha_bdf,
+            self.coefficients.epsFact,
+            self.coefficients.backgroundDiffusionFactor,
+            self.coefficients.weakDirichletFactor,
+            self.freezeLevelSet,
+            useTimeIntegration,
+            self.shockCapturing.lag,
+            self.stabilization.lag,#0 nothing lagged
+            #1 dH lagged in tau calc
+            #2 dH lagged in tau and pdeResidual, Lstar*w calculations
+            self.shockCapturing.shockCapturingFactor,
+            self.u[0].femSpace.dofMap.l2g,
+            self.elementDiameter,#self.mesh.elementDiametersArray,
+            self.mesh.nodeDiametersArray,
             self.u[0].dof,
-                  self.coefficients.q_u0,
-                  self.timeIntegration.m_tmp[0],
-                  self.q[('u',0)],
-                  self.q[('grad(u)',0)],  
-                  self.q[('dH',0,0)],
-                  self.u_dof_last,
-                  beta_bdf[0],
-                  self.q[('dH_sge',0,0)],
-                  self.q[('cfl',0)],
-                  self.shockCapturing.numDiff[0],
-                  self.shockCapturing.numDiff_last[0],
-                  self.weakDirichletConditionFlags,
-                  self.offset[0],self.stride[0],
-                  r,
-                  self.mesh.nExteriorElementBoundaries_global,
-                  self.mesh.exteriorElementBoundariesArray,
-                  self.mesh.elementBoundaryElementsArray,
-                  self.mesh.elementBoundaryLocalElementBoundariesArray,
-                  self.coefficients.ebqe_u0,
-                  self.numericalFlux.isDOFBoundary[0],
-                  self.numericalFlux.ebqe[('u',0)],
-                  self.ebqe[('u',0)],
-                  self.ebqe[('grad(u)',0)] )
+            self.coefficients.q_u0,
+            self.timeIntegration.m_tmp[0],
+            self.q[('u',0)],
+            self.q[('grad(u)',0)],  
+            self.q[('dH',0,0)],
+            self.u_dof_last,
+            beta_bdf[0],
+            self.q[('dH_sge',0,0)],
+            self.q[('cfl',0)],
+            self.shockCapturing.numDiff[0],
+            self.shockCapturing.numDiff_last[0],
+            self.weakDirichletConditionFlags,
+            self.offset[0],self.stride[0],
+            r,
+            self.mesh.nExteriorElementBoundaries_global,
+            self.mesh.exteriorElementBoundariesArray,
+            self.mesh.elementBoundaryElementsArray,
+            self.mesh.elementBoundaryLocalElementBoundariesArray,
+            self.coefficients.ebqe_u0,
+            self.numericalFlux.isDOFBoundary[0],
+            self.numericalFlux.ebqe[('u',0)],
+            self.ebqe[('u',0)],
+            self.ebqe[('grad(u)',0)] )
         #print "m_tmp",self.timeIntegration.m_tmp[0]
         #print "dH",self.q[('dH',0,0)]
         #print "dH_sge",self.q[('dH_sge',0,0)]
@@ -901,35 +905,38 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.u[0].femSpace.elementMaps.boundaryNormals,
             self.u[0].femSpace.elementMaps.boundaryJacobians,
             self.mesh.nElements_global,
-	    self.coefficients.useMetrics,
-                  alpha_bdf,
-                  self.coefficients.epsFact,
-                  self.freezeLevelSet,
-                  useTimeIntegration,
-                  self.shockCapturing.lag,
-                  self.stabilization.lag,
-                  self.shockCapturing.shockCapturingFactor,
-                  self.u[0].femSpace.dofMap.l2g,
-                  self.elementDiameter,#self.mesh.elementDiametersArray,
+            self.coefficients.useMetrics,
+            alpha_bdf,
+            self.coefficients.epsFact,
+            self.coefficients.backgroundDiffusionFactor,
+            self.coefficients.weakDirichletFactor,
+            self.freezeLevelSet,
+            useTimeIntegration,
+            self.shockCapturing.lag,
+            self.stabilization.lag,
+            self.shockCapturing.shockCapturingFactor,
+            self.u[0].femSpace.dofMap.l2g,
+            self.elementDiameter,#self.mesh.elementDiametersArray,
             self.mesh.nodeDiametersArray,
-                  self.u[0].dof,
-                  self.coefficients.q_u0,
-                  beta_bdf[0],
-                  self.q[('dH_sge',0,0)],
-                  self.q[('cfl',0)],
-                  self.shockCapturing.numDiff[0],
-                  self.shockCapturing.numDiff_last[0],
-                  self.weakDirichletConditionFlags,
-                  self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
-                  jacobian,
-                  self.mesh.nExteriorElementBoundaries_global,
-                  self.mesh.exteriorElementBoundariesArray,
-                  self.mesh.elementBoundaryElementsArray,
-                  self.mesh.elementBoundaryLocalElementBoundariesArray,
-                  self.coefficients.ebqe_u0,
-                  self.numericalFlux.isDOFBoundary[0],
-                  self.numericalFlux.ebqe[('u',0)],
-                  self.csrColumnOffsets_eb[(0,0)])
+            self.u[0].dof,
+            self.u_dof_last,
+            self.coefficients.q_u0,
+            beta_bdf[0],
+            self.q[('dH_sge',0,0)],
+            self.q[('cfl',0)],
+            self.shockCapturing.numDiff[0],
+            self.shockCapturing.numDiff_last[0],
+            self.weakDirichletConditionFlags,
+            self.csrRowIndeces[(0,0)],self.csrColumnOffsets[(0,0)],
+            jacobian,
+            self.mesh.nExteriorElementBoundaries_global,
+            self.mesh.exteriorElementBoundariesArray,
+            self.mesh.elementBoundaryElementsArray,
+            self.mesh.elementBoundaryLocalElementBoundariesArray,
+            self.coefficients.ebqe_u0,
+            self.numericalFlux.isDOFBoundary[0],
+            self.numericalFlux.ebqe[('u',0)],
+            self.csrColumnOffsets_eb[(0,0)])
         log("Jacobian ",level=10,data=jacobian)
         #mwf decide if this is reasonable for solver statistics
         self.nonlinear_function_jacobian_evaluations += 1
@@ -991,6 +998,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #             J = self.u[0].femSpace.dofMap.l2g[eN,j]
         #             self.q[('u',0)][eN,k]+=self.u[0].dof[J]*self.u[0].femSpace.psi[k,j]
     def calculateAuxiliaryQuantitiesAfterStep(self):
+        pass
+    def updateAfterMeshMotion(self):
         pass
 #OneLevelRDLS
 from proteus import ctransportCoefficients

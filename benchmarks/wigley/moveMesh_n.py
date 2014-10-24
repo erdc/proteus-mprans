@@ -30,22 +30,29 @@ linearSmoother = None
 
 fullNewtonFlag = True
 
-tolFac = 1e-2
-
-nl_atol_res = 0.0
-maxNonlinearIts = 4#should be linear
-maxLineSearches = 0
 
 matrix = SparseMatrix
 
-multilevelLinearSolver = PETSc
-levelLinearSolver = PETSc
+if useOldPETSc:
+    multilevelLinearSolver = PETSc
+    levelLinearSolver      = PETSc
+else:
+    multilevelLinearSolver = KSP_petsc4py
+    levelLinearSolver      = KSP_petsc4py
+
+if useSuperlu:
+    multilevelLinearSolver = LU
+    levelLinearSolver      = LU
+
 linear_solver_options_prefix = 'mesh_'
 linearSmoother = None
 linearSolverConvergenceTest = 'r-true'
-
+tolFac = 0.0
 linTolFac = 0.001
+nl_atol_res = mesh_nl_atol_res
+maxNonlinearIts = 4#should be linear
+maxLineSearches = 0
 
 conservativeFlux = None
 
-##auxiliaryVariables=[tro]
+auxiliaryVariables=[tro]

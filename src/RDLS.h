@@ -36,6 +36,8 @@ namespace proteus
 			   double useMetrics, 
 			   double alphaBDF,
 			   double epsFact_redist,
+			   double backgroundDiffusionFactor,
+			   double weakDirichletFactor,
 			   int freezeLevelSet,
 			   int useTimeIntegration,
 			   int lag_shockCapturing, 
@@ -95,6 +97,8 @@ namespace proteus
 			        double useMetrics, 
 				double alphaBDF,
 				double epsFact_redist,
+				double backgroundDiffusionFactor,
+				double weakDirichletFactor,
 				int freezeLevelSet,
 				int useTimeIntegration,
 				int lag_shockCapturing,
@@ -104,6 +108,7 @@ namespace proteus
 				double* elementDiameter,
 				double* nodeDiametersArray,
 				double* u_dof, 
+				double* u_weak_internal_bc_dofs,//for freezing level set
 				double* phi_ls,
 				double* q_m_betaBDF,
 				double* q_dH_last,
@@ -249,6 +254,8 @@ namespace proteus
 			   double useMetrics, 
 			   double alphaBDF,
 			   double epsFact_redist,
+			   double backgroundDiffusionFactor,
+			   double weakDirichletFactor,
 			   int freezeLevelSet,
 			   int useTimeIntegration,
 			   int lag_shockCapturing, 
@@ -509,6 +516,9 @@ namespace proteus
 	      std::cout<<"q_numDiff_u[eN_k] "<<q_numDiff_u[eN_k]<<" q_numDiff_u_last[eN_k] "<<q_numDiff_u_last[eN_k]<<" lag "<<lag_shockCapturingScale<<std::endl;
 #endif
 	      nu_sc = q_numDiff_u[eN_k]*(1.0-lag_shockCapturingScale) + q_numDiff_u_last[eN_k]*lag_shockCapturingScale;
+	      double epsilon_background_diffusion = 2.0*epsFact_redist*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      if (fabs(phi_ls[eN_k]) >  epsilon_background_diffusion)
+		nu_sc += backgroundDiffusionFactor*elementDiameter[eN];
 	      // 
 	      //update element residual 
 	      // 
@@ -542,12 +552,12 @@ namespace proteus
 	  //
 	  if (freezeLevelSet)
 	    {
-	      const double weakDirichletFactor = 3.0;
 	      for (int j = 0; j < nDOF_trial_element; j++)
 		{
 		  const int eN_j = eN*nDOF_trial_element+j;
 		  const int J = u_l2g[eN_j];
-		  if (weakDirichletConditionFlags[J] == 1)
+		  //if (weakDirichletConditionFlags[J] == 1)
+		  if (fabs(u_weak_internal_bc_dofs[J]) < epsilon_redist)
 		    {
 		      elementResidual_u[j] = (u_dof[J]-u_weak_internal_bc_dofs[J])*weakDirichletFactor*elementDiameter[eN];
 		    }
@@ -759,6 +769,8 @@ namespace proteus
 			        double useMetrics, 
 				double alphaBDF,
 				double epsFact_redist,
+				double backgroundDiffusionFactor,
+				double weakDirichletFactor,
 				int freezeLevelSet,
 				int useTimeIntegration,
 				int lag_shockCapturing,
@@ -767,7 +779,8 @@ namespace proteus
 				int* u_l2g,
 				double* elementDiameter,
 				double* nodeDiametersArray,
-				double* u_dof, 
+				double* u_dof,
+				double* u_weak_internal_bc_dofs,//for freezing level set
 				double* phi_ls,
 				double* q_m_betaBDF,
 				double* q_dH_last,
@@ -970,6 +983,9 @@ namespace proteus
 		dsubgridError_u_u[j] =  -tau*dpdeResidual_u_u[j];
 
 	      nu_sc = q_numDiff_u[eN_k]*(1.0-lag_shockCapturingScale) + q_numDiff_u_last[eN_k]*lag_shockCapturingScale;
+	      double epsilon_background_diffusion = 2.0*epsFact_redist*(useMetrics*h_phi+(1.0-useMetrics)*elementDiameter[eN]);
+	      if (fabs(phi_ls[eN_k]) >  epsilon_background_diffusion)
+		nu_sc += backgroundDiffusionFactor*elementDiameter[eN];
 
 	      for(int i=0;i<nDOF_test_element;i++)
 		{
@@ -997,12 +1013,12 @@ namespace proteus
 	  //now try to account for weak dirichlet conditions in interior (frozen level set values)
 	  if (freezeLevelSet)
 	    {
-	      const double weakDirichletFactor = 3.0;
 	      //assume correspondence between dof and equations 
 	      for (int j = 0; j < nDOF_trial_element; j++)
 		{
 		  const int J = u_l2g[eN*nDOF_trial_element+j];
-		  if (weakDirichletConditionFlags[J] == 1)
+		  if (fabs(u_weak_internal_bc_dofs[J]) < epsilon_redist)
+		    //if (weakDirichletConditionFlags[J] == 1)
 		    {
 		      for (int jj=0; jj < nDOF_trial_element; jj++)
 			elementJacobian_u_u[j][jj] = 0.0;

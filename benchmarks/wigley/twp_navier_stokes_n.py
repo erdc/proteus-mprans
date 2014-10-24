@@ -50,3 +50,4 @@ useEisenstatWalker = False#True
 maxNonlinearIts = 50
 maxLineSearches = 0
 conservativeFlux = {0:'pwl-bdm-opt'}
+auxiliaryVariables=[rc]

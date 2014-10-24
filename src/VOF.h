@@ -492,8 +492,10 @@ namespace proteus
 	      mesh_velocity[0] = xt;
 	      mesh_velocity[1] = yt;
 	      mesh_velocity[2] = zt;
+	      //std::cout<<"q mesh_velocity"<<std::endl;
 	      for (int I=0;I<nSpace;I++)
 		{
+		  //std::cout<<mesh_velocity[I]<<std::endl;
 		  f[I] -= MOVING_DOMAIN*m*mesh_velocity[I];
 		  df[I] -= MOVING_DOMAIN*dm*mesh_velocity[I];
 		}
@@ -534,8 +536,6 @@ namespace proteus
 	      //
 	      //calculate shock capturing diffusion
 	      //
-
-	      
 	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,elementDiameter[eN],pdeResidual_u,grad_u,numDiff0);	      
 	      //ck.calculateNumericalDiffusion(shockCapturingDiffusion,G,pdeResidual_u,grad_u_old,numDiff1);
 	      ck.calculateNumericalDiffusion(shockCapturingDiffusion,sc_uref, sc_alpha,G,G_dd_G,pdeResidual_u,grad_u,numDiff1);
@@ -664,6 +664,7 @@ namespace proteus
 							  boundaryJac,
 							  metricTensor,
 							  integralScaling);
+	      //std::cout<<"metricTensorDetSqrt "<<metricTensorDetSqrt<<" integralScaling "<<integralScaling<<std::endl;
 	      dS = ((1.0-MOVING_DOMAIN)*metricTensorDetSqrt + MOVING_DOMAIN*integralScaling)*dS_ref[kb];
 	      //get the metric tensor
 	      //cek todo use symmetry
@@ -710,13 +711,19 @@ namespace proteus
 	      //
 	      //moving mesh
 	      //
-	      double velocity_ext[nSpace];
 	      double mesh_velocity[3];
 	      mesh_velocity[0] = xt_ext;
 	      mesh_velocity[1] = yt_ext;
 	      mesh_velocity[2] = zt_ext;
+	      //std::cout<<"mesh_velocity ext"<<std::endl;
 	      for (int I=0;I<nSpace;I++)
-		velocity_ext[I] = ebqe_velocity_ext[ebNE_kb_nSpace+0] - MOVING_DOMAIN*mesh_velocity[I];
+		{
+		  //std::cout<<mesh_velocity[I]<<std::endl;
+		  f_ext[I] -= MOVING_DOMAIN*m_ext*mesh_velocity[I];
+		  df_ext[I] -= MOVING_DOMAIN*dm_ext*mesh_velocity[I];
+		  bc_f_ext[I] -= MOVING_DOMAIN*bc_m_ext*mesh_velocity[I];
+		  bc_df_ext[I] -= MOVING_DOMAIN*bc_dm_ext*mesh_velocity[I];
+		}
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
@@ -727,7 +734,6 @@ namespace proteus
 					     ebqe_bc_flux_u_ext[ebNE_kb],
 					     u_ext,//smoothedHeaviside(eps,ebqe_phi[ebNE_kb]),//cek hack
 					     df_ext,//VRANS includes porosity
-					     //velocity_ext,
 					     flux_ext);
 	      ebqe_flux[ebNE_kb] = flux_ext;
 	      //save for other models? cek need to be consistent with numerical flux
@@ -931,8 +937,10 @@ namespace proteus
 	      mesh_velocity[0] = xt;
 	      mesh_velocity[1] = yt;
 	      mesh_velocity[2] = zt;
+	      //std::cout<<"qj mesh_velocity"<<std::endl;
 	      for(int I=0;I<nSpace;I++)
 		{
+		  //std::cout<<mesh_velocity[I]<<std::endl;
 		  f[I] -= MOVING_DOMAIN*m*mesh_velocity[I];
 		  df[I] -= MOVING_DOMAIN*dm*mesh_velocity[I];
 		}
@@ -1109,6 +1117,7 @@ namespace proteus
 							  boundaryJac,
 							  metricTensor,
 							  integralScaling);
+	      //std::cout<<"J mtsqrdet "<<metricTensorDetSqrt<<" integralScaling "<<integralScaling<<std::endl;
 	      dS = ((1.0-MOVING_DOMAIN)*metricTensorDetSqrt + MOVING_DOMAIN*integralScaling)*dS_ref[kb];
 	      //dS = metricTensorDetSqrt*dS_ref[kb];
 	      ck.calculateG(jacInv_ext,G,G_dd_G,tr_G);
@@ -1154,17 +1163,26 @@ namespace proteus
 	      //
 	      //moving domain
 	      //
-	      double velocity_ext[nSpace];
 	      double mesh_velocity[3];
+	      mesh_velocity[0] = xt_ext;
+	      mesh_velocity[1] = yt_ext;
+	      mesh_velocity[2] = zt_ext;
+	      //std::cout<<"ext J mesh_velocity"<<std::endl;
 	      for (int I=0;I<nSpace;I++)
-		velocity_ext[I] = ebqe_velocity_ext[ebNE_kb_nSpace+0] - MOVING_DOMAIN*mesh_velocity[I];
+		{
+		  //std::cout<<mesh_velocity[I]<<std::endl;
+		  f_ext[I] -= MOVING_DOMAIN*m_ext*mesh_velocity[I];
+		  df_ext[I] -= MOVING_DOMAIN*dm_ext*mesh_velocity[I];
+		  bc_f_ext[I] -= MOVING_DOMAIN*bc_m_ext*mesh_velocity[I];
+		  bc_df_ext[I] -= MOVING_DOMAIN*bc_dm_ext*mesh_velocity[I];
+		}
 	      // 
 	      //calculate the numerical fluxes 
 	      // 
 	      exteriorNumericalAdvectiveFluxDerivative(isDOFBoundary_u[ebNE_kb],
 						       isFluxBoundary_u[ebNE_kb],
 						       normal,
-						       df_ext,//VRANS holds porosity velocity_ext,//ebqe_velocity_ext[ebNE_kb_nSpace],
+						       df_ext,//VRANS holds porosity
 						       dflux_u_u_ext);
 	      //
 	      //calculate the flux jacobian
