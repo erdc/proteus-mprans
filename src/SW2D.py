@@ -1,6 +1,80 @@
 import proteus
 from proteus.mprans.cSW2D import *
 
+class SubgridError(proteus.SubgridError.SGE_base):
+    def __init__(self,coefficients,nd,lag=False,nStepsToDelay=0,hFactor=1.0):
+        proteus.SubgridError.SGE_base.__init__(self,coefficients,nd,lag)
+        self.hFactor=hFactor
+        self.nStepsToDelay = nStepsToDelay
+        self.nSteps=0
+        if self.lag:
+            log("SW2D.SubgridError: lagging requested but must lag the first step; switching lagging off and delaying")
+            self.nStepsToDelay=1
+            self.lag=False
+    def initializeElementQuadrature(self,mesh,t,cq):
+        import copy
+        self.cq=cq
+        self.v_last = self.cq[('velocity',0)]
+    def updateSubgridErrorHistory(self,initializationPhase=False):
+        self.nSteps += 1
+        if self.lag:
+            self.v_last[:] = self.cq[('velocity',0)]
+        if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            log("SW2D.SubgridError: switched to lagged subgrid error")
+            self.lag = True
+            self.v_last = self.cq[('velocity',0)].copy()
+    def calculateSubgridError(self,q):
+        pass
+
+class NumericalFlux(proteus.NumericalFlux.ShallowWater_2D):
+    hasInterior=False
+    def __init__(self,vt,getPointwiseBoundaryConditions,
+                 getAdvectiveFluxBoundaryConditions,
+                 getDiffusiveFluxBoundaryConditions,
+                 getPeriodicBoundaryConditions=None,
+                 h_eps=1.0e-8,
+                 tol_u=1.0e-8):
+        proteus.NumericalFlux.ShallowWater_2D.__init__(self,vt,getPointwiseBoundaryConditions,
+                                                       getAdvectiveFluxBoundaryConditions,
+                                                       getDiffusiveFluxBoundaryConditions,
+                                                       getPeriodicBoundaryConditions,
+                                                       h_eps,
+                                                       tol_u)
+        self.penalty_constant = 2.0
+        self.includeBoundaryAdjoint=True
+        self.boundaryAdjoint_sigma=1.0
+        self.hasInterior=False
+
+class ShockCapturing(proteus.ShockCapturing.ShockCapturing_base):
+    def __init__(self,coefficients,nd,shockCapturingFactor=0.25,lag=False,nStepsToDelay=3):
+        proteus.ShockCapturing.ShockCapturing_base.__init__(self,coefficients,nd,shockCapturingFactor,lag)
+        self.nStepsToDelay = nStepsToDelay
+        self.nSteps=0
+        if self.lag:
+            log("SW2D.ShockCapturing: lagging requested but must lag the first step; switching lagging off and delaying")
+            self.nStepsToDelay=1
+            self.lag=False
+    def initializeElementQuadrature(self,mesh,t,cq):
+        self.mesh=mesh
+        self.numDiff={}
+        self.numDiff_last={}
+        for ci in range(3):
+            self.numDiff[ci] = cq[('numDiff',ci,ci)]
+            self.numDiff_last[ci] = cq[('numDiff',ci,ci)]
+    def updateShockCapturingHistory(self):
+        self.nSteps += 1
+        if self.lag:
+            for ci in range(3):
+                self.numDiff_last[ci][:] = self.numDiff[ci]
+        if self.lag == False and self.nStepsToDelay != None and self.nSteps > self.nStepsToDelay:
+            log("SW2D.ShockCapturing: switched to lagged shock capturing")
+            self.lag = True
+            for ci in range(3):
+                self.numDiff_last[ci] = self.numDiff[ci].copy()
+        log("SW2D: max numDiff_0 %e numDiff_1 %e numDiff_2 %e" % (globalMax(self.numDiff_last[0].max()),
+                                                                    globalMax(self.numDiff_last[1].max()),
+                                                                    globalMax(self.numDiff_last[2].max())))
+
 class Coefficients(proteus.TransportCoefficients.TC_base):
     """
     The coefficients for the shallow water equations
@@ -523,6 +597,17 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                                    self.testSpace[0].referenceFiniteElement.localFunctionSpace.dim,
                                    self.nElementBoundaryQuadraturePoints_elementBoundary,
                                    compKernelFlag)
+        try_supg = False
+        if options != None and 'try_supg_stabilization' in dir(options):
+            try_supg = options.try_supg_stabilization
+            log("setting try_supg_stabilization from options= {0}".format(try_supg),level=1)
+        if try_supg:
+            self.calculateResidual = self.sw2d.calculateResidual_supg
+            self.calculateJacobian = self.sw2d.calculateJacobian_supg
+        else:
+            self.calculateResidual =  self.sw2d.calculateResidual
+            self.calculateJacobian = self.sw2d.calculateJacobian
+
     def getResidual(self,u,r):
         """
         Calculate the element residuals and add in to the global residual
@@ -557,7 +642,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
                     self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
         #import pdb
         #pdb.set_trace()
-        self.sw2d.calculateResidual(#element
+        
+        self.calculateResidual(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
@@ -595,6 +681,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.timeIntegration.alpha_bdf,
             self.coefficients.nu,
             self.coefficients.g,
+            self.shockCapturing.shockCapturingFactor,
             self.u[0].femSpace.dofMap.l2g,
             self.u[1].femSpace.dofMap.l2g,
             self.coefficients.b.dof,
@@ -679,7 +766,7 @@ class LevelModel(proteus.Transport.OneLevelTransport):
     def getJacobian(self,jacobian):
 	cfemIntegrals.zeroJacobian_CSR(self.nNonzerosInJacobian,
 				       jacobian)
-        self.sw2d.calculateJacobian(#element
+        self.calculateJacobian(#element
             self.u[0].femSpace.elementMaps.psi,
             self.u[0].femSpace.elementMaps.grad_psi,
             self.mesh.nodeArray,
@@ -821,17 +908,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.u[1].femSpace.getBasisValuesRef(self.elementQuadraturePoints)
         self.u[1].femSpace.getBasisGradientValuesRef(self.elementQuadraturePoints)
         self.coefficients.initializeElementQuadrature(self.timeIntegration.t,self.q)
-        #cek hack
-        self.stabilization.v_last = self.q[('velocity',0)]
-        # if self.stabilization != None:
-        #     self.stabilization.initializeElementQuadrature(self.mesh,self.timeIntegration.t,self.q)
-        #     self.stabilization.initializeTimeIntegration(self.timeIntegration)
-        #cek hack
-        self.shockCapturing.numDiff_last=[numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d'),
-                                          numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d'),
-                                          numpy.zeros((self.mesh.nElements_global,self.nQuadraturePoints_element),'d')]
-        # if self.shockCapturing != None:
-        #     self.shockCapturing.initializeElementQuadrature(self.mesh,self.timeIntegration.t,self.q)
+        if self.stabilization != None:
+            self.stabilization.initializeElementQuadrature(self.mesh,self.timeIntegration.t,self.q)
+            self.stabilization.initializeTimeIntegration(self.timeIntegration)
+        if self.shockCapturing != None:
+            self.shockCapturing.initializeElementQuadrature(self.mesh,self.timeIntegration.t,self.q)
     def calculateElementBoundaryQuadrature(self):
         """
         Calculate the physical location and weights of the quadrature rules
@@ -878,9 +959,6 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.h_dof_sge[:] = self.u[0].dof
         self.u_dof_sge[:] = self.u[1].dof
         self.v_dof_sge[:] = self.u[2].dof
-        self.shockCapturing.numDiff_last[0][:] = self.q[('numDiff',0,0)]
-        self.shockCapturing.numDiff_last[1][:] = self.q[('numDiff',1,1)] 
-        self.shockCapturing.numDiff_last[2][:] = self.q[('numDiff',2,2)] 
         # if self.postProcessing:
         #     from proteus.cSW2D import calculateVelocityAverage as cva
         #     cva(self.mesh.nExteriorElementBoundaries_global,
