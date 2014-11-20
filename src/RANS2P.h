@@ -618,16 +618,18 @@ namespace proteus
 	  }
 	case 2:
 	  {
-	    double re_0,cs_0,re_1,cs_1;
+	    double re_0,cs_0=0.0,re_1,cs_1=0.0;
 	    norm_S = sqrt(2.0*(grad_u[0]*grad_u[0] + grad_v[1]*grad_v[1] + grad_w[2]*grad_w[2] +
 			       0.5*(grad_u[1]+grad_v[0])*(grad_u[1]+grad_v[0]) + 
 			       0.5*(grad_u[2]+grad_w[0])*(grad_u[2]+grad_w[0]) +
 			       0.5*(grad_v[2]+grad_w[1])*(grad_v[2]+grad_w[1])));
 	    re_0 = h_e*h_e*norm_S/nu_0;
-	    cs_0=0.027*pow(10.0,-3.23*pow(re_0,-0.92));
+	    if (re_0 > 1.0)
+	      cs_0=0.027*pow(10.0,-3.23*pow(re_0,-0.92));
 	    nu_t0 = cs_0*h_e*h_e*norm_S;
 	    re_1 = h_e*h_e*norm_S/nu_1;
-	    cs_1=0.027*pow(10.0,-3.23*pow(re_1,-0.92));
+	    if (re_1 > 1.0)
+	      cs_1=0.027*pow(10.0,-3.23*pow(re_1,-0.92));
 	    nu_t1 = cs_1*h_e*h_e*norm_S;
 	  }
 	}
