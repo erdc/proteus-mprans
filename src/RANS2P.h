@@ -627,7 +627,7 @@ namespace proteus
 	    if (re_0 > 1.0)
 	      cs_0=0.027*pow(10.0,-3.23*pow(re_0,-0.92));
 	    nu_t0 = cs_0*h_e*h_e*norm_S;
-	    re_1 = h_e*h_e*norm_S/nu_1+1.0e-8;
+	    re_1 = h_e*h_e*norm_S/nu_1;
 	    if (re_1 > 1.0)
 	      cs_1=0.027*pow(10.0,-3.23*pow(re_1,-0.92));
 	    nu_t1 = cs_1*h_e*h_e*norm_S;
