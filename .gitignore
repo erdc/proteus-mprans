@@ -13,9 +13,15 @@ data*txt
 *.node
 *.bak
 *.log.*
+*.egg-info
+*.idea
 install_*
 config_*
 build/
+proteus/__init__.py
+proteus/__init__.pyc
+proteus/mprans/*.so
+proteus/mprans/*.cpp
 config.py
 darwin/
 linux2/
