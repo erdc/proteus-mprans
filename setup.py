@@ -1,3 +1,7 @@
+import os
+import sys
+
+
 from distutils.core import setup, Extension
 from Cython.Distutils import build_ext
 import numpy
@@ -7,8 +11,9 @@ import numpy
 #
 #  Set the DISTUTILS_DEBUG environment variable to print detailed information while setup.py is running.
 #
+
+# Get Proteus configuration information
 try:
-    import sys,os.path,os
     if not os.getenv('PROTEUS_PREFIX'):
         os.environ['PROTEUS_PREFIX'] = sys.prefix
     sys.path.insert(0,os.path.join(os.environ['PROTEUS_PREFIX'],'proteusConfig'))
@@ -21,76 +26,96 @@ except:
 from distutils import sysconfig
 cv = sysconfig.get_config_vars()
 
+# Get include flags for building Proteus Extensions
+
+import proteus
+
+try:
+    import proteus.util
+    proteus_include_dir = proteus.util.get_include_dir()
+    proteus_model_kernel = [proteus_include_dir + '/ModelFactory.h', proteus_include_dir + '/CompKernel.h']
+except:
+    import sys
+    sys.stderr.write("Unable to import `get_include_dir` from Proteus, is your Proteus up to date?")
+    raise
+
+# Ensure that Proteus namespace init.py has been symbolically linked in
+if not os.path.exists('./proteus/__init__.py') or not os.path.exists('./proteus/__init__.pyc'):
+    # Symbolically link in Proteus __init__.py file
+    proteus_init = proteus.__file__
+    # if pyc, use py instead if available
+    if proteus_init.endswith('pyc') and os.path.exists(proteus_init[:-1]):
+        proteus_init = proteus_init[:-1]
+    proteus_init_name = os.path.split(proteus_init)[-1]
+    os.symlink(proteus_init, os.path.join('.', 'proteus', proteus_init_name))
+
 
 setup(name='proteus_mprans',
       version='0.9.0',
       description='Proteus modules for simulating free surface fluid/structure interaction',
       author='Chris Kees',
       author_email='christopher.e.kees@usace.army.mil',
-      url='https://adh.usace.army.mil/proteus',
+      url='https://proteus.usace.army.mil',
       packages=['proteus.mprans'],
-      package_dir={'proteus.mprans':'src'},
       ext_package='proteus.mprans',
       cmdclass = {'build_ext':build_ext},
-      ext_modules=[Extension("cNCLS",["src/cNCLS.pyx"],depends=["src/NCLS.h"], language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src',os.getenv('PROTEUS')+'/src']),
-                   Extension("cMCorr",["src/cMCorr.pyx"],depends=["src/MCorr.h"], define_macros=[('PROTEUS_LAPACK_H',PROTEUS_LAPACK_H),
+      ext_modules=[Extension("cNCLS",["proteus/mprans/cNCLS.pyx"],depends=["proteus/mprans/NCLS.h"], language="c++",
+                             include_dirs=[numpy.get_include(), proteus_include_dir]),
+                   Extension("cMCorr",["proteus/mprans/cMCorr.pyx"],depends=["proteus/mprans/MCorr.h"], define_macros=[('PROTEUS_LAPACK_H',PROTEUS_LAPACK_H),
                                             ('PROTEUS_LAPACK_INTEGER',PROTEUS_LAPACK_INTEGER),
-                                            ('PROTEUS_BLAS_H',PROTEUS_BLAS_H)],language="c++",include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src',os.getenv('PROTEUS')+'/src'],
+                                            ('PROTEUS_BLAS_H',PROTEUS_BLAS_H)],language="c++",
+                             include_dirs=[numpy.get_include(),proteus_include_dir],
                              library_dirs=[PROTEUS_LAPACK_LIB_DIR,
                                            PROTEUS_BLAS_LIB_DIR],
                              libraries=['m',PROTEUS_LAPACK_LIB,PROTEUS_BLAS_LIB],
                              extra_compile_args=PROTEUS_EXTRA_COMPILE_ARGS,
                              extra_link_args=PROTEUS_EXTRA_LINK_ARGS),
-                   Extension("cRANS2P",["src/cRANS2P.pyx"],
-		             depends=["src/RANS2P.h",os.getenv('PROTEUS')+'/src/ModelFactory.h',os.getenv('PROTEUS')+'/src/CompKernel.h'],
-			     language="c++",
-			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src']),
-                   Extension("cRANS2P2D",["src/cRANS2P2D.pyx"],
-		             depends=["src/RANS2P2D.h",os.getenv('PROTEUS')+'/src/ModelFactory.h',os.getenv('PROTEUS')+'/src/CompKernel.h'],
-			     language="c++",
-			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src']),
-                   Extension("cRDLS",["src/cRDLS.pyx"],
-		             depends=["src/RDLS.h",os.getenv('PROTEUS')+'/src/ModelFactory.h',os.getenv('PROTEUS')+'/src/CompKernel.h'], 
-		             language="c++",
-			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src']),
-                   Extension("cVOF",["src/cVOF.pyx"],
-		             depends=["src/VOF.h",os.getenv('PROTEUS')+'/src/ModelFactory.h',os.getenv('PROTEUS')+'/src/CompKernel.h'], 
-		             language="c++",
-			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src']),
-                   Extension("cMoveMesh",["src/cMoveMesh.pyx"],
-		             depends=["src/MoveMesh.h",os.getenv('PROTEUS')+'/src/ModelFactory.h',os.getenv('PROTEUS')+'/src/CompKernel.h'], 
-		             language="c++",
-			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src']),
-                   Extension("cSW2D",["src/cSW2D.pyx"],
-		             depends=["src/SW2D.h",os.getenv('PROTEUS')+'/src/ModelFactory.h',os.getenv('PROTEUS')+'/src/CompKernel.h'], 
-		             language="c++",
-			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src'],
+                   Extension("cRANS2P",["proteus/mprans/cRANS2P.pyx"], depends=["proteus/mprans/RANS2P.h"] + proteus_model_kernel,
+                             language="c++", include_dirs=[numpy.get_include(), proteus_include_dir]),
+                   Extension("cRANS2P2D",["proteus/mprans/cRANS2P2D.pyx"],
+                             depends=["proteus/mprans/RANS2P2D.h"] + proteus_model_kernel,
+                             language="c++",
+                             include_dirs=[numpy.get_include(), proteus_include_dir]),
+                   Extension("cRDLS",["proteus/mprans/cRDLS.pyx"],
+                             depends=["proteus/mprans/RDLS.h"] + proteus_model_kernel,
+                             language="c++",
+                             include_dirs=[numpy.get_include(), proteus_include_dir]),
+                   Extension("cVOF",["proteus/mprans/cVOF.pyx"],
+                             depends=["proteus/mprans/VOF.h"] + proteus_model_kernel,
+                             language="c++",
+                             include_dirs=[numpy.get_include(), proteus_include_dir]),
+                   Extension("cMoveMesh",["proteus/mprans/cMoveMesh.pyx"],
+                             depends=["proteus/mprans/MoveMesh.h"] + proteus_model_kernel,
+                             language="c++",
+                             include_dirs=[numpy.get_include(), proteus_include_dir]),
+                   Extension("cSW2D",["proteus/mprans/cSW2D.pyx"],
+                             depends=["proteus/mprans/SW2D.h"] + proteus_model_kernel,
+                             language="c++",
+                             include_dirs=[numpy.get_include(), proteus_include_dir],
                              extra_compile_args=PROTEUS_EXTRA_COMPILE_ARGS+['-g'],
                              extra_link_args=PROTEUS_EXTRA_LINK_ARGS+['-g']),
-                   Extension("cSW2DCV",["src/cSW2DCV.pyx"],
-		             depends=["src/SW2DCV.h",os.getenv('PROTEUS')+'/src/ModelFactory.h',os.getenv('PROTEUS')+'/src/CompKernel.h'], 
-		             language="c++",
-			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src'],
+                   Extension("cSW2DCV",["proteus/mprans/cSW2DCV.pyx"],
+                             depends=["proteus/mprans/SW2DCV.h"] + proteus_model_kernel,
+                             language="c++",
+                             include_dirs=[numpy.get_include(), proteus_include_dir],
                              extra_compile_args=PROTEUS_EXTRA_COMPILE_ARGS+['-g'],
                              extra_link_args=PROTEUS_EXTRA_LINK_ARGS+['-g']),
-                   Extension("cKappa",["src/cKappa.pyx"],
-		             depends=["src/Kappa.h",os.getenv('PROTEUS')+'/src/ModelFactory.h',os.getenv('PROTEUS')+'/src/CompKernel.h'], 
-		             language="c++",
-			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src']),
-                   Extension("cKappa2D",["src/cKappa2D.pyx"],
-		             depends=["src/Kappa2D.h",os.getenv('PROTEUS')+'/src/ModelFactory.h',os.getenv('PROTEUS')+'/src/CompKernel.h'], 
-		             language="c++",
-			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src']),
-                   Extension("cDissipation",["src/cDissipation.pyx"],
-		             depends=["src/Dissipation.h",os.getenv('PROTEUS')+'/src/ModelFactory.h',os.getenv('PROTEUS')+'/src/CompKernel.h'], 
-		             language="c++",
-			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src']),
-
-                   Extension("cDissipation2D",["src/cDissipation2D.pyx"],
-		             depends=["src/Dissipation2D.h",os.getenv('PROTEUS')+'/src/ModelFactory.h',os.getenv('PROTEUS')+'/src/CompKernel.h'], 
-		             language="c++",
-			     include_dirs=[numpy.get_include(),os.getenv('PROTEUS')+'/src']),
-
+                   Extension("cKappa",["proteus/mprans/cKappa.pyx"],
+                             depends=["proteus/mprans/Kappa.h"] + proteus_model_kernel,
+                             language="c++",
+                             include_dirs=[numpy.get_include(), proteus_include_dir]),
+                   Extension("cKappa2D",["proteus/mprans/cKappa2D.pyx"],
+                             depends=["proteus/mprans/Kappa2D.h"] + proteus_model_kernel,
+                             language="c++",
+                             include_dirs=[numpy.get_include(), proteus_include_dir]),
+                   Extension("cDissipation",["proteus/mprans/cDissipation.pyx"],
+                             depends=["proteus/mprans/Dissipation.h"] + proteus_model_kernel,
+                             language="c++",
+                             include_dirs=[numpy.get_include(), proteus_include_dir]),
+                   Extension("cDissipation2D",["proteus/mprans/cDissipation2D.pyx"],
+                             depends=["proteus/mprans/Dissipation2D.h"] + proteus_model_kernel,
+                             language="c++",
+                             include_dirs=[numpy.get_include(), proteus_include_dir]),
                    ],
       requires=['numpy']
       )

@@ -6,6 +6,12 @@ install_proteus:
 install:
 	${PROTEUS_PYTHON} setup.py install
 
+develop_proteus:
+	cd ${PROTEUS} && make develop
+
+develop:
+	${PROTEUS_PREFIX}/bin/pip install -e .
+
 clean:
 	${PROTEUS_PYTHON} setup.py clean
 	cd scripts && make clean
