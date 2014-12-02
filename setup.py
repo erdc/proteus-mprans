@@ -14,9 +14,8 @@ import numpy
 
 # Get Proteus configuration information
 try:
-    if not os.getenv('PROTEUS_PREFIX'):
-        os.environ['PROTEUS_PREFIX'] = sys.prefix
-    sys.path.insert(0,os.path.join(os.environ['PROTEUS_PREFIX'],'proteusConfig'))
+    proteus_prefix = sys.prefix
+    sys.path.insert(0, os.path.join(proteus_prefix, 'proteusConfig'))
     from config import *
 except:
     raise RuntimeError("Missing or invalid config.py file. See proteusConfig for examples")
