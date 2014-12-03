@@ -39,7 +39,7 @@ except:
     raise
 
 # Ensure that Proteus namespace init.py has been symbolically linked in
-if not os.path.exists('./proteus/__init__.py') or not os.path.exists('./proteus/__init__.pyc'):
+if not os.path.exists(os.path.join('.','proteus','__init__.py')) or not os.path.exists(os.path.join('.','proteus','__init__.pyc')):
     # Symbolically link in Proteus __init__.py file
     proteus_init = proteus.__file__
     # if pyc, use py instead if available
