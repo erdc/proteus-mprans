@@ -482,6 +482,30 @@ namespace proteus
 		      <<nQuadraturePoints_elementBoundaryIn<<">());"*/
 	  /*  <<std::endl<<std::flush; */
 	}
+ /*define relaxation function according to Jacobsen et al 2012, INJNMF*/
+inline relaxationFunction(double phi, double phiStart, double phiEnd)
+{
+  double H;
+  double x;
+  double Length;
+    
+    if(phiStart < phiEnd)
+      { 
+	Length = phiEnd - phiStart;
+	x = (phi - phiStart)/Length;
+	H = 1 - (exp(pow(x,3.5)) - 1.)/ (exp(1) - 1.);
+      }
+    else
+      { 
+	Length = -(phiEnd - phiStart);
+	x = 1 - (phi - phiStart)/Length;
+	H = 1 - (exp(pow(x,3.5)) - 1.)/ (exp(1) - 1.);
+      }      
+    return H;
+	
+	  
+  
+}     
       
     inline double smoothedHeaviside(double eps, double phi)
     {
@@ -932,6 +956,8 @@ namespace proteus
 					   const double w,
 					   const double eps_s,
 					   const double phi_s,
+					   const double phiStart_s,
+					   const double phiEnd_s,
 					   const double u_s,
 					   const double v_s,
 					   const double w_s,
@@ -951,7 +977,7 @@ namespace proteus
 #else
       viscosity = nu;
 #endif
-      H_s = (1.0-useVF)*smoothedHeaviside(eps_s,phi_s)+useVF*fmin(1.0,fmax(0.0,vf));
+      H_s = (1.0-useVF)*relaxationFunction(phi_s,phiStart_s,phiEnd_s)+useVF*fmin(1.0,fmax(0.0,vf));
 
       uc = sqrt(u*u+v*v*+w*w); 
       duc_du = u/(uc+1.0e-12);
