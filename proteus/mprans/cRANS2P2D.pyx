@@ -58,6 +58,8 @@ cdef extern from "RANS2P2D.h" namespace "proteus":
 				   double C_b,
 # VRANS start
 				   double eps_solid,
+				   double phiStart_solid,		   
+   				   double phiEnd_solid,			
 				   double* phi_solid,
 				   double* q_velocity_solid,
 				   double* q_porosity,
@@ -202,6 +204,8 @@ cdef extern from "RANS2P2D.h" namespace "proteus":
 				   double C_b,
 # VRANS start
 				   double eps_solid,
+				   double phiStart_solid,		   
+   				   double phiEnd_solid,			
 				   double* phi_solid,
 				   double* q_velocity_solid,
 				   double* q_porosity,
@@ -520,6 +524,8 @@ cdef class cRANS2P2D_base:
 			 double C_b,
 # VRANS start
 			 double eps_solid,
+			 double phiStart_solid,
+			 double phiEnd_solid,
 		         numpy.ndarray phi_solid,
 			 numpy.ndarray q_velocity_solid,
                          numpy.ndarray q_porosity,
@@ -665,6 +671,8 @@ cdef class cRANS2P2D_base:
 				       C_b,
 # VRANS start
 				       eps_solid,
+				       phiStart_solid,
+				       phiEnd_solid,
 				       <double*> phi_solid.data,
 				       <double*> q_velocity_solid.data,
                                        <double*> q_porosity.data,
@@ -811,6 +819,8 @@ cdef class cRANS2P2D_base:
 			 double C_b,
 # VRANS start
 			 double eps_solid,
+      			 double phiStart_solid,		   
+   			 double phiEnd_solid,			
 		 	 numpy.ndarray phi_solid,
 			 numpy.ndarray q_velocity_solid,
                          numpy.ndarray q_porosity,
@@ -967,6 +977,8 @@ cdef class cRANS2P2D_base:
 				      C_b,
 # VRANS start
                                       eps_solid,
+				      phiStart_solid,			      
+				      phiEnd_solid,			      
                                       <double*> phi_solid.data,
                                       <double*> q_velocity_solid.data,
                                       <double*> q_porosity.data,

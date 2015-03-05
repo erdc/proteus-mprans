@@ -66,6 +66,8 @@ namespace proteus
 				   double C_b,
 				   //VRANS
 				   double eps_solid,
+				   double phiStart_solid,
+				   double phiEnd_solid,
 				   const double* phi_solid,
 				   const double* q_velocity_solid,
 				   const double* q_porosity,
@@ -212,6 +214,8 @@ namespace proteus
 				   double C_b,
 				   //VRANS
 				   double eps_solid,
+				   double phiStart_solid,
+				   double phiEnd_solid,
 				   const double* phi_solid,
 				   const double* q_velocity_solid,
 				   const double* q_porosity,
@@ -483,29 +487,30 @@ namespace proteus
 	  /*  <<std::endl<<std::flush; */
 	}
  /*define relaxation function according to Jacobsen et al 2012, INJNMF*/
-inline relaxationFunction(double phi, double phiStart, double phiEnd)
-{
-  double H;
-  double x;
-  double Length;
-    
-    if(phiStart < phiEnd)
-      { 
-	Length = phiEnd - phiStart;
-	x = (phi - phiStart)/Length;
-	H = 1 - (exp(pow(x,3.5)) - 1.)/ (exp(1) - 1.);
-      }
-    else
-      { 
-	Length = -(phiEnd - phiStart);
-	x = 1 - (phi - phiStart)/Length;
-	H = 1 - (exp(pow(x,3.5)) - 1.)/ (exp(1) - 1.);
-      }      
-    return H;
+      inline double relaxationFunction(double phi, double phiStart, double phiEnd)
+      {
+	double H;
+	double x;
+	double Length;
+	
+	if(phiStart < phiEnd)
+	  { 
+	    Length = phiEnd - phiStart;
+	    x = (phi - phiStart)/Length;
+	    
+	  }
+	else
+	  { 
+	    Length = -(phiEnd - phiStart);
+	    x = 1. - (phi - phiStart)/Length;
+	    H = 1. - (exp(pow(x,3.5)) - 1.)/ (exp(1) - 1.);
+	  }      
+	H = 1 - (exp(pow(x,3.5)) - 1.)/ (exp(1.) - 1.);
+	return H;
 	
 	  
   
-}     
+      }     
       
     inline double smoothedHeaviside(double eps, double phi)
     {
@@ -1757,6 +1762,8 @@ inline relaxationFunction(double phi, double phiStart, double phiEnd)
 			   double C_b,
 			   //VRANS
 			   double eps_solid,
+			   double phiStart_solid,
+			   double phiEnd_solid,
 			   const double* phi_solid,
 			   const double* q_velocity_solid,
 			   const double* q_porosity,
@@ -2129,6 +2136,8 @@ inline relaxationFunction(double phi, double phiStart, double phiEnd)
 						w,//q_velocity_sge[eN_k_nSpace+2],//w
 						eps_solid,
 						phi_solid[eN_k],
+						phiStart_solid,
+						phiEnd_solid,
 						q_velocity_solid[eN_k_nSpace+0],
 						q_velocity_solid[eN_k_nSpace+1],
 						q_velocity_solid[eN_k_nSpace+2],
@@ -3288,6 +3297,8 @@ inline relaxationFunction(double phi, double phiStart, double phiEnd)
 			   double C_b,
 			   //VRANS
 			   double eps_solid,
+			   double phiStart_solid,
+			   double phiEnd_solid,
 			   const double* phi_solid,
 			   const double* q_velocity_solid,
 			   const double* q_porosity,
@@ -3695,6 +3706,8 @@ inline relaxationFunction(double phi, double phiStart, double phiEnd)
 						w,//q_velocity_sge[eN_k_nSpace+2],//w
 						eps_solid,
 						phi_solid[eN_k],
+						phiStart_solid,
+						phiEnd_solid,
 						q_velocity_solid[eN_k_nSpace+0],
 						q_velocity_solid[eN_k_nSpace+1],
 						q_velocity_solid[eN_k_nSpace+1],//cek hack, should not be used
