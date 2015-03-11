@@ -13,12 +13,8 @@ import numpy
 #
 
 # Get Proteus configuration information
-try:
-    proteus_prefix = sys.prefix
-    sys.path.insert(0, os.path.join(proteus_prefix, 'proteusConfig'))
-    from config import *
-except:
-    raise RuntimeError("Missing or invalid config.py file. See proteusConfig for examples")
+
+from proteus.config import *
 
 ###to turn on debugging in c++
 ##\todo Finishing cleaning up setup.py/setup.cfg, config.py...
