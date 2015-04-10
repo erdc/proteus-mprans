@@ -570,10 +570,17 @@ class LevelModel(proteus.Transport.OneLevelTransport):
             self.mesh.nodeVelocityArray = numpy.zeros(self.mesh.nodeArray.shape,'d')
         #cek/ido todo replace python loops in modules with optimized code if possible/necessary
         self.forceStrongConditions=True#False
+        #mwf hack only force strong on velocity to test tailwater
+        self.forceStrongConditions_velocity_only=True
         self.dirichletConditionsForceDOF = {}
         if self.forceStrongConditions:
-            for cj in range(self.nc):
+            if self.forceStrongConditions_velocity_only:
+                dofrange = range(1,self.nc)
+            else:
+                dofrange = range(self.nc)
+            for cj in dofrange:
                 self.dirichletConditionsForceDOF[cj] = DOFBoundaryConditions(self.u[cj].femSpace,dofBoundaryConditionsSetterDict[cj],weakDirichletConditions=False)
+
 
         compKernelFlag = 0
         #if self.coefficients.useConstantH:
@@ -629,7 +636,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         self.Cd_sge = 144.0
  
         if self.forceStrongConditions:
-            for cj in range(len(self.dirichletConditionsForceDOF)):
+            #for cj in range(len(self.dirichletConditionsForceDOF)):
+            for cj in self.dirichletConditionsForceDOF.keys():
                 for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
                     self.u[cj].dof[dofN] = g(self.dirichletConditionsForceDOF[cj].DOFBoundaryPointDict[dofN],self.timeIntegration.t)
         #import pdb
@@ -741,7 +749,8 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #import pdb
         #pdb.set_trace()
 	if self.forceStrongConditions:#
-	    for cj in range(len(self.dirichletConditionsForceDOF)):#
+	    #for cj in range(len(self.dirichletConditionsForceDOF)):#
+            for cj in self.dirichletConditionsForceDOF.keys():
 		for dofN,g in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.iteritems():
                      r[self.offset[cj]+self.stride[cj]*dofN] = 0
 
@@ -870,7 +879,11 @@ class LevelModel(proteus.Transport.OneLevelTransport):
         #Load the Dirichlet conditions directly into residual
         if self.forceStrongConditions:
             scaling = 1.0#probably want to add some scaling to match non-dirichlet diagonals in linear system 
-            for cj in range(self.nc):
+            if self.forceStrongConditions_velocity_only:
+                dofrange = range(1,self.nc)
+            else:
+                dofrange = range(self.nc)
+            for cj in dofrange:
                 for dofN in self.dirichletConditionsForceDOF[cj].DOFBoundaryConditionsDict.keys():
                     global_dofN = self.offset[cj]+self.stride[cj]*dofN
                     for i in range(self.rowptr[global_dofN],self.rowptr[global_dofN+1]):

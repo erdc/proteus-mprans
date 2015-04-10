@@ -803,7 +803,8 @@ namespace proteus
     }
 
     inline
-      void exteriorNumericalAdvectiveFlux(const int& isDOFBoundary_h,
+      void exteriorNumericalAdvectiveFlux(const double& gravity,
+					  const int& isDOFBoundary_h,
 					  const int& isDOFBoundary_u,
 					  const int& isDOFBoundary_v,
 					  const int& isFluxBoundary_h,
@@ -836,11 +837,12 @@ namespace proteus
 					  double* velocity)
     {
       //cek todo, need to do the Riemann solve
-      /* double flowDirection; */
+      double flowDirection;
       flux_mass = 0.0;
       flux_umom = 0.0;
       flux_vmom = 0.0;
-      /* flowDirection=n[0]*f_mass[0]+n[1]*f_mass[1]; */
+      flowDirection=n[0]*f_mass[0]+n[1]*f_mass[1]; 
+      double bc_scale=10.0;
       /* if (isDOFBoundary_u != 1) */
       /* 	{ */
       /* 	  flux_mass += n[0]*f_mass[0]; */
@@ -914,6 +916,30 @@ namespace proteus
       /* 	  flux_umom+= n[0]*(bc_h-p)*oneByRho; */
       /* 	  flux_vmom+= n[1]*(bc_h-p)*oneByRho; */
       /* 	} */
+      /*mwf hack, try tailwater bc as well */
+      if (isDOFBoundary_h == 1)
+	{
+	  if (flowDirection > 0.0)
+	    {
+	      flux_mass = n[0]*f_mass[0]+n[1]*f_mass[1];
+	      flux_umom = n[0]*f_umom[0]+n[1]*f_umom[1];
+	      flux_vmom = n[0]*f_vmom[0]+n[1]*f_vmom[1];
+	      //use boundary value for head in momentum flux
+	      flux_umom -= n[0]*0.5*h*h*gravity;
+	      flux_vmom -= n[1]*0.5*h*h*gravity;
+	    }
+	  else
+	    {
+	      flux_mass = 0.0;
+	      flux_umom = 0.0;
+	      flux_vmom = 0.0;
+	    }
+	  flux_umom += n[0]*0.5*bc_h*bc_h*gravity;
+	  flux_vmom += n[1]*0.5*bc_h*bc_h*gravity;
+	  //incorporate penalty term
+	  flux_umom += n[0]*(h-bc_h)*bc_scale;
+	  flux_vmom += n[1]*(h-bc_h)*bc_scale;
+	}
       if (isFluxBoundary_h == 1)
 	{
 	  //cek todo, not sure if we'll need this for SW2
@@ -933,7 +959,8 @@ namespace proteus
     }
 
     inline
-    void exteriorNumericalAdvectiveFluxDerivatives(const int& isDOFBoundary_h,
+    void exteriorNumericalAdvectiveFluxDerivatives(const double& gravity,
+						   const int& isDOFBoundary_h,
 						   const int& isDOFBoundary_u,
 						   const int& isDOFBoundary_v,
 						   const int& isFluxBoundary_h,
@@ -951,6 +978,7 @@ namespace proteus
 						   const double f_mass[nSpace],
 						   const double f_umom[nSpace],
 						   const double f_vmom[nSpace],
+						   const double df_mass_dh[nSpace],
 						   const double df_mass_du[nSpace],
 						   const double df_mass_dv[nSpace],
 						   const double df_umom_dh[nSpace],
@@ -983,6 +1011,7 @@ namespace proteus
       dflux_vmom_dv = 0.0;
   
       flowDirection=n[0]*f_mass[0]+n[1]*f_mass[1];
+      double bc_scale=10.0;
       /* if (isDOFBoundary_u != 1) */
       /* 	{ */
       /* 	  dflux_mass_du += n[0]*df_mass_du[0]; */
@@ -1055,6 +1084,48 @@ namespace proteus
       /* 	  dflux_umom_dp= -n[0]*oneByRho; */
       /* 	  dflux_vmom_dp= -n[1]*oneByRho; */
       /* 	} */
+      /*mwf hack, try tailwater bc as well */
+      if (isDOFBoundary_h == 1)
+	{
+	  if (flowDirection > 0.0)
+	    {
+	      dflux_mass_dh = n[0]*df_mass_dh[0]+n[1]*df_mass_dh[1];
+	      dflux_mass_du = n[0]*df_mass_du[0]+n[1]*df_mass_du[1]; /*cross terms should be zero*/
+	      dflux_mass_dv = n[0]*df_mass_dv[0]+n[1]*df_mass_dv[1];
+
+	      dflux_umom_dh = n[0]*df_umom_dh[0]+n[1]*df_umom_dh[1];
+	      dflux_umom_du = n[0]*df_umom_du[0]+n[1]*df_umom_du[1];
+	      dflux_umom_dv = n[0]*df_umom_dv[0]+n[1]*df_umom_dv[1];
+
+	      dflux_vmom_dh = n[0]*df_vmom_dh[0]+n[1]*df_vmom_dh[1];
+	      dflux_vmom_du = n[0]*df_vmom_du[0]+n[1]*df_vmom_du[1];
+	      dflux_vmom_dv = n[0]*df_vmom_dv[0]+n[1]*df_vmom_dv[1];
+
+	      //use boundary value for head in momentum flux
+	      dflux_umom_dh -= n[0]*h*gravity;
+	      dflux_vmom_dh -= n[1]*h*gravity;
+
+	    }
+	  else
+	    {
+	      dflux_mass_dh = 0.0;
+	      dflux_mass_du = 0.0;
+	      dflux_mass_dv = 0.0;
+
+	      dflux_umom_dh = 0.0;
+	      dflux_umom_du = 0.0;
+	      dflux_umom_dv = 0.0;
+
+	      dflux_vmom_dh = 0.0;
+	      dflux_vmom_du = 0.0;
+	      dflux_vmom_dv = 0.0;
+
+	    }
+	  //penalty term
+	  dflux_umom_dh += n[0]*bc_scale;
+	  dflux_vmom_dh += n[1]*bc_scale;
+	}
+
       if (isFluxBoundary_h == 1)
 	{
 	  dflux_mass_dh = 0.0;
@@ -2581,6 +2652,372 @@ namespace proteus
       	      globalResidual[offset_v+stride_v*vel_l2g[eN_i]]+=elementResidual_v[i];
       	    }
       	}
+
+      
+      //loop over exterior element boundaries to calculate surface integrals and load into element and global residuals
+      //
+      //	ebNE is the Exterior element boundary INdex
+      //	ebN is the element boundary INdex
+      //	eN is the element index
+      
+      for (int ebNE = 0; ebNE < nExteriorElementBoundaries_global; ebNE++)
+      	{
+      	  register int ebN = exteriorElementBoundariesArray[ebNE],
+      	    eN  = elementBoundaryElementsArray[ebN*2+0],
+      	    ebN_local = elementBoundaryLocalElementBoundariesArray[ebN*2+0],
+      	    eN_nDOF_trial_element = eN*nDOF_trial_element;
+      	  register double elementResidual_h[nDOF_test_element],
+      	    elementResidual_u[nDOF_test_element],
+      	    elementResidual_v[nDOF_test_element],
+      	    eps_rho,eps_mu;
+      	  for (int i=0;i<nDOF_test_element;i++)
+      	    {
+      	      elementResidual_h[i]=0.0;
+      	      elementResidual_u[i]=0.0;
+      	      elementResidual_v[i]=0.0;
+      	    }
+      	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++)
+      	    {
+      	      register int ebNE_kb = ebNE*nQuadraturePoints_elementBoundary+kb,
+      		ebNE_kb_nSpace = ebNE_kb*nSpace,
+      		ebN_local_kb = ebN_local*nQuadraturePoints_elementBoundary+kb,
+      		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
+      	      register double b_ext=0.0,h_ext=0.0,u_ext=0.0,v_ext=0.0,
+      		grad_b_ext[nSpace],grad_h_ext[nSpace],grad_u_ext[nSpace],grad_v_ext[nSpace],
+      		mass_acc_ext=0.0,
+      		dmass_acc_h_ext=0.0,
+      		mom_u_acc_ext=0.0,
+      		dmom_u_acc_h_ext=0.0,
+      		dmom_u_acc_u_ext=0.0,
+      		mom_v_acc_ext=0.0,
+      		dmom_v_acc_h_ext=0.0,
+      		dmom_v_acc_v_ext=0.0,
+      		mass_adv_ext[nSpace],
+      		dmass_adv_h_ext[nSpace],
+      		dmass_adv_u_ext[nSpace],
+      		dmass_adv_v_ext[nSpace],
+		mom_u_adv_ext[nSpace],
+      		dmom_u_adv_h_ext[nSpace],
+      		dmom_u_adv_u_ext[nSpace],
+      		dmom_u_adv_v_ext[nSpace],
+		mom_v_adv_ext[nSpace],
+      		dmom_v_adv_h_ext[nSpace],
+      		dmom_v_adv_u_ext[nSpace],
+      		dmom_v_adv_v_ext[nSpace],
+		mom_u_diff_ten_ext[nSpace],
+      		mom_v_diff_ten_ext[nSpace],
+      		mom_uv_diff_ten_ext[1],
+      		mom_vu_diff_ten_ext[1],
+      		mom_u_source_ext=0.0,
+      		dmom_u_source_h_ext=0.0,
+      		mom_v_source_ext=0.0,
+      		dmom_v_source_h_ext=0.0,
+     		jac_ext[nSpace*nSpace],
+      		jacDet_ext,
+      		jacInv_ext[nSpace*nSpace],
+      		boundaryJac[nSpace*(nSpace-1)],
+      		metricTensor[(nSpace-1)*(nSpace-1)],
+      		metricTensorDetSqrt,
+      		dS,h_test_dS[nDOF_test_element],vel_test_dS[nDOF_test_element],
+      		h_grad_trial_trace[nDOF_trial_element*nSpace],vel_grad_trial_trace[nDOF_trial_element*nSpace],
+      		normal[3],x_ext,y_ext,xt_ext,yt_ext,integralScaling,
+      		G[nSpace*nSpace],G_dd_G,tr_G,h_penalty;
+      	      register double bc_b_ext=0.0,bc_h_ext=0.0,bc_u_ext=0.0,bc_v_ext=0.0,
+      		bc_mass_acc_ext=0.0,
+      		bc_dmass_acc_h_ext=0.0,
+      		bc_mom_u_acc_ext=0.0,
+      		bc_dmom_u_acc_h_ext=0.0,
+      		bc_dmom_u_acc_u_ext=0.0,
+      		bc_mom_v_acc_ext=0.0,
+      		bc_dmom_v_acc_h_ext=0.0,
+      		bc_dmom_v_acc_v_ext=0.0,
+      		bc_mass_adv_ext[nSpace],
+      		bc_dmass_adv_h_ext[nSpace],
+      		bc_dmass_adv_u_ext[nSpace],
+      		bc_dmass_adv_v_ext[nSpace],
+		bc_mom_u_adv_ext[nSpace],
+      		bc_dmom_u_adv_h_ext[nSpace],
+      		bc_dmom_u_adv_u_ext[nSpace],
+      		bc_dmom_u_adv_v_ext[nSpace],
+		bc_mom_v_adv_ext[nSpace],
+      		bc_dmom_v_adv_h_ext[nSpace],
+      		bc_dmom_v_adv_u_ext[nSpace],
+      		bc_dmom_v_adv_v_ext[nSpace],
+		bc_mom_u_diff_ten_ext[nSpace],
+      		bc_mom_v_diff_ten_ext[nSpace],
+      		bc_mom_uv_diff_ten_ext[1],
+      		bc_mom_vu_diff_ten_ext[1],
+      		bc_mom_u_source_ext=0.0,
+      		bc_dmom_u_source_h_ext=0.0,
+      		bc_mom_v_source_ext=0.0,
+      		bc_dmom_v_source_h_ext=0.0;
+	      
+	      register double flux_mass_ext=0.,flux_mom_u_adv_ext=0.,
+		flux_mom_v_adv_ext=0.,flux_mom_u_diff_ext=0.,flux_mom_v_diff_ext=0.;
+
+      	      //compute information about mapping from reference element to physical element
+      	      ck.calculateMapping_elementBoundary(eN,
+      						  ebN_local,
+      						  kb,
+      						  ebN_local_kb,
+      						  mesh_dof,
+      						  mesh_l2g,
+      						  mesh_trial_trace_ref,
+      						  mesh_grad_trial_trace_ref,
+      						  boundaryJac_ref,
+      						  jac_ext,
+      						  jacDet_ext,
+      						  jacInv_ext,
+      						  boundaryJac,
+      						  metricTensor,
+      						  metricTensorDetSqrt,
+      						  normal_ref,
+      						  normal,
+      						  x_ext,y_ext);
+      	      ck.calculateMappingVelocity_elementBoundary(eN,
+      							  ebN_local,
+      							  kb,
+      							  ebN_local_kb,
+      							  mesh_velocity_dof,
+      							  mesh_l2g,
+      							  mesh_trial_trace_ref,
+      							  xt_ext,yt_ext,
+      							  normal,
+      							  boundaryJac,
+      							  metricTensor,
+      							  integralScaling);
+      	      xt_ext=0.0;yt_ext=0.0;
+      	      
+	      //	std::cout<<"xt_ext "<<xt_ext<<'\t'<<yt_ext<<'\t'<<std::endl;
+	      //	std::cout<<"integralScaling - metricTensorDetSrt ==============================="<<integralScaling-metricTensorDetSqrt<<std::endl;
+	      
+      	      dS = ((1.0-MOVING_DOMAIN)*metricTensorDetSqrt + MOVING_DOMAIN*integralScaling)*dS_ref[kb];
+      	      //compute shape and solution information
+      	      //shape
+      	      ck.gradTrialFromRef(&h_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,h_grad_trial_trace);
+      	      ck.gradTrialFromRef(&vel_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,vel_grad_trial_trace);
+      	      //solution and gradients
+      	      ck.valFromDOF(b_dof,&h_l2g[eN_nDOF_trial_element],&h_trial_trace_ref[ebN_local_kb*nDOF_test_element],b_ext);
+
+      	      ck.valFromDOF(h_dof,&h_l2g[eN_nDOF_trial_element],&h_trial_trace_ref[ebN_local_kb*nDOF_test_element],h_ext);
+      	      ck.valFromDOF(u_dof,&vel_l2g[eN_nDOF_trial_element],&vel_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
+      	      ck.valFromDOF(v_dof,&vel_l2g[eN_nDOF_trial_element],&vel_trial_trace_ref[ebN_local_kb*nDOF_test_element],v_ext);
+      	      ck.gradFromDOF(b_dof,&h_l2g[eN_nDOF_trial_element],h_grad_trial_trace,grad_b_ext);
+      	      ck.gradFromDOF(h_dof,&h_l2g[eN_nDOF_trial_element],h_grad_trial_trace,grad_h_ext);
+      	      ck.gradFromDOF(u_dof,&vel_l2g[eN_nDOF_trial_element],vel_grad_trial_trace,grad_u_ext);
+      	      ck.gradFromDOF(v_dof,&vel_l2g[eN_nDOF_trial_element],vel_grad_trial_trace,grad_v_ext);
+      	      //precalculate test function products with integration weights
+      	      for (int j=0;j<nDOF_trial_element;j++)
+      		{
+      		  h_test_dS[j] = h_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
+      		  vel_test_dS[j] = vel_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
+      		}
+      	      //
+      	      //debugging section for finite element calculations on exterior
+      	      //
+      	      //std::cout<<"ebNE = "<<ebNE<<" kb = "<<kb<<std::endl;
+      	      //for (int j=0;j<nDOF_trial_element;j++)
+	      // {
+	      //   std::cout<<"h_trial_trace["<<j<<"] "<<h_trial_trace_ref[ebN_local_kb*nDOF_trial_element+j]<<std::endl;
+	      //  std::cout<<"vel_trial_trace["<<j<<"] "<<vel_trial_trace_ref[ebN_local_kb*nDOF_trial_element+j]<<std::endl;
+	      //  std::cout<<"h_test_dS["<<j<<"] "<<h_test_dS[j]<<std::endl;
+	      //  std::cout<<"vel_test_dS["<<j<<"] "<<vel_test_dS[j]<<std::endl;
+	      //  for (int I=0;I<nSpace;I++)
+	      //{
+	      //  std::cout<<"h_grad_trial_trace["<<j<<","<<I<<"] "<<h_grad_trial_trace[j*nSpace+I]<<std::endl;
+	      //  std::cout<<"vel_grad_trial_trace["<<j<<","<<I<<"] "<<vel_grad_trial_trace[j*nSpace+I]<<std::endl;
+	      //}
+	      //}
+      	      //std::cout<<"h_ext "<<h_ext<<std::endl;
+      	      //std::cout<<"u_ext "<<u_ext<<std::endl;
+      	      //std::cout<<"v_ext "<<v_ext<<std::endl;
+      	      //for(int I=0;I<nSpace;I++)
+	      // {
+	      //   std::cout<<"grad_h_ext["<<I<<"] "<<grad_h_ext[I]<<std::endl;
+	      //  std::cout<<"grad_u_ext["<<I<<"] "<<grad_u_ext[I]<<std::endl;
+	      //  std::cout<<"grad_v_ext["<<I<<"] "<<grad_v_ext[I]<<std::endl;
+	      //}
+      
+      	      //load the boundary values
+      
+      	      bc_h_ext = isDOFBoundary_h[ebNE_kb]*ebqe_bc_h_ext[ebNE_kb]+(1-isDOFBoundary_h[ebNE_kb])*h_ext;
+      	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
+      	      bc_v_ext = isDOFBoundary_v[ebNE_kb]*ebqe_bc_v_ext[ebNE_kb]+(1-isDOFBoundary_v[ebNE_kb])*v_ext;
+      
+      	      //
+      	      //calculate pde coefficients at quadrature points
+      	      //
+      	      evaluateCoefficients(nu,
+      				   g,
+      				   grad_b_ext,
+      				   h_ext,
+      				   u_ext,
+      				   v_ext,
+      				   mass_acc_ext,
+      				   dmass_acc_h_ext,
+      				   mom_u_acc_ext,
+      				   dmom_u_acc_h_ext,
+      				   dmom_u_acc_u_ext,
+      				   mom_v_acc_ext,
+      				   dmom_v_acc_h_ext,
+      				   dmom_v_acc_v_ext,
+      				   mass_adv_ext,
+      				   dmass_adv_h_ext,
+      				   dmass_adv_u_ext,
+      				   dmass_adv_v_ext,
+      				   mom_u_adv_ext,
+      				   dmom_u_adv_h_ext,
+      				   dmom_u_adv_u_ext,
+      				   dmom_u_adv_v_ext,
+      				   mom_v_adv_ext,
+      				   dmom_v_adv_h_ext,
+      				   dmom_v_adv_u_ext,
+      				   dmom_v_adv_v_ext,
+      				   mom_u_diff_ten_ext,
+      				   mom_v_diff_ten_ext,
+      				   mom_uv_diff_ten_ext,
+      				   mom_vu_diff_ten_ext,
+      				   mom_u_source_ext,
+      				   dmom_u_source_h_ext,
+      				   mom_v_source_ext,
+      				   dmom_v_source_h_ext);
+      	      evaluateCoefficients(nu,
+      				   g,
+      				   grad_b_ext,
+      				   bc_h_ext,
+      				   bc_u_ext,
+      				   bc_v_ext,
+      				   bc_mass_acc_ext,
+      				   bc_dmass_acc_h_ext,
+      				   bc_mom_u_acc_ext,
+      				   bc_dmom_u_acc_h_ext,
+      				   bc_dmom_u_acc_u_ext,
+      				   bc_mom_v_acc_ext,
+      				   bc_dmom_v_acc_h_ext,
+      				   bc_dmom_v_acc_v_ext,
+      				   bc_mass_adv_ext,
+      				   bc_dmass_adv_h_ext,
+      				   bc_dmass_adv_u_ext,
+      				   bc_dmass_adv_v_ext,
+      				   bc_mom_u_adv_ext,
+      				   bc_dmom_u_adv_h_ext,
+      				   bc_dmom_u_adv_u_ext,
+      				   bc_dmom_u_adv_v_ext,
+      				   bc_mom_v_adv_ext,
+      				   bc_dmom_v_adv_h_ext,
+      				   bc_dmom_v_adv_u_ext,
+      				   bc_dmom_v_adv_v_ext,
+      				   bc_mom_u_diff_ten_ext,
+      				   bc_mom_v_diff_ten_ext,
+      				   bc_mom_uv_diff_ten_ext,
+      				   bc_mom_vu_diff_ten_ext,
+      				   bc_mom_u_source_ext,
+      				   bc_dmom_u_source_h_ext,
+      				   bc_mom_v_source_ext,
+      				   bc_dmom_v_source_h_ext);
+
+	      //moving domain      
+      	      mass_adv_ext[0] -= MOVING_DOMAIN*xt_ext;
+      	      mass_adv_ext[1] -= MOVING_DOMAIN*yt_ext;
+
+      	      mom_u_adv_ext[0] -= MOVING_DOMAIN*mom_u_acc_ext*xt_ext;
+      	      mom_u_adv_ext[1] -= MOVING_DOMAIN*mom_u_acc_ext*yt_ext;
+      	      dmom_u_adv_u_ext[0] -= MOVING_DOMAIN*dmom_u_acc_u_ext*xt_ext;
+      	      dmom_u_adv_u_ext[1] -= MOVING_DOMAIN*dmom_u_acc_u_ext*yt_ext;
+
+      	      mom_v_adv_ext[0] -= MOVING_DOMAIN*mom_v_acc_ext*xt_ext;
+      	      mom_v_adv_ext[1] -= MOVING_DOMAIN*mom_v_acc_ext*yt_ext;
+      	      dmom_v_adv_v_ext[0] -= MOVING_DOMAIN*dmom_v_acc_v_ext*xt_ext;
+      	      dmom_v_adv_v_ext[1] -= MOVING_DOMAIN*dmom_v_acc_v_ext*yt_ext;
+
+      	      //bc's
+      	      bc_mom_u_adv_ext[0] -= MOVING_DOMAIN*bc_mom_u_acc_ext*xt_ext;
+      	      bc_mom_u_adv_ext[1] -= MOVING_DOMAIN*bc_mom_u_acc_ext*yt_ext;
+
+      	      bc_mom_v_adv_ext[0] -= MOVING_DOMAIN*bc_mom_v_acc_ext*xt_ext;
+      	      bc_mom_v_adv_ext[1] -= MOVING_DOMAIN*bc_mom_v_acc_ext*yt_ext;
+
+      
+      	      //calculate the numerical fluxes
+       	      ck.calculateGScale(G,normal,h_penalty);
+      	      h_penalty = 10.0/h_penalty;
+      	      exteriorNumericalAdvectiveFlux(g,
+					     isDOFBoundary_h[ebNE_kb],
+      					     isDOFBoundary_u[ebNE_kb],
+      					     isDOFBoundary_v[ebNE_kb],
+      					     isAdvectiveFluxBoundary_h[ebNE_kb],
+      					     isAdvectiveFluxBoundary_u[ebNE_kb],
+      					     isAdvectiveFluxBoundary_v[ebNE_kb],
+					     normal,
+      					     bc_h_ext,
+      					     bc_mass_adv_ext,
+      					     bc_mom_u_adv_ext,
+      					     bc_mom_v_adv_ext,
+      					     ebqe_bc_flux_mass_ext[ebNE_kb],
+      					     ebqe_bc_flux_mom_u_adv_ext[ebNE_kb],
+      					     ebqe_bc_flux_mom_v_adv_ext[ebNE_kb],
+      					     h_ext,
+      					     mass_adv_ext,
+      					     mom_u_adv_ext,
+      					     mom_v_adv_ext,
+					     dmass_adv_h_ext,
+      					     dmass_adv_u_ext,
+      					     dmass_adv_v_ext,
+      					     dmom_u_adv_h_ext,
+      					     dmom_u_adv_u_ext,
+      					     dmom_u_adv_v_ext,
+      					     dmom_v_adv_h_ext,
+      					     dmom_v_adv_u_ext,
+      					     dmom_v_adv_v_ext,
+      					     flux_mass_ext,
+      					     flux_mom_u_adv_ext,
+      					     flux_mom_v_adv_ext,
+      					     &ebqe_velocity[ebNE_kb_nSpace]);
+
+      	      flux[ebN*nQuadraturePoints_elementBoundary+kb] = flux_mass_ext;
+
+      
+      	      //update residuals
+      
+      	      for (int i=0;i<nDOF_test_element;i++)
+      		{
+      		  elementResidual_h[i] += ck.ExteriorElementBoundaryFlux(flux_mass_ext,h_test_dS[i]);
+      		  globalConservationError += ck.ExteriorElementBoundaryFlux(flux_mass_ext,h_test_dS[i]);
+		  
+      		  elementResidual_u[i] += ck.ExteriorElementBoundaryFlux(flux_mom_u_adv_ext,vel_test_dS[i])+
+      		    ck.ExteriorElementBoundaryFlux(flux_mom_u_diff_ext,vel_test_dS[i]);
+
+      		  elementResidual_v[i] += ck.ExteriorElementBoundaryFlux(flux_mom_v_adv_ext,vel_test_dS[i]) +
+      		    ck.ExteriorElementBoundaryFlux(flux_mom_v_diff_ext,vel_test_dS[i]);
+	       
+      		}//i
+      	    }//kb
+      
+      	  //update the element and global residual storage
+      
+      	  for (int i=0;i<nDOF_test_element;i++)
+      	    {
+      	      int eN_i = eN*nDOF_test_element+i;
+	      
+      	      elementResidual_h_save[eN_i] +=  elementResidual_h[i];
+		  
+      	      globalResidual[offset_h+stride_h*h_l2g[eN_i]]+=elementResidual_h[i];
+      	      globalResidual[offset_u+stride_u*vel_l2g[eN_i]]+=elementResidual_u[i];
+      	      globalResidual[offset_v+stride_v*vel_l2g[eN_i]]+=elementResidual_v[i];
+      	    }//i
+      	  //
+      	  //debug
+      	  //
+      	  //for(int i=0;i<nDOF_test_element;i++)
+      	  //  {
+	  // 	  std::cout<<"ebNE "<<ebNE<<" i "<<i<<std::endl;
+      	  //	  std::cout<<"r_h"<<elementResidual_h[i]<<std::endl;
+      	  //	  std::cout<<"r_u"<<elementResidual_u[i]<<std::endl;
+      	  //	  std::cout<<"r_v"<<elementResidual_v[i]<<std::endl;
+      	  //	}
+
+      	}//ebNE
+
     }
     void calculateJacobian(//element
 			   double* mesh_trial_ref,
@@ -4294,6 +4731,424 @@ namespace proteus
       //
       //loop over exterior element boundaries to compute the surface integrals and load them into the global Jacobian
       //
+      for (int ebNE = 0; ebNE < nExteriorElementBoundaries_global; ebNE++)
+      	{
+      	  register int ebN = exteriorElementBoundariesArray[ebNE],
+      	    eN  = elementBoundaryElementsArray[ebN*2+0],
+      	    eN_nDOF_trial_element = eN*nDOF_trial_element,
+      	    ebN_local = elementBoundaryLocalElementBoundariesArray[ebN*2+0];
+      	  register double eps_rho,eps_mu;
+      	  for  (int kb=0;kb<nQuadraturePoints_elementBoundary;kb++)
+      	    {
+      	      register int ebNE_kb = ebNE*nQuadraturePoints_elementBoundary+kb,
+      		ebNE_kb_nSpace = ebNE_kb*nSpace,
+      		ebN_local_kb = ebN_local*nQuadraturePoints_elementBoundary+kb,
+      		ebN_local_kb_nSpace = ebN_local_kb*nSpace;
+
+      	      register double b_ext=0.0,h_ext=0.0,u_ext=0.0,v_ext=0.0,
+      		grad_b_ext[nSpace],grad_h_ext[nSpace],grad_u_ext[nSpace],grad_v_ext[nSpace],
+      		mass_acc_ext=0.0,
+      		dmass_acc_h_ext=0.0,
+      		mom_u_acc_ext=0.0,
+      		dmom_u_acc_h_ext=0.0,
+      		dmom_u_acc_u_ext=0.0,
+      		mom_v_acc_ext=0.0,
+      		dmom_v_acc_h_ext=0.0,
+      		dmom_v_acc_v_ext=0.0,
+      		mass_adv_ext[nSpace],
+      		dmass_adv_h_ext[nSpace],
+      		dmass_adv_u_ext[nSpace],
+      		dmass_adv_v_ext[nSpace],
+		mom_u_adv_ext[nSpace],
+      		dmom_u_adv_h_ext[nSpace],
+      		dmom_u_adv_u_ext[nSpace],
+      		dmom_u_adv_v_ext[nSpace],
+		mom_v_adv_ext[nSpace],
+      		dmom_v_adv_h_ext[nSpace],
+      		dmom_v_adv_u_ext[nSpace],
+      		dmom_v_adv_v_ext[nSpace],
+		mom_u_diff_ten_ext[nSpace],
+      		mom_v_diff_ten_ext[nSpace],
+      		mom_uv_diff_ten_ext[1],
+      		mom_vu_diff_ten_ext[1],
+      		mom_u_source_ext=0.0,
+      		dmom_u_source_h_ext=0.0,
+      		mom_v_source_ext=0.0,
+      		dmom_v_source_h_ext=0.0,
+      		fluxJacobian_h_h[nDOF_trial_element],
+      		fluxJacobian_h_u[nDOF_trial_element],
+      		fluxJacobian_h_v[nDOF_trial_element],
+      		fluxJacobian_u_h[nDOF_trial_element],
+      		fluxJacobian_u_u[nDOF_trial_element],
+      		fluxJacobian_u_v[nDOF_trial_element],
+      		fluxJacobian_v_h[nDOF_trial_element],
+      		fluxJacobian_v_u[nDOF_trial_element],
+      		fluxJacobian_v_v[nDOF_trial_element],
+     		jac_ext[nSpace*nSpace],
+      		jacDet_ext,
+      		jacInv_ext[nSpace*nSpace],
+      		boundaryJac[nSpace*(nSpace-1)],
+      		metricTensor[(nSpace-1)*(nSpace-1)],
+      		metricTensorDetSqrt,
+      		dS,h_test_dS[nDOF_test_element],vel_test_dS[nDOF_test_element],
+      		h_grad_trial_trace[nDOF_trial_element*nSpace],vel_grad_trial_trace[nDOF_trial_element*nSpace],
+      		normal[3],x_ext,y_ext,xt_ext,yt_ext,integralScaling,
+      		G[nSpace*nSpace],G_dd_G,tr_G,h_penalty;
+
+      	      register double bc_b_ext=0.0,bc_h_ext=0.0,bc_u_ext=0.0,bc_v_ext=0.0,
+      		bc_mass_acc_ext=0.0,
+      		bc_dmass_acc_h_ext=0.0,
+      		bc_mom_u_acc_ext=0.0,
+      		bc_dmom_u_acc_h_ext=0.0,
+      		bc_dmom_u_acc_u_ext=0.0,
+      		bc_mom_v_acc_ext=0.0,
+      		bc_dmom_v_acc_h_ext=0.0,
+      		bc_dmom_v_acc_v_ext=0.0,
+      		bc_mass_adv_ext[nSpace],
+      		bc_dmass_adv_h_ext[nSpace],
+      		bc_dmass_adv_u_ext[nSpace],
+      		bc_dmass_adv_v_ext[nSpace],
+		bc_mom_u_adv_ext[nSpace],
+      		bc_dmom_u_adv_h_ext[nSpace],
+      		bc_dmom_u_adv_u_ext[nSpace],
+      		bc_dmom_u_adv_v_ext[nSpace],
+		bc_mom_v_adv_ext[nSpace],
+      		bc_dmom_v_adv_h_ext[nSpace],
+      		bc_dmom_v_adv_u_ext[nSpace],
+      		bc_dmom_v_adv_v_ext[nSpace],
+		bc_mom_u_diff_ten_ext[nSpace],
+      		bc_mom_v_diff_ten_ext[nSpace],
+      		bc_mom_uv_diff_ten_ext[1],
+      		bc_mom_vu_diff_ten_ext[1],
+      		bc_mom_u_source_ext=0.0,
+      		bc_dmom_u_source_h_ext=0.0,
+      		bc_mom_v_source_ext=0.0,
+      		bc_dmom_v_source_h_ext=0.0;
+
+	      register double dflux_mass_h_ext=0.,dflux_mass_u_ext=0.,dflux_mass_v_ext=0.,
+		dflux_mom_u_adv_h_ext=0.,dflux_mom_u_adv_u_ext=0.,dflux_mom_u_adv_v_ext=0.,
+		dflux_mom_v_adv_h_ext=0.,dflux_mom_v_adv_u_ext=0.,dflux_mom_v_adv_v_ext=0.;
+
+
+
+      	      //compute information about mapping from reference element to physical element
+      	      ck.calculateMapping_elementBoundary(eN,
+      						  ebN_local,
+      						  kb,
+      						  ebN_local_kb,
+      						  mesh_dof,
+      						  mesh_l2g,
+      						  mesh_trial_trace_ref,
+      						  mesh_grad_trial_trace_ref,
+      						  boundaryJac_ref,
+      						  jac_ext,
+      						  jacDet_ext,
+      						  jacInv_ext,
+      						  boundaryJac,
+      						  metricTensor,
+      						  metricTensorDetSqrt,
+      						  normal_ref,
+      						  normal,
+      						  x_ext,y_ext);
+      	      ck.calculateMappingVelocity_elementBoundary(eN,
+      							  ebN_local,
+      							  kb,
+      							  ebN_local_kb,
+      							  mesh_velocity_dof,
+      							  mesh_l2g,
+      							  mesh_trial_trace_ref,
+      							  xt_ext,yt_ext,
+      							  normal,
+      							  boundaryJac,
+      							  metricTensor,
+      							  integralScaling);
+      	      xt_ext=0.0;yt_ext=0.0;
+
+
+	      //	std::cout<<"xt_ext "<<xt_ext<<'\t'<<yt_ext<<'\t'<<std::endl;
+	      //	std::cout<<"integralScaling - metricTensorDetSrt ==============================="<<integralScaling-metricTensorDetSqrt<<std::endl;
+	      
+      	      dS = ((1.0-MOVING_DOMAIN)*metricTensorDetSqrt + MOVING_DOMAIN*integralScaling)*dS_ref[kb];
+      	      //compute shape and solution information
+      	      //shape
+      	      ck.gradTrialFromRef(&h_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,h_grad_trial_trace);
+      	      ck.gradTrialFromRef(&vel_grad_trial_trace_ref[ebN_local_kb_nSpace*nDOF_trial_element],jacInv_ext,vel_grad_trial_trace);
+      	      //solution and gradients
+      	      ck.valFromDOF(b_dof,&h_l2g[eN_nDOF_trial_element],&h_trial_trace_ref[ebN_local_kb*nDOF_test_element],b_ext);
+
+      	      ck.valFromDOF(h_dof,&h_l2g[eN_nDOF_trial_element],&h_trial_trace_ref[ebN_local_kb*nDOF_test_element],h_ext);
+      	      ck.valFromDOF(u_dof,&vel_l2g[eN_nDOF_trial_element],&vel_trial_trace_ref[ebN_local_kb*nDOF_test_element],u_ext);
+      	      ck.valFromDOF(v_dof,&vel_l2g[eN_nDOF_trial_element],&vel_trial_trace_ref[ebN_local_kb*nDOF_test_element],v_ext);
+      	      ck.gradFromDOF(b_dof,&h_l2g[eN_nDOF_trial_element],h_grad_trial_trace,grad_b_ext);
+      	      ck.gradFromDOF(h_dof,&h_l2g[eN_nDOF_trial_element],h_grad_trial_trace,grad_h_ext);
+      	      ck.gradFromDOF(u_dof,&vel_l2g[eN_nDOF_trial_element],vel_grad_trial_trace,grad_u_ext);
+      	      ck.gradFromDOF(v_dof,&vel_l2g[eN_nDOF_trial_element],vel_grad_trial_trace,grad_v_ext);
+      	      //precalculate test function products with integration weights
+      	      for (int j=0;j<nDOF_trial_element;j++)
+      		{
+      		  h_test_dS[j] = h_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
+      		  vel_test_dS[j] = vel_test_trace_ref[ebN_local_kb*nDOF_test_element+j]*dS;
+      		}
+      	      // //
+      	      // //debugging section for finite element calculations on exterior
+      	      // //
+      	      // std::cout<<"ebNE = "<<ebNE<<" kb = "<<kb<<std::endl;
+      	      // for (int j=0;j<nDOF_trial_element;j++)
+      	      //   {
+      	      //     std::cout<<"h_trial_trace["<<j<<"] "<<h_trial_trace_ref[ebN_local_kb*nDOF_trial_element+j]<<std::endl;
+      	      //     std::cout<<"vel_trial_trace["<<j<<"] "<<vel_trial_trace_ref[ebN_local_kb*nDOF_trial_element+j]<<std::endl;
+      	      //     std::cout<<"h_test_dS["<<j<<"] "<<h_test_dS[j]<<std::endl;
+      	      //     std::cout<<"vel_test_dS["<<j<<"] "<<vel_test_dS[j]<<std::endl;
+      	      //     for (int I=0;I<nSpace;I++)
+      	      // 	{
+      	      // 	  std::cout<<"h_grad_trial_trace["<<j<<","<<I<<"] "<<h_grad_trial_trace[j*nSpace+I]<<std::endl;
+      	      // 	  std::cout<<"vel_grad_trial_trace["<<j<<","<<I<<"] "<<vel_grad_trial_trace[j*nSpace+I]<<std::endl;
+      	      // 	}
+      	      //   }
+      	      // std::cout<<"h_ext "<<h_ext<<std::endl;
+      	      // std::cout<<"u_ext "<<u_ext<<std::endl;
+      	      // std::cout<<"v_ext "<<v_ext<<std::endl;
+      	      // for(int I=0;I<nSpace;I++)
+      	      //   {
+      	      //     std::cout<<"grad_h_ext["<<I<<"] "<<grad_h_ext[I]<<std::endl;
+      	      //     std::cout<<"grad_u_ext["<<I<<"] "<<grad_u_ext[I]<<std::endl;
+      	      //     std::cout<<"grad_v_ext["<<I<<"] "<<grad_v_ext[I]<<std::endl;
+      	      //   }
+      	      //
+      	      //load the boundary values
+      	      //
+      	      bc_h_ext = isDOFBoundary_h[ebNE_kb]*ebqe_bc_h_ext[ebNE_kb]+(1-isDOFBoundary_h[ebNE_kb])*h_ext;
+      	      bc_u_ext = isDOFBoundary_u[ebNE_kb]*ebqe_bc_u_ext[ebNE_kb]+(1-isDOFBoundary_u[ebNE_kb])*u_ext;
+      	      bc_v_ext = isDOFBoundary_v[ebNE_kb]*ebqe_bc_v_ext[ebNE_kb]+(1-isDOFBoundary_v[ebNE_kb])*v_ext;
+      	      //
+      	      //calculate the internal and external trace of the pde coefficients
+      	      //
+      	      //
+      	      //calculate pde coefficients at quadrature points
+      	      //
+      	      evaluateCoefficients(nu,
+      				   g,
+      				   grad_b_ext,
+      				   h_ext,
+      				   u_ext,
+      				   v_ext,
+      				   mass_acc_ext,
+      				   dmass_acc_h_ext,
+      				   mom_u_acc_ext,
+      				   dmom_u_acc_h_ext,
+      				   dmom_u_acc_u_ext,
+      				   mom_v_acc_ext,
+      				   dmom_v_acc_h_ext,
+      				   dmom_v_acc_v_ext,
+      				   mass_adv_ext,
+      				   dmass_adv_h_ext,
+      				   dmass_adv_u_ext,
+      				   dmass_adv_v_ext,
+      				   mom_u_adv_ext,
+      				   dmom_u_adv_h_ext,
+      				   dmom_u_adv_u_ext,
+      				   dmom_u_adv_v_ext,
+      				   mom_v_adv_ext,
+      				   dmom_v_adv_h_ext,
+      				   dmom_v_adv_u_ext,
+      				   dmom_v_adv_v_ext,
+      				   mom_u_diff_ten_ext,
+      				   mom_v_diff_ten_ext,
+      				   mom_uv_diff_ten_ext,
+      				   mom_vu_diff_ten_ext,
+      				   mom_u_source_ext,
+      				   dmom_u_source_h_ext,
+      				   mom_v_source_ext,
+      				   dmom_v_source_h_ext);
+      	      evaluateCoefficients(nu,
+      				   g,
+      				   grad_b_ext,
+      				   bc_h_ext,
+      				   bc_u_ext,
+      				   bc_v_ext,
+      				   bc_mass_acc_ext,
+      				   bc_dmass_acc_h_ext,
+      				   bc_mom_u_acc_ext,
+      				   bc_dmom_u_acc_h_ext,
+      				   bc_dmom_u_acc_u_ext,
+      				   bc_mom_v_acc_ext,
+      				   bc_dmom_v_acc_h_ext,
+      				   bc_dmom_v_acc_v_ext,
+      				   bc_mass_adv_ext,
+      				   bc_dmass_adv_h_ext,
+      				   bc_dmass_adv_u_ext,
+      				   bc_dmass_adv_v_ext,
+      				   bc_mom_u_adv_ext,
+      				   bc_dmom_u_adv_h_ext,
+      				   bc_dmom_u_adv_u_ext,
+      				   bc_dmom_u_adv_v_ext,
+      				   bc_mom_v_adv_ext,
+      				   bc_dmom_v_adv_h_ext,
+      				   bc_dmom_v_adv_u_ext,
+      				   bc_dmom_v_adv_v_ext,
+      				   bc_mom_u_diff_ten_ext,
+      				   bc_mom_v_diff_ten_ext,
+      				   bc_mom_uv_diff_ten_ext,
+      				   bc_mom_vu_diff_ten_ext,
+      				   bc_mom_u_source_ext,
+      				   bc_dmom_u_source_h_ext,
+      				   bc_mom_v_source_ext,
+      				   bc_dmom_v_source_h_ext);
+      	      //
+      	      //moving domain
+      	      //
+      	      mass_adv_ext[0] -= MOVING_DOMAIN*xt_ext;
+      	      mass_adv_ext[1] -= MOVING_DOMAIN*yt_ext;
+
+      	      mom_u_adv_ext[0] -= MOVING_DOMAIN*mom_u_acc_ext*xt_ext;
+      	      mom_u_adv_ext[1] -= MOVING_DOMAIN*mom_u_acc_ext*yt_ext;
+      	      dmom_u_adv_u_ext[0] -= MOVING_DOMAIN*dmom_u_acc_u_ext*xt_ext;
+      	      dmom_u_adv_u_ext[1] -= MOVING_DOMAIN*dmom_u_acc_u_ext*yt_ext;
+	      
+      	      mom_v_adv_ext[0] -= MOVING_DOMAIN*mom_v_acc_ext*xt_ext;
+      	      mom_v_adv_ext[1] -= MOVING_DOMAIN*mom_v_acc_ext*yt_ext;
+      	      dmom_v_adv_v_ext[0] -= MOVING_DOMAIN*dmom_v_acc_v_ext*xt_ext;
+      	      dmom_v_adv_v_ext[1] -= MOVING_DOMAIN*dmom_v_acc_v_ext*yt_ext;
+	      
+      	      //moving domain bc's
+      	      bc_mom_u_adv_ext[0] -= MOVING_DOMAIN*bc_mom_u_acc_ext*xt_ext;
+      	      bc_mom_u_adv_ext[1] -= MOVING_DOMAIN*bc_mom_u_acc_ext*yt_ext;
+	      
+      	      bc_mom_v_adv_ext[0] -= MOVING_DOMAIN*bc_mom_v_acc_ext*xt_ext;
+      	      bc_mom_v_adv_ext[1] -= MOVING_DOMAIN*bc_mom_v_acc_ext*yt_ext;
+
+      	      //
+      	      //calculate the numerical fluxes
+      	      //
+      	      //calculate the numerical fluxes
+       	      ck.calculateGScale(G,normal,h_penalty);
+      	      h_penalty = 10.0/h_penalty;
+      	      exteriorNumericalAdvectiveFluxDerivatives(g,
+							isDOFBoundary_h[ebNE_kb],
+      							isDOFBoundary_u[ebNE_kb],
+      							isDOFBoundary_v[ebNE_kb],
+      							isAdvectiveFluxBoundary_h[ebNE_kb],
+      							isAdvectiveFluxBoundary_u[ebNE_kb],
+      							isAdvectiveFluxBoundary_v[ebNE_kb],
+							normal,
+      							bc_h_ext,
+      							bc_mass_adv_ext,
+      							bc_mom_u_adv_ext,
+      							bc_mom_v_adv_ext,
+      							ebqe_bc_flux_mass_ext[ebNE_kb],
+      							ebqe_bc_flux_mom_u_adv_ext[ebNE_kb],
+      							ebqe_bc_flux_mom_v_adv_ext[ebNE_kb],
+      							h_ext,
+      							mass_adv_ext,
+      							mom_u_adv_ext,
+      							mom_v_adv_ext,
+							dmass_adv_h_ext,
+      							dmass_adv_u_ext,
+      							dmass_adv_v_ext,
+      							dmom_u_adv_h_ext,
+      							dmom_u_adv_u_ext,
+      							dmom_u_adv_v_ext,
+      							dmom_v_adv_h_ext,
+      							dmom_v_adv_u_ext,
+      							dmom_v_adv_v_ext,
+							dflux_mass_h_ext,
+      							dflux_mass_u_ext,
+      							dflux_mass_v_ext,
+      							dflux_mom_u_adv_h_ext,
+      							dflux_mom_u_adv_u_ext,
+      							dflux_mom_u_adv_v_ext,
+      							dflux_mom_v_adv_h_ext,
+      							dflux_mom_v_adv_u_ext,
+      							dflux_mom_v_adv_v_ext);
+      	      //
+      	      //calculate the flux jacobian
+      	      //
+      	      ck.calculateGScale(G,normal,h_penalty);
+      	      h_penalty = 10.0/h_penalty;
+      	      //cek debug, do it the old way
+      	      h_penalty = 100.0/elementDiameter[eN];
+      	      for (int j=0;j<nDOF_trial_element;j++)
+      		{
+      		  register int j_nSpace = j*nSpace,ebN_local_kb_j=ebN_local_kb*nDOF_trial_element+j;
+      		  //cek debug
+      		  //ebqe_henalty_ext[ebNE_kb] = 10.0;
+      		  //
+      		  //cek todo add full stress on boundaries
+
+      		  fluxJacobian_h_h[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mass_h_ext,vel_trial_trace_ref[ebN_local_kb_j]);
+      		  fluxJacobian_h_u[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mass_u_ext,vel_trial_trace_ref[ebN_local_kb_j]);
+      		  fluxJacobian_h_v[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mass_v_ext,vel_trial_trace_ref[ebN_local_kb_j]);
+
+      		  fluxJacobian_u_h[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_u_adv_h_ext,h_trial_trace_ref[ebN_local_kb_j]);
+      		  fluxJacobian_u_u[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_u_adv_u_ext,vel_trial_trace_ref[ebN_local_kb_j]);
+
+      		  fluxJacobian_u_v[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_u_adv_v_ext,vel_trial_trace_ref[ebN_local_kb_j]);
+
+      		  fluxJacobian_v_h[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_v_adv_h_ext,h_trial_trace_ref[ebN_local_kb_j]);
+      		  fluxJacobian_v_u[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_v_adv_u_ext,vel_trial_trace_ref[ebN_local_kb_j]);
+      		  fluxJacobian_v_v[j]=ck.ExteriorNumericalAdvectiveFluxJacobian(dflux_mom_v_adv_v_ext,vel_trial_trace_ref[ebN_local_kb_j]);
+
+
+      		  // fluxJacobian_h_h[j]=0.0;
+      		  // fluxJacobian_h_u[j]=0.0;
+      		  // fluxJacobian_h_v[j]=0.0;
+
+      		  // fluxJacobian_u_h[j]=0.0;
+      		  // fluxJacobian_u_u[j]=0.0;
+      		  // fluxJacobian_u_v[j]=0.0;
+
+      		  // fluxJacobian_v_h[j]=0.0;
+      		  // fluxJacobian_v_u[j]=0.0;
+      		  // fluxJacobian_v_v[j]=0.0;
+
+      		  // //cek debug
+      		}//j
+      	      //
+      	      //update the global Jacobian from the flux Jacobian
+      	      //
+      	      for (int i=0;i<nDOF_test_element;i++)
+      		{
+      		  register int eN_i = eN*nDOF_test_element+i;
+      		  for (int j=0;j<nDOF_trial_element;j++)
+      		    {
+      		      register int ebN_i_j = ebN*4*nDOF_test_X_trial_element + i*nDOF_trial_element + j;
+		  
+      		      globalJacobian[csrRowIndeces_h_h[eN_i] + csrColumnOffsets_eb_h_h[ebN_i_j]] += fluxJacobian_h_h[j]*h_test_dS[i];
+      		      globalJacobian[csrRowIndeces_h_u[eN_i] + csrColumnOffsets_eb_h_u[ebN_i_j]] += fluxJacobian_h_u[j]*h_test_dS[i];
+      		      globalJacobian[csrRowIndeces_h_v[eN_i] + csrColumnOffsets_eb_h_v[ebN_i_j]] += fluxJacobian_h_v[j]*h_test_dS[i];
+		   
+      		      globalJacobian[csrRowIndeces_u_h[eN_i] + csrColumnOffsets_eb_u_h[ebN_i_j]] += fluxJacobian_u_h[j]*vel_test_dS[i];
+      		      globalJacobian[csrRowIndeces_u_u[eN_i] + csrColumnOffsets_eb_u_u[ebN_i_j]] += fluxJacobian_u_u[j]*vel_test_dS[i];
+      		      globalJacobian[csrRowIndeces_u_v[eN_i] + csrColumnOffsets_eb_u_v[ebN_i_j]] += fluxJacobian_u_v[j]*vel_test_dS[i];
+		   
+      		      globalJacobian[csrRowIndeces_v_h[eN_i] + csrColumnOffsets_eb_v_h[ebN_i_j]] += fluxJacobian_v_h[j]*vel_test_dS[i];
+      		      globalJacobian[csrRowIndeces_v_u[eN_i] + csrColumnOffsets_eb_v_u[ebN_i_j]] += fluxJacobian_v_u[j]*vel_test_dS[i];
+      		      globalJacobian[csrRowIndeces_v_v[eN_i] + csrColumnOffsets_eb_v_v[ebN_i_j]] += fluxJacobian_v_v[j]*vel_test_dS[i];
+		   
+      		    }//j
+      		}//i
+      	      // //debug
+      	      // std::cout<<"flux jacobian ebNE "<<ebNE<<" kb "<<kb<<std::endl;
+      	      // for (int i=0;i<nDOF_test_element;i++)
+      	      //   {
+      	      //     for (int j=0;j<nDOF_trial_element;j++)
+      	      // 	{
+      	      // 	  std::cout<< fluxJacobian_h_h[j]*h_test_dS[i]<<std::endl;
+      	      // 	  std::cout<< fluxJacobian_h_u[j]*h_test_dS[i]<<std::endl;
+      	      // 	  std::cout<< fluxJacobian_h_v[j]*h_test_dS[i]<<std::endl;
+		  
+      	      // 	  std::cout<< fluxJacobian_u_h[j]*vel_test_dS[i]<<std::endl;
+      	      // 	  std::cout<< fluxJacobian_u_u[j]*vel_test_dS[i]<<std::endl;
+      	      // 	  std::cout<< fluxJacobian_u_v[j]*vel_test_dS[i]<<std::endl;
+		  
+      	      // 	  std::cout<< fluxJacobian_v_h[j]*vel_test_dS[i]<<std::endl;
+      	      // 	  std::cout<< fluxJacobian_v_u[j]*vel_test_dS[i]<<std::endl;
+      	      // 	  std::cout<< fluxJacobian_v_v[j]*vel_test_dS[i]<<std::endl;
+      	      // 	}//j
+      	      //   }//i
+      	    }//kb
+      	}//ebNE
+
     }//computeJacobian_supg
 
     /* void calculateVelocityAverage(int nExteriorElementBoundaries_global, */
