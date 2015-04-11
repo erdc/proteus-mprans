@@ -10,7 +10,7 @@ g = 1.0
 nu= 1.0e-8#1.0e-3#0.1
 H1=2.0
 H0=1.0
-Q=1.0e0
+Q=2.0e-1
 shock=True
 domain = Domain.RectangularDomain(L,name="Rectangle")
 bt = domain.boundaryTags
@@ -97,6 +97,6 @@ diffusiveFluxBoundaryConditions = {0:{},
                                    1:{1:getDFBC_u},
                                    2:{2:getDFBC_v}}
 
-T=2.0
+T=5.0
 
 

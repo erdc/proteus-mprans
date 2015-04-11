@@ -803,7 +803,8 @@ namespace proteus
     }
 
     inline
-      void exteriorNumericalAdvectiveFlux(const double& gravity,
+      void exteriorNumericalAdvectiveFlux(const double& h_penalty,
+					  const double& gravity,
 					  const int& isDOFBoundary_h,
 					  const int& isDOFBoundary_u,
 					  const int& isDOFBoundary_v,
@@ -842,7 +843,7 @@ namespace proteus
       flux_umom = 0.0;
       flux_vmom = 0.0;
       flowDirection=n[0]*f_mass[0]+n[1]*f_mass[1]; 
-      double bc_scale=10.0;
+      double bc_scale=h_penalty;
       /* if (isDOFBoundary_u != 1) */
       /* 	{ */
       /* 	  flux_mass += n[0]*f_mass[0]; */
@@ -959,7 +960,8 @@ namespace proteus
     }
 
     inline
-    void exteriorNumericalAdvectiveFluxDerivatives(const double& gravity,
+    void exteriorNumericalAdvectiveFluxDerivatives(const double& h_penalty,
+						   const double& gravity,
 						   const int& isDOFBoundary_h,
 						   const int& isDOFBoundary_u,
 						   const int& isDOFBoundary_v,
@@ -1011,7 +1013,7 @@ namespace proteus
       dflux_vmom_dv = 0.0;
   
       flowDirection=n[0]*f_mass[0]+n[1]*f_mass[1];
-      double bc_scale=10.0;
+      double bc_scale=h_penalty;
       /* if (isDOFBoundary_u != 1) */
       /* 	{ */
       /* 	  dflux_mass_du += n[0]*df_mass_du[0]; */
@@ -2941,7 +2943,8 @@ namespace proteus
       	      //calculate the numerical fluxes
        	      ck.calculateGScale(G,normal,h_penalty);
       	      h_penalty = 10.0/h_penalty;
-      	      exteriorNumericalAdvectiveFlux(g,
+      	      exteriorNumericalAdvectiveFlux(h_penalty,
+					     g,
 					     isDOFBoundary_h[ebNE_kb],
       					     isDOFBoundary_u[ebNE_kb],
       					     isDOFBoundary_v[ebNE_kb],
@@ -5023,7 +5026,8 @@ namespace proteus
       	      //calculate the numerical fluxes
        	      ck.calculateGScale(G,normal,h_penalty);
       	      h_penalty = 10.0/h_penalty;
-      	      exteriorNumericalAdvectiveFluxDerivatives(g,
+      	      exteriorNumericalAdvectiveFluxDerivatives(h_penalty,
+							g,
 							isDOFBoundary_h[ebNE_kb],
       							isDOFBoundary_u[ebNE_kb],
       							isDOFBoundary_v[ebNE_kb],
