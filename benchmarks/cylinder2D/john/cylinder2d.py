@@ -1,10 +1,15 @@
 from math import *
 import proteus.MeshTools
 from proteus import Domain
-from proteus.default_n import *  
+from proteus.default_n import *
 '''
 flow around a 2D cylinder  benchmark problem.
 '''
+
+# Fluid
+rho = 1.0e0
+##mu  =rho*0.2
+nu = 1.0e-3
 
 nd = 2
 spaceOrder=1
@@ -16,33 +21,34 @@ usePETSc = False
 
 L=2.2
 H = 0.41
-#Um = 2.0e-1
 C = (0.15,0.15)
 radius = 0.05
+Um = 120*nu/(2.0*radius)
+print "Um", Um
 fl_H = H
 
 # Input checks
 if spaceOrder not in [1,2]:
     print "INVALID: spaceOrder" + spaceOrder
-    sys.exit() 
+    sys.exit()
 if spaceOrder == 1:
     hFactor=1.0
     if useHex:
 	 basis=C0_AffineLinearOnCubeWithNodalBasis
          elementQuadrature = CubeGaussQuadrature(nd,2)
-         elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,2)     	 
+         elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,2)
     else:
     	 basis=C0_AffineLinearOnSimplexWithNodalBasis
          elementQuadrature = SimplexGaussQuadrature(nd,3)
-         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,3) 	    
+         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,3)
 elif spaceOrder == 2:
     hFactor=0.5
-    if useHex:    
+    if useHex:
 	basis=C0_AffineLagrangeOnCubeWithNodalBasis
         elementQuadrature = CubeGaussQuadrature(nd,4)
-        elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,4)    
-    else:    
-	basis=C0_AffineQuadraticOnSimplexWithNodalBasis	
+        elementBoundaryQuadrature = CubeGaussQuadrature(nd-1,4)
+    else:
+	basis=C0_AffineQuadraticOnSimplexWithNodalBasis
         elementQuadrature = SimplexGaussQuadrature(nd,4)
         elementBoundaryQuadrature = SimplexGaussQuadrature(nd-1,4)
 
@@ -62,7 +68,7 @@ domain = symmetric2D(box=(2.2,0.41),
                      C = (0.2,0.2),
                      DX = DX,
                      refinement_length=0.5,
-                     DX_coarse = 0.05)
+                     DX_coarse = 2*DX)
 # domain =symmetric2D(box=(L,H),
 #                     L=C[0]-DX,
 #                     H = C[1]-DX,
@@ -77,7 +83,7 @@ dt_fixed = 1.0e-2 #2.5e-1
 dt_init = 1.0e-2
 nDTout = int(T/dt_fixed)
 dt_init = min(dt_init,0.5*dt_fixed)
-tnList = [0.0,dt_init]+[i*dt_fixed for i in range(1,nDTout+1)] 
+tnList = [0.0,dt_init]+[i*dt_fixed for i in range(1,nDTout+1)]
 
 
 useBackwardEuler = False
@@ -94,10 +100,6 @@ epsFact_consrv_heaviside = 1.5
 epsFact_consrv_dirac     = 1.5
 epsFact_consrv_diffusion = 10.0
 
-# Fluid
-rho = 1.0e0
-##mu  =rho*0.2
-nu = 1.0e-3
 
 
 # Gravity
@@ -108,7 +110,8 @@ g = [0.0,0.0]
 
 
 
-triangleOptions= "penAaq" #pAq30.0Dena%f" % (.5*DX**2)  #% (0.5*(DX)**2,)
+#triangleOptions= "penAaq" #pAq30.0Dena%f" % (.5*DX**2)  #% (0.5*(DX)**2,)
+triangleOptions= "pAq30.0Dena%f" % (.5*DX**2)  #% (0.5*(DX)**2,)
 print triangleOptions
 genMesh=True
 domain.writePLY('symmetric2D')

@@ -35,10 +35,10 @@ def velRamp(t):
 def getDBC_p(x,flag):
     if flag in [boundaryTags['right']]: #,boundaryTags['left'],boundaryTags['front'], boundaryTags['back']]:
         return lambda x,t: 0.0
-    
+
 def getDBC_u(x,flag):
     if flag in[ boundaryTags['left']]: #,boundaryTags['right']]:
-        return lambda x,t: velRamp(t)*6.0*x[1]*(fl_H-x[1])#*1.5*Um*x[1]*(fl_H-x[1])/(fl_H/2.0)**2
+        return lambda x,t: Um#velRamp(t)*6.0*x[1]*(fl_H-x[1])#*1.5*Um*x[1]*(fl_H-x[1])/(fl_H/2.0)**2
     elif flag in [boundaryTags['obstacle'],boundaryTags['front'],boundaryTags['back']]:
         return lambda x,t: 0.0
 
@@ -47,7 +47,7 @@ def getDBC_v(x,flag):
         return lambda x,t: 0.0
     elif flag in [boundaryTags['obstacle'],boundaryTags['front'],boundaryTags['back']]:
         return lambda x,t: 0.0
-    
+
 
 
 dirichletConditions = {0:getDBC_p,
@@ -56,12 +56,12 @@ dirichletConditions = {0:getDBC_p,
 
 def getAFBC_p(x,flag):
     if flag == boundaryTags['left']:
-        return lambda x,t: -velRamp(t)*6.0*x[1]*(fl_H-x[1]) #velRamp(t)*1.5*Um*x[1]*(fl_H-x[1])/(fl_H/2.0)**2
+        return lambda x,t: -Um#velRamp(t)*6.0*x[1]*(fl_H-x[1]) #velRamp(t)*1.5*Um*x[1]*(fl_H-x[1])/(fl_H/2.0)**2
     elif flag == boundaryTags['right']:
         return None #lambda x,t: velRamp(t)*6.0*x[1]*(fl_H-x[1])
     else:
         return lambda x,t: 0.0
-                          
+
 
 def getAFBC_u(x,flag):
     if flag in [boundaryTags['left'],boundaryTags['obstacle'],boundaryTags['front'],boundaryTags['back'],boundaryTags['right']]:

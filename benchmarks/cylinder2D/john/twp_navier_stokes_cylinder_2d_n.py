@@ -12,8 +12,8 @@ class Fixed_dt_controller(proteus.StepControl.Min_dt_controller):
         proteus.StepControl.Min_dt_controller.__init__(self,model,nOptions)
         self.dt = nOptions.DT
         self.dt_model_last = None
-        
-        
+
+
     def initialize_dt_model(self,t0,tOut):
         self.saveSolution()
         m = self.model.levelModelList[-1]
@@ -22,7 +22,7 @@ class Fixed_dt_controller(proteus.StepControl.Min_dt_controller):
             self.dt_model_last = self.dt_model
         self.set_dt_allLevels()
         self.substeps = [self.t_model]
-        log("Initializing time step on model %s to dt = %12.5e" % (self.model.name,
+        logEvent("Initializing time step on model %s to dt = %12.5e" % (self.model.name,
                                                                    self.dt_model),
             level=1)
 
@@ -52,12 +52,12 @@ if useBackwardEuler:
     #nonlinearIterationsCeil=4
     #dtNLgrowFactor  = 1.5
     #dtNLreduceFactor= 0.75
-    
+
     #timeIntegration = NoIntegration
     #stepController = Newton_controller
 else:
     timeOrder=2
-    timeIntegration = VBDF 
+    timeIntegration = VBDF
     stepController = Fixed_dt_controller #Min_dt_controller
     DT = dt_fixed
     # timeIntegration = FLCBDF
@@ -97,15 +97,15 @@ shockCapturing = RANS2P.ShockCapturing(coefficients,nd,ns_shockCapturingFactor,l
 massLumping = False
 
 fullNewtonFlag = True
-multilevelNonlinearSolver = NewtonNS
-levelNonlinearSolver = NewtonNS
+multilevelNonlinearSolver = Newton#NS
+levelNonlinearSolver = Newton#NS
 
 nonlinearSmoother = None
 linearSmoother = None #SimpleNavierStokes2D
 
 matrix = SparseMatrix
 
-if usePETSc:    
+if usePETSc:
     multilevelLinearSolver = KSP_petsc4py
     levelLinearSolver = KSP_petsc4py
     linear_solver_options_prefix = 'rans2p_'
