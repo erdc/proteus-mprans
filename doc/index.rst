@@ -67,14 +67,14 @@ somewhat of a long and complicated compilation process.
 Git Repository Access
 =====================
 
-The source code is available on github at: ``https://github.com/erdc-cm/proteus-mprans``
+The source code is available on github at: ``https://github.com/erdc/proteus-mprans``
 See ``http://help.github.com`` for help on using git and github.
 
 If you have setup Git on your system and have been granted acces to PROTEUS-MPRANS
 repository, do the following::
 
   %cd $HOME
-  %git clone git@github.com:erdc-cm/proteus-mprans.git 
+  %git clone git@github.com:erdc/proteus-mprans.git 
 
 That will create proteus-mprans directory on in your home directory.
 
@@ -85,7 +85,7 @@ Installing
 
 Note that before you can build Proteus-MPRANS you must have a workinng version
 of Proteus. Build instructions for Proteus are available on our wiki
-``https://github.com/erdc-cm/proteus/wiki``, and you can ask for help on
+``https://github.com/erdc/proteus/wiki``, and you can ask for help on
 the developers' mailing list
 ``http://groups.google.com/group/proteus-dev/subscribe``.
 
@@ -297,7 +297,7 @@ Developer Information
 ======================
 
 The source code, wiki, and issue tracker are on github at
-``https://github.come/erdc-cm/proteus-mprans``. The developers' mailing list is
+``https://github.come/erdc/proteus-mprans``. The developers' mailing list is
 ``http://groups.google.com/group/proteus-dev``. Both require approval at
 this time.
 

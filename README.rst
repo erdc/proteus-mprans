@@ -28,6 +28,6 @@ Developer Information
 ======================
 
 The source code, wiki, and issue tracker are on github at
-https://github.come/erdc-cm/proteus. The developers' mailing list is
+https://github.come/erdc/proteus. The developers' mailing list is
 http://groups.google.com/group/proteus-dev. Both require approval at
 this time.
